@@ -49,7 +49,7 @@ struct MainTabView: View {
                 .tag(AppRouter.Tab.settings)
         }
         .fullScreenCover(item: $router.activeSession) { session in
-            SessionPlaceholderView(session: session)
+            SessionContainerView(session: session)
         }
     }
 }

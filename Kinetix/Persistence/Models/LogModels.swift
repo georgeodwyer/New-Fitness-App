@@ -54,6 +54,10 @@ final class StrengthLogModel: SyncTracked {
     var effort: Double
     var load: Double
     var healthKitWorkoutId: UUID?
+    var title: String = ""
+    /// False while the workout is in progress (sets are saved as you go, so it can be resumed).
+    var isFinished: Bool = false
+    var finishedAt: Date?
 
     @Relationship(deleteRule: .cascade, inverse: \SetLogModel.session)
     var sets: [SetLogModel] = []
@@ -70,9 +74,13 @@ final class StrengthLogModel: SyncTracked {
         self.load = 0
     }
 
-    /// Volume = Σ reps × weight (kg).
+    /// Volume = Σ reps × weight (kg) over completed sets.
     var volumeKg: Double {
-        sets.reduce(0) { $0 + Double($1.actualReps) * $1.actualWeightKg }
+        sets.filter(\.isCompleted).reduce(0) { $0 + Double($1.actualReps) * $1.actualWeightKg }
+    }
+
+    var orderedSets: [SetLogModel] {
+        sets.filter { !$0.isSoftDeleted }.sorted { ($0.exerciseOrder, $0.setIndex) < ($1.exerciseOrder, $1.setIndex) }
     }
 }
 
@@ -92,6 +100,16 @@ final class SetLogModel: SyncTracked {
     var actualWeightKg: Double
     var rpe: Double?
     var completedAt: Date?
+    var progressionKey: String = ""
+    var exerciseName: String = ""
+    var exerciseOrder: Int = 0
+    var repRangeLower: Int = 0
+    var repRangeUpper: Int = 0
+    var restSeconds: Int = 90
+    /// Bodyweight exercises have no load.
+    var isBodyweight: Bool = false
+
+    var isCompleted: Bool { completedAt != nil }
 
     init(exerciseId: String, setIndex: Int, targetReps: Int, targetWeightKg: Double, id: UUID = UUID(), now: Date = .now) {
         self.id = id
@@ -125,6 +143,8 @@ final class ExerciseStateModel: SyncTracked {
     var stallCount: Int
     /// "Added 2.5 kg: you hit 3×10 at RPE 8."
     var lastChangeReason: String?
+    var lastChangedAt: Date?
+    var exerciseName: String = ""
 
     init(progressionKey: String, exerciseId: String, workingWeightKg: Double, repRangeLower: Int, repRangeUpper: Int, id: UUID = UUID(), now: Date = .now) {
         self.id = id

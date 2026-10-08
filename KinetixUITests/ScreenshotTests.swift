@@ -85,8 +85,16 @@ final class ScreenshotTests: XCTestCase {
             app.navigationBars.buttons.firstMatch.tap()
         }
 
+        if !dark { strengthWorkout() }
+
         app.tabBars.buttons["Progress"].tap()
         snap("24-progress")
+        let lift = app.buttons.matching(identifier: "progress.lift").firstMatch
+        if lift.waitForExistence(timeout: 3) {
+            lift.tap()
+            snap("24b-exercise-history")
+            app.navigationBars.buttons.firstMatch.tap()
+        }
 
         app.tabBars.buttons["Settings"].tap()
         snap("25-settings")
@@ -96,5 +104,33 @@ final class ScreenshotTests: XCTestCase {
         snap("27-design-system-2")
         app.swipeUp()
         snap("28-design-system-3")
+    }
+
+    /// Opens a strength session from the Plan tab, logs a set, and finishes.
+    private func strengthWorkout() {
+        app.tabBars.buttons["Plan"].tap()
+        let strength = app.buttons.matching(NSPredicate(format: "identifier == 'plan.session' AND label CONTAINS 'Body'")).firstMatch
+        guard strength.waitForExistence(timeout: 5) else { return }
+        strength.tap()
+        tap("Start session")
+        XCTAssertTrue(app.buttons["Finish workout"].waitForExistence(timeout: 10))
+        snap("30-strength-workout")
+        let complete = app.buttons["Complete set 1"].firstMatch
+        if complete.waitForExistence(timeout: 3) {
+            complete.tap()
+            snap("31-strength-rest-timer")
+            if app.buttons["Skip"].exists { app.buttons["Skip"].tap() }
+        }
+        tap("Finish workout")
+        XCTAssertTrue(app.buttons["Save workout"].waitForExistence(timeout: 5))
+        snap("32-strength-finish")
+        tap("Save workout")
+        XCTAssertTrue(app.buttons["Done"].waitForExistence(timeout: 10))
+        snap("33-strength-summary")
+        tap("Done")
+        // Back to the plan's session detail.
+        if app.navigationBars.buttons.firstMatch.waitForExistence(timeout: 3) {
+            app.navigationBars.buttons.firstMatch.tap()
+        }
     }
 }
