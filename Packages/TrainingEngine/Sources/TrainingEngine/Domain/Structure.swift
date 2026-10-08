@@ -46,21 +46,36 @@ public struct RepRange: Codable, Equatable, Hashable, Sendable {
     }
 }
 
+public enum SlotRole: String, Codable, Sendable {
+    /// Main compound lift (heavier, lower reps).
+    case main
+    /// Supporting exercise (lighter, higher reps).
+    case accessory
+}
+
 public struct ExercisePrescription: Codable, Equatable, Sendable {
     public var exerciseId: String
+    public var name: String
+    public var role: SlotRole
     public var sets: Int
     public var repRange: RepRange
     /// Nil for bodyweight movements.
     public var weightKg: Double?
     public var restSeconds: Int
 
-    public init(exerciseId: String, sets: Int, repRange: RepRange, weightKg: Double?, restSeconds: Int) {
+    public init(exerciseId: String, name: String, role: SlotRole, sets: Int, repRange: RepRange, weightKg: Double?, restSeconds: Int) {
         self.exerciseId = exerciseId
+        self.name = name
+        self.role = role
         self.sets = sets
         self.repRange = repRange
         self.weightKg = weightKg
         self.restSeconds = restSeconds
     }
+
+    /// Progression is tracked per exercise *and* role, so a lift used as both a
+    /// heavy main lift and a lighter accessory keeps two working weights.
+    public var progressionKey: String { "\(exerciseId).\(role.rawValue)" }
 }
 
 public struct StrengthPrescription: Codable, Equatable, Sendable {

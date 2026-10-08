@@ -1,0 +1,36 @@
+{
+  "_comment": "Plan-level rules. Distances in metres. runShare = fraction of weekly sessions that are runs. quality = number of hard runs (tempo/intervals) per week by level and phase. qualityOrder = which hard run type is added first. longRunCapMeters caps the long run by goal.",
+  "goals": {
+    "first5k":        { "runShare": 0.65, "minLifts": 1, "maxLifts": 2, "maxQuality": 2, "qualityOrder": ["intervals", "tempo"], "taperWeeks": 1, "longRunCapMeters": 8000,  "longRunShare": 0.30 },
+    "faster10k":      { "runShare": 0.65, "minLifts": 1, "maxLifts": 2, "maxQuality": 2, "qualityOrder": ["intervals", "tempo"], "taperWeeks": 1, "longRunCapMeters": 16000, "longRunShare": 0.30 },
+    "halfMarathon":   { "runShare": 0.70, "minLifts": 1, "maxLifts": 2, "maxQuality": 2, "qualityOrder": ["tempo", "intervals"], "taperWeeks": 2, "longRunCapMeters": 22000, "longRunShare": 0.32 },
+    "marathon":       { "runShare": 0.70, "minLifts": 1, "maxLifts": 2, "maxQuality": 2, "qualityOrder": ["tempo", "intervals"], "taperWeeks": 3, "longRunCapMeters": 32000, "longRunShare": 0.33 },
+    "buildStrength":  { "runShare": 0.35, "minLifts": 2, "maxLifts": 4, "maxQuality": 1, "qualityOrder": ["tempo", "intervals"], "taperWeeks": 1, "longRunCapMeters": 10000, "longRunShare": 0.35 },
+    "buildMuscle":    { "runShare": 0.30, "minLifts": 2, "maxLifts": 4, "maxQuality": 1, "qualityOrder": ["tempo", "intervals"], "taperWeeks": 1, "longRunCapMeters": 10000, "longRunShare": 0.35 },
+    "balancedHybrid": { "runShare": 0.55, "minLifts": 2, "maxLifts": 3, "maxQuality": 2, "qualityOrder": ["tempo", "intervals"], "taperWeeks": 1, "longRunCapMeters": 16000, "longRunShare": 0.30 }
+  },
+  "quality": {
+    "beginner":     { "base": 0, "build": 1, "peak": 1, "taper": 1 },
+    "intermediate": { "base": 1, "build": 2, "peak": 2, "taper": 1 },
+    "advanced":     { "base": 1, "build": 2, "peak": 2, "taper": 1 }
+  },
+  "startVolumeMeters": { "beginner": 10000, "intermediate": 22000, "advanced": 38000 },
+  "peakVolumeMeters": {
+    "first5k":        { "beginner": 18000, "intermediate": 30000, "advanced": 45000 },
+    "faster10k":      { "beginner": 22000, "intermediate": 38000, "advanced": 55000 },
+    "halfMarathon":   { "beginner": 30000, "intermediate": 45000, "advanced": 65000 },
+    "marathon":       { "beginner": 40000, "intermediate": 60000, "advanced": 85000 },
+    "buildStrength":  { "beginner": 10000, "intermediate": 18000, "advanced": 25000 },
+    "buildMuscle":    { "beginner": 8000,  "intermediate": 15000, "advanced": 22000 },
+    "balancedHybrid": { "beginner": 18000, "intermediate": 30000, "advanced": 45000 }
+  },
+  "maxRunMeters": { "beginner": 8000, "intermediate": 13000, "advanced": 18000 },
+  "minRunMeters": 3000,
+  "weeklyIncrease": { "base": 0.05, "build": 0.08 },
+  "maxWeeklyIncrease": 0.10,
+  "recoveryWeekEvery": 4,
+  "recoveryWeekFactor": 0.8,
+  "taperFactors": [0.75, 0.6, 0.45],
+  "rollingHorizonWeeks": 12,
+  "plannedEffort": { "easy": 3, "recovery": 2, "long": 5, "tempo": 7, "intervals": 8, "strength": 7, "crossTraining": 3, "mobility": 2 }
+}

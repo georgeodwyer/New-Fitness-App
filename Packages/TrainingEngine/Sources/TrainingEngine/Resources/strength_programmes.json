@@ -1,0 +1,33 @@
+{
+  "_comment": "Strength sessions are built from movement-pattern slots; the exercise is chosen from exercises.json to suit the user's equipment. 'splits' picks sessions by number of lifting days per week. 'prescriptions' sets sets/reps/rest by goal and slot role.",
+  "sessions": {
+    "fullBodyA": { "name": "Full Body A", "focus": "fullBody",
+      "slots": [ { "pattern": "squat", "role": "main" }, { "pattern": "horizontalPush", "role": "main" }, { "pattern": "horizontalPull", "role": "accessory" }, { "pattern": "calf", "role": "accessory" }, { "pattern": "core", "role": "accessory" } ] },
+    "fullBodyB": { "name": "Full Body B", "focus": "fullBody",
+      "slots": [ { "pattern": "hinge", "role": "main" }, { "pattern": "verticalPush", "role": "main" }, { "pattern": "verticalPull", "role": "accessory" }, { "pattern": "lunge", "role": "accessory" }, { "pattern": "antiRotation", "role": "accessory" } ] },
+    "fullBodyC": { "name": "Full Body C", "focus": "fullBody",
+      "slots": [ { "pattern": "squat", "role": "main" }, { "pattern": "horizontalPull", "role": "main" }, { "pattern": "horizontalPush", "role": "accessory" }, { "pattern": "hingeAccessory", "role": "accessory" }, { "pattern": "core", "role": "accessory" } ] },
+    "upperA": { "name": "Upper Body A", "focus": "upper",
+      "slots": [ { "pattern": "horizontalPush", "role": "main" }, { "pattern": "horizontalPull", "role": "main" }, { "pattern": "verticalPush", "role": "accessory" }, { "pattern": "verticalPull", "role": "accessory" }, { "pattern": "arms", "role": "accessory" } ] },
+    "upperB": { "name": "Upper Body B", "focus": "upper",
+      "slots": [ { "pattern": "verticalPush", "role": "main" }, { "pattern": "verticalPull", "role": "main" }, { "pattern": "horizontalPush", "role": "accessory" }, { "pattern": "horizontalPull", "role": "accessory" }, { "pattern": "core", "role": "accessory" } ] },
+    "lowerA": { "name": "Lower Body A", "focus": "lower",
+      "slots": [ { "pattern": "squat", "role": "main" }, { "pattern": "hingeAccessory", "role": "accessory" }, { "pattern": "lunge", "role": "accessory" }, { "pattern": "calf", "role": "accessory" }, { "pattern": "core", "role": "accessory" } ] },
+    "lowerB": { "name": "Lower Body B", "focus": "lower",
+      "slots": [ { "pattern": "hinge", "role": "main" }, { "pattern": "lunge", "role": "main" }, { "pattern": "calf", "role": "accessory" }, { "pattern": "antiRotation", "role": "accessory" } ] }
+  },
+  "splits": {
+    "1": [ "fullBodyA" ],
+    "2": [ "fullBodyA", "fullBodyB" ],
+    "3": [ "fullBodyA", "fullBodyB", "fullBodyC" ],
+    "4": [ "upperA", "lowerA", "upperB", "lowerB" ]
+  },
+  "prescriptions": {
+    "buildStrength": { "main": { "sets": 5, "repsLow": 4, "repsHigh": 6, "restSeconds": 180 }, "accessory": { "sets": 3, "repsLow": 8, "repsHigh": 10, "restSeconds": 90 } },
+    "buildMuscle":   { "main": { "sets": 4, "repsLow": 8, "repsHigh": 12, "restSeconds": 120 }, "accessory": { "sets": 3, "repsLow": 10, "repsHigh": 15, "restSeconds": 75 } },
+    "balancedHybrid": { "main": { "sets": 4, "repsLow": 6, "repsHigh": 8, "restSeconds": 150 }, "accessory": { "sets": 3, "repsLow": 8, "repsHigh": 12, "restSeconds": 75 } },
+    "running":       { "main": { "sets": 3, "repsLow": 5, "repsHigh": 8, "restSeconds": 150 }, "accessory": { "sets": 2, "repsLow": 8, "repsHigh": 12, "restSeconds": 60 } }
+  },
+  "bodyweightReps": { "repsLow": 8, "repsHigh": 15 },
+  "taperSetMultiplier": 0.6
+}

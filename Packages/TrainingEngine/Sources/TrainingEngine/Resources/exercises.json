@@ -1,0 +1,62 @@
+{
+  "_comment": "Exercise library. 'requires' is the minimum equipment: fullGym > homeGym > dumbbellsOnly > bodyweight. For each movement pattern the first exercise the user's equipment allows is chosen. Default weights are total load (barbell) or per hand (dumbbells), in kg.",
+  "exercises": [
+    { "id": "barbell-back-squat", "name": "Barbell Back Squat", "pattern": "squat", "requires": "homeGym", "loading": "barbell", "region": "lower", "mainLift": "squat",
+      "defaultWeightKg": { "beginner": 40, "intermediate": 70, "advanced": 100 } },
+    { "id": "goblet-squat", "name": "Goblet Squat", "pattern": "squat", "requires": "dumbbellsOnly", "loading": "dumbbell", "region": "lower",
+      "defaultWeightKg": { "beginner": 12, "intermediate": 20, "advanced": 30 } },
+    { "id": "bodyweight-squat", "name": "Tempo Bodyweight Squat", "pattern": "squat", "requires": "bodyweight", "loading": "bodyweight", "region": "lower" },
+
+    { "id": "barbell-deadlift", "name": "Barbell Deadlift", "pattern": "hinge", "requires": "homeGym", "loading": "barbell", "region": "lower", "mainLift": "deadlift",
+      "defaultWeightKg": { "beginner": 50, "intermediate": 90, "advanced": 130 } },
+    { "id": "dumbbell-rdl", "name": "Dumbbell Romanian Deadlift", "pattern": "hinge", "requires": "dumbbellsOnly", "loading": "dumbbell", "region": "lower",
+      "defaultWeightKg": { "beginner": 12, "intermediate": 22, "advanced": 32 } },
+    { "id": "single-leg-hip-hinge", "name": "Single-Leg Hip Hinge", "pattern": "hinge", "requires": "bodyweight", "loading": "bodyweight", "region": "lower" },
+
+    { "id": "barbell-rdl", "name": "Romanian Deadlift", "pattern": "hingeAccessory", "requires": "homeGym", "loading": "barbell", "region": "lower",
+      "defaultWeightKg": { "beginner": 40, "intermediate": 70, "advanced": 100 } },
+    { "id": "dumbbell-rdl-accessory", "name": "Dumbbell Romanian Deadlift", "pattern": "hingeAccessory", "requires": "dumbbellsOnly", "loading": "dumbbell", "region": "lower",
+      "defaultWeightKg": { "beginner": 12, "intermediate": 22, "advanced": 32 } },
+    { "id": "glute-bridge", "name": "Single-Leg Glute Bridge", "pattern": "hingeAccessory", "requires": "bodyweight", "loading": "bodyweight", "region": "lower" },
+
+    { "id": "dumbbell-split-squat", "name": "Dumbbell Split Squat", "pattern": "lunge", "requires": "dumbbellsOnly", "loading": "dumbbell", "region": "lower",
+      "defaultWeightKg": { "beginner": 8, "intermediate": 14, "advanced": 22 } },
+    { "id": "reverse-lunge", "name": "Reverse Lunge", "pattern": "lunge", "requires": "bodyweight", "loading": "bodyweight", "region": "lower" },
+
+    { "id": "standing-calf-raise", "name": "Standing Calf Raise", "pattern": "calf", "requires": "dumbbellsOnly", "loading": "dumbbell", "region": "lower",
+      "defaultWeightKg": { "beginner": 10, "intermediate": 16, "advanced": 24 } },
+    { "id": "single-leg-calf-raise", "name": "Single-Leg Calf Raise", "pattern": "calf", "requires": "bodyweight", "loading": "bodyweight", "region": "lower" },
+
+    { "id": "barbell-bench-press", "name": "Barbell Bench Press", "pattern": "horizontalPush", "requires": "homeGym", "loading": "barbell", "region": "upper", "mainLift": "benchPress",
+      "defaultWeightKg": { "beginner": 30, "intermediate": 55, "advanced": 80 } },
+    { "id": "dumbbell-bench-press", "name": "Dumbbell Floor Press", "pattern": "horizontalPush", "requires": "dumbbellsOnly", "loading": "dumbbell", "region": "upper",
+      "defaultWeightKg": { "beginner": 10, "intermediate": 18, "advanced": 28 } },
+    { "id": "push-up", "name": "Push-Up", "pattern": "horizontalPush", "requires": "bodyweight", "loading": "bodyweight", "region": "upper" },
+
+    { "id": "barbell-overhead-press", "name": "Overhead Press", "pattern": "verticalPush", "requires": "homeGym", "loading": "barbell", "region": "upper", "mainLift": "overheadPress",
+      "defaultWeightKg": { "beginner": 20, "intermediate": 35, "advanced": 50 } },
+    { "id": "dumbbell-shoulder-press", "name": "Dumbbell Shoulder Press", "pattern": "verticalPush", "requires": "dumbbellsOnly", "loading": "dumbbell", "region": "upper",
+      "defaultWeightKg": { "beginner": 8, "intermediate": 14, "advanced": 22 } },
+    { "id": "pike-push-up", "name": "Pike Push-Up", "pattern": "verticalPush", "requires": "bodyweight", "loading": "bodyweight", "region": "upper" },
+
+    { "id": "barbell-row", "name": "Barbell Row", "pattern": "horizontalPull", "requires": "homeGym", "loading": "barbell", "region": "upper", "mainLift": "row",
+      "defaultWeightKg": { "beginner": 30, "intermediate": 50, "advanced": 75 } },
+    { "id": "dumbbell-row", "name": "One-Arm Dumbbell Row", "pattern": "horizontalPull", "requires": "dumbbellsOnly", "loading": "dumbbell", "region": "upper",
+      "defaultWeightKg": { "beginner": 12, "intermediate": 22, "advanced": 32 } },
+    { "id": "inverted-row", "name": "Inverted Row (table or bar)", "pattern": "horizontalPull", "requires": "bodyweight", "loading": "bodyweight", "region": "upper" },
+
+    { "id": "lat-pulldown", "name": "Lat Pulldown", "pattern": "verticalPull", "requires": "fullGym", "loading": "machine", "region": "upper",
+      "defaultWeightKg": { "beginner": 35, "intermediate": 55, "advanced": 75 } },
+    { "id": "pull-up", "name": "Pull-Up", "pattern": "verticalPull", "requires": "homeGym", "loading": "bodyweight", "region": "upper" },
+    { "id": "dumbbell-pullover", "name": "Dumbbell Pullover", "pattern": "verticalPull", "requires": "dumbbellsOnly", "loading": "dumbbell", "region": "upper",
+      "defaultWeightKg": { "beginner": 8, "intermediate": 14, "advanced": 20 } },
+    { "id": "doorway-row", "name": "Towel Doorway Row", "pattern": "verticalPull", "requires": "bodyweight", "loading": "bodyweight", "region": "upper" },
+
+    { "id": "dumbbell-curl", "name": "Dumbbell Curl", "pattern": "arms", "requires": "dumbbellsOnly", "loading": "dumbbell", "region": "upper",
+      "defaultWeightKg": { "beginner": 6, "intermediate": 10, "advanced": 14 } },
+    { "id": "diamond-push-up", "name": "Diamond Push-Up", "pattern": "arms", "requires": "bodyweight", "loading": "bodyweight", "region": "upper" },
+
+    { "id": "plank", "name": "Plank", "pattern": "core", "requires": "bodyweight", "loading": "bodyweight", "region": "core" },
+    { "id": "dead-bug", "name": "Dead Bug", "pattern": "antiRotation", "requires": "bodyweight", "loading": "bodyweight", "region": "core" }
+  ]
+}

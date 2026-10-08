@@ -11,7 +11,10 @@ let package = Package(
         .library(name: "TrainingEngine", targets: ["TrainingEngine"])
     ],
     targets: [
-        .target(name: "TrainingEngine"),
+        .target(
+            name: "TrainingEngine",
+            resources: [.process("Resources")]
+        ),
         .testTarget(name: "TrainingEngineTests", dependencies: ["TrainingEngine"])
     ]
 )
