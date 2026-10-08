@@ -13,7 +13,9 @@ agreed architecture and milestones. It is updated as decisions change.
 | Sync | Supabase, last-write-wins per record, soft deletes; built for multiple devices |
 | Plan horizon | Outline (blocks + weekly targets) to the event; detailed sessions generated ~2 weeks ahead |
 | Run effort | Asked after each session (pre-filled default from session type) → sRPE load |
-| Templates | JSON files bundled in the engine; format allows a remote override later |
+| Templates | JSON files in `Packages/TrainingEngine/Sources/TrainingEngine/Resources/` (run workouts, exercises, strength programmes, plan rules); format allows a remote override later |
+| Plan start | This week if onboarding finishes Mon–Wed, otherwise next Monday |
+| Rest day | Always at least one; choosing 7 days makes Friday a rest day |
 | Units | Stored internally as metres / seconds / kg; units only affect display |
 | Secrets | `Config/Secrets.xcconfig` (git-ignored); see `Secrets.example.xcconfig` |
 | Subscriptions | Not designed yet. A single `Entitlements` service will gate features (StoreKit 2), so a paywall can be added without restructuring |
@@ -55,7 +57,7 @@ Kinetix/ (iOS app)
 ## Milestones
 
 1. ✅ Project setup, design system, data model, navigation shell
-2. Onboarding + programme generation engine (unit tests)
+2. ✅ Onboarding + programme generation engine (unit tests)
 3. Strength trainer with logging and progression
 4. Running trainer, background GPS, audible pace cues (simulated GPS route)
 5. Dashboard, load calculations, balancing / skip / swap
