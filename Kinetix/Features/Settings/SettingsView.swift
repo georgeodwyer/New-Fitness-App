@@ -21,6 +21,13 @@ struct SettingsView: View {
                         .labelsHidden()
                     }
                 }
+                if let profile = profiles.first {
+                    Section {
+                        Button("Regenerate my plan") { PlanService.createPlan(for: profile.profile, in: context) }
+                    } footer: {
+                        Text("Builds a fresh plan from your current answers. Completed sessions are kept.")
+                    }
+                }
                 Section("Developer") {
                     NavigationLink("Design system") { DesignGalleryView() }
                     Button("Reset all data", role: .destructive) { confirmReset = true }

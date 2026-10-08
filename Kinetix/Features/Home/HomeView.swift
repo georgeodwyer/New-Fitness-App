@@ -12,7 +12,7 @@ struct HomeView: View {
     private var units: UnitSystem { profiles.first?.units ?? .metric }
 
     private var todaysSessions: [PlannedSessionModel] {
-        let calendar = Calendar.current
+        let calendar = Calendar.kinetix
         return sessions
             .filter { !$0.isSoftDeleted && calendar.isDateInToday($0.date) }
             .sorted { $0.slot == .morning && $1.slot == .evening }
@@ -95,12 +95,12 @@ struct HomeView: View {
                 ForEach(Array(todaysSessions.enumerated()), id: \.element.id) { index, session in
                     KXSessionCard(
                         overline: "Session \(sessionLetter(index)) · \(session.slot == .morning ? "Morning" : "Evening")",
-                        title: session.kind.displayName,
-                        detail: "\(Int(session.plannedDurationMinutes)) min · Effort \(Int(session.plannedEffort))/10",
+                        title: session.title,
+                        detail: "\(session.summary) · \(Int(session.plannedDurationMinutes)) min",
                         kind: session.kind,
                         status: session.status,
                         onStart: {
-                            router.activeSession = ActiveSession(id: session.id, kind: session.kind, title: session.kind.displayName)
+                            router.activeSession = ActiveSession(id: session.id, kind: session.kind, title: session.title)
                         }
                     )
                 }

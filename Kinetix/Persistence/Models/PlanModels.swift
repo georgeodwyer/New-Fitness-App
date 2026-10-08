@@ -14,11 +14,13 @@ final class TrainingPlanModel: SyncTracked {
     var goalRaw: String
     var startDate: Date
     var endDate: Date?
-    /// Encoded outline (base/build/peak/taper blocks); format defined in Milestone 2.
+    /// Encoded `PlanOutline` (phases and weekly volume targets for the whole horizon).
     var blocksData: Data
     /// Engine version that generated this plan.
     var engineVersion: String
     var isActive: Bool
+    /// Number of outline weeks whose detailed sessions have been generated.
+    var generatedWeekCount: Int = 0
 
     @Relationship(deleteRule: .cascade, inverse: \PlannedSessionModel.plan)
     var sessions: [PlannedSessionModel] = []
@@ -34,6 +36,11 @@ final class TrainingPlanModel: SyncTracked {
         self.blocksData = blocksData
         self.engineVersion = TrainingEngine.version
         self.isActive = true
+    }
+
+    var outline: PlanOutline? {
+        get { StoredJSON.decode(PlanOutline.self, from: blocksData) }
+        set { blocksData = newValue.map { StoredJSON.encode($0) } ?? Data(); touch() }
     }
 }
 
@@ -63,6 +70,11 @@ final class PlannedSessionModel: SyncTracked {
     var plannedEffort: Double
     var runStructureData: Data?
     var strengthPrescriptionData: Data?
+    var title: String = ""
+    /// Short description, e.g. "6 × 800 m · 9.5 km".
+    var summary: String = ""
+    var weekIndex: Int = 0
+    var estimatedDistanceMeters: Double?
 
     init(
         date: Date,
@@ -89,6 +101,25 @@ final class PlannedSessionModel: SyncTracked {
         self.plannedEffort = plannedEffort
         self.runStructureData = runStructure.map { StoredJSON.encode($0) }
         self.strengthPrescriptionData = strength.map { StoredJSON.encode($0) }
+        self.title = kind.displayName
+    }
+
+    /// Creates a stored session from the engine's output.
+    convenience init(generated: GeneratedSession, weekIndex: Int) {
+        self.init(
+            date: generated.date,
+            slot: generated.slot,
+            kind: generated.kind,
+            isKey: generated.isKey,
+            plannedDurationMinutes: generated.plannedDurationMinutes,
+            plannedEffort: generated.plannedEffort,
+            runStructure: generated.runStructure,
+            strength: generated.strength
+        )
+        self.title = generated.title
+        self.summary = generated.summary
+        self.weekIndex = weekIndex
+        self.estimatedDistanceMeters = generated.estimatedDistanceMeters
     }
 
     var kind: SessionKind {

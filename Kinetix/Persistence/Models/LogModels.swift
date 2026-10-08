@@ -116,7 +116,9 @@ final class ExerciseStateModel: SyncTracked {
     var deletedAt: Date?
     var needsSync: Bool
 
-    @Attribute(.unique) var exerciseId: String
+    /// `ExercisePrescription.progressionKey`: exercise id + role, e.g. "barbell-back-squat.main".
+    @Attribute(.unique) var progressionKey: String = ""
+    var exerciseId: String = ""
     var workingWeightKg: Double
     var repRangeLower: Int
     var repRangeUpper: Int
@@ -124,11 +126,12 @@ final class ExerciseStateModel: SyncTracked {
     /// "Added 2.5 kg: you hit 3×10 at RPE 8."
     var lastChangeReason: String?
 
-    init(exerciseId: String, workingWeightKg: Double, repRangeLower: Int, repRangeUpper: Int, id: UUID = UUID(), now: Date = .now) {
+    init(progressionKey: String, exerciseId: String, workingWeightKg: Double, repRangeLower: Int, repRangeUpper: Int, id: UUID = UUID(), now: Date = .now) {
         self.id = id
         self.updatedAt = now
         self.deletedAt = nil
         self.needsSync = true
+        self.progressionKey = progressionKey
         self.exerciseId = exerciseId
         self.workingWeightKg = workingWeightKg
         self.repRangeLower = repRangeLower

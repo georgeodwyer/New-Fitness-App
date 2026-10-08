@@ -5,6 +5,8 @@ import SwiftData
 struct RootView: View {
     @Query private var profiles: [UserProfileModel]
     @State private var router = AppRouter()
+    @Environment(\.modelContext) private var context
+    @Environment(\.scenePhase) private var scenePhase
 
     private var hasProfile: Bool {
         profiles.contains { !$0.isSoftDeleted }
@@ -15,11 +17,15 @@ struct RootView: View {
             if hasProfile {
                 MainTabView()
             } else {
-                OnboardingWelcomeView()
+                OnboardingFlowView()
             }
         }
         .environment(router)
         .tint(KXColor.accent)
+        .onChange(of: scenePhase, initial: true) { _, phase in
+            // Keep detailed sessions generated about two weeks ahead.
+            if phase == .active { PlanService.refresh(in: context) }
+        }
     }
 }
 

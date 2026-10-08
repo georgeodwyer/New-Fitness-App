@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     container: swift:6.1
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Test TrainingEngine
         run: swift test --package-path Packages/TrainingEngine
 
@@ -22,7 +22,7 @@ jobs:
     name: iOS app build & tests
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Show Xcode version
         run: xcodebuild -version
       - name: Install XcodeGen
@@ -46,7 +46,7 @@ jobs:
           exit $status
       - name: Upload build log
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: xcodebuild-log
           path: xcodebuild.log
