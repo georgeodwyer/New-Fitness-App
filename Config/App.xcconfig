@@ -1,0 +1,10 @@
+// Shared build settings for the Kinetix app target.
+// Defaults are empty; real values live in Secrets.xcconfig (git-ignored).
+// Copy Secrets.example.xcconfig to Secrets.xcconfig and fill it in.
+
+DEVELOPMENT_TEAM =
+SUPABASE_URL =
+SUPABASE_ANON_KEY =
+STRAVA_CLIENT_ID =
+
+#include? "Secrets.xcconfig"

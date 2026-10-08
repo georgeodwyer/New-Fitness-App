@@ -1,0 +1,54 @@
+import SwiftUI
+import UIKit
+
+/// Kinetix colour tokens, taken from the Stitch designs (light mint surfaces,
+/// warm orange accent, charcoal ink). Each token has a dark-mode variant.
+/// Values are approximations from the overview screenshot; replace them with the
+/// exact hex values from the Stitch export when available — every screen updates.
+enum KXColor {
+    // Surfaces
+    static let background = dynamic(light: 0xF2F7F5, dark: 0x0E1513)
+    static let surface = dynamic(light: 0xFFFFFF, dark: 0x18211E)
+    static let surfaceTint = dynamic(light: 0xE4F1ED, dark: 0x1F2B27)
+    static let border = dynamic(light: 0xDFE9E5, dark: 0x2A3733)
+
+    // Ink (text and icons)
+    static let ink = dynamic(light: 0x13201C, dark: 0xEEF4F2)
+    static let inkSecondary = dynamic(light: 0x5A6B66, dark: 0xA7B5B1)
+    static let inkTertiary = dynamic(light: 0x93A39F, dark: 0x6F7F7A)
+    static let inverted = dynamic(light: 0x1B2521, dark: 0xEEF4F2)
+    static let onInverted = dynamic(light: 0xFFFFFF, dark: 0x13201C)
+
+    // Brand accent
+    static let accent = dynamic(light: 0xF47B20, dark: 0xFF8D3A)
+    static let accentSoft = dynamic(light: 0xFDE9D8, dark: 0x3A2616)
+    static let onAccent = Color.white
+
+    // Data and status
+    static let teal = dynamic(light: 0x4FB3A2, dark: 0x5CC7B5)
+    static let slate = dynamic(light: 0x6F8A92, dark: 0x8BA3AA)
+    static let success = dynamic(light: 0x23936A, dark: 0x3CC08D)
+    static let warning = dynamic(light: 0xE9A21F, dark: 0xF2B544)
+    static let danger = dynamic(light: 0xD8433B, dark: 0xF06A61)
+
+    /// Discipline colours used consistently in charts and session cards.
+    static let run = accent
+    static let strength = slate
+
+    private static func dynamic(light: UInt32, dark: UInt32) -> Color {
+        Color(UIColor { traits in
+            UIColor(hex: traits.userInterfaceStyle == .dark ? dark : light)
+        })
+    }
+}
+
+private extension UIColor {
+    convenience init(hex: UInt32) {
+        self.init(
+            red: CGFloat((hex >> 16) & 0xFF) / 255,
+            green: CGFloat((hex >> 8) & 0xFF) / 255,
+            blue: CGFloat(hex & 0xFF) / 255,
+            alpha: 1
+        )
+    }
+}

@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  engine-linux:
+    name: Training engine tests (Linux)
+    runs-on: ubuntu-latest
+    container: swift:6.1
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test TrainingEngine
+        run: swift test --package-path Packages/TrainingEngine
+
+  ios:
+    name: iOS app build & tests
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show Xcode version
+        run: xcodebuild -version
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate Xcode project
+        run: xcodegen generate
+      - name: Test TrainingEngine (macOS)
+        run: swift test --package-path Packages/TrainingEngine
+      - name: Build and test app on simulator
+        run: |
+          UDID=$(./scripts/pick-simulator.sh)
+          echo "Using simulator $UDID"
+          xcodebuild test \
+            -project Kinetix.xcodeproj \
+            -scheme Kinetix \
+            -destination "id=$UDID" \
+            CODE_SIGNING_ALLOWED=NO \
+            > xcodebuild.log 2>&1 && status=0 || status=$?
+          grep -E "error:|Test Case .* (passed|failed)|\*\* (BUILD|TEST)" xcodebuild.log || true
+          if [ "$status" -ne 0 ]; then tail -n 80 xcodebuild.log; fi
+          exit $status
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-log
+          path: xcodebuild.log
+          if-no-files-found: ignore

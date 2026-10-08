@@ -1,0 +1,70 @@
+# XcodeGen project definition. Run `xcodegen` to (re)create Kinetix.xcodeproj.
+# Edit this file rather than Xcode's project settings, so changes are kept in git.
+name: Kinetix
+options:
+  bundleIdPrefix: com.georgeodwyer
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+  developmentLanguage: en-GB
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+packages:
+  TrainingEngine:
+    path: Packages/TrainingEngine
+targets:
+  Kinetix:
+    type: application
+    platform: iOS
+    sources:
+      - path: Kinetix
+    dependencies:
+      - package: TrainingEngine
+    configFiles:
+      Debug: Config/App.xcconfig
+      Release: Config/App.xcconfig
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.georgeodwyer.kinetix
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGN_STYLE: Automatic
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        ENABLE_PREVIEWS: YES
+    info:
+      path: Kinetix/Info.plist
+      properties:
+        CFBundleDisplayName: Kinetix
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        UIBackgroundModes: [location, audio]
+        NSLocationWhenInUseUsageDescription: "Kinetix uses your location during runs to measure distance and pace and draw your route."
+        NSLocationAlwaysAndWhenInUseUsageDescription: "Kinetix keeps tracking your run with the screen locked so pace coaching and splits keep working."
+        NSHealthShareUsageDescription: "Kinetix reads heart rate, resting heart rate and workouts to show live heart rate and balance your training load."
+        NSHealthUpdateUsageDescription: "Kinetix saves your completed runs and strength sessions to Apple Health."
+        NSBluetoothAlwaysUsageDescription: "Kinetix connects to Bluetooth heart rate straps to show live heart rate during workouts."
+        SupabaseURL: $(SUPABASE_URL)
+        SupabaseAnonKey: $(SUPABASE_ANON_KEY)
+        StravaClientID: $(STRAVA_CLIENT_ID)
+  KinetixTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: KinetixTests
+    dependencies:
+      - target: Kinetix
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  Kinetix:
+    build:
+      targets:
+        Kinetix: all
+        KinetixTests: [test]
+    test:
+      targets:
+        - KinetixTests
