@@ -39,8 +39,10 @@ final class PlanGeneratorTests: XCTestCase {
                         let isBodyweight = TestSupport.templates.exercise(id: exercise.exerciseId)?.loading == .bodyweight
                         XCTAssertEqual(exercise.weightKg == nil, isBodyweight, exercise.exerciseId)
                     }
-                default:
-                    XCTFail("Unexpected session kind \(session.kind)")
+                case .crossTraining:
+                    XCTAssertNil(session.runStructure)
+                case .mobility:
+                    XCTFail("Plans don't generate mobility sessions yet")
                 }
             }
         }
@@ -121,6 +123,15 @@ final class PlanGeneratorTests: XCTestCase {
         let week = generator.generateWeek(4, outline: outline, profile: profile)!
         let expectedLifts = generator.weeklyMixCounts(for: profile).lifts
         XCTAssertEqual(week.sessions.filter { $0.kind.discipline == .strength }.count, expectedLifts)
+    }
+
+    func testOverfullWeekSwapsEasyRunsForCrossTraining() {
+        // Two quality sessions plus a long run fill a modest week, so easy runs become cardio.
+        let profile = TestSupport.profile(goal: .halfMarathon, days: [.monday, .tuesday, .wednesday, .thursday, .saturday, .sunday], doubles: 1)
+        let outline = generator.makeOutline(for: profile, startingOn: TestSupport.monday)
+        let week = generator.generateWeek(4, outline: outline, profile: profile)!
+        XCTAssertTrue(week.sessions.contains { $0.kind == .crossTraining })
+        XCTAssertTrue(week.notes.contains { $0.contains("low-impact") })
     }
 
     func testKeySessionsFollowGoal() {

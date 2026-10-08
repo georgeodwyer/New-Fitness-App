@@ -47,17 +47,28 @@ public enum WeekScheduler {
         var state = State(days: days.sorted(), doubleDays: doubleDays)
         var notes: [String] = []
 
-        // Long run at the weekend if possible.
+        var convertedToEasy = 0
         var remainingRuns = runs
-        if let longIndex = remainingRuns.firstIndex(of: .long) {
+
+        // Long run at the weekend if possible. It never follows a lower-body lift day
+        // (only relevant when lifts were placed first).
+        func placeLongRun() {
+            guard let longIndex = remainingRuns.firstIndex(of: .long) else { return }
             remainingRuns.remove(at: longIndex)
-            let preferred = [Weekday.sunday, .saturday].first { state.days.contains($0) } ?? state.days.last
+            let allowed = state.days.filter { day in
+                state.runs[day] == nil
+                    && state.hasCapacity(on: day)
+                    && !(state.lifts[day]?.focus.loadsLowerBody ?? false)
+                    && !(state.lifts[day.previous]?.focus.loadsLowerBody ?? false)
+            }
+            let preferred = [Weekday.sunday, .saturday].first { allowed.contains($0) } ?? allowed.last
             if let day = preferred {
                 state.addRun(.long, on: day)
+            } else {
+                convertedToEasy += 1
+                notes.append("Your long run became an easy run this week so it doesn't follow a leg session.")
             }
         }
-
-        var convertedToEasy = 0
 
         // Quality runs, spread as far as possible from other hard runs. If lifting has
         // priority, they also avoid the day after a lower-body session; a quality run with
@@ -107,8 +118,10 @@ public enum WeekScheduler {
 
         if prioritiseLifts {
             placeLifts()
+            placeLongRun()
             placeQualityRuns()
         } else {
+            placeLongRun()
             placeQualityRuns()
             placeLifts()
         }

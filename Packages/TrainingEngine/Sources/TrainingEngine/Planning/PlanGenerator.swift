@@ -98,29 +98,63 @@ public struct PlanGenerator: Sendable {
         }
         let qualityMeters = qualityStructures.values.reduce(0) { $0 + $1.1.estimate(zones: zones).distanceMeters }
 
+        // Share the week's running volume: long run, then quality runs, then easy runs.
+        // If quality + long already fill the week, surplus easy runs become low-impact
+        // cardio and the long run shortens, so planned running stays close to target.
         let maxRun = rules.maxRunMeters[level.rawValue] ?? 12000
         let target = week.runVolumeMeters
         let hasLong = schedule.placements.contains { $0.item == .run(.long) }
         let easyCount = schedule.placements.filter { $0.item == .run(.easy) }.count
-        let longMeters: Double = hasLong
-            ? RunBuilder.tidy(min(max(target * goalRules.longRunShare, rules.minRunMeters), goalRules.longRunCapMeters, maxRun * 1.8))
+        var longMeters: Double = hasLong
+            ? min(max(target * goalRules.longRunShare, rules.minRunMeters), goalRules.longRunCapMeters, maxRun * 1.8)
             : 0
         let remainder = target - longMeters - qualityMeters
-        let easyMeters = easyCount > 0
-            ? RunBuilder.tidy(min(max(remainder / Double(easyCount), rules.minRunMeters), maxRun))
+        let easyToKeep = remainder >= Double(easyCount) * rules.minRunMeters
+            ? easyCount
+            : max(0, Int(remainder / rules.minRunMeters))
+        if hasLong && remainder < 0 {
+            longMeters = max(rules.minRunMeters, longMeters + remainder)
+        }
+        longMeters = RunBuilder.tidy(longMeters)
+        let easyMeters = easyToKeep > 0
+            ? RunBuilder.tidy(min(max(remainder / Double(easyToKeep), rules.minRunMeters), maxRun))
             : 0
+        var easyPlaced = 0
+        var crossTrainingNoteAdded = false
 
         let strengthContext = StrengthBuilder.Context(profile: profile, templates: templates, week: week, workingWeights: workingWeights)
         let liftsAreKey = !profile.goal.isRunningFocused
         let runsAreKey = profile.goal != .buildStrength && profile.goal != .buildMuscle
 
         var sessions: [GeneratedSession] = []
+        var extraNotes: [String] = []
         for placement in schedule.placements {
             let date = calendar.date(for: placement.weekday, inWeekStarting: week.startDate)
             if let notBefore, date < calendar.startOfDay(for: notBefore) { continue }
 
             switch placement.item {
+            case .run(let type) where type == .easy && easyPlaced >= easyToKeep:
+                // Surplus easy run → low-impact cardio (keeps the aerobic work, spares the legs).
+                sessions.append(GeneratedSession(
+                    date: date,
+                    slot: placement.slot,
+                    kind: .crossTraining,
+                    isKey: false,
+                    title: SessionKind.crossTraining.displayName,
+                    summary: "30 min easy cycling, cross-trainer or brisk walk",
+                    plannedDurationMinutes: 30,
+                    plannedEffort: rules.effort("crossTraining"),
+                    estimatedDistanceMeters: nil,
+                    runStructure: nil,
+                    strength: nil
+                ))
+                if !crossTrainingNoteAdded {
+                    crossTrainingNoteAdded = true
+                    extraNotes.append("Some easy runs are low-impact cardio this week so running volume doesn't jump too quickly.")
+                }
+
             case .run(let type):
+                if type == .easy { easyPlaced += 1 }
                 let structure: RunStructure
                 var summaryPrefix = ""
                 if let quality = qualityStructures[placement.weekday] {
@@ -170,7 +204,7 @@ public struct PlanGenerator: Sendable {
         }
 
         let plannedRunMeters = sessions.compactMap(\.estimatedDistanceMeters).reduce(0, +)
-        var notes = mix.notes + schedule.notes
+        var notes = mix.notes + schedule.notes + extraNotes
         if week.isRecoveryWeek { notes.append("Recovery week: volume is down about 20% so your body can absorb the last few weeks.") }
         if week.phase == .taper && index == outline.weeks.count - 1 && outline.eventDate != nil {
             notes.append("Race week: sessions are short and sharp so you arrive fresh.")
