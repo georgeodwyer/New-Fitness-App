@@ -110,6 +110,7 @@ struct PlanView: View {
                     ForEach(day.sessions) { session in
                         NavigationLink(value: session) { sessionRow(session) }
                             .buttonStyle(.plain)
+                            .accessibilityIdentifier("plan.session")
                     }
                 }
             }

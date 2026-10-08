@@ -45,6 +45,7 @@ struct KXOptionCard: View {
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
+        .accessibilityIdentifier(title)
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 }

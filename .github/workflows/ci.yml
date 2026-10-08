@@ -4,6 +4,7 @@ on:
   push:
     paths-ignore: ['docs/**', '**/*.md', 'Designs/**']
   pull_request:
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -20,7 +21,7 @@ jobs:
         run: swift test --package-path Packages/TrainingEngine
 
   ios:
-    name: iOS app build & tests
+    name: iOS app build, tests & screenshots
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v5
@@ -32,23 +33,58 @@ jobs:
         run: xcodegen generate
       - name: Test TrainingEngine (macOS)
         run: swift test --package-path Packages/TrainingEngine
-      - name: Build and test app on simulator
+
+      - name: Pick and boot simulator
         run: |
           UDID=$(./scripts/pick-simulator.sh)
           echo "Using simulator $UDID"
-          xcodebuild test \
-            -project Kinetix.xcodeproj \
-            -scheme Kinetix \
-            -destination "id=$UDID" \
-            CODE_SIGNING_ALLOWED=NO \
-            > xcodebuild.log 2>&1 && status=0 || status=$?
-          grep -E "error:|Test Case .* (passed|failed)|\*\* (BUILD|TEST)" xcodebuild.log || true
-          if [ "$status" -ne 0 ]; then tail -n 80 xcodebuild.log; fi
+          echo "UDID=$UDID" >> "$GITHUB_ENV"
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+
+      - name: Build for testing
+        run: |
+          ./scripts/xcodebuild-step.sh build.log build-for-testing \
+            -project Kinetix.xcodeproj -scheme Kinetix -destination "id=$UDID" \
+            -derivedDataPath DerivedData CODE_SIGNING_ALLOWED=NO
+
+      - name: App unit tests
+        run: |
+          ./scripts/xcodebuild-step.sh unit-tests.log test-without-building \
+            -project Kinetix.xcodeproj -scheme Kinetix -destination "id=$UDID" \
+            -derivedDataPath DerivedData -only-testing:KinetixTests
+
+      - name: Screenshots and screen recording
+        run: |
+          mkdir -p screenshots
+          xcrun simctl io "$UDID" recordVideo --codec=h264 --force screenshots/walkthrough.mp4 &
+          RECORDER=$!
+          sleep 2
+          TEST_RUNNER_SCREENSHOT_DIR="$PWD/screenshots" ./scripts/xcodebuild-step.sh ui-tests.log test-without-building \
+            -project Kinetix.xcodeproj -scheme Kinetix -destination "id=$UDID" \
+            -derivedDataPath DerivedData -only-testing:KinetixUITests -resultBundlePath UITests.xcresult \
+            && status=0 || status=$?
+          kill -INT $RECORDER || true
+          wait $RECORDER || true
+          # Fall back to the screenshots attached to the test results if none were written directly.
+          if [ -z "$(ls screenshots/*.png 2>/dev/null)" ] && [ -d UITests.xcresult ]; then
+            xcrun xcresulttool export attachments --path UITests.xcresult --output-path screenshots/attachments || true
+          fi
+          ls -la screenshots
           exit $status
-      - name: Upload build log
+
+      - name: Upload screenshots
         if: always()
         uses: actions/upload-artifact@v5
         with:
-          name: xcodebuild-log
-          path: xcodebuild.log
+          name: screenshots
+          path: screenshots/
+          if-no-files-found: ignore
+
+      - name: Upload build logs
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: xcodebuild-logs
+          path: '*.log'
           if-no-files-found: ignore

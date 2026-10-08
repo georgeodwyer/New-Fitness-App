@@ -49,6 +49,7 @@ targets:
         SupabaseURL: $(SUPABASE_URL)
         SupabaseAnonKey: $(SUPABASE_ANON_KEY)
         StravaClientID: $(STRAVA_CLIENT_ID)
+        ITSAppUsesNonExemptEncryption: false
   KinetixTests:
     type: bundle.unit-test
     platform: iOS
@@ -59,12 +60,25 @@ targets:
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
+  KinetixUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: KinetixUITests
+    dependencies:
+      - target: Kinetix
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: Kinetix
 schemes:
   Kinetix:
     build:
       targets:
         Kinetix: all
         KinetixTests: [test]
+        KinetixUITests: [test]
     test:
       targets:
         - KinetixTests
+        - KinetixUITests

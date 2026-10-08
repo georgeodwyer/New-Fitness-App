@@ -1,0 +1,90 @@
+name: TestFlight
+
+# Builds a signed release of Kinetix and uploads it to TestFlight.
+# Run it from GitHub: Actions → TestFlight → Run workflow.
+# Needs the four repository secrets described in docs/TESTFLIGHT.md.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  upload:
+    name: Build and upload to TestFlight
+    runs-on: macos-latest
+    env:
+      TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check secrets are set
+        run: |
+          missing=0
+          for name in TEAM_ID ASC_KEY_ID ASC_ISSUER_ID; do
+            if [ -z "${!name}" ]; then echo "::error::Secret for $name is missing (see docs/TESTFLIGHT.md)"; missing=1; fi
+          done
+          if [ -z "${{ secrets.ASC_KEY_P8 }}" ]; then echo "::error::Secret ASC_KEY_P8 is missing"; missing=1; fi
+          exit $missing
+
+      - name: Install XcodeGen and generate project
+        run: |
+          brew install xcodegen
+          xcodegen generate
+
+      - name: Write App Store Connect API key
+        run: |
+          mkdir -p "$RUNNER_TEMP/keys"
+          KEY_PATH="$RUNNER_TEMP/keys/AuthKey_${ASC_KEY_ID}.p8"
+          printf '%s' "${{ secrets.ASC_KEY_P8 }}" > "$KEY_PATH"
+          echo "KEY_PATH=$KEY_PATH" >> "$GITHUB_ENV"
+
+      - name: Archive
+        run: |
+          ./scripts/xcodebuild-step.sh archive.log archive \
+            -project Kinetix.xcodeproj -scheme Kinetix \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/Kinetix.xcarchive" \
+            DEVELOPMENT_TEAM="$TEAM_ID" \
+            CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$KEY_PATH" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+
+      - name: Export and upload to App Store Connect
+        run: |
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>${TEAM_ID}</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict>
+          </plist>
+          PLIST
+          ./scripts/xcodebuild-step.sh export.log -exportArchive \
+            -archivePath "$RUNNER_TEMP/Kinetix.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$KEY_PATH" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: testflight-logs
+          path: '*.log'
+          if-no-files-found: ignore
+
+      - name: Remove API key
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/keys"
