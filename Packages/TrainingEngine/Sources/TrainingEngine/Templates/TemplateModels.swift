@@ -107,6 +107,10 @@ public struct StrengthProgrammeFile: Codable, Equatable, Sendable {
     public var prescriptions: [String: GoalPrescription]
     public var bodyweightReps: RepBand
     public var taperSetMultiplier: Double
+    /// Optional; defaults to `ProgressionRules.standard`.
+    public var progression: ProgressionRules?
+
+    public var progressionRules: ProgressionRules { progression ?? .standard }
 }
 
 // MARK: - Plan rules
