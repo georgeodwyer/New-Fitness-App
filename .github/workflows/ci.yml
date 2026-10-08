@@ -20,7 +20,7 @@ jobs:
 
   ios:
     name: iOS app build & tests
-    runs-on: macos-15
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
       - name: Show Xcode version
