@@ -7,6 +7,8 @@ struct SettingsView: View {
     @Environment(\.modelContext) private var context
     @Query private var profiles: [UserProfileModel]
     @State private var confirmReset = false
+    @AppStorage(DeveloperSettings.simulateGPSKey) private var simulateGPS = false
+    @AppStorage(DeveloperSettings.simulationSpeedKey) private var simulationSpeed = 10.0
 
     var body: some View {
         NavigationStack {
@@ -27,6 +29,21 @@ struct SettingsView: View {
                     } footer: {
                         Text("Builds a fresh plan from your current answers. Completed sessions are kept.")
                     }
+                }
+                Section {
+                    Toggle("Simulated GPS for runs", isOn: $simulateGPS)
+                    if simulateGPS {
+                        Picker("Simulation speed", selection: $simulationSpeed) {
+                            Text("Real time").tag(1.0)
+                            Text("5× faster").tag(5.0)
+                            Text("10× faster").tag(10.0)
+                            Text("30× faster").tag(30.0)
+                        }
+                    }
+                } header: {
+                    Text("Testing")
+                } footer: {
+                    Text("Runs use a virtual runner looping Hyde Park instead of your GPS, including some off-pace moments so you can hear the coaching. Useful in the simulator or indoors.")
                 }
                 Section("Developer") {
                     NavigationLink("Design system") { DesignGalleryView() }

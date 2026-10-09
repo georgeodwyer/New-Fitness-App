@@ -70,7 +70,7 @@ final class ScreenshotTests: XCTestCase {
 
     private func mainScreens(dark: Bool) {
         prefix = dark ? "dark-" : "light-"
-        launch(["-seed-sample"] + (dark ? ["-dark"] : []))
+        launch(["-seed-sample", "-simulate-gps", "120"] + (dark ? ["-dark"] : []))
         XCTAssertTrue(app.tabBars.buttons["Today"].waitForExistence(timeout: 10))
         snap("20-today")
 
@@ -85,7 +85,10 @@ final class ScreenshotTests: XCTestCase {
             app.navigationBars.buttons.firstMatch.tap()
         }
 
-        if !dark { strengthWorkout() }
+        if !dark {
+            strengthWorkout()
+            runWorkout()
+        }
 
         app.tabBars.buttons["Progress"].tap()
         snap("24-progress")
@@ -99,11 +102,44 @@ final class ScreenshotTests: XCTestCase {
         app.tabBars.buttons["Settings"].tap()
         snap("25-settings")
         tap("Design system")
+        _ = app.navigationBars["Design system"].waitForExistence(timeout: 5)
         snap("26-design-system")
         app.swipeUp()
         snap("27-design-system-2")
         app.swipeUp()
         snap("28-design-system-3")
+    }
+
+    /// Opens a run from the Plan tab and runs it with simulated GPS at 120× speed.
+    private func runWorkout() {
+        app.tabBars.buttons["Plan"].tap()
+        let run = app.buttons.matching(NSPredicate(format: "identifier == 'plan.session' AND (label CONTAINS 'Run' OR label CONTAINS 'Intervals')")).firstMatch
+        guard run.waitForExistence(timeout: 5) else { return }
+        run.tap()
+        tap("Start session")
+        XCTAssertTrue(app.buttons["Start run"].waitForExistence(timeout: 10))
+        snap("40-run-ready")
+        tap("Start run")
+        XCTAssertTrue(app.buttons["Finish"].waitForExistence(timeout: 10))
+        sleep(9) // ~18 simulated minutes
+        snap("41-run-live")
+        sleep(5)
+        snap("42-run-live-later")
+        tap("Finish")
+        tap("Finish run")
+        XCTAssertTrue(app.buttons["Save"].waitForExistence(timeout: 5))
+        snap("43-run-effort")
+        tap("Save")
+        XCTAssertTrue(app.buttons["Done"].waitForExistence(timeout: 10))
+        snap("44-run-summary")
+        app.swipeUp()
+        snap("45-run-summary-splits")
+        app.swipeUp()
+        snap("46-run-summary-efforts")
+        tap("Done")
+        if app.navigationBars.buttons.firstMatch.waitForExistence(timeout: 3) {
+            app.navigationBars.buttons.firstMatch.tap()
+        }
     }
 
     /// Opens a strength session from the Plan tab, logs a set, and finishes.

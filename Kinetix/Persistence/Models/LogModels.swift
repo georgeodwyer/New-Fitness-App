@@ -24,6 +24,16 @@ final class RunLogModel: SyncTracked {
     var load: Double
     var healthKitWorkoutId: UUID?
     var stravaActivityId: String?
+    var title: String = ""
+    /// False while the run is in progress (it's checkpointed every 30 s).
+    var isFinished: Bool = false
+    var finishedAt: Date?
+    var maxHeartRate: Double?
+    /// Seconds of work/steady running where pace was measured against a target.
+    var targetedSeconds: Double = 0
+    /// Encoded `[SegmentResult]`.
+    var segmentsData: Data?
+    var usedSimulatedGPS: Bool = false
 
     init(plannedSessionId: UUID?, startedAt: Date, id: UUID = UUID(), now: Date = .now) {
         self.id = id
