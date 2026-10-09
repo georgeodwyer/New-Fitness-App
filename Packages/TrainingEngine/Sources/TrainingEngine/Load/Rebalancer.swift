@@ -52,6 +52,11 @@ public struct WeekSession: Identifiable, Equatable, Sendable {
 public struct Adjustment: Equatable, Sendable {
     public var session: WeekSession
     public var explanation: String
+
+    public init(session: WeekSession, explanation: String) {
+        self.session = session
+        self.explanation = explanation
+    }
 }
 
 /// A lighter alternative the user can swap a session for.
