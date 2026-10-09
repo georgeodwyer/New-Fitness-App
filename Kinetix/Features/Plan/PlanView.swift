@@ -120,7 +120,7 @@ struct PlanView: View {
     private func sessionRow(_ session: PlannedSessionModel) -> some View {
         HStack(spacing: KXSpacing.md) {
             Image(systemName: session.kind.symbolName)
-                .foregroundStyle(session.kind.discipline == .run ? KXColor.accent : KXColor.slate)
+                .foregroundStyle(session.kind.tint)
                 .frame(width: 28)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: KXSpacing.xxs) {
@@ -154,12 +154,8 @@ struct PlanView: View {
         .kxCard(.tinted)
     }
 
+    /// Phases are a sequence, so they use one hue from light (base) to dark (taper).
     private func color(for phase: TrainingPhase) -> Color {
-        switch phase {
-        case .base: return KXColor.teal
-        case .build: return KXColor.accent
-        case .peak: return KXColor.danger
-        case .taper: return KXColor.slate
-        }
+        KXColor.phase(TrainingPhase.allCases.firstIndex(of: phase) ?? 0)
     }
 }

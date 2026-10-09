@@ -102,7 +102,7 @@ struct PlanPreviewView: View {
                             .foregroundStyle(KXColor.inkSecondary)
                             .frame(width: 40, alignment: .leading)
                         Image(systemName: session.kind.symbolName)
-                            .foregroundStyle(session.kind.discipline == .run ? KXColor.accent : KXColor.slate)
+                            .foregroundStyle(session.kind.tint)
                             .frame(width: 24)
                             .accessibilityHidden(true)
                         VStack(alignment: .leading, spacing: KXSpacing.xxs) {

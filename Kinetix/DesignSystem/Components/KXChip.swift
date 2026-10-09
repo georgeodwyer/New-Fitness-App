@@ -33,9 +33,8 @@ struct KXChip: View {
         case .secondary: return KXColor.accent
         case .inverted: return KXColor.onInverted
         case .outlined: return KXColor.inkSecondary
-        case .success: return KXColor.success
-        case .warning: return KXColor.warning
-        case .danger: return KXColor.danger
+        // Status chips keep ink text; the tinted background and icon carry the status.
+        case .success, .warning, .danger: return KXColor.ink
         }
     }
 
@@ -45,9 +44,9 @@ struct KXChip: View {
         case .secondary: return KXColor.accentSoft
         case .inverted: return KXColor.inverted
         case .outlined: return .clear
-        case .success: return KXColor.success.opacity(0.12)
-        case .warning: return KXColor.warning.opacity(0.15)
-        case .danger: return KXColor.danger.opacity(0.12)
+        case .success: return KXColor.success.opacity(0.16)
+        case .warning: return KXColor.warning.opacity(0.22)
+        case .danger: return KXColor.danger.opacity(0.16)
         }
     }
 }

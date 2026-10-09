@@ -9,6 +9,7 @@ struct ProgressScreen: View {
     @Query(filter: #Predicate<StrengthLogModel> { $0.isFinished }, sort: \StrengthLogModel.startedAt, order: .reverse)
     private var workouts: [StrengthLogModel]
     @Query private var profiles: [UserProfileModel]
+    @Query private var runs: [RunLogModel]
 
     private var format: DisplayFormat { DisplayFormat(units: profiles.first?.units ?? .metric) }
 
@@ -34,10 +35,9 @@ struct ProgressScreen: View {
                     KXScreenHeader(title: "Progress")
                     liftsSection
                     recentWorkouts
-                    VStack(alignment: .leading, spacing: KXSpacing.sm) {
-                        KXSectionHeader("Training load", subtitle: "Running and lifting load, and your acute:chronic ratio, arrive in a later update.")
-                    }
-                    .kxCard(.tinted)
+                    LoadTrendCard(report: LoadModel.report(
+                        entries: DashboardService.loadEntries(runs: runs, lifts: workouts),
+                        today: .now, calendar: .kinetix))
                 }
                 .padding(KXSpacing.screenMargin)
             }

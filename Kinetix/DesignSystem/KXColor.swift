@@ -27,13 +27,28 @@ enum KXColor {
     // Data and status
     static let teal = dynamic(light: 0x4FB3A2, dark: 0x5CC7B5)
     static let slate = dynamic(light: 0x6F8A92, dark: 0x8BA3AA)
-    static let success = dynamic(light: 0x23936A, dark: 0x3CC08D)
-    static let warning = dynamic(light: 0xE9A21F, dark: 0xF2B544)
-    static let danger = dynamic(light: 0xD8433B, dark: 0xF06A61)
 
-    /// Discipline colours used consistently in charts and session cards.
-    static let run = accent
-    static let strength = slate
+    /// Discipline colours for charts, meters and session icons. Validated as a pair
+    /// (lightness band, chroma, colour-blind separation, contrast) in light and dark.
+    static let run = dynamic(light: 0xDD6A12, dark: 0xDE7024)
+    static let lift = dynamic(light: 0x008E80, dark: 0x2A9D8F)
+    /// De-emphasis for "other" data (cross-training, mobility).
+    static let other = dynamic(light: 0xA3B1AD, dark: 0x5E6D69)
+
+    /// Status colours: reserved meaning, always shown with an icon and a label.
+    static let success = Color(UIColor(hex: 0x0CA30C))
+    static let warning = Color(UIColor(hex: 0xFAB219))
+    static let danger = Color(UIColor(hex: 0xD03B3B))
+
+    /// Ordinal ramp for training phases (base → taper), one hue, light → dark.
+    static func phase(_ index: Int) -> Color {
+        let light: [UInt32] = [0xF0A266, 0xE5802F, 0xC55F0E, 0x8E440A]
+        let dark: [UInt32] = [0x8A440E, 0xB85B10, 0xE07A2A, 0xF2A86A]
+        let i = min(max(index, 0), 3)
+        return dynamic(light: light[i], dark: dark[i])
+    }
+
+    static let strength = lift
 
     private static func dynamic(light: UInt32, dark: UInt32) -> Color {
         Color(UIColor { traits in

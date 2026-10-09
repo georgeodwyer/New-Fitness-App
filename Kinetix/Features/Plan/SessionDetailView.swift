@@ -8,6 +8,8 @@ struct SessionDetailView: View {
     let session: PlannedSessionModel
     @Query private var profiles: [UserProfileModel]
     @Environment(AppRouter.self) private var router
+    @State private var showActions = false
+    @State private var lastChange: String?
 
     private var format: DisplayFormat { DisplayFormat(units: profiles.first?.units ?? .metric) }
 
@@ -24,8 +26,16 @@ struct SessionDetailView: View {
                     KXMetric(label: "Effort", value: "\(Int(session.plannedEffort))", unit: "/10", size: .small)
                     if session.isKey { KXChip(text: "Key session", systemImage: "star.fill", variant: .secondary) }
                 }
-                if let reason = session.changeReason {
+                if let reason = lastChange ?? session.changeReason {
                     Label(reason, systemImage: "arrow.triangle.2.circlepath").font(KXFont.callout).kxCard(.accent)
+                }
+                if session.status == .planned, profiles.first != nil {
+                    Button {
+                        showActions = true
+                    } label: {
+                        Label("Skip or swap this session", systemImage: "arrow.left.arrow.right")
+                    }
+                    .buttonStyle(.kx(.outlined, fullWidth: true))
                 }
                 if let structure = session.runStructure { runCard(structure) }
                 if let strength = session.strengthPrescription { strengthCard(strength) }
@@ -38,7 +48,8 @@ struct SessionDetailView: View {
             .padding(KXSpacing.screenMargin)
         }
         .safeAreaInset(edge: .bottom) {
-            if session.status == .planned, session.kind.discipline != .crossTraining {
+            if session.status == .planned || session.status == .swapped,
+               session.kind.discipline == .run || session.kind.discipline == .strength {
                 Button("Start session") {
                     router.activeSession = ActiveSession(id: session.id, kind: session.kind, title: session.title)
                 }
@@ -49,6 +60,15 @@ struct SessionDetailView: View {
         }
         .background(KXColor.background.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showActions) {
+            if let profile = profiles.first?.profile {
+                SessionActionsSheet(session: session, profile: profile) { explanations in
+                    showActions = false
+                    lastChange = explanations.first
+                }
+                .presentationDetents([.medium, .large])
+            }
+        }
     }
 
     private func runCard(_ structure: RunStructure) -> some View {

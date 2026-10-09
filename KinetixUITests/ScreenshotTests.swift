@@ -70,9 +70,14 @@ final class ScreenshotTests: XCTestCase {
 
     private func mainScreens(dark: Bool) {
         prefix = dark ? "dark-" : "light-"
-        launch(["-seed-sample", "-simulate-gps", "120"] + (dark ? ["-dark"] : []))
+        launch(["-seed-sample", "-seed-history", "-simulate-gps", "120"] + (dark ? ["-dark"] : []))
         XCTAssertTrue(app.tabBars.buttons["Today"].waitForExistence(timeout: 10))
-        snap("20-today")
+        snap("20-dashboard-1")
+        for index in 2...6 {
+            app.swipeUp()
+            snap("20-dashboard-\(index)")
+        }
+        if !dark { skipOrSwap() }
 
         app.tabBars.buttons["Plan"].tap()
         snap("21-plan")
@@ -108,6 +113,22 @@ final class ScreenshotTests: XCTestCase {
         snap("27-design-system-2")
         app.swipeUp()
         snap("28-design-system-3")
+    }
+
+    /// Opens the skip/swap sheet for today's first session and swaps it.
+    private func skipOrSwap() {
+        app.swipeDown(); app.swipeDown(); app.swipeDown(); app.swipeDown(); app.swipeDown()
+        let button = app.buttons["Skip or swap"].firstMatch
+        guard button.waitForExistence(timeout: 3) else { return }
+        button.tap()
+        snap("29-skip-or-swap")
+        let option = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Low-impact cardio' OR label CONTAINS 'Reduced-volume'")).firstMatch
+        if option.waitForExistence(timeout: 3) {
+            option.tap()
+            snap("29b-plan-updated")
+        } else {
+            app.swipeDown()
+        }
     }
 
     /// Opens a run from the Plan tab and runs it with simulated GPS at 120× speed.

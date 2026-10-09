@@ -14,7 +14,10 @@ struct KinetixApp: App {
             fatalError("Could not open the Kinetix database: \(error)")
         }
         if launch.seedSample {
-            MainActor.assumeIsolated { SampleData.seed(into: container.mainContext) }
+            MainActor.assumeIsolated {
+                SampleData.seed(into: container.mainContext)
+                if launch.seedHistory { SampleData.seedHistory(into: container.mainContext) }
+            }
         }
     }
 
@@ -35,5 +38,7 @@ struct LaunchOptions {
     var isUITesting: Bool { arguments.contains("-ui-testing") }
     /// Start with the sample profile and plan.
     var seedSample: Bool { isUITesting && arguments.contains("-seed-sample") }
+    /// Also add four weeks of past training (dashboard screenshots).
+    var seedHistory: Bool { isUITesting && arguments.contains("-seed-history") }
     var forceDark: Bool { isUITesting && arguments.contains("-dark") }
 }

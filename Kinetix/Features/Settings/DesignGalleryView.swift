@@ -23,6 +23,8 @@ struct DesignGalleryView: View {
                         swatch("Tint", KXColor.surfaceTint)
                         swatch("Teal", KXColor.teal)
                         swatch("Slate", KXColor.slate)
+                        swatch("Run", KXColor.run)
+                        swatch("Lift", KXColor.lift)
                         swatch("Success", KXColor.success)
                         swatch("Warning", KXColor.warning)
                         swatch("Danger", KXColor.danger)

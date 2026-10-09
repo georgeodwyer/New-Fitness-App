@@ -47,6 +47,7 @@ struct SettingsView: View {
                 }
                 Section("Developer") {
                     NavigationLink("Design system") { DesignGalleryView() }
+                    Button("Add sample training history") { SampleData.seedHistory(into: context) }
                     Button("Reset all data", role: .destructive) { confirmReset = true }
                 }
                 Section {

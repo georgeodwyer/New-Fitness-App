@@ -15,7 +15,7 @@ struct KXSessionCard: View {
         HStack(spacing: KXSpacing.md) {
             Image(systemName: kind.symbolName)
                 .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(kind.discipline == .run ? KXColor.accent : KXColor.slate)
+                .foregroundStyle(kind.tint)
                 .frame(width: 44, height: 44)
                 .background(KXColor.surfaceTint, in: Circle())
                 .accessibilityHidden(true)
@@ -30,7 +30,7 @@ struct KXSessionCard: View {
             }
             Spacer(minLength: KXSpacing.sm)
             switch status {
-            case .planned:
+            case .planned, .swapped:
                 if let onStart {
                     KXIconButton(systemImage: "play.fill", accessibilityLabel: "Start \(title)", variant: .accent, size: 44, action: onStart)
                 }
@@ -38,8 +38,6 @@ struct KXSessionCard: View {
                 KXChip(text: "Done", systemImage: "checkmark", variant: .success)
             case .skipped:
                 KXChip(text: "Skipped", variant: .outlined)
-            case .swapped:
-                KXChip(text: "Swapped", variant: .warning)
             }
         }
         .kxCard()
@@ -47,6 +45,15 @@ struct KXSessionCard: View {
 }
 
 extension SessionKind {
+    /// Discipline colour: running orange, lifting teal, everything else grey.
+    var tint: Color {
+        switch discipline {
+        case .run: return KXColor.run
+        case .strength: return KXColor.lift
+        case .crossTraining, .mobility: return KXColor.other
+        }
+    }
+
     /// SF Symbol for each session kind.
     var symbolName: String {
         switch self {
