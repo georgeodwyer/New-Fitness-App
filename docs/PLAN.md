@@ -60,7 +60,7 @@ Kinetix/ (iOS app)
 2. ✅ Onboarding + programme generation engine (unit tests)
 3. ✅ Strength trainer with logging and progression
 4. ✅ Running trainer, background GPS, audible pace cues (simulated GPS route)
-5. Dashboard, load calculations, balancing / skip / swap
+5. ✅ Dashboard, load calculations, balancing / skip / swap
 6. Settings
 7. Supabase accounts and sync
 8. HealthKit, Bluetooth HR, Strava

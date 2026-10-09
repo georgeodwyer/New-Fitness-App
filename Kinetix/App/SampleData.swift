@@ -17,12 +17,17 @@ enum SampleData {
         units: .metric
     )
 
-    /// Inserts the sample profile, default coaching settings and a generated plan.
+    /// Inserts the sample profile, default coaching settings and a generated plan that
+    /// started this Monday (so the current week is populated for demos and screenshots).
     @MainActor
     static func seed(into context: ModelContext, now: Date = .now) {
         context.insert(UserProfileModel(profile: profile))
         context.insert(CoachingSettingsModel())
-        PlanService.createPlan(for: profile, in: context, now: now)
+        let monday = Calendar.kinetix.startOfISOWeek(for: now)
+        let plan = PlanService.createPlan(for: profile, in: context, now: monday)
+        // Generate the rest of the horizon relative to today.
+        PlanService.ensureHorizon(for: plan, profile: profile, in: context, now: now)
+        try? context.save()
     }
 
     /// Adds ~4 weeks of past runs, lifts, records and a check-in so the dashboard
@@ -70,6 +75,12 @@ enum SampleData {
                     log.session = lift
                 }
             }
+        }
+        // This week's sessions before today: mostly done, one skipped, to make the week realistic.
+        let planned = (try? context.fetch(FetchDescriptor<PlannedSessionModel>())) ?? []
+        let earlier = planned.filter { $0.date < today && $0.date >= calendar.startOfISOWeek(for: today) }.sorted { $0.date < $1.date }
+        for (index, session) in earlier.enumerated() {
+            session.status = index == 1 ? .skipped : .completed
         }
         context.insert(PersonalRecordModel(recordKey: "barbell-back-squat", kindRaw: RecordKind.estimatedOneRepMax.rawValue,
                                            value: 125, achievedAt: today.addingTimeInterval(-2 * 86400)))

@@ -115,10 +115,18 @@ struct HomeView: View {
                             subtitle: todaysSessions.isEmpty ? nil : "\(todaysSessions.count) session\(todaysSessions.count == 1 ? "" : "s") planned")
             if todaysSessions.isEmpty {
                 VStack(alignment: .leading, spacing: KXSpacing.sm) {
-                    Label("Rest day", systemImage: "bed.double").font(KXFont.headline).foregroundStyle(KXColor.ink)
-                    Text("Nothing scheduled today. Recovery is when the training sinks in.")
-                        .font(KXFont.callout)
-                        .foregroundStyle(KXColor.inkSecondary)
+                    if let start = plans.first?.startDate, start > .now {
+                        Label("Your plan starts \(start.formatted(.dateTime.weekday(.wide).day().month(.wide)))", systemImage: "calendar")
+                            .font(KXFont.headline).foregroundStyle(KXColor.ink)
+                        Text("Until then, an easy 20–30 minute run, a walk or rest is perfect. Fresh legs for day one.")
+                            .font(KXFont.callout)
+                            .foregroundStyle(KXColor.inkSecondary)
+                    } else {
+                        Label("Rest day", systemImage: "bed.double").font(KXFont.headline).foregroundStyle(KXColor.ink)
+                        Text("Nothing scheduled today. Recovery is when the training sinks in.")
+                            .font(KXFont.callout)
+                            .foregroundStyle(KXColor.inkSecondary)
+                    }
                 }
                 .kxCard(.tinted)
             } else {
