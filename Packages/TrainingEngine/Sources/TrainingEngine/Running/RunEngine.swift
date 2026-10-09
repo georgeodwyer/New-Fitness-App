@@ -91,8 +91,8 @@ public struct RunSummary: Equatable, Sendable {
 
 /// Tracks a structured run from GPS samples and the clock, and decides what to say.
 ///
-/// Pace cues: when smoothed pace stays outside the target range (plus tolerance) for the
-/// whole cue delay, one cue is spoken. The timer then restarts, so a repeat only comes
+/// Pace cues: when pace (10 s average) stays outside the target range (plus tolerance) for
+/// the whole cue delay, and the 20 s average agrees, one cue is spoken. The timer then restarts, so a repeat only comes
 /// after another full delay still off pace. Coming back on target, or changing segment,
 /// resets it. Warm-up and cool-down are quiet unless the runner opts in, and the first
 /// ~15 s of each segment are ignored while the rolling average catches up.
@@ -110,7 +110,10 @@ public struct RunEngine: Sendable {
     private var distance: Double = 0
     private var lastSample: LocationSample?
     private var lastSampleActive: Double = 0
+    /// 20 s rolling pace for display and the cue double-check.
     private var smoother: PaceSmoother
+    /// Shorter window that reflects what the runner is doing now; decides "off pace".
+    private var coachSmoother: PaceSmoother
     private var route: [RoutePoint] = []
     private var lastFixActive: Double?
 
@@ -143,11 +146,13 @@ public struct RunEngine: Sendable {
         self.segments = structure?.segments ?? []
         self.config = config
         self.smoother = PaceSmoother(windowSeconds: config.smoothingWindowSeconds)
+        self.coachSmoother = PaceSmoother(windowSeconds: min(10, config.smoothingWindowSeconds))
     }
 
     public mutating func updateConfig(_ config: CoachingConfig) {
         self.config = config
         smoother.windowSeconds = config.smoothingWindowSeconds
+        coachSmoother.windowSeconds = min(10, config.smoothingWindowSeconds)
     }
 
     private var unitLength: Double { config.units == .metric ? 1000 : Units.metersPerMile }
@@ -177,6 +182,7 @@ public struct RunEngine: Sendable {
         // Don't count distance across the pause, or let old samples skew pace.
         lastSample = nil
         smoother.reset()
+        coachSmoother.reset()
     }
 
     /// Moves to the next segment now (e.g. the runner taps "Skip").
@@ -216,6 +222,7 @@ public struct RunEngine: Sendable {
         lastSampleActive = activeSeconds
         lastFixActive = activeSeconds
         smoother.add(time: activeSeconds, distance: distance, speed: sample.speed)
+        coachSmoother.add(time: activeSeconds, distance: distance, speed: sample.speed)
         route.append(RoutePoint(latitude: sample.latitude, longitude: sample.longitude, elapsed: activeSeconds))
 
         events += progressSegments()
@@ -418,7 +425,7 @@ public struct RunEngine: Sendable {
     private mutating func evaluateCoach() -> [RunEvent] {
         guard config.paceCuesEnabled, !isPaused, let segment = currentSegment, let target = segment.targetPace,
               config.cuesDuringWarmUpCoolDown || !segment.kind.isEasyBookend,
-              gpsFresh, let pace = smoother.pace
+              gpsFresh, let pace = coachSmoother.pace
         else {
             resetCoach()
             return []
@@ -440,9 +447,13 @@ public struct RunEngine: Sendable {
             return []
         }
         guard activeSeconds - since >= config.paceCueDelaySeconds else { return [] }
+        // Double-check with the longer average so GPS noise can't trigger a cue.
+        guard let steadyPace = smoother.pace,
+              target.position(of: steadyPace, toleranceSecondsPerKm: config.toleranceSecondsPerKm) == position
+        else { return [] }
         // Cue, then require another full delay off pace before repeating.
         offSince = activeSeconds
-        let cue = PaceCue(direction: position, pace: pace, target: target,
+        let cue = PaceCue(direction: position, pace: steadyPace, target: target,
                           message: Announcer.paceCue(position, target: target, units: config.units))
         lastCue = cue
         return [.paceCue(cue)]

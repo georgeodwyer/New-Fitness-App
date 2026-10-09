@@ -86,7 +86,7 @@ final class RunEngineTests: XCTestCase {
         XCTAssertTrue(found.allSatisfy { $0.1.direction == .tooFast })
         XCTAssertTrue(found[0].1.message.hasPrefix("Ease off, you're running too fast"))
         XCTAssertTrue(found[0].1.message.contains("4:40 to 4:50 per kilometre"))
-        // Smoothed pace takes a few seconds to cross the threshold, then 20 s must pass.
+        // The 10 s average takes a few seconds to cross the threshold, then 20 s must pass.
         XCTAssertGreaterThanOrEqual(found[0].0, 80)
         XCTAssertLessThan(found[0].0, 95)
         XCTAssertEqual(found[1].0 - found[0].0, 20, accuracy: 1.5)
@@ -102,6 +102,7 @@ final class RunEngineTests: XCTestCase {
         XCTAssertTrue(found[0].1.message.hasPrefix("Pick it up, you're running too slow"))
     }
 
+    /// A 12 s surge is stretched by smoothing but must still not count as 20 s off pace.
     func testShortExcursionDoesNotCue() {
         let structure = steady(6000)
         let runner = SimulatedRunner(structure: structure, deviations: [.init(segmentIndex: 0, from: 60, to: 72, speedFactor: 1.2)],
@@ -115,7 +116,7 @@ final class RunEngineTests: XCTestCase {
         let runner = SimulatedRunner(structure: structure, deviations: [.init(segmentIndex: 0, from: 60, to: 200, speedFactor: 1.15)],
                                      driftMeters: 0, speedNoise: 0)
         var engine = RunEngine(structure: structure, config: CoachingConfig(paceCueDelaySeconds: 45))
-        let found = cues(run(&engine, runner.samples(start: start, duration: 200)))
+        let found = cues(run(&engine, runner.samples(start: start, duration: 180)))
         XCTAssertEqual(found.count, 2)
         XCTAssertEqual(found[1].0 - found[0].0, 45, accuracy: 1.5)
     }
