@@ -106,6 +106,19 @@ final class ScreenshotTests: XCTestCase {
 
         app.tabBars.buttons["Settings"].tap()
         snap("25-settings")
+        if app.buttons["settings.coaching"].firstMatch.waitForExistence(timeout: 3) {
+            app.buttons["settings.coaching"].firstMatch.tap()
+            snap("25b-audio-coaching")
+            app.navigationBars.buttons.firstMatch.tap()
+        }
+        if app.buttons["settings.training"].firstMatch.waitForExistence(timeout: 3) {
+            app.buttons["settings.training"].firstMatch.tap()
+            snap("25c-training-profile")
+            app.navigationBars.buttons.firstMatch.tap()
+        }
+        app.swipeUp()
+        snap("25d-settings-account")
+        app.swipeUp()
         tap("Design system")
         _ = app.navigationBars["Design system"].waitForExistence(timeout: 5)
         snap("26-design-system")

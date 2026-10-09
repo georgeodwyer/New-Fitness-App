@@ -123,6 +123,38 @@ final class OnboardingModel {
         )
     }
 
+    /// Loads existing answers (used when editing the training profile in Settings).
+    func load(_ profile: AthleteProfile) {
+        units = profile.units
+        runningExperience = profile.runningExperience
+        if let race = profile.recentRace {
+            knowsRaceTime = true
+            raceDistance = RaceDistance.allCases.min { abs($0.rawValue - race.distanceMeters) < abs($1.rawValue - race.distanceMeters) } ?? .fiveK
+            let total = Int(race.timeSeconds.rounded())
+            raceHours = total / 3600
+            raceMinutes = (total % 3600) / 60
+            raceSeconds = total % 60
+        } else {
+            knowsRaceTime = false
+        }
+        liftingExperience = profile.liftingExperience
+        for index in liftEntries.indices {
+            if let estimate = profile.liftEstimates.first(where: { $0.lift == liftEntries[index].lift }) {
+                liftEntries[index].isKnown = true
+                liftEntries[index].weightKg = estimate.weightKg
+                liftEntries[index].reps = Double(estimate.reps)
+            } else {
+                liftEntries[index].isKnown = false
+            }
+        }
+        goal = profile.goal
+        hasEvent = profile.eventDate != nil
+        if let event = profile.eventDate { eventDate = event }
+        trainingDays = Set(profile.trainingDays)
+        doubleSessionDays = profile.doubleSessionDays
+        equipment = profile.equipment
+    }
+
     #if DEBUG
     /// Fills in typical answers (development shortcut).
     func fillSampleAnswers() {

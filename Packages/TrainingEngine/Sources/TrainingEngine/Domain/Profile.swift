@@ -129,3 +129,23 @@ public struct AthleteProfile: Codable, Equatable, Sendable {
         self.units = units
     }
 }
+
+extension AthleteProfile {
+    /// Plain-English names of the answers that differ from `other` and affect the plan
+    /// (units don't: they only change how things are shown).
+    public func planAffectingChanges(comparedTo other: AthleteProfile) -> [String] {
+        var changes: [String] = []
+        if goal != other.goal { changes.append("goal") }
+        if eventDate.map({ Int($0.timeIntervalSince1970 / 86400) }) != other.eventDate.map({ Int($0.timeIntervalSince1970 / 86400) }) {
+            changes.append("event date")
+        }
+        if Set(trainingDays) != Set(other.trainingDays) { changes.append("training days") }
+        if doubleSessionDays != other.doubleSessionDays { changes.append("double sessions") }
+        if equipment != other.equipment { changes.append("equipment") }
+        if runningExperience != other.runningExperience { changes.append("running experience") }
+        if liftingExperience != other.liftingExperience { changes.append("lifting experience") }
+        if recentRace != other.recentRace { changes.append("race time") }
+        if liftEstimates != other.liftEstimates { changes.append("lift numbers") }
+        return changes
+    }
+}

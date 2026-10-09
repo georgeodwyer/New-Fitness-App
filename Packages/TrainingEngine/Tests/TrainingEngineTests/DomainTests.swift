@@ -91,3 +91,30 @@ final class DomainCodingTests: XCTestCase {
         XCTAssertFalse(StrengthFocus.upper.loadsLowerBody)
     }
 }
+
+final class ProfileChangeTests: XCTestCase {
+    func testUnitsAloneDoNotAffectThePlan() {
+        let base = TestSupport.profile()
+        var imperial = base
+        imperial.units = .imperial
+        XCTAssertTrue(imperial.planAffectingChanges(comparedTo: base).isEmpty)
+    }
+
+    func testPlanAffectingChangesAreNamed() {
+        let base = TestSupport.profile()
+        var changed = base
+        changed.goal = .marathon
+        changed.trainingDays = [.monday, .wednesday, .saturday]
+        changed.equipment = .dumbbellsOnly
+        XCTAssertEqual(changed.planAffectingChanges(comparedTo: base), ["goal", "training days", "equipment"])
+    }
+
+    func testDayOrderAndSameEventDayAreNotChanges() {
+        let event = TestSupport.date(2027, 3, 14)
+        var a = TestSupport.profile(event: event)
+        var b = TestSupport.profile(event: event.addingTimeInterval(3600))
+        a.trainingDays = [.monday, .friday]
+        b.trainingDays = [.friday, .monday]
+        XCTAssertTrue(a.planAffectingChanges(comparedTo: b).isEmpty)
+    }
+}
