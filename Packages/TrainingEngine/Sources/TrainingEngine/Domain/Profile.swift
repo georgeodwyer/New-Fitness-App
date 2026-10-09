@@ -39,6 +39,18 @@ public enum Weekday: Int, Codable, CaseIterable, Comparable, Sendable {
 
     public static func < (lhs: Weekday, rhs: Weekday) -> Bool { lhs.rawValue < rhs.rawValue }
 
+    public var fullName: String {
+        switch self {
+        case .monday: return "Monday"
+        case .tuesday: return "Tuesday"
+        case .wednesday: return "Wednesday"
+        case .thursday: return "Thursday"
+        case .friday: return "Friday"
+        case .saturday: return "Saturday"
+        case .sunday: return "Sunday"
+        }
+    }
+
     public var shortName: String {
         switch self {
         case .monday: return "Mon"
