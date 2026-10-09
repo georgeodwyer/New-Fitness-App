@@ -84,10 +84,14 @@ final class RebalancerTests: XCTestCase {
                     durationMinutes: minutes, effort: 5)
     }
 
-    /// Mon intervals (key), Tue easy, Wed upper, Thu easy, Sat lower, Sun long (key).
+    /// Mon intervals (key), Tue easy, Wed lower, Thu easy, Sat upper, Sun long (key) — a valid week.
     private func week() -> [WeekSession] {
-        [session(0, .run(.intervals), key: true), session(1, .run(.easy)), session(2, .strength(.upper)),
-         session(3, .run(.easy)), session(5, .strength(.lower)), session(6, .run(.long), key: true, minutes: 90)]
+        [session(0, .run(.intervals), key: true), session(1, .run(.easy)), session(2, .strength(.lower)),
+         session(3, .run(.easy)), session(5, .strength(.upper)), session(6, .run(.long), key: true, minutes: 90)]
+    }
+
+    func testBaseWeekIsValid() {
+        XCTAssertTrue(Rebalancer.isValid(week(), calendar: calendar))
     }
 
     func testSkippingNonKeySessionIsNotRescheduled() {
@@ -114,10 +118,9 @@ final class RebalancerTests: XCTestCase {
 
     func testMovedKeySessionRespectsInterference() {
         var week = week()
-        // Make Thursday the only easy run left and put a lower-body lift on Wednesday:
-        // intervals can't go on Thursday (day after a lower lift).
+        // Tuesday's easy run is done, so Thursday's is the only one left — but intervals can't
+        // go on Thursday (the day after Wednesday's lower-body lift), and there's no free day.
         week[1].status = .completed
-        week[2].kind = .strength(.lower)
         let result = Rebalancer.skip(week[0].id, week: week, context: context(today: 1))
         let moved = result.first { $0.session.id == week[0].id }!.session
         XCTAssertNotEqual(calendar.weekday(of: moved.date), .thursday)
