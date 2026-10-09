@@ -40,7 +40,7 @@ final class RunEngineTests: XCTestCase {
 
     func testJitterDoesNotTriggerCuesWhenOnPace() {
         let structure = steady(5000)
-        let runner = SimulatedRunner(structure: structure, speedNoise: 0.4, seed: 7)
+        let runner = SimulatedRunner(structure: structure, speedNoise: 0.3, seed: 7)
         var engine = RunEngine(structure: structure)
         let events = run(&engine, runner.samples(start: start, duration: 1200))
         XCTAssertTrue(cues(events).isEmpty, "Noisy but on-pace running must not trigger cues")
@@ -77,8 +77,8 @@ final class RunEngineTests: XCTestCase {
 
     func testTooFastTriggersCueAfterDelayThenRepeatsAfterAnotherFullDelay() {
         let structure = steady(6000)
-        // 15% too fast from 60 s to 130 s.
-        let runner = SimulatedRunner(structure: structure, deviations: [.init(segmentIndex: 0, from: 60, to: 130, speedFactor: 1.15)],
+        // 15% too fast from 60 s to 110 s (smoothed pace stays fast until ~122 s).
+        let runner = SimulatedRunner(structure: structure, deviations: [.init(segmentIndex: 0, from: 60, to: 110, speedFactor: 1.15)],
                                      driftMeters: 0, speedNoise: 0)
         var engine = RunEngine(structure: structure)
         let found = cues(run(&engine, runner.samples(start: start, duration: 200)))

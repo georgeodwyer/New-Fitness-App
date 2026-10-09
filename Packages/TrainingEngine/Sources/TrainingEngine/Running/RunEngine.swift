@@ -94,7 +94,8 @@ public struct RunSummary: Equatable, Sendable {
 /// Pace cues: when smoothed pace stays outside the target range (plus tolerance) for the
 /// whole cue delay, one cue is spoken. The timer then restarts, so a repeat only comes
 /// after another full delay still off pace. Coming back on target, or changing segment,
-/// resets it. Warm-up and cool-down are quiet unless the runner opts in.
+/// resets it. Warm-up and cool-down are quiet unless the runner opts in, and the first
+/// ~15 s of each segment are ignored while the rolling average catches up.
 public struct RunEngine: Sendable {
     public private(set) var config: CoachingConfig
     public let segments: [RunSegment]
@@ -419,6 +420,12 @@ public struct RunEngine: Sendable {
               config.cuesDuringWarmUpCoolDown || !segment.kind.isEasyBookend,
               gpsFresh, let pace = smoother.pace
         else {
+            resetCoach()
+            return []
+        }
+        // Right after a segment change the smoothed pace still includes the previous
+        // segment (e.g. the recovery jog), so wait until the window is mostly in this one.
+        guard activeSeconds - segmentStartActive >= config.smoothingWindowSeconds * 0.75 else {
             resetCoach()
             return []
         }
