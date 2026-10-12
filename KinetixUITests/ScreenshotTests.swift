@@ -118,9 +118,9 @@ final class ScreenshotTests: XCTestCase {
         snap("24-progress-running")
         app.swipeUp()
         snap("24a-progress-running-2")
-        let run = app.buttons.matching(identifier: "progress.run").firstMatch
-        if run.waitForExistence(timeout: 3) {
-            run.tap()
+        let runRow = app.buttons.matching(identifier: "progress.run").firstMatch
+        if runRow.waitForExistence(timeout: 3) {
+            runRow.tap()
             snap("24c-run-detail")
             app.swipeUp()
             snap("24d-run-detail-charts")
@@ -129,10 +129,10 @@ final class ScreenshotTests: XCTestCase {
         app.swipeDown(); app.swipeDown(); app.swipeDown()
         if app.buttons["Strength"].waitForExistence(timeout: 3) { app.buttons["Strength"].tap() }
         snap("24e-progress-strength")
-        let session = app.buttons.matching(identifier: "progress.strengthSession").firstMatch
-        for _ in 0..<3 where !session.exists { app.swipeUp() }
-        if session.waitForExistence(timeout: 3) {
-            session.tap()
+        let strengthSession = app.buttons.matching(identifier: "progress.strengthSession").firstMatch
+        for _ in 0..<3 where !strengthSession.exists { app.swipeUp() }
+        if strengthSession.waitForExistence(timeout: 3) {
+            strengthSession.tap()
             snap("24f-strength-session-detail")
             app.navigationBars.buttons.firstMatch.tap()
         }
