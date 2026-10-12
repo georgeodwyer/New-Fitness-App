@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>Kinetix</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Kinetix connects to Bluetooth heart rate straps to show live heart rate during workouts.</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Kinetix reads heart rate, resting heart rate and workouts to show live heart rate and balance your training load.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Kinetix saves your completed runs and strength sessions to Apple Health.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Kinetix keeps tracking your run with the screen locked so pace coaching and splits keep working.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Kinetix uses your location during runs to measure distance and pace and draw your route.</string>
+	<key>StravaClientID</key>
+	<string>$(STRAVA_CLIENT_ID)</string>
+	<key>SupabaseAnonKey</key>
+	<string>$(SUPABASE_ANON_KEY)</string>
+	<key>SupabaseURL</key>
+	<string>$(SUPABASE_URL)</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+		<string>audio</string>
+	</array>
+	<key>UILaunchScreen</key>
+	<dict/>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+</dict>
+</plist>

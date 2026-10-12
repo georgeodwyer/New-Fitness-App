@@ -1,0 +1,978 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0147D8BEC0DBA6EF2072DCD9 /* KXStepper.swift in Sources */ = {isa = PBXBuildFile; fileRef = D763CB1795460ACC4115555D /* KXStepper.swift */; };
+		019C4AE040EEE60FFD47B6AF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9D4B9D509AC09C29705FCC4B /* Assets.xcassets */; };
+		0256EAD3B08ADE3512154318 /* VoiceCoach.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CB8951AE011CBA263FE6226 /* VoiceCoach.swift */; };
+		067880B384E37AE558D9400B /* KXMetric.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DBA1671E84924F9135EF5C2 /* KXMetric.swift */; };
+		0B0FAE936D97D1E2FFDF2B44 /* KXHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = E29498CEEBE32CAE95B52D85 /* KXHeader.swift */; };
+		0B8EDD2194BD01A7D5D4F63C /* StrengthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE4D2B82E6F373D0D19923E8 /* StrengthService.swift */; };
+		0EB0A969CF111C83D1EE1612 /* SessionPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BDCE4810AFEA6B0C6902B30 /* SessionPlaceholderView.swift */; };
+		1153E095AEC952349F00FE4F /* PlanModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20B9963B730BCD17BDF41812 /* PlanModels.swift */; };
+		1369ADE963F649AC955FB2F9 /* KXColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18F5261D8A4C543FC07B8C9C /* KXColor.swift */; };
+		137D60F69C32B7B5FEA6B601 /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CCC3286E58148E4A728A4C5 /* AuthView.swift */; };
+		176A9CA264F5F1958B93191B /* CoachingSettingsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E4B9C42AA415E0578CF122F /* CoachingSettingsModel.swift */; };
+		23D4F39B01462EFBBA9B2DD3 /* AppRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEB367BF9ABEF3898F8358B4 /* AppRouter.swift */; };
+		2A4AA22FE91E593A94B94CC9 /* StrengthServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EB4073696B3EE5AFE2200E5 /* StrengthServiceTests.swift */; };
+		2DA92333D1D2C198361DCA42 /* CoachingSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C45C2DEC18638987AEE83DF7 /* CoachingSettingsView.swift */; };
+		2EEFF256098339590EEE70FD /* BalanceServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A150A73A24DB8D5355ECAE20 /* BalanceServiceTests.swift */; };
+		31ED552C55B36D3CBDB1CD53 /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCB45CC899A400282E14A651 /* Persistence.swift */; };
+		3312F6FAC1B80A1BF812DE48 /* KXText.swift in Sources */ = {isa = PBXBuildFile; fileRef = E266EDCEE7A3C5533B50F72F /* KXText.swift */; };
+		3C6F7C2B9C73500FAB98611A /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 802622121BE8CA378EC34BEB /* SettingsView.swift */; };
+		3FA853E7300E79023E932CCF /* RunServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0147DFFEB3CB167E9DF43A4B /* RunServiceTests.swift */; };
+		4ABFCBB55C182B3A0ED4611A /* KinetixApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71405E462937064340577B61 /* KinetixApp.swift */; };
+		4EF57F21D8A20AD9117AA119 /* KXChip.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8BF6F66B84AE6EFC5020574 /* KXChip.swift */; };
+		4F5922D407E1EEA2B88CB261 /* StrengthWorkoutModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AC850A99E07C7AFAF18354F /* StrengthWorkoutModel.swift */; };
+		5466848F08C1F98E4764F874 /* RunSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4708069D9CB0D862B6D3765 /* RunSummaryView.swift */; };
+		5F1BC7801AE6C3F4ECEFE1D5 /* SyncMapping.swift in Sources */ = {isa = PBXBuildFile; fileRef = E52E3E78C54380C735C981F1 /* SyncMapping.swift */; };
+		6138BDF777275FD7654DA4D4 /* TrainingProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F327708828E05100B42EDD57 /* TrainingProfileView.swift */; };
+		6A5C33C319519EE85058D5AF /* KXSpacing.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2EEE532F379E91567B19BF6 /* KXSpacing.swift */; };
+		6F2333E9AC60E44595804758 /* BalanceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E677E3A17BFA4777DEC73596 /* BalanceService.swift */; };
+		6FE2872F3A8B36B3EB17EF7F /* Formatters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03230B905B53975A34E0C37E /* Formatters.swift */; };
+		7069554845EABC54FCA85309 /* SyncTracked.swift in Sources */ = {isa = PBXBuildFile; fileRef = C29BBA81B297D8EE2CF1FF89 /* SyncTracked.swift */; };
+		70A9566473D1E63FDF6E9305 /* TrainingEngine in Frameworks */ = {isa = PBXBuildFile; productRef = 047896C2DD13857BB0AC3280 /* TrainingEngine */; };
+		70C07E1CB04C57F050ED4CD7 /* PlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D4219D257608DB539A51D9 /* PlanView.swift */; };
+		75556304FD12FA065E0F81F2 /* RunWorkoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12C1324B1AC05AA177D5BF93 /* RunWorkoutView.swift */; };
+		7ACA70325602396261B857E8 /* AccountService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27D5D1CA3AE70EB8EF9D18FD /* AccountService.swift */; };
+		7C7C3B1A994523C342761A39 /* LogModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08A053F7F4B39B04FED73E26 /* LogModels.swift */; };
+		8B54A4325A9E7F601F01144F /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D0A8758A0E38811D70F3371 /* HomeView.swift */; };
+		8B591D9BB2497AB6F03A5E2E /* RunService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C49960012FF421B7459C2F62 /* RunService.swift */; };
+		90CD0CC8516E0A04C6BA5AFD /* PersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD05F4DDF2E3BCB21AE7455E /* PersistenceTests.swift */; };
+		93B0A23AFFF5CCD24A81AF87 /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6E63C3F1C7645CF45D08433 /* Keychain.swift */; };
+		968DE1EA1D9F5D940E4394C6 /* LoadTrendCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CB156067CAAF579368CC276 /* LoadTrendCard.swift */; };
+		97D12E8D6FDFFAB0F6E5B051 /* AccountServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFBEFA7B7B4203748B86952F /* AccountServiceTests.swift */; };
+		987F88FE0499291815271F5E /* KXButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72DC83A5774C0DFA7D49CB52 /* KXButton.swift */; };
+		997D9CDDED136526D197815A /* KinetixSync in Frameworks */ = {isa = PBXBuildFile; productRef = 2CA9B1268AB94CE9AE75FDC2 /* KinetixSync */; };
+		ABE991D19232BC6D6AAF9136 /* LocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15A2B8D3E8EAC9797667326F /* LocationService.swift */; };
+		B29A94D91EADFC17D2BA06B6 /* OnboardingModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53E2CA92347B3217FE2818A5 /* OnboardingModel.swift */; };
+		B3732468744D9B820C1E44A5 /* OnboardingSteps.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71127FE0289D140375A18838 /* OnboardingSteps.swift */; };
+		B86925D4CFEAF0F0AB267E19 /* DesignGalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF24C085F57A681388D5C38D /* DesignGalleryView.swift */; };
+		BAF5F5CDD35377946754A4BE /* DashboardCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D6CEBF47C9E4CCE5F22FE91 /* DashboardCards.swift */; };
+		BD17DBB64F9EEE349E1919E5 /* PlanPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2388FFC3629A913F08C12797 /* PlanPreviewView.swift */; };
+		BDC6DDDC3E501DEEBDC63BE6 /* UserProfileModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4869AF91B0E573C72D5565D /* UserProfileModel.swift */; };
+		BE28D01A78FC0916106786A8 /* KXProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FCE0202A3E975345AA0F2B0 /* KXProgress.swift */; };
+		BFA529069514CFA98ADFAF18 /* PlanService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D792A73A46409ABE2ED5AF2 /* PlanService.swift */; };
+		C34EAB3E216D85D3BD92BA60 /* SyncServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8696410FC6193358A919F22E /* SyncServiceTests.swift */; };
+		C9AA92DC8EF36D69C1F597C2 /* DashboardService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79BC49909BB83B41E036C205 /* DashboardService.swift */; };
+		CAC2303CFFBE51FB0B6EB5E5 /* HealthDisclaimerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76EC9F0A55E7B2D91BA49545 /* HealthDisclaimerView.swift */; };
+		CB20E0045605C43C08FD0F0F /* StrengthWorkoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09686787D51317AEE10572A2 /* StrengthWorkoutView.swift */; };
+		CCA12A2320F014BD6DA03CF3 /* RunWorkoutModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B488A5C64C09276C346F5B82 /* RunWorkoutModel.swift */; };
+		CD0413479485C96BC3B7F758 /* OnboardingFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D249250D5897255E15EBCE32 /* OnboardingFlowView.swift */; };
+		D01F9F689C654DD47EDC8ED5 /* AccountSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90BA113272970E6AD61E52D1 /* AccountSection.swift */; };
+		D06698D33FC2AC066E0A414A /* KXFont.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09457C53CBC5D758DE02ED68 /* KXFont.swift */; };
+		D187078BA75A613B810BDEEE /* SyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8625E979738A82F0E873A0DD /* SyncService.swift */; };
+		D476D771D5426B889C8C62E2 /* KXSessionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20939AE5B582C11C6898982 /* KXSessionCard.swift */; };
+		DF8F9E4B40B44923C0AE60BB /* SessionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 626F847EE3778CA53D1E28E9 /* SessionDetailView.swift */; };
+		E18D623A542EBD8663A3226F /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 252A5F13C31E37644227D134 /* AuthService.swift */; };
+		E34443073A1F6BE0D91C8DB9 /* SampleData.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5069ED66DFB790377708F8D /* SampleData.swift */; };
+		E573A0887E71CCACCFAA8B6D /* SessionContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DD6B44B1B977B2EB92D215E /* SessionContainerView.swift */; };
+		EDB481995BF3F7256917D1B9 /* KXCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7E3234A649534340E001365 /* KXCard.swift */; };
+		EFCD60EA3DA0160280D59C6C /* DashboardWeekCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F0CC62D8E175B3EDF30B986 /* DashboardWeekCards.swift */; };
+		EFF93589CAA9CF6D5AE20771 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4999561CDF8222C282BCAEDC /* RootView.swift */; };
+		F030C9653CAED7265051687D /* ProgressScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3000B3D5DB9BC4ADD3017915 /* ProgressScreen.swift */; };
+		F2A324D050EF67C1DB246CEA /* ExerciseHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F546C371EF13550E9BC3897E /* ExerciseHistoryView.swift */; };
+		FA0E637FA834325958C956CB /* StrengthSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB27DBF74434135E36364597 /* StrengthSummaryView.swift */; };
+		FA8F771A9CCBA11E9BD58893 /* KXOptionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F31D7238D3089FE39D1AF49 /* KXOptionCard.swift */; };
+		FE3C5A0DF03F3DC1CE544053 /* ScreenshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8F9A4EC4A0EB227AB709AD /* ScreenshotTests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		9229D3797E242A9DD58E3D7F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 58C5EE1E25568B3B535E13F2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FBB43E0AF71BC56923DC785A;
+			remoteInfo = Kinetix;
+		};
+		B94721F944621C98B9C4ABD0 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 58C5EE1E25568B3B535E13F2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FBB43E0AF71BC56923DC785A;
+			remoteInfo = Kinetix;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		0147DFFEB3CB167E9DF43A4B /* RunServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunServiceTests.swift; sourceTree = "<group>"; };
+		03230B905B53975A34E0C37E /* Formatters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Formatters.swift; sourceTree = "<group>"; };
+		08A053F7F4B39B04FED73E26 /* LogModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogModels.swift; sourceTree = "<group>"; };
+		09457C53CBC5D758DE02ED68 /* KXFont.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXFont.swift; sourceTree = "<group>"; };
+		09686787D51317AEE10572A2 /* StrengthWorkoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrengthWorkoutView.swift; sourceTree = "<group>"; };
+		0AC850A99E07C7AFAF18354F /* StrengthWorkoutModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrengthWorkoutModel.swift; sourceTree = "<group>"; };
+		0D792A73A46409ABE2ED5AF2 /* PlanService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanService.swift; sourceTree = "<group>"; };
+		0DC769B996AC6DB47C6612B5 /* App.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = App.xcconfig; sourceTree = "<group>"; };
+		0E4B9C42AA415E0578CF122F /* CoachingSettingsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachingSettingsModel.swift; sourceTree = "<group>"; };
+		12C1324B1AC05AA177D5BF93 /* RunWorkoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunWorkoutView.swift; sourceTree = "<group>"; };
+		13D4219D257608DB539A51D9 /* PlanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanView.swift; sourceTree = "<group>"; };
+		15A2B8D3E8EAC9797667326F /* LocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationService.swift; sourceTree = "<group>"; };
+		18F5261D8A4C543FC07B8C9C /* KXColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXColor.swift; sourceTree = "<group>"; };
+		1CCC3286E58148E4A728A4C5 /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
+		1D0A8758A0E38811D70F3371 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		1DD6B44B1B977B2EB92D215E /* SessionContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionContainerView.swift; sourceTree = "<group>"; };
+		1F31D7238D3089FE39D1AF49 /* KXOptionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXOptionCard.swift; sourceTree = "<group>"; };
+		20B9963B730BCD17BDF41812 /* PlanModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanModels.swift; sourceTree = "<group>"; };
+		2388FFC3629A913F08C12797 /* PlanPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanPreviewView.swift; sourceTree = "<group>"; };
+		252A5F13C31E37644227D134 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
+		27D5D1CA3AE70EB8EF9D18FD /* AccountService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountService.swift; sourceTree = "<group>"; };
+		2FCE0202A3E975345AA0F2B0 /* KXProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXProgress.swift; sourceTree = "<group>"; };
+		3000B3D5DB9BC4ADD3017915 /* ProgressScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressScreen.swift; sourceTree = "<group>"; };
+		3996EB82CA6A8C8F088B7F7C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		3CB8951AE011CBA263FE6226 /* VoiceCoach.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceCoach.swift; sourceTree = "<group>"; };
+		4999561CDF8222C282BCAEDC /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		53E2CA92347B3217FE2818A5 /* OnboardingModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingModel.swift; sourceTree = "<group>"; };
+		626F847EE3778CA53D1E28E9 /* SessionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionDetailView.swift; sourceTree = "<group>"; };
+		6CB156067CAAF579368CC276 /* LoadTrendCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadTrendCard.swift; sourceTree = "<group>"; };
+		71127FE0289D140375A18838 /* OnboardingSteps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingSteps.swift; sourceTree = "<group>"; };
+		71405E462937064340577B61 /* KinetixApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KinetixApp.swift; sourceTree = "<group>"; };
+		72DC83A5774C0DFA7D49CB52 /* KXButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXButton.swift; sourceTree = "<group>"; };
+		76EC9F0A55E7B2D91BA49545 /* HealthDisclaimerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthDisclaimerView.swift; sourceTree = "<group>"; };
+		79BC49909BB83B41E036C205 /* DashboardService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardService.swift; sourceTree = "<group>"; };
+		7BCD7748D99A447F7F18B061 /* Kinetix.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Kinetix.entitlements; sourceTree = "<group>"; };
+		7BDCE4810AFEA6B0C6902B30 /* SessionPlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionPlaceholderView.swift; sourceTree = "<group>"; };
+		7D6CEBF47C9E4CCE5F22FE91 /* DashboardCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardCards.swift; sourceTree = "<group>"; };
+		7DBA1671E84924F9135EF5C2 /* KXMetric.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXMetric.swift; sourceTree = "<group>"; };
+		802622121BE8CA378EC34BEB /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		8625E979738A82F0E873A0DD /* SyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncService.swift; sourceTree = "<group>"; };
+		8696410FC6193358A919F22E /* SyncServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncServiceTests.swift; sourceTree = "<group>"; };
+		90BA113272970E6AD61E52D1 /* AccountSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountSection.swift; sourceTree = "<group>"; };
+		9D4B9D509AC09C29705FCC4B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		9EB4073696B3EE5AFE2200E5 /* StrengthServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrengthServiceTests.swift; sourceTree = "<group>"; };
+		9F0CC62D8E175B3EDF30B986 /* DashboardWeekCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardWeekCards.swift; sourceTree = "<group>"; };
+		A150A73A24DB8D5355ECAE20 /* BalanceServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BalanceServiceTests.swift; sourceTree = "<group>"; };
+		A4869AF91B0E573C72D5565D /* UserProfileModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfileModel.swift; sourceTree = "<group>"; };
+		ABE151BB82821F03C677FAAB /* KinetixTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = KinetixTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AE4D2B82E6F373D0D19923E8 /* StrengthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrengthService.swift; sourceTree = "<group>"; };
+		B20939AE5B582C11C6898982 /* KXSessionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXSessionCard.swift; sourceTree = "<group>"; };
+		B488A5C64C09276C346F5B82 /* RunWorkoutModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunWorkoutModel.swift; sourceTree = "<group>"; };
+		BB43F58AC57A99553DE11F51 /* Kinetix.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Kinetix.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BCB45CC899A400282E14A651 /* Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Persistence.swift; sourceTree = "<group>"; };
+		BEB367BF9ABEF3898F8358B4 /* AppRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRouter.swift; sourceTree = "<group>"; };
+		C29BBA81B297D8EE2CF1FF89 /* SyncTracked.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncTracked.swift; sourceTree = "<group>"; };
+		C45C2DEC18638987AEE83DF7 /* CoachingSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachingSettingsView.swift; sourceTree = "<group>"; };
+		C4708069D9CB0D862B6D3765 /* RunSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunSummaryView.swift; sourceTree = "<group>"; };
+		C49960012FF421B7459C2F62 /* RunService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunService.swift; sourceTree = "<group>"; };
+		C5069ED66DFB790377708F8D /* SampleData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleData.swift; sourceTree = "<group>"; };
+		C66B591B87308C029372D75D /* TrainingEngine */ = {isa = PBXFileReference; lastKnownFileType = folder; name = TrainingEngine; path = Packages/TrainingEngine; sourceTree = SOURCE_ROOT; };
+		CD05F4DDF2E3BCB21AE7455E /* PersistenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceTests.swift; sourceTree = "<group>"; };
+		CE8F9A4EC4A0EB227AB709AD /* ScreenshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotTests.swift; sourceTree = "<group>"; };
+		CF24C085F57A681388D5C38D /* DesignGalleryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignGalleryView.swift; sourceTree = "<group>"; };
+		D249250D5897255E15EBCE32 /* OnboardingFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingFlowView.swift; sourceTree = "<group>"; };
+		D763CB1795460ACC4115555D /* KXStepper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXStepper.swift; sourceTree = "<group>"; };
+		D7E3234A649534340E001365 /* KXCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXCard.swift; sourceTree = "<group>"; };
+		DA59942CB66FDA71A6631EDE /* KinetixUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = KinetixUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		DFBEFA7B7B4203748B86952F /* AccountServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountServiceTests.swift; sourceTree = "<group>"; };
+		E266EDCEE7A3C5533B50F72F /* KXText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXText.swift; sourceTree = "<group>"; };
+		E29498CEEBE32CAE95B52D85 /* KXHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXHeader.swift; sourceTree = "<group>"; };
+		E52E3E78C54380C735C981F1 /* SyncMapping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncMapping.swift; sourceTree = "<group>"; };
+		E677E3A17BFA4777DEC73596 /* BalanceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BalanceService.swift; sourceTree = "<group>"; };
+		E6E63C3F1C7645CF45D08433 /* Keychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keychain.swift; sourceTree = "<group>"; };
+		E8BF6F66B84AE6EFC5020574 /* KXChip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXChip.swift; sourceTree = "<group>"; };
+		EB27DBF74434135E36364597 /* StrengthSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrengthSummaryView.swift; sourceTree = "<group>"; };
+		F2EEE532F379E91567B19BF6 /* KXSpacing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXSpacing.swift; sourceTree = "<group>"; };
+		F327708828E05100B42EDD57 /* TrainingProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingProfileView.swift; sourceTree = "<group>"; };
+		F546C371EF13550E9BC3897E /* ExerciseHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseHistoryView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		EF2D2A822C424CBC1EAEACB7 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				70A9566473D1E63FDF6E9305 /* TrainingEngine in Frameworks */,
+				997D9CDDED136526D197815A /* KinetixSync in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		0433DAB0425019C688FC8B3B /* Plan */ = {
+			isa = PBXGroup;
+			children = (
+				13D4219D257608DB539A51D9 /* PlanView.swift */,
+				626F847EE3778CA53D1E28E9 /* SessionDetailView.swift */,
+			);
+			path = Plan;
+			sourceTree = "<group>";
+		};
+		10B7D0DAD1B0D22522E1DF83 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				D249250D5897255E15EBCE32 /* OnboardingFlowView.swift */,
+				53E2CA92347B3217FE2818A5 /* OnboardingModel.swift */,
+				71127FE0289D140375A18838 /* OnboardingSteps.swift */,
+				2388FFC3629A913F08C12797 /* PlanPreviewView.swift */,
+			);
+			path = Onboarding;
+			sourceTree = "<group>";
+		};
+		1931C8076CEDF5A5746A977C /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				0E4B9C42AA415E0578CF122F /* CoachingSettingsModel.swift */,
+				08A053F7F4B39B04FED73E26 /* LogModels.swift */,
+				20B9963B730BCD17BDF41812 /* PlanModels.swift */,
+				A4869AF91B0E573C72D5565D /* UserProfileModel.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		1B0D2332FCA8E404B8FB7128 /* Session */ = {
+			isa = PBXGroup;
+			children = (
+				1DD6B44B1B977B2EB92D215E /* SessionContainerView.swift */,
+				7BDCE4810AFEA6B0C6902B30 /* SessionPlaceholderView.swift */,
+			);
+			path = Session;
+			sourceTree = "<group>";
+		};
+		1FFC700AC0B2C99F7B8554E0 /* Progress */ = {
+			isa = PBXGroup;
+			children = (
+				F546C371EF13550E9BC3897E /* ExerciseHistoryView.swift */,
+				6CB156067CAAF579368CC276 /* LoadTrendCard.swift */,
+				3000B3D5DB9BC4ADD3017915 /* ProgressScreen.swift */,
+			);
+			path = Progress;
+			sourceTree = "<group>";
+		};
+		2A1B14D54B8D60B606E490E9 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				0DC769B996AC6DB47C6612B5 /* App.xcconfig */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
+		3486AD757FA77E95F7EF7C45 /* Strength */ = {
+			isa = PBXGroup;
+			children = (
+				EB27DBF74434135E36364597 /* StrengthSummaryView.swift */,
+				0AC850A99E07C7AFAF18354F /* StrengthWorkoutModel.swift */,
+				09686787D51317AEE10572A2 /* StrengthWorkoutView.swift */,
+			);
+			path = Strength;
+			sourceTree = "<group>";
+		};
+		3528D4A7E6EEADE70767D2FA /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				C45C2DEC18638987AEE83DF7 /* CoachingSettingsView.swift */,
+				CF24C085F57A681388D5C38D /* DesignGalleryView.swift */,
+				76EC9F0A55E7B2D91BA49545 /* HealthDisclaimerView.swift */,
+				802622121BE8CA378EC34BEB /* SettingsView.swift */,
+				F327708828E05100B42EDD57 /* TrainingProfileView.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		365D20CE7BA8AE3C0E6D4CCD /* App */ = {
+			isa = PBXGroup;
+			children = (
+				BEB367BF9ABEF3898F8358B4 /* AppRouter.swift */,
+				03230B905B53975A34E0C37E /* Formatters.swift */,
+				71405E462937064340577B61 /* KinetixApp.swift */,
+				4999561CDF8222C282BCAEDC /* RootView.swift */,
+				C5069ED66DFB790377708F8D /* SampleData.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		446327BDF73D08F8D3EFB828 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				C66B591B87308C029372D75D /* TrainingEngine */,
+			);
+			path = Packages;
+			sourceTree = "<group>";
+		};
+		53D8121D2B7F96CF3E10389C /* Account */ = {
+			isa = PBXGroup;
+			children = (
+				90BA113272970E6AD61E52D1 /* AccountSection.swift */,
+				1CCC3286E58148E4A728A4C5 /* AuthView.swift */,
+			);
+			path = Account;
+			sourceTree = "<group>";
+		};
+		76EBBDDEF245E9C235CF2A0D /* DesignSystem */ = {
+			isa = PBXGroup;
+			children = (
+				18F5261D8A4C543FC07B8C9C /* KXColor.swift */,
+				09457C53CBC5D758DE02ED68 /* KXFont.swift */,
+				F2EEE532F379E91567B19BF6 /* KXSpacing.swift */,
+				ED518A34F07F0E3B29C46067 /* Components */,
+			);
+			path = DesignSystem;
+			sourceTree = "<group>";
+		};
+		7B0C522696F5C06EDC5A5EB2 /* KinetixTests */ = {
+			isa = PBXGroup;
+			children = (
+				DFBEFA7B7B4203748B86952F /* AccountServiceTests.swift */,
+				A150A73A24DB8D5355ECAE20 /* BalanceServiceTests.swift */,
+				CD05F4DDF2E3BCB21AE7455E /* PersistenceTests.swift */,
+				0147DFFEB3CB167E9DF43A4B /* RunServiceTests.swift */,
+				9EB4073696B3EE5AFE2200E5 /* StrengthServiceTests.swift */,
+				8696410FC6193358A919F22E /* SyncServiceTests.swift */,
+			);
+			path = KinetixTests;
+			sourceTree = "<group>";
+		};
+		7D818BC8CD32E58D50939080 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				53D8121D2B7F96CF3E10389C /* Account */,
+				F24A89EAF537A09CB1F05544 /* Home */,
+				10B7D0DAD1B0D22522E1DF83 /* Onboarding */,
+				0433DAB0425019C688FC8B3B /* Plan */,
+				1FFC700AC0B2C99F7B8554E0 /* Progress */,
+				D482E96F3A920C6751F987D2 /* Run */,
+				1B0D2332FCA8E404B8FB7128 /* Session */,
+				3528D4A7E6EEADE70767D2FA /* Settings */,
+				3486AD757FA77E95F7EF7C45 /* Strength */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		8843943330CB9C27C2155A76 /* Kinetix */ = {
+			isa = PBXGroup;
+			children = (
+				3996EB82CA6A8C8F088B7F7C /* Info.plist */,
+				7BCD7748D99A447F7F18B061 /* Kinetix.entitlements */,
+				365D20CE7BA8AE3C0E6D4CCD /* App */,
+				76EBBDDEF245E9C235CF2A0D /* DesignSystem */,
+				7D818BC8CD32E58D50939080 /* Features */,
+				97E77AE3DF796D86572835C1 /* Persistence */,
+				8C04237661244702168C9827 /* Resources */,
+				AFCA2B9529C68BDFD152FB4F /* Services */,
+			);
+			path = Kinetix;
+			sourceTree = "<group>";
+		};
+		891339C1F89F15F0AA2F5F71 = {
+			isa = PBXGroup;
+			children = (
+				2A1B14D54B8D60B606E490E9 /* Config */,
+				8843943330CB9C27C2155A76 /* Kinetix */,
+				7B0C522696F5C06EDC5A5EB2 /* KinetixTests */,
+				DDE2EC73D53650C94703DEB0 /* KinetixUITests */,
+				446327BDF73D08F8D3EFB828 /* Packages */,
+				DDD50C43413916974D153483 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		8C04237661244702168C9827 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				9D4B9D509AC09C29705FCC4B /* Assets.xcassets */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		97E77AE3DF796D86572835C1 /* Persistence */ = {
+			isa = PBXGroup;
+			children = (
+				BCB45CC899A400282E14A651 /* Persistence.swift */,
+				E52E3E78C54380C735C981F1 /* SyncMapping.swift */,
+				C29BBA81B297D8EE2CF1FF89 /* SyncTracked.swift */,
+				1931C8076CEDF5A5746A977C /* Models */,
+			);
+			path = Persistence;
+			sourceTree = "<group>";
+		};
+		AFCA2B9529C68BDFD152FB4F /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				27D5D1CA3AE70EB8EF9D18FD /* AccountService.swift */,
+				252A5F13C31E37644227D134 /* AuthService.swift */,
+				E677E3A17BFA4777DEC73596 /* BalanceService.swift */,
+				79BC49909BB83B41E036C205 /* DashboardService.swift */,
+				E6E63C3F1C7645CF45D08433 /* Keychain.swift */,
+				15A2B8D3E8EAC9797667326F /* LocationService.swift */,
+				0D792A73A46409ABE2ED5AF2 /* PlanService.swift */,
+				C49960012FF421B7459C2F62 /* RunService.swift */,
+				AE4D2B82E6F373D0D19923E8 /* StrengthService.swift */,
+				8625E979738A82F0E873A0DD /* SyncService.swift */,
+				3CB8951AE011CBA263FE6226 /* VoiceCoach.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		D482E96F3A920C6751F987D2 /* Run */ = {
+			isa = PBXGroup;
+			children = (
+				C4708069D9CB0D862B6D3765 /* RunSummaryView.swift */,
+				B488A5C64C09276C346F5B82 /* RunWorkoutModel.swift */,
+				12C1324B1AC05AA177D5BF93 /* RunWorkoutView.swift */,
+			);
+			path = Run;
+			sourceTree = "<group>";
+		};
+		DDD50C43413916974D153483 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				BB43F58AC57A99553DE11F51 /* Kinetix.app */,
+				ABE151BB82821F03C677FAAB /* KinetixTests.xctest */,
+				DA59942CB66FDA71A6631EDE /* KinetixUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		DDE2EC73D53650C94703DEB0 /* KinetixUITests */ = {
+			isa = PBXGroup;
+			children = (
+				CE8F9A4EC4A0EB227AB709AD /* ScreenshotTests.swift */,
+			);
+			path = KinetixUITests;
+			sourceTree = "<group>";
+		};
+		ED518A34F07F0E3B29C46067 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				72DC83A5774C0DFA7D49CB52 /* KXButton.swift */,
+				D7E3234A649534340E001365 /* KXCard.swift */,
+				E8BF6F66B84AE6EFC5020574 /* KXChip.swift */,
+				E29498CEEBE32CAE95B52D85 /* KXHeader.swift */,
+				7DBA1671E84924F9135EF5C2 /* KXMetric.swift */,
+				1F31D7238D3089FE39D1AF49 /* KXOptionCard.swift */,
+				2FCE0202A3E975345AA0F2B0 /* KXProgress.swift */,
+				B20939AE5B582C11C6898982 /* KXSessionCard.swift */,
+				D763CB1795460ACC4115555D /* KXStepper.swift */,
+				E266EDCEE7A3C5533B50F72F /* KXText.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		F24A89EAF537A09CB1F05544 /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				7D6CEBF47C9E4CCE5F22FE91 /* DashboardCards.swift */,
+				9F0CC62D8E175B3EDF30B986 /* DashboardWeekCards.swift */,
+				1D0A8758A0E38811D70F3371 /* HomeView.swift */,
+			);
+			path = Home;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		0BC21FA106D47B9A8B83E681 /* KinetixTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA321F253A5400F4EA0E4148 /* Build configuration list for PBXNativeTarget "KinetixTests" */;
+			buildPhases = (
+				53E6DC92EA3DD8782D5145E5 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A87B26C39AFD4FAA95E930F8 /* PBXTargetDependency */,
+			);
+			name = KinetixTests;
+			packageProductDependencies = (
+			);
+			productName = KinetixTests;
+			productReference = ABE151BB82821F03C677FAAB /* KinetixTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		4EAB4B1213956A8123113B5B /* KinetixUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 49BFEE788D87C2D86CC2BF6D /* Build configuration list for PBXNativeTarget "KinetixUITests" */;
+			buildPhases = (
+				81A54D498F2B11FCB0AAA0CE /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				18FBEE11810F44A1CE71B5FF /* PBXTargetDependency */,
+			);
+			name = KinetixUITests;
+			packageProductDependencies = (
+			);
+			productName = KinetixUITests;
+			productReference = DA59942CB66FDA71A6631EDE /* KinetixUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		FBB43E0AF71BC56923DC785A /* Kinetix */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 10BE9142DEE0D558A4D7D506 /* Build configuration list for PBXNativeTarget "Kinetix" */;
+			buildPhases = (
+				2FB9399DD67D3F0B563F6FE4 /* Sources */,
+				903B2B9AE8BA42B4ECBFE2D8 /* Resources */,
+				EF2D2A822C424CBC1EAEACB7 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Kinetix;
+			packageProductDependencies = (
+				047896C2DD13857BB0AC3280 /* TrainingEngine */,
+				2CA9B1268AB94CE9AE75FDC2 /* KinetixSync */,
+			);
+			productName = Kinetix;
+			productReference = BB43F58AC57A99553DE11F51 /* Kinetix.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		58C5EE1E25568B3B535E13F2 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					4EAB4B1213956A8123113B5B = {
+						TestTargetID = FBB43E0AF71BC56923DC785A;
+					};
+					FBB43E0AF71BC56923DC785A = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 6EC1127D2EB891A899A3CCD8 /* Build configuration list for PBXProject "Kinetix" */;
+			developmentRegion = "en-GB";
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				"en-GB",
+			);
+			mainGroup = 891339C1F89F15F0AA2F5F71;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				1087ECFE100FFD24A8788E76 /* XCLocalSwiftPackageReference "Packages/TrainingEngine" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = DDD50C43413916974D153483 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				FBB43E0AF71BC56923DC785A /* Kinetix */,
+				0BC21FA106D47B9A8B83E681 /* KinetixTests */,
+				4EAB4B1213956A8123113B5B /* KinetixUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		903B2B9AE8BA42B4ECBFE2D8 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				019C4AE040EEE60FFD47B6AF /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		2FB9399DD67D3F0B563F6FE4 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D01F9F689C654DD47EDC8ED5 /* AccountSection.swift in Sources */,
+				7ACA70325602396261B857E8 /* AccountService.swift in Sources */,
+				23D4F39B01462EFBBA9B2DD3 /* AppRouter.swift in Sources */,
+				E18D623A542EBD8663A3226F /* AuthService.swift in Sources */,
+				137D60F69C32B7B5FEA6B601 /* AuthView.swift in Sources */,
+				6F2333E9AC60E44595804758 /* BalanceService.swift in Sources */,
+				176A9CA264F5F1958B93191B /* CoachingSettingsModel.swift in Sources */,
+				2DA92333D1D2C198361DCA42 /* CoachingSettingsView.swift in Sources */,
+				BAF5F5CDD35377946754A4BE /* DashboardCards.swift in Sources */,
+				C9AA92DC8EF36D69C1F597C2 /* DashboardService.swift in Sources */,
+				EFCD60EA3DA0160280D59C6C /* DashboardWeekCards.swift in Sources */,
+				B86925D4CFEAF0F0AB267E19 /* DesignGalleryView.swift in Sources */,
+				F2A324D050EF67C1DB246CEA /* ExerciseHistoryView.swift in Sources */,
+				6FE2872F3A8B36B3EB17EF7F /* Formatters.swift in Sources */,
+				CAC2303CFFBE51FB0B6EB5E5 /* HealthDisclaimerView.swift in Sources */,
+				8B54A4325A9E7F601F01144F /* HomeView.swift in Sources */,
+				987F88FE0499291815271F5E /* KXButton.swift in Sources */,
+				EDB481995BF3F7256917D1B9 /* KXCard.swift in Sources */,
+				4EF57F21D8A20AD9117AA119 /* KXChip.swift in Sources */,
+				1369ADE963F649AC955FB2F9 /* KXColor.swift in Sources */,
+				D06698D33FC2AC066E0A414A /* KXFont.swift in Sources */,
+				0B0FAE936D97D1E2FFDF2B44 /* KXHeader.swift in Sources */,
+				067880B384E37AE558D9400B /* KXMetric.swift in Sources */,
+				FA8F771A9CCBA11E9BD58893 /* KXOptionCard.swift in Sources */,
+				BE28D01A78FC0916106786A8 /* KXProgress.swift in Sources */,
+				D476D771D5426B889C8C62E2 /* KXSessionCard.swift in Sources */,
+				6A5C33C319519EE85058D5AF /* KXSpacing.swift in Sources */,
+				0147D8BEC0DBA6EF2072DCD9 /* KXStepper.swift in Sources */,
+				3312F6FAC1B80A1BF812DE48 /* KXText.swift in Sources */,
+				93B0A23AFFF5CCD24A81AF87 /* Keychain.swift in Sources */,
+				4ABFCBB55C182B3A0ED4611A /* KinetixApp.swift in Sources */,
+				968DE1EA1D9F5D940E4394C6 /* LoadTrendCard.swift in Sources */,
+				ABE991D19232BC6D6AAF9136 /* LocationService.swift in Sources */,
+				7C7C3B1A994523C342761A39 /* LogModels.swift in Sources */,
+				CD0413479485C96BC3B7F758 /* OnboardingFlowView.swift in Sources */,
+				B29A94D91EADFC17D2BA06B6 /* OnboardingModel.swift in Sources */,
+				B3732468744D9B820C1E44A5 /* OnboardingSteps.swift in Sources */,
+				31ED552C55B36D3CBDB1CD53 /* Persistence.swift in Sources */,
+				1153E095AEC952349F00FE4F /* PlanModels.swift in Sources */,
+				BD17DBB64F9EEE349E1919E5 /* PlanPreviewView.swift in Sources */,
+				BFA529069514CFA98ADFAF18 /* PlanService.swift in Sources */,
+				70C07E1CB04C57F050ED4CD7 /* PlanView.swift in Sources */,
+				F030C9653CAED7265051687D /* ProgressScreen.swift in Sources */,
+				EFF93589CAA9CF6D5AE20771 /* RootView.swift in Sources */,
+				8B591D9BB2497AB6F03A5E2E /* RunService.swift in Sources */,
+				5466848F08C1F98E4764F874 /* RunSummaryView.swift in Sources */,
+				CCA12A2320F014BD6DA03CF3 /* RunWorkoutModel.swift in Sources */,
+				75556304FD12FA065E0F81F2 /* RunWorkoutView.swift in Sources */,
+				E34443073A1F6BE0D91C8DB9 /* SampleData.swift in Sources */,
+				E573A0887E71CCACCFAA8B6D /* SessionContainerView.swift in Sources */,
+				DF8F9E4B40B44923C0AE60BB /* SessionDetailView.swift in Sources */,
+				0EB0A969CF111C83D1EE1612 /* SessionPlaceholderView.swift in Sources */,
+				3C6F7C2B9C73500FAB98611A /* SettingsView.swift in Sources */,
+				0B8EDD2194BD01A7D5D4F63C /* StrengthService.swift in Sources */,
+				FA0E637FA834325958C956CB /* StrengthSummaryView.swift in Sources */,
+				4F5922D407E1EEA2B88CB261 /* StrengthWorkoutModel.swift in Sources */,
+				CB20E0045605C43C08FD0F0F /* StrengthWorkoutView.swift in Sources */,
+				5F1BC7801AE6C3F4ECEFE1D5 /* SyncMapping.swift in Sources */,
+				D187078BA75A613B810BDEEE /* SyncService.swift in Sources */,
+				7069554845EABC54FCA85309 /* SyncTracked.swift in Sources */,
+				6138BDF777275FD7654DA4D4 /* TrainingProfileView.swift in Sources */,
+				BDC6DDDC3E501DEEBDC63BE6 /* UserProfileModel.swift in Sources */,
+				0256EAD3B08ADE3512154318 /* VoiceCoach.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		53E6DC92EA3DD8782D5145E5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				97D12E8D6FDFFAB0F6E5B051 /* AccountServiceTests.swift in Sources */,
+				2EEFF256098339590EEE70FD /* BalanceServiceTests.swift in Sources */,
+				90CD0CC8516E0A04C6BA5AFD /* PersistenceTests.swift in Sources */,
+				3FA853E7300E79023E932CCF /* RunServiceTests.swift in Sources */,
+				2A4AA22FE91E593A94B94CC9 /* StrengthServiceTests.swift in Sources */,
+				C34EAB3E216D85D3BD92BA60 /* SyncServiceTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		81A54D498F2B11FCB0AAA0CE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FE3C5A0DF03F3DC1CE544053 /* ScreenshotTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		18FBEE11810F44A1CE71B5FF /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FBB43E0AF71BC56923DC785A /* Kinetix */;
+			targetProxy = B94721F944621C98B9C4ABD0 /* PBXContainerItemProxy */;
+		};
+		A87B26C39AFD4FAA95E930F8 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FBB43E0AF71BC56923DC785A /* Kinetix */;
+			targetProxy = 9229D3797E242A9DD58E3D7F /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		10969E5B918161C6DD9950F0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 0.1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		1A71A98C8077F755EEA18894 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 0DC769B996AC6DB47C6612B5 /* App.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Kinetix/Kinetix.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				ENABLE_PREVIEWS = YES;
+				INFOPLIST_FILE = Kinetix/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.georgeodwyer.kinetix;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		44AE5C0308D68C0DC7EE2CC9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 0DC769B996AC6DB47C6612B5 /* App.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Kinetix/Kinetix.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				ENABLE_PREVIEWS = YES;
+				INFOPLIST_FILE = Kinetix/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.georgeodwyer.kinetix;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		4BB2A3908E0322F604FB0CFB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.georgeodwyer.KinetixUITests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Kinetix;
+			};
+			name = Debug;
+		};
+		9433880E596D1F1E1024A55C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.georgeodwyer.KinetixUITests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Kinetix;
+			};
+			name = Release;
+		};
+		AA3EAB5119AFC50EE1B70868 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 0.1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		ABFC779124F2410087F840CF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.georgeodwyer.KinetixTests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Kinetix.app/Kinetix";
+			};
+			name = Release;
+		};
+		E91B3F209D711CF7CDF35887 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.georgeodwyer.KinetixTests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Kinetix.app/Kinetix";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		10BE9142DEE0D558A4D7D506 /* Build configuration list for PBXNativeTarget "Kinetix" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1A71A98C8077F755EEA18894 /* Debug */,
+				44AE5C0308D68C0DC7EE2CC9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		49BFEE788D87C2D86CC2BF6D /* Build configuration list for PBXNativeTarget "KinetixUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4BB2A3908E0322F604FB0CFB /* Debug */,
+				9433880E596D1F1E1024A55C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		6EC1127D2EB891A899A3CCD8 /* Build configuration list for PBXProject "Kinetix" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				10969E5B918161C6DD9950F0 /* Debug */,
+				AA3EAB5119AFC50EE1B70868 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		AA321F253A5400F4EA0E4148 /* Build configuration list for PBXNativeTarget "KinetixTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E91B3F209D711CF7CDF35887 /* Debug */,
+				ABFC779124F2410087F840CF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		1087ECFE100FFD24A8788E76 /* XCLocalSwiftPackageReference "Packages/TrainingEngine" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/TrainingEngine;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		047896C2DD13857BB0AC3280 /* TrainingEngine */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TrainingEngine;
+		};
+		2CA9B1268AB94CE9AE75FDC2 /* KinetixSync */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = KinetixSync;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 58C5EE1E25568B3B535E13F2 /* Project object */;
+}
