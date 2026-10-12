@@ -5,8 +5,8 @@ Read this, then `docs/PLAN.md`, before doing anything. Work on branch
 
 ## Status
 
-Milestones 1–7 are done and green on CI. **Next: Milestone 8** (HealthKit, Bluetooth HR,
-Strava), then Milestone 9 (polish, accessibility, App Store requirements).
+Milestones 1–8 are done. **Next: Milestone 9** (polish, accessibility, privacy manifest,
+App Store requirements, official Strava brand assets, health disclaimer in onboarding).
 
 | # | Milestone | State |
 |---|---|---|
@@ -17,7 +17,7 @@ Strava), then Milestone 9 (polish, accessibility, App Store requirements).
 | 5 | Dashboard, sRPE load / ACWR, skip/swap/rebalancing | ✅ |
 | 6 | Settings (coaching, training profile, units, export, delete) | ✅ |
 | 7 | Supabase accounts + sync (REST, LWW, RLS) | ✅ code done; owner still has to create the Supabase project (docs/SUPABASE.md) |
-| 8 | HealthKit (read HR, resting HR, workouts; write runs + lifts), live HR from Apple Watch via HealthKit and BLE chest straps (Heart Rate service 0x180D), Strava OAuth + auto-upload of runs | ⏭ next |
+| 8 | HealthKit (read HR, resting HR, workouts; write runs + lifts), live HR from Apple Watch via HealthKit and BLE chest straps (Heart Rate service 0x180D), Strava OAuth + auto-upload of runs | ✅ owner still has to register the Strava app (docs/STRAVA.md) |
 | 9 | Polish: empty states, errors, Dynamic Type/VoiceOver pass, privacy manifest, permission strings, health disclaimer in onboarding | |
 
 ## About the owner
@@ -71,18 +71,23 @@ Strava), then Milestone 9 (polish, accessibility, App Store requirements).
 - Launch args for UI tests: `-ui-testing` (in-memory DB), `-seed-sample`, `-seed-history`,
   `-dark`, `-simulate-gps <speed>`.
 
-## Milestone 8 notes (planned approach)
+## Milestone 8 (as built)
 
-- HealthKit: add entitlement + capability in `Kinetix.entitlements`/project.yml; usage strings
-  already in Info.plist. Request read (heartRate, restingHeartRate, workouts) and share
-  (workouts, distanceWalkingRunning, activeEnergyBurned, workout routes) at end of onboarding
-  and in Settings → Integrations. Save finished runs (HKWorkoutBuilder + HKWorkoutRouteBuilder)
-  and strength sessions; store `healthKitWorkoutId` on logs. Use resting HR in recovery.
-- Live HR during runs: `RunEngine.addHeartRate` already exists. Sources: HealthKit anchored
-  query for heart rate (Apple Watch) and CoreBluetooth Heart Rate Measurement (0x2A37, flags
-  bit 0 → UInt8/UInt16). Put the BLE byte parsing in the package so it's unit-tested.
-- Strava: owner registers an API app (docs needed). OAuth via ASWebAuthenticationSession;
-  token exchange needs the client secret — do it through a Supabase Edge Function (don't ship
-  the secret in the app). Upload a GPX/TCX built from the run route (builder in the package,
-  tested), store `stravaActivityId`.
-- Keep simulator/CI working without HealthKit/Bluetooth/Strava (feature-detect, mock in tests).
+- Package: `HeartRateMeasurement.parse` (BLE 0x2A37), `GPXBuilder`, `RestingHeartRateSignal`
+  (median baseline, +7 bpm = elevated; feeds `RecoveryCheckIn.isPoor` only when readiness < 0.6),
+  `ExternalWorkouts.loadEntries` (other apps' workouts → load, skipping ≥50% overlap with Kinetix
+  logs), `RunSummary.heartRateSamples` (≤ 1 per 5 s). `KinetixSync/Strava.swift`: `StravaClient`
+  (OAuth URL/callback parsing, token exchange via Edge Function, GPX upload + polling, duplicate
+  detection, manual activities, refresh on expiry/401, disconnect on revoked refresh).
+- App `Kinetix/Services/Integrations/`: `IntegrationSettings` (per-device, UserDefaults),
+  `HealthService`, `HeartRateMonitor` (CoreBluetooth, lazy central so no early prompt),
+  `StravaService` (tokens in Keychain), `ActivityExportService` (on finish + retry on launch for 7 days;
+  only sessions finished after connecting; never simulated runs).
+- Settings → Integrations: `IntegrationsViews.swift`. Strava OAuth uses SwiftUI
+  `webAuthenticationSession` (ephemeral), redirect `kinetix://localhost/strava`.
+- Edge Function: `supabase/functions/strava-token/index.ts` (secrets STRAVA_CLIENT_ID/SECRET, JWT off).
+- Watch HR = HealthKit anchored query (only arrives while the Watch records a workout; a watchOS
+  companion app would be the proper fix later). Strap HR wins when both are present.
+- Not done: writing HR samples to Health (avoids duplicating Watch data); pause events in Health workouts.
+- Owner docs: `docs/IPHONE.md` (install on device, free Apple ID OK), `docs/STRAVA.md`.
+

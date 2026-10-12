@@ -63,15 +63,15 @@ Kinetix/ (iOS app)
 5. ✅ Dashboard, load calculations, balancing / skip / swap
 6. ✅ Settings
 7. ✅ Supabase accounts and sync
-8. HealthKit, Bluetooth HR, Strava
+8. ✅ HealthKit, Bluetooth HR, Strava
 9. Polish: empty states, errors, accessibility, App Store requirements
 
 ## Things the owner needs to do
 
 | When | Task |
 |---|---|
-| Now | Install Xcode (Mac App Store) and Homebrew, then `brew install xcodegen` |
+| Now | Install Xcode 26 and GitHub Desktop (README); run on iPhone via docs/IPHONE.md |
 | Now (optional) | Export the Stitch designs as HTML/code into `Designs/` for exact colours and fonts |
 | Before M4 | Join the Apple Developer Program (needed to test background GPS on a real phone) |
 | M7 | Create a Supabase project; configure Sign in with Apple (guided) |
-| M8 | Register a Strava API application (guided) |
+| M8 | Register a Strava API application and deploy the token function (docs/STRAVA.md) |
