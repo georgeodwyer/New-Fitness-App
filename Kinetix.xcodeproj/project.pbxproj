@@ -26,12 +26,14 @@
 		3312F6FAC1B80A1BF812DE48 /* KXText.swift in Sources */ = {isa = PBXBuildFile; fileRef = E266EDCEE7A3C5533B50F72F /* KXText.swift */; };
 		3C6F7C2B9C73500FAB98611A /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 802622121BE8CA378EC34BEB /* SettingsView.swift */; };
 		3FA853E7300E79023E932CCF /* RunServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0147DFFEB3CB167E9DF43A4B /* RunServiceTests.swift */; };
+		4100D39BFB207D3BA79C1236 /* StravaService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41DD740D22466B22510031CB /* StravaService.swift */; };
 		4ABFCBB55C182B3A0ED4611A /* KinetixApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71405E462937064340577B61 /* KinetixApp.swift */; };
 		4EF57F21D8A20AD9117AA119 /* KXChip.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8BF6F66B84AE6EFC5020574 /* KXChip.swift */; };
 		4F5922D407E1EEA2B88CB261 /* StrengthWorkoutModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AC850A99E07C7AFAF18354F /* StrengthWorkoutModel.swift */; };
 		5466848F08C1F98E4764F874 /* RunSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4708069D9CB0D862B6D3765 /* RunSummaryView.swift */; };
 		5F1BC7801AE6C3F4ECEFE1D5 /* SyncMapping.swift in Sources */ = {isa = PBXBuildFile; fileRef = E52E3E78C54380C735C981F1 /* SyncMapping.swift */; };
 		6138BDF777275FD7654DA4D4 /* TrainingProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F327708828E05100B42EDD57 /* TrainingProfileView.swift */; };
+		69CF5E31BCF438B10AAEFD2E /* HealthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 130A6B35CC5FB984FCCD948F /* HealthService.swift */; };
 		6A5C33C319519EE85058D5AF /* KXSpacing.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2EEE532F379E91567B19BF6 /* KXSpacing.swift */; };
 		6F2333E9AC60E44595804758 /* BalanceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E677E3A17BFA4777DEC73596 /* BalanceService.swift */; };
 		6FE2872F3A8B36B3EB17EF7F /* Formatters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03230B905B53975A34E0C37E /* Formatters.swift */; };
@@ -49,6 +51,7 @@
 		97D12E8D6FDFFAB0F6E5B051 /* AccountServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFBEFA7B7B4203748B86952F /* AccountServiceTests.swift */; };
 		987F88FE0499291815271F5E /* KXButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72DC83A5774C0DFA7D49CB52 /* KXButton.swift */; };
 		997D9CDDED136526D197815A /* KinetixSync in Frameworks */ = {isa = PBXBuildFile; productRef = 2CA9B1268AB94CE9AE75FDC2 /* KinetixSync */; };
+		A37859534B61490F5D344E6B /* IntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3880708490C8993B63991C6A /* IntegrationTests.swift */; };
 		ABE991D19232BC6D6AAF9136 /* LocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15A2B8D3E8EAC9797667326F /* LocationService.swift */; };
 		B29A94D91EADFC17D2BA06B6 /* OnboardingModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53E2CA92347B3217FE2818A5 /* OnboardingModel.swift */; };
 		B3732468744D9B820C1E44A5 /* OnboardingSteps.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71127FE0289D140375A18838 /* OnboardingSteps.swift */; };
@@ -59,17 +62,21 @@
 		BE28D01A78FC0916106786A8 /* KXProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FCE0202A3E975345AA0F2B0 /* KXProgress.swift */; };
 		BFA529069514CFA98ADFAF18 /* PlanService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D792A73A46409ABE2ED5AF2 /* PlanService.swift */; };
 		C34EAB3E216D85D3BD92BA60 /* SyncServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8696410FC6193358A919F22E /* SyncServiceTests.swift */; };
+		C64CEB9EB7A5439075E2C10D /* HeartRateMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DCA983868F3800CCDF25C8B /* HeartRateMonitor.swift */; };
 		C9AA92DC8EF36D69C1F597C2 /* DashboardService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79BC49909BB83B41E036C205 /* DashboardService.swift */; };
 		CAC2303CFFBE51FB0B6EB5E5 /* HealthDisclaimerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76EC9F0A55E7B2D91BA49545 /* HealthDisclaimerView.swift */; };
 		CB20E0045605C43C08FD0F0F /* StrengthWorkoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09686787D51317AEE10572A2 /* StrengthWorkoutView.swift */; };
 		CCA12A2320F014BD6DA03CF3 /* RunWorkoutModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B488A5C64C09276C346F5B82 /* RunWorkoutModel.swift */; };
 		CD0413479485C96BC3B7F758 /* OnboardingFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D249250D5897255E15EBCE32 /* OnboardingFlowView.swift */; };
+		CE7E1D1D0F5BB1979A48EA1F /* ActivityExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24EE4D4AE4E5EC11003FF81E /* ActivityExportService.swift */; };
 		D01F9F689C654DD47EDC8ED5 /* AccountSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90BA113272970E6AD61E52D1 /* AccountSection.swift */; };
 		D06698D33FC2AC066E0A414A /* KXFont.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09457C53CBC5D758DE02ED68 /* KXFont.swift */; };
 		D187078BA75A613B810BDEEE /* SyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8625E979738A82F0E873A0DD /* SyncService.swift */; };
 		D476D771D5426B889C8C62E2 /* KXSessionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20939AE5B582C11C6898982 /* KXSessionCard.swift */; };
+		D53836873E2BCF0B8D71834C /* IntegrationsViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA9718F435F06430788DECB6 /* IntegrationsViews.swift */; };
 		DF8F9E4B40B44923C0AE60BB /* SessionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 626F847EE3778CA53D1E28E9 /* SessionDetailView.swift */; };
 		E18D623A542EBD8663A3226F /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 252A5F13C31E37644227D134 /* AuthService.swift */; };
+		E28000A1D061D045D76768F9 /* IntegrationSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5052A6236109C68A845CCA1A /* IntegrationSettings.swift */; };
 		E34443073A1F6BE0D91C8DB9 /* SampleData.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5069ED66DFB790377708F8D /* SampleData.swift */; };
 		E573A0887E71CCACCFAA8B6D /* SessionContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DD6B44B1B977B2EB92D215E /* SessionContainerView.swift */; };
 		EDB481995BF3F7256917D1B9 /* KXCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7E3234A649534340E001365 /* KXCard.swift */; };
@@ -110,6 +117,7 @@
 		0DC769B996AC6DB47C6612B5 /* App.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = App.xcconfig; sourceTree = "<group>"; };
 		0E4B9C42AA415E0578CF122F /* CoachingSettingsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachingSettingsModel.swift; sourceTree = "<group>"; };
 		12C1324B1AC05AA177D5BF93 /* RunWorkoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunWorkoutView.swift; sourceTree = "<group>"; };
+		130A6B35CC5FB984FCCD948F /* HealthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthService.swift; sourceTree = "<group>"; };
 		13D4219D257608DB539A51D9 /* PlanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanView.swift; sourceTree = "<group>"; };
 		15A2B8D3E8EAC9797667326F /* LocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationService.swift; sourceTree = "<group>"; };
 		18F5261D8A4C543FC07B8C9C /* KXColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXColor.swift; sourceTree = "<group>"; };
@@ -119,16 +127,21 @@
 		1F31D7238D3089FE39D1AF49 /* KXOptionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXOptionCard.swift; sourceTree = "<group>"; };
 		20B9963B730BCD17BDF41812 /* PlanModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanModels.swift; sourceTree = "<group>"; };
 		2388FFC3629A913F08C12797 /* PlanPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanPreviewView.swift; sourceTree = "<group>"; };
+		24EE4D4AE4E5EC11003FF81E /* ActivityExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityExportService.swift; sourceTree = "<group>"; };
 		252A5F13C31E37644227D134 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		27D5D1CA3AE70EB8EF9D18FD /* AccountService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountService.swift; sourceTree = "<group>"; };
 		2FCE0202A3E975345AA0F2B0 /* KXProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXProgress.swift; sourceTree = "<group>"; };
 		3000B3D5DB9BC4ADD3017915 /* ProgressScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressScreen.swift; sourceTree = "<group>"; };
+		3880708490C8993B63991C6A /* IntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntegrationTests.swift; sourceTree = "<group>"; };
 		3996EB82CA6A8C8F088B7F7C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		3CB8951AE011CBA263FE6226 /* VoiceCoach.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceCoach.swift; sourceTree = "<group>"; };
+		41DD740D22466B22510031CB /* StravaService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StravaService.swift; sourceTree = "<group>"; };
 		4999561CDF8222C282BCAEDC /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		5052A6236109C68A845CCA1A /* IntegrationSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntegrationSettings.swift; sourceTree = "<group>"; };
 		53E2CA92347B3217FE2818A5 /* OnboardingModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingModel.swift; sourceTree = "<group>"; };
 		626F847EE3778CA53D1E28E9 /* SessionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionDetailView.swift; sourceTree = "<group>"; };
 		6CB156067CAAF579368CC276 /* LoadTrendCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadTrendCard.swift; sourceTree = "<group>"; };
+		6DCA983868F3800CCDF25C8B /* HeartRateMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeartRateMonitor.swift; sourceTree = "<group>"; };
 		71127FE0289D140375A18838 /* OnboardingSteps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingSteps.swift; sourceTree = "<group>"; };
 		71405E462937064340577B61 /* KinetixApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KinetixApp.swift; sourceTree = "<group>"; };
 		72DC83A5774C0DFA7D49CB52 /* KXButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXButton.swift; sourceTree = "<group>"; };
@@ -167,6 +180,7 @@
 		D763CB1795460ACC4115555D /* KXStepper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXStepper.swift; sourceTree = "<group>"; };
 		D7E3234A649534340E001365 /* KXCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXCard.swift; sourceTree = "<group>"; };
 		DA59942CB66FDA71A6631EDE /* KinetixUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = KinetixUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		DA9718F435F06430788DECB6 /* IntegrationsViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntegrationsViews.swift; sourceTree = "<group>"; };
 		DFBEFA7B7B4203748B86952F /* AccountServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountServiceTests.swift; sourceTree = "<group>"; };
 		E266EDCEE7A3C5533B50F72F /* KXText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXText.swift; sourceTree = "<group>"; };
 		E29498CEEBE32CAE95B52D85 /* KXHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXHeader.swift; sourceTree = "<group>"; };
@@ -267,6 +281,7 @@
 				C45C2DEC18638987AEE83DF7 /* CoachingSettingsView.swift */,
 				CF24C085F57A681388D5C38D /* DesignGalleryView.swift */,
 				76EC9F0A55E7B2D91BA49545 /* HealthDisclaimerView.swift */,
+				DA9718F435F06430788DECB6 /* IntegrationsViews.swift */,
 				802622121BE8CA378EC34BEB /* SettingsView.swift */,
 				F327708828E05100B42EDD57 /* TrainingProfileView.swift */,
 			);
@@ -318,6 +333,7 @@
 			children = (
 				DFBEFA7B7B4203748B86952F /* AccountServiceTests.swift */,
 				A150A73A24DB8D5355ECAE20 /* BalanceServiceTests.swift */,
+				3880708490C8993B63991C6A /* IntegrationTests.swift */,
 				CD05F4DDF2E3BCB21AE7455E /* PersistenceTests.swift */,
 				0147DFFEB3CB167E9DF43A4B /* RunServiceTests.swift */,
 				9EB4073696B3EE5AFE2200E5 /* StrengthServiceTests.swift */,
@@ -402,8 +418,21 @@
 				AE4D2B82E6F373D0D19923E8 /* StrengthService.swift */,
 				8625E979738A82F0E873A0DD /* SyncService.swift */,
 				3CB8951AE011CBA263FE6226 /* VoiceCoach.swift */,
+				CDF6D92FEC0650C4D16C7DA6 /* Integrations */,
 			);
 			path = Services;
+			sourceTree = "<group>";
+		};
+		CDF6D92FEC0650C4D16C7DA6 /* Integrations */ = {
+			isa = PBXGroup;
+			children = (
+				24EE4D4AE4E5EC11003FF81E /* ActivityExportService.swift */,
+				130A6B35CC5FB984FCCD948F /* HealthService.swift */,
+				6DCA983868F3800CCDF25C8B /* HeartRateMonitor.swift */,
+				5052A6236109C68A845CCA1A /* IntegrationSettings.swift */,
+				41DD740D22466B22510031CB /* StravaService.swift */,
+			);
+			path = Integrations;
 			sourceTree = "<group>";
 		};
 		D482E96F3A920C6751F987D2 /* Run */ = {
@@ -581,6 +610,7 @@
 			files = (
 				D01F9F689C654DD47EDC8ED5 /* AccountSection.swift in Sources */,
 				7ACA70325602396261B857E8 /* AccountService.swift in Sources */,
+				CE7E1D1D0F5BB1979A48EA1F /* ActivityExportService.swift in Sources */,
 				23D4F39B01462EFBBA9B2DD3 /* AppRouter.swift in Sources */,
 				E18D623A542EBD8663A3226F /* AuthService.swift in Sources */,
 				137D60F69C32B7B5FEA6B601 /* AuthView.swift in Sources */,
@@ -594,7 +624,11 @@
 				F2A324D050EF67C1DB246CEA /* ExerciseHistoryView.swift in Sources */,
 				6FE2872F3A8B36B3EB17EF7F /* Formatters.swift in Sources */,
 				CAC2303CFFBE51FB0B6EB5E5 /* HealthDisclaimerView.swift in Sources */,
+				69CF5E31BCF438B10AAEFD2E /* HealthService.swift in Sources */,
+				C64CEB9EB7A5439075E2C10D /* HeartRateMonitor.swift in Sources */,
 				8B54A4325A9E7F601F01144F /* HomeView.swift in Sources */,
+				E28000A1D061D045D76768F9 /* IntegrationSettings.swift in Sources */,
+				D53836873E2BCF0B8D71834C /* IntegrationsViews.swift in Sources */,
 				987F88FE0499291815271F5E /* KXButton.swift in Sources */,
 				EDB481995BF3F7256917D1B9 /* KXCard.swift in Sources */,
 				4EF57F21D8A20AD9117AA119 /* KXChip.swift in Sources */,
@@ -632,6 +666,7 @@
 				DF8F9E4B40B44923C0AE60BB /* SessionDetailView.swift in Sources */,
 				0EB0A969CF111C83D1EE1612 /* SessionPlaceholderView.swift in Sources */,
 				3C6F7C2B9C73500FAB98611A /* SettingsView.swift in Sources */,
+				4100D39BFB207D3BA79C1236 /* StravaService.swift in Sources */,
 				0B8EDD2194BD01A7D5D4F63C /* StrengthService.swift in Sources */,
 				FA0E637FA834325958C956CB /* StrengthSummaryView.swift in Sources */,
 				4F5922D407E1EEA2B88CB261 /* StrengthWorkoutModel.swift in Sources */,
@@ -651,6 +686,7 @@
 			files = (
 				97D12E8D6FDFFAB0F6E5B051 /* AccountServiceTests.swift in Sources */,
 				2EEFF256098339590EEE70FD /* BalanceServiceTests.swift in Sources */,
+				A37859534B61490F5D344E6B /* IntegrationTests.swift in Sources */,
 				90CD0CC8516E0A04C6BA5AFD /* PersistenceTests.swift in Sources */,
 				3FA853E7300E79023E932CCF /* RunServiceTests.swift in Sources */,
 				2A4AA22FE91E593A94B94CC9 /* StrengthServiceTests.swift in Sources */,
