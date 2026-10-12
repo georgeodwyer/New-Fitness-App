@@ -10,6 +10,11 @@ struct SessionDetailView: View {
     @Environment(AppRouter.self) private var router
     @State private var showActions = false
     @State private var lastChange: String?
+    @Query(sort: \PlanChangeModel.createdAt, order: .reverse) private var allChanges: [PlanChangeModel]
+
+    private var sessionChanges: [PlanChangeModel] {
+        allChanges.filter { $0.sessionId == session.id && !$0.isSoftDeleted }
+    }
 
     private var format: DisplayFormat { DisplayFormat(units: profiles.first?.units ?? .metric) }
 
@@ -27,7 +32,23 @@ struct SessionDetailView: View {
                     if session.isKey { KXChip(text: "Key session", systemImage: "star.fill", variant: .secondary) }
                 }
                 if let reason = lastChange ?? session.changeReason {
-                    Label(reason, systemImage: "arrow.triangle.2.circlepath").font(KXFont.callout).kxCard(.accent)
+                    NavigationLink {
+                        PlanChangesView(changes: sessionChanges)
+                            .navigationTitle("What changed and why")
+                            .navigationBarTitleDisplayMode(.inline)
+                    } label: {
+                        VStack(alignment: .leading, spacing: KXSpacing.xs) {
+                            Label(reason, systemImage: "arrow.triangle.2.circlepath")
+                                .font(KXFont.callout).foregroundStyle(KXColor.ink)
+                                .multilineTextAlignment(.leading)
+                            Text("Changed – see why")
+                                .font(KXFont.captionEmphasis).foregroundStyle(KXColor.accent)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .kxCard(.accent)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("session.changes")
                 }
                 if session.status == .planned, profiles.first != nil {
                     Button {

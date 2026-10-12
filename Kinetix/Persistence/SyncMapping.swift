@@ -202,13 +202,24 @@ extension PlanChangeModel: SyncableModel {
         var createdAt: Date
         var sessionId: UUID?
         var summary: String
+        var causeRaw: String?
+        var beforeData: Data?
+        var afterData: Data?
+        var triggersData: Data?
     }
     static var syncType: String { "planChange" }
-    var syncPayload: Payload { Payload(createdAt: createdAt, sessionId: sessionId, summary: summary) }
+    var syncPayload: Payload {
+        Payload(createdAt: createdAt, sessionId: sessionId, summary: summary, causeRaw: causeRaw,
+                beforeData: beforeData, afterData: afterData, triggersData: triggersData)
+    }
     func applySync(_ p: Payload, context: ModelContext) {
         createdAt = p.createdAt
         sessionId = p.sessionId
         summary = p.summary
+        causeRaw = p.causeRaw ?? ChangeCause.other.rawValue
+        beforeData = p.beforeData
+        afterData = p.afterData
+        triggersData = p.triggersData
     }
     static func makeForSync(id: UUID) -> PlanChangeModel { PlanChangeModel(summary: "", id: id) }
 }

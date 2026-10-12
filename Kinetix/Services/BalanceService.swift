@@ -35,19 +35,25 @@ enum BalanceService {
     static func skip(_ session: PlannedSessionModel, profile: AthleteProfile, in modelContext: ModelContext, now: Date = .now) -> [String] {
         let models = week(containing: session.date, in: modelContext)
         let adjustments = Rebalancer.skip(session.id, week: models.map(\.weekSession), context: context(profile: profile, now: now))
-        return apply(adjustments, to: models, profile: profile, in: modelContext, now: now)
+        let trigger = ChangeTrigger(label: "You skipped", value: session.title,
+                                    detail: session.date.formatted(.dateTime.weekday(.wide)), symbol: "forward.end")
+        return apply(adjustments, to: models, profile: profile, triggers: [trigger], in: modelContext, now: now)
     }
 
     @discardableResult
     static func swap(_ session: PlannedSessionModel, to option: SwapOption, profile: AthleteProfile, in modelContext: ModelContext, now: Date = .now) -> [String] {
-        apply([Adjustment(session: option.replacement, explanation: option.explanation)], to: [session], profile: profile, in: modelContext, now: now)
+        let trigger = ChangeTrigger(label: "You chose", value: option.title, detail: "instead of \(session.title.lowercased())",
+                                    symbol: "arrow.left.arrow.right")
+        return apply([Adjustment(session: option.replacement, explanation: option.explanation, cause: .swapped)], to: [session],
+                     profile: profile, triggers: [trigger], in: modelContext, now: now)
     }
 
     /// Eases the coming days if load is high or today's check-in is poor. Runs at most
     /// once a day unless `force` (e.g. right after a check-in).
     @discardableResult
     static func autoAdjust(profile: AthleteProfile, status: LoadStatus, checkIn: RecoveryCheckIn?, in modelContext: ModelContext,
-                           now: Date = .now, force: Bool = false) -> [String] {
+                           now: Date = .now, force: Bool = false, ratio: Double? = nil,
+                           restingHeartRate: RestingHeartRateSignal? = nil) -> [String] {
         let calendar = Calendar.kinetix
         let dayKey = ISO8601DateFormatter().string(from: calendar.startOfDay(for: now))
         if !force, UserDefaults.standard.string(forKey: lastAutoAdjustKey) == dayKey { return [] }
@@ -55,22 +61,59 @@ enum BalanceService {
         let models = week(containing: now, in: modelContext)
         let adjustments = Rebalancer.adjustForLoad(week: models.map(\.weekSession), status: status, checkIn: checkIn,
                                                    context: context(profile: profile, now: now))
-        return apply(adjustments, to: models, profile: profile, in: modelContext, now: now)
+        let triggers = loadTriggers(status: status, ratio: ratio) + recoveryTriggers(checkIn, restingHeartRate: restingHeartRate)
+        return apply(adjustments, to: models, profile: profile, triggers: triggers, in: modelContext, now: now)
     }
 
     private static func apply(_ adjustments: [Adjustment], to models: [PlannedSessionModel], profile: AthleteProfile,
-                              in modelContext: ModelContext, now: Date) -> [String] {
+                              triggers: [ChangeTrigger] = [], in modelContext: ModelContext, now: Date) -> [String] {
         let zones = PaceZones(profile: profile)
         var explanations: [String] = []
         for adjustment in adjustments {
             guard let model = models.first(where: { $0.id == adjustment.session.id }) else { continue }
+            let before = SessionSnapshot(model.weekSession, zones: zones)
             model.update(from: adjustment.session, zones: zones)
-            modelContext.insert(PlanChangeModel(summary: adjustment.explanation, sessionId: model.id, now: now))
+            let change = PlanChangeModel(summary: adjustment.explanation, sessionId: model.id, now: now)
+            change.causeRaw = adjustment.cause.rawValue
+            change.beforeData = StoredJSON.encode(before)
+            change.afterData = StoredJSON.encode(SessionSnapshot(model.weekSession, zones: zones))
+            change.triggersData = StoredJSON.encode(triggers)
+            modelContext.insert(change)
             explanations.append(adjustment.explanation)
         }
         try? modelContext.save()
         if !explanations.isEmpty { SyncService.shared.requestSync() }
         return explanations
+    }
+}
+
+extension BalanceService {
+    /// The load numbers behind a high-load change.
+    static func loadTriggers(status: LoadStatus, ratio: Double?) -> [ChangeTrigger] {
+        guard status == .high else { return [] }
+        let range = LoadStatus.optimalRange
+        return [ChangeTrigger(label: "Load ratio", value: ratio.map { String(format: "%.2f", $0) } ?? "High",
+                              detail: String(format: "optimal %.2f–%.2f", range.lowerBound, range.upperBound),
+                              symbol: "chart.line.uptrend.xyaxis")]
+    }
+
+    /// The check-in answers and body signals behind a poor-recovery change.
+    static func recoveryTriggers(_ checkIn: RecoveryCheckIn?, restingHeartRate: RestingHeartRateSignal?) -> [ChangeTrigger] {
+        guard let checkIn, checkIn.isPoor else { return [] }
+        let rules = BalanceRules.current.recovery
+        var triggers = [
+            ChangeTrigger(label: "Readiness", value: "\(Int((checkIn.readiness * 100).rounded()))%",
+                          detail: "below \(Int(rules.poorReadinessBelow * 100))% counts as poor", symbol: "gauge.with.dots.needle.33percent"),
+            ChangeTrigger(label: "Sleep", value: "\(checkIn.sleep)/5", symbol: "moon.zzz"),
+            ChangeTrigger(label: "Soreness", value: "\(checkIn.soreness)/5", symbol: "bandage"),
+            ChangeTrigger(label: "Energy", value: "\(checkIn.energy)/5", symbol: "bolt")
+        ]
+        if checkIn.restingHeartRateElevated, let restingHeartRate {
+            triggers.append(ChangeTrigger(label: "Resting HR", value: "+\(Int(restingHeartRate.difference.rounded())) bpm",
+                                          detail: "\(Int(restingHeartRate.today.rounded())) vs usual \(Int(restingHeartRate.baseline.rounded()))",
+                                          symbol: "heart"))
+        }
+        return triggers
     }
 }
 

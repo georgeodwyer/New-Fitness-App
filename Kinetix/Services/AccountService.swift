@@ -136,7 +136,7 @@ enum AccountService {
     /// (Milestone 7 also deletes the cloud account and its data.)
     static func deleteEverything(in context: ModelContext) {
         SampleData.eraseAll(in: context)
-        for key in [BalanceService.lastAutoAdjustKey, DeveloperSettings.simulateGPSKey, DeveloperSettings.simulationSpeedKey] {
+        for key in [BalanceService.lastAutoAdjustKey, DeveloperSettings.simulateGPSKey, DeveloperSettings.simulationSpeedKey, AppearanceChoice.storageKey] {
             UserDefaults.standard.removeObject(forKey: key)
         }
         HeartRateMonitor.shared.forget()

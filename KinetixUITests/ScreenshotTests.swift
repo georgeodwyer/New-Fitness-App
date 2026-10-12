@@ -90,6 +90,14 @@ final class ScreenshotTests: XCTestCase {
 
         app.tabBars.buttons["Plan"].tap()
         snap("21-plan")
+        let allChanges = app.buttons["plan.allChanges"].firstMatch
+        for _ in 0..<4 where !allChanges.exists { app.swipeUp() }
+        if allChanges.waitForExistence(timeout: 3) {
+            allChanges.tap()
+            snap("21b-what-changed")
+            app.navigationBars.buttons.firstMatch.tap()
+        }
+        app.swipeDown(); app.swipeDown(); app.swipeDown(); app.swipeDown()
         let session = app.buttons.matching(identifier: "plan.session").firstMatch
         if session.waitForExistence(timeout: 5) {
             session.tap()

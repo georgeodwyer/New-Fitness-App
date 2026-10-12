@@ -47,7 +47,7 @@ struct HomeView: View {
                 if let banner { changeBanner(banner) }
                 todaySection
                 CheckInCard(existing: data.todaysCheckIn, restingHeartRate: restingHeartRate) { checkIn in
-                    saveCheckIn(checkIn, status: data.load.combined.status)
+                    saveCheckIn(checkIn, status: data.load.combined.status, ratio: data.load.combined.ratio)
                 }
                 LoadHeroCard(report: data.load)
                 DailyLoadChart(daily: data.load.daily)
@@ -80,7 +80,8 @@ struct HomeView: View {
         .onAppear {
             guard let profile else { return }
             let changed = BalanceService.autoAdjust(profile: profile, status: data.load.combined.status,
-                                                    checkIn: data.todaysCheckIn?.engineValue(restingHeartRate: restingHeartRate), in: context)
+                                                    checkIn: data.todaysCheckIn?.engineValue(restingHeartRate: restingHeartRate), in: context,
+                                                    ratio: data.load.combined.ratio, restingHeartRate: restingHeartRate)
             if let first = changed.first { banner = first }
         }
     }
@@ -181,7 +182,7 @@ struct HomeView: View {
         integrations.healthEnabled ? health.restingHeartRate : nil
     }
 
-    private func saveCheckIn(_ answers: RecoveryCheckIn, status: LoadStatus) {
+    private func saveCheckIn(_ answers: RecoveryCheckIn, status: LoadStatus, ratio: Double?) {
         var checkIn = answers
         checkIn.restingHeartRateElevated = restingHeartRate?.isElevated ?? false
         let calendar = Calendar.kinetix
@@ -196,7 +197,8 @@ struct HomeView: View {
         }
         try? context.save()
         if let profile {
-            let changed = BalanceService.autoAdjust(profile: profile, status: status, checkIn: checkIn, in: context, force: true)
+            let changed = BalanceService.autoAdjust(profile: profile, status: status, checkIn: checkIn, in: context, force: true,
+                                                    ratio: ratio, restingHeartRate: restingHeartRate)
             if let first = changed.first { banner = first }
         }
     }
@@ -219,34 +221,17 @@ extension RecoveryCheckInModel {
         .modelContainer(container)
 }
 
-/// Recent automatic plan changes, each with the reason (opened from the bell).
+/// Recent automatic plan changes, each with what changed and why (opened from the bell).
 struct PlanUpdatesSheet: View {
     let changes: [PlanChangeModel]
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
-            Group {
-                if changes.isEmpty {
-                    ContentUnavailableView {
-                        Label("No plan changes yet", systemImage: "bell")
-                    } description: {
-                        Text("When Kinetix moves, eases or swaps a session (after a skip, a hard week or a poor check-in) you'll see what changed and why here.")
-                    }
-                } else {
-                    List(changes) { change in
-                        VStack(alignment: .leading, spacing: KXSpacing.xxs) {
-                            Text(change.summary).font(KXFont.callout).foregroundStyle(KXColor.ink)
-                            Text(change.createdAt, format: .relative(presentation: .named))
-                                .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
-                        }
-                        .padding(.vertical, KXSpacing.xxs)
-                    }
-                }
-            }
-            .navigationTitle("Plan updates")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+            PlanChangesView(changes: changes)
+                .navigationTitle("What changed and why")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
         }
         .tint(KXColor.accent)
     }

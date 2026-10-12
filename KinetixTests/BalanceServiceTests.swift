@@ -46,6 +46,36 @@ final class BalanceServiceTests: XCTestCase {
         XCTAssertNil(run.runStructure)
     }
 
+    func testChangesRecordBeforeAfterAndTriggers() throws {
+        let run = try XCTUnwrap(thisWeek().first { $0.kind.discipline == .run })
+        let originalTitle = run.title
+        let option = try XCTUnwrap(BalanceService.swapOptions(for: run, profile: SampleData.profile, now: monday).first { $0.id == "crossTraining" })
+        BalanceService.swap(run, to: option, profile: SampleData.profile, in: context, now: monday)
+        let change = try XCTUnwrap(context.fetch(FetchDescriptor<PlanChangeModel>()).first { $0.sessionId == run.id })
+        XCTAssertEqual(change.cause, .swapped)
+        XCTAssertEqual(change.before?.title, originalTitle)
+        XCTAssertEqual(change.after?.kind, .crossTraining)
+        XCTAssertEqual(change.triggers.first?.label, "You chose")
+        let fields = PlanChangeDiff.changes(from: try XCTUnwrap(change.before), to: try XCTUnwrap(change.after), units: .metric)
+        XCTAssertTrue(fields.contains { $0.field == .session })
+    }
+
+    func testHighLoadChangeRecordsTheRatio() throws {
+        BalanceService.autoAdjust(profile: SampleData.profile, status: .high, checkIn: nil, in: context, now: monday, force: true, ratio: 1.42)
+        let changes = try context.fetch(FetchDescriptor<PlanChangeModel>()).filter { $0.cause == .highLoad }
+        XCTAssertFalse(changes.isEmpty)
+        XCTAssertEqual(changes.first?.triggers.first?.value, "1.42")
+        XCTAssertNotNil(changes.first?.before)
+    }
+
+    func testPoorRecoveryTriggersIncludeCheckInAndRestingHeartRate() {
+        let checkIn = RecoveryCheckIn(sleep: 2, soreness: 4, energy: 2, restingHeartRateElevated: true)
+        let triggers = BalanceService.recoveryTriggers(checkIn, restingHeartRate: RestingHeartRateSignal(today: 60, baseline: 51))
+        XCTAssertEqual(triggers.map(\.label), ["Readiness", "Sleep", "Soreness", "Energy", "Resting HR"])
+        XCTAssertEqual(triggers.last?.value, "+9 bpm")
+        XCTAssertTrue(BalanceService.recoveryTriggers(RecoveryCheckIn(sleep: 5, soreness: 1, energy: 5), restingHeartRate: nil).isEmpty)
+    }
+
     func testSkipNonKeySession() throws {
         let session = try XCTUnwrap(thisWeek().first { !$0.isKey })
         let explanations = BalanceService.skip(session, profile: SampleData.profile, in: context, now: monday)

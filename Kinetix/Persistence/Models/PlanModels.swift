@@ -153,6 +153,13 @@ final class PlanChangeModel: SyncTracked {
     var createdAt: Date
     var sessionId: UUID?
     var summary: String
+    /// `ChangeCause` raw value.
+    var causeRaw: String = ChangeCause.other.rawValue
+    /// Encoded `SessionSnapshot`s of the session before and after the change.
+    var beforeData: Data?
+    var afterData: Data?
+    /// Encoded `[ChangeTrigger]`: the numbers behind the change.
+    var triggersData: Data?
 
     init(summary: String, sessionId: UUID? = nil, id: UUID = UUID(), now: Date = .now) {
         self.id = id
@@ -163,4 +170,11 @@ final class PlanChangeModel: SyncTracked {
         self.sessionId = sessionId
         self.summary = summary
     }
+}
+
+extension PlanChangeModel {
+    var cause: ChangeCause { ChangeCause(rawValue: causeRaw) ?? .other }
+    var before: SessionSnapshot? { StoredJSON.decode(SessionSnapshot.self, from: beforeData) }
+    var after: SessionSnapshot? { StoredJSON.decode(SessionSnapshot.self, from: afterData) }
+    var triggers: [ChangeTrigger] { StoredJSON.decode([ChangeTrigger].self, from: triggersData) ?? [] }
 }

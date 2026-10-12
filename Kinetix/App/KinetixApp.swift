@@ -26,7 +26,7 @@ struct KinetixApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
-                .preferredColorScheme(launch.forceDark ? .dark : nil)
+                .modifier(AppearanceModifier(forceDark: launch.forceDark))
         }
         .modelContainer(container)
     }
@@ -43,4 +43,36 @@ struct LaunchOptions {
     /// Also add four weeks of past training (dashboard screenshots).
     var seedHistory: Bool { isUITesting && arguments.contains("-seed-history") }
     var forceDark: Bool { isUITesting && arguments.contains("-dark") }
+}
+
+/// Light / dark / follow the system. A per-phone choice (Settings → Appearance).
+enum AppearanceChoice: String, CaseIterable, Identifiable {
+    case system, light, dark
+
+    static let storageKey = "appearance"
+
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .system: return "System"
+        case .light: return "Light"
+        case .dark: return "Dark"
+        }
+    }
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .system: return nil
+        case .light: return .light
+        case .dark: return .dark
+        }
+    }
+}
+
+private struct AppearanceModifier: ViewModifier {
+    let forceDark: Bool
+    @AppStorage(AppearanceChoice.storageKey) private var appearance = AppearanceChoice.system.rawValue
+
+    func body(content: Content) -> some View {
+        content.preferredColorScheme(forceDark ? .dark : (AppearanceChoice(rawValue: appearance) ?? .system).colorScheme)
+    }
 }

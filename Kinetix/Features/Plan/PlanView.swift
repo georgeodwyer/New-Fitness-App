@@ -145,11 +145,22 @@ struct PlanView: View {
     private var changesSection: some View {
         VStack(alignment: .leading, spacing: KXSpacing.sm) {
             KXSectionHeader("Why your plan looks like this")
-            ForEach(changes.prefix(6)) { change in
-                Label(change.summary, systemImage: "info.circle")
+            ForEach(changes.prefix(4)) { change in
+                Label(change.summary, systemImage: change.cause.symbol)
                     .font(KXFont.caption)
                     .foregroundStyle(KXColor.inkSecondary)
             }
+            NavigationLink {
+                PlanChangesView(changes: Array(changes))
+                    .navigationTitle("What changed and why")
+                    .navigationBarTitleDisplayMode(.inline)
+            } label: {
+                Label("See every change, before and after", systemImage: "chevron.right")
+                    .labelStyle(.titleAndIcon)
+                    .font(KXFont.captionEmphasis)
+                    .foregroundStyle(KXColor.accent)
+            }
+            .accessibilityIdentifier("plan.allChanges")
         }
         .kxCard(.tinted)
     }

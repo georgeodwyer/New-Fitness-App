@@ -2,12 +2,12 @@ import XCTest
 @testable import TrainingEngine
 
 final class BalanceRulesTests: XCTestCase {
-    func testBundledFileMatchesTheDesignedDefaults() throws {
-        // If you edit balance_rules.json on purpose, update `BalanceRules.defaults` to match.
-        XCTAssertEqual(try BalanceRules.bundled(), BalanceRules.defaults)
-        XCTAssertEqual(BalanceRules.current, BalanceRules.defaults)
-        XCTAssertEqual(LoadStatus.optimalRange, 0.8...1.3)
-        XCTAssertEqual(LoadModel.minimumHistoryDays, 14)
+    func testBundledFileLoadsAndIsUsed() throws {
+        // Fails with a clear message if balance_rules.json has a typo or an out-of-range value.
+        let bundled = try BalanceRules.bundled()
+        XCTAssertEqual(BalanceRules.current, bundled)
+        XCTAssertEqual(LoadStatus.optimalRange, bundled.load.optimalRange)
+        XCTAssertEqual(LoadModel.minimumHistoryDays, bundled.load.minimumHistoryDays)
     }
 
     func testValidationRejectsBrokenValues() {

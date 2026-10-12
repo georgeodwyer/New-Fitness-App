@@ -10,6 +10,7 @@ struct SettingsView: View {
     @Query(filter: #Predicate<CoachingSettingsModel> { $0.deletedAt == nil }) private var coachingSettings: [CoachingSettingsModel]
     @AppStorage(DeveloperSettings.simulateGPSKey) private var simulateGPS = false
     @AppStorage(DeveloperSettings.simulationSpeedKey) private var simulationSpeed = 10.0
+    @AppStorage(AppearanceChoice.storageKey) private var appearance = AppearanceChoice.system.rawValue
 
     @State private var confirmRegenerate = false
     @State private var confirmDelete = false
@@ -52,6 +53,19 @@ struct SettingsView: View {
                         Text("Training")
                     } footer: {
                         Text("Changing your goal, days or equipment offers to rebuild your plan. Completed sessions and progress are always kept.")
+                    }
+
+                    Section {
+                        Picker("Appearance", selection: $appearance) {
+                            ForEach(AppearanceChoice.allCases) { Text($0.title).tag($0.rawValue) }
+                        }
+                        .pickerStyle(.segmented)
+                        .listRowBackground(Color.clear)
+                        .accessibilityIdentifier("settings.appearance")
+                    } header: {
+                        Text("Appearance")
+                    } footer: {
+                        Text("System follows your iPhone's light or dark setting.")
                     }
 
                     Section("Units") {
