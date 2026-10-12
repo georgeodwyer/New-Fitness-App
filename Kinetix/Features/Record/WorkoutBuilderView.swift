@@ -72,7 +72,7 @@ struct WorkoutBuilderView: View {
                     Button("Warm-up") { add(.warmUp, .distance(meters: 2000)) }
                     Button("Steady run") { add(.steady, .distance(meters: 5000)) }
                     Button("Repeats (work + recovery)") {
-                        workout.blocks.append(WorkoutBlock(repeats: 4, steps: [
+                        workout.blocks.append(RunBlock(repeats: 4, steps: [
                             WorkoutStep(kind: .work, length: .duration(seconds: 180)),
                             WorkoutStep(kind: .recovery, length: .duration(seconds: 90))
                         ]))
@@ -104,7 +104,7 @@ struct WorkoutBuilderView: View {
         return "≈ \(format.distance(estimate.distanceMeters)) · \(Units.formatMinutesSeconds(estimate.durationSeconds))"
     }
 
-    private func blockTitle(_ block: WorkoutBlock) -> String {
+    private func blockTitle(_ block: RunBlock) -> String {
         if block.repeats > 1 { return "Repeat block" }
         switch block.steps.first?.kind {
         case .warmUp: return "Warm-up"
@@ -142,7 +142,7 @@ struct WorkoutBuilderView: View {
     }
 
     private func add(_ kind: SegmentKind, _ length: SegmentLength) {
-        let block = WorkoutBlock(steps: [WorkoutStep(kind: kind, length: length)])
+        let block = RunBlock(steps: [WorkoutStep(kind: kind, length: length)])
         if kind == .warmUp {
             workout.blocks.insert(block, at: 0)
         } else {

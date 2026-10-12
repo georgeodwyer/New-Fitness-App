@@ -7,12 +7,12 @@ final class CustomRunTests: XCTestCase {
     /// The owner's example: 2 km warm-up, 2 × 10 min at 4:15/km, 2 km cool-down.
     private var thresholdSession: CustomRunWorkout {
         CustomRunWorkout(name: "Threshold", type: .tempo, blocks: [
-            WorkoutBlock(steps: [WorkoutStep(kind: .warmUp, length: .distance(meters: 2000))]),
-            WorkoutBlock(repeats: 2, steps: [
+            RunBlock(steps: [WorkoutStep(kind: .warmUp, length: .distance(meters: 2000))]),
+            RunBlock(repeats: 2, steps: [
                 WorkoutStep(kind: .work, length: .duration(seconds: 600), target: .single(threshold)),
                 WorkoutStep(kind: .recovery, length: .duration(seconds: 120))
             ]),
-            WorkoutBlock(steps: [WorkoutStep(kind: .coolDown, length: .distance(meters: 2000))])
+            RunBlock(steps: [WorkoutStep(kind: .coolDown, length: .distance(meters: 2000))])
         ])
     }
 
@@ -27,7 +27,7 @@ final class CustomRunTests: XCTestCase {
 
     func testTrailingRecoveryIsDropped() throws {
         let workout = CustomRunWorkout(name: "Reps", type: .intervals, blocks: [
-            WorkoutBlock(repeats: 3, steps: [
+            RunBlock(repeats: 3, steps: [
                 WorkoutStep(kind: .work, length: .distance(meters: 400), target: .single(threshold)),
                 WorkoutStep(kind: .recovery, length: .duration(seconds: 60))
             ])
@@ -42,7 +42,7 @@ final class CustomRunTests: XCTestCase {
     func testSummaryReadsLikeTheWorkout() {
         XCTAssertEqual(thresholdSession.summary(units: .metric),
                        "2 km warm-up · 2 × (10 min @ 4:15/km, 2 min easy) · 2 km cool-down")
-        let range = CustomRunWorkout(name: "Easy", type: .easy, blocks: [WorkoutBlock(steps: [
+        let range = CustomRunWorkout(name: "Easy", type: .easy, blocks: [RunBlock(steps: [
             WorkoutStep(kind: .steady, length: .distance(meters: 8000),
                         target: .range(PaceRange(fastest: Pace(secondsPerKm: 300), slowest: Pace(secondsPerKm: 320))))
         ])])

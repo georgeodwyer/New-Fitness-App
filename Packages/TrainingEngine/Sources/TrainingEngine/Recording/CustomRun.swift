@@ -100,7 +100,7 @@ public struct WorkoutStep: Codable, Equatable, Identifiable, Sendable {
 }
 
 /// Steps run `repeats` times in a row (1 for a single warm-up or steady block).
-public struct WorkoutBlock: Codable, Equatable, Identifiable, Sendable {
+public struct RunBlock: Codable, Equatable, Identifiable, Sendable {
     public var id: UUID
     public var repeats: Int
     public var steps: [WorkoutStep]
@@ -117,9 +117,9 @@ public struct CustomRunWorkout: Codable, Equatable, Identifiable, Sendable {
     public var id: UUID
     public var name: String
     public var type: RecordRunType
-    public var blocks: [WorkoutBlock]
+    public var blocks: [RunBlock]
 
-    public init(id: UUID = UUID(), name: String, type: RecordRunType, blocks: [WorkoutBlock] = []) {
+    public init(id: UUID = UUID(), name: String, type: RecordRunType, blocks: [RunBlock] = []) {
         self.id = id
         self.name = name
         self.type = type
@@ -220,39 +220,39 @@ extension CustomRunWorkout {
         func step(_ kind: SegmentKind, minutes: Double, _ target: PaceTarget? = nil) -> WorkoutStep {
             WorkoutStep(kind: kind, length: .duration(seconds: minutes * 60), target: target)
         }
-        let blocks: [WorkoutBlock]
+        let blocks: [RunBlock]
         switch type {
         case .free:
             blocks = []
         case .easy:
-            blocks = [WorkoutBlock(steps: [step(.steady, km: 6, pace(.easy))])]
+            blocks = [RunBlock(steps: [step(.steady, km: 6, pace(.easy))])]
         case .recovery:
-            blocks = [WorkoutBlock(steps: [step(.steady, minutes: 30, nil)])]
+            blocks = [RunBlock(steps: [step(.steady, minutes: 30, nil)])]
         case .long:
-            blocks = [WorkoutBlock(steps: [step(.steady, km: 15, pace(.easy))])]
+            blocks = [RunBlock(steps: [step(.steady, km: 15, pace(.easy))])]
         case .tempo:
             blocks = [
-                WorkoutBlock(steps: [step(.warmUp, km: 2)]),
-                WorkoutBlock(repeats: 2, steps: [step(.work, minutes: 10, pace(.threshold)), step(.recovery, minutes: 2)]),
-                WorkoutBlock(steps: [step(.coolDown, km: 2)])
+                RunBlock(steps: [step(.warmUp, km: 2)]),
+                RunBlock(repeats: 2, steps: [step(.work, minutes: 10, pace(.threshold)), step(.recovery, minutes: 2)]),
+                RunBlock(steps: [step(.coolDown, km: 2)])
             ]
         case .intervals:
             blocks = [
-                WorkoutBlock(steps: [step(.warmUp, km: 2)]),
-                WorkoutBlock(repeats: 6, steps: [step(.work, km: 0.8, pace(.interval)), step(.recovery, minutes: 1.5)]),
-                WorkoutBlock(steps: [step(.coolDown, km: 2)])
+                RunBlock(steps: [step(.warmUp, km: 2)]),
+                RunBlock(repeats: 6, steps: [step(.work, km: 0.8, pace(.interval)), step(.recovery, minutes: 1.5)]),
+                RunBlock(steps: [step(.coolDown, km: 2)])
             ]
         case .progression:
-            blocks = [WorkoutBlock(steps: [
+            blocks = [RunBlock(steps: [
                 step(.steady, km: 3, pace(.easy)),
                 step(.steady, km: 3, pace(.marathon)),
                 step(.work, km: 2, pace(.threshold))
             ])]
         case .fartlek:
             blocks = [
-                WorkoutBlock(steps: [step(.warmUp, minutes: 10)]),
-                WorkoutBlock(repeats: 8, steps: [step(.work, minutes: 1, pace(.interval)), step(.recovery, minutes: 1)]),
-                WorkoutBlock(steps: [step(.coolDown, minutes: 10)])
+                RunBlock(steps: [step(.warmUp, minutes: 10)]),
+                RunBlock(repeats: 8, steps: [step(.work, minutes: 1, pace(.interval)), step(.recovery, minutes: 1)]),
+                RunBlock(steps: [step(.coolDown, minutes: 10)])
             ]
         }
         return CustomRunWorkout(name: type.displayName, type: type, blocks: blocks)

@@ -12,7 +12,7 @@ final class RunTemplateModel: SyncTracked {
 
     var name: String
     var typeRaw: String
-    /// Encoded `[WorkoutBlock]`.
+    /// Encoded `[RunBlock]`.
     var blocksData: Data?
     var createdAt: Date
     var lastUsedAt: Date?
@@ -31,7 +31,7 @@ final class RunTemplateModel: SyncTracked {
     var workout: CustomRunWorkout {
         get {
             CustomRunWorkout(id: id, name: name, type: RecordRunType(rawValue: typeRaw) ?? .free,
-                             blocks: StoredJSON.decode([WorkoutBlock].self, from: blocksData) ?? [])
+                             blocks: StoredJSON.decode([RunBlock].self, from: blocksData) ?? [])
         }
         set {
             name = newValue.name
