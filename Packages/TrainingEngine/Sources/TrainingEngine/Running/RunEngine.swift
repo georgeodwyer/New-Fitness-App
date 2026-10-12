@@ -82,6 +82,8 @@ public struct RunSummary: Equatable, Sendable {
     public var averageHeartRate: Double?
     public var maxHeartRate: Double?
     public var route: [RoutePoint]
+    /// Heart rate through the run (at most one sample every 5 s).
+    public var heartRateSamples: [HeartRateSample] = []
 
     /// Fraction of measured target time spent on target (nil if nothing was targeted).
     public var timeInTargetFraction: Double? {
@@ -140,6 +142,7 @@ public struct RunEngine: Sendable {
     private var timeInTarget: Double = 0
     private var targeted: Double = 0
     private var heartRates: [Double] = []
+    private var heartRateSamples: [HeartRateSample] = []
     private var currentHeartRate: Double?
 
     public init(structure: RunStructure?, config: CoachingConfig = CoachingConfig()) {
@@ -199,6 +202,9 @@ public struct RunEngine: Sendable {
         if !isPaused {
             heartRates.append(bpm)
             splitHeartRates.append(bpm)
+            if heartRateSamples.last.map({ activeSeconds - $0.elapsed >= 5 }) ?? true {
+                heartRateSamples.append(HeartRateSample(elapsed: activeSeconds, bpm: bpm))
+            }
         }
     }
 
@@ -293,7 +299,8 @@ public struct RunEngine: Sendable {
             targetedSeconds: targeted,
             averageHeartRate: heartRates.isEmpty ? nil : heartRates.reduce(0, +) / Double(heartRates.count),
             maxHeartRate: heartRates.max(),
-            route: route
+            route: route,
+            heartRateSamples: heartRateSamples
         )
     }
 

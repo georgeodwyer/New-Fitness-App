@@ -152,11 +152,14 @@ public struct RecoveryCheckIn: Equatable, Sendable {
     public var soreness: Int
     /// 1 = exhausted, 5 = full of energy.
     public var energy: Int
+    /// Resting heart rate from Apple Health is well above the runner's usual.
+    public var restingHeartRateElevated: Bool
 
-    public init(sleep: Int, soreness: Int, energy: Int) {
+    public init(sleep: Int, soreness: Int, energy: Int, restingHeartRateElevated: Bool = false) {
         self.sleep = min(max(sleep, 1), 5)
         self.soreness = min(max(soreness, 1), 5)
         self.energy = min(max(energy, 1), 5)
+        self.restingHeartRateElevated = restingHeartRateElevated
     }
 
     /// 0…1 readiness (higher is better).
@@ -164,6 +167,9 @@ public struct RecoveryCheckIn: Equatable, Sendable {
         Double((sleep - 1) + (5 - soreness) + (energy - 1)) / 12
     }
 
-    /// Poor recovery: low overall readiness or very sore.
-    public var isPoor: Bool { readiness < 0.42 || soreness >= 5 }
+    /// Poor recovery: low overall readiness, very sore, or a raised resting heart rate
+    /// on a day that doesn't feel great either (a raised RHR alone can be noise).
+    public var isPoor: Bool {
+        readiness < 0.42 || soreness >= 5 || (restingHeartRateElevated && readiness < 0.6)
+    }
 }
