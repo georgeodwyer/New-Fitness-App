@@ -73,8 +73,9 @@ final class CustomRunTests: XCTestCase {
     }
 
     func testWorkoutRoundTripsThroughJSON() throws {
-        let data = try JSONEncoder().encode(thresholdSession)
-        XCTAssertEqual(try JSONDecoder().decode(CustomRunWorkout.self, from: data), thresholdSession)
+        let workout = thresholdSession // built once: each build gets fresh ids
+        let data = try JSONEncoder().encode(workout)
+        XCTAssertEqual(try JSONDecoder().decode(CustomRunWorkout.self, from: data), workout)
     }
 
     func testRunEngineFollowsACustomWorkout() throws {
