@@ -126,4 +126,11 @@ After M13: owner's list of faults.
   `CustomRunWorkout` (structure/estimate/summary/starters). App: `RunTemplateModel` (synced
   "runTemplate"), Record tab (`Features/Record/`: `RecordView`, `RunSetupView`, `WorkoutBuilderView`,
   `StepEditorView`, `PacePicker`), `ActiveSession.custom/linkedPlannedId`, `RunWorkoutModel(custom:)`.
+- **Progress rework ✅** (owner request before M12): Progress tab = Running | Strength | Overall
+  (`ProgressScreen`, `RunningProgressView` + `WeeklyBarChart`, `RunDetailView` + `RunLineChart` +
+  `EditSessionSheet`, `StrengthProgressView` + `StrengthSessionDetailView`). Engine
+  `Running/RunAnalysis.swift`: best efforts (sliding window, interpolated), pace/HR series,
+  `TrainingHistory` totals/weekly. `RunLogModel.runTypeRaw/recordTypeRaw` (synced);
+  `RunService/StrengthService.update/delete`, `PlanService.reopen`. Simulated runs listed but
+  excluded from totals/bests. Sample history runs now have routes + HR.
 - M12 Gym tracker · M13 Health dashboard + layout: not started.
