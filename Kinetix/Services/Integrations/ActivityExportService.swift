@@ -13,11 +13,27 @@ enum ActivityExportService {
     static let retryWindow: TimeInterval = 7 * 24 * 3600
 
     static func runFinished(_ log: RunLogModel, in context: ModelContext) {
-        Task { await export(run: log, in: context) }
+        guard anyEnabled else { return }
+        let id = log.persistentModelID
+        // Look the run up again when the task runs: it may have been deleted meanwhile.
+        Task {
+            guard let log: RunLogModel = context.registeredModel(for: id) else { return }
+            await export(run: log, in: context)
+        }
     }
 
     static func strengthFinished(_ log: StrengthLogModel, units: UnitSystem, in context: ModelContext) {
-        Task { await export(strength: log, units: units, in: context) }
+        guard anyEnabled else { return }
+        let id = log.persistentModelID
+        Task {
+            guard let log: StrengthLogModel = context.registeredModel(for: id) else { return }
+            await export(strength: log, units: units, in: context)
+        }
+    }
+
+    /// Whether anything would be sent at all (avoids work when no integration is on).
+    private static var anyEnabled: Bool {
+        IntegrationSettings.shared.healthEnabled || StravaService.shared.isConnected
     }
 
     static func export(run log: RunLogModel, in context: ModelContext, settings: IntegrationSettings = .shared) async {
@@ -75,8 +91,7 @@ enum ActivityExportService {
 
     /// Retries recent sessions that haven't reached Health or Strava yet.
     static func retryPending(in context: ModelContext, units: UnitSystem, now: Date = .now) async {
-        let settings = IntegrationSettings.shared
-        guard settings.healthEnabled || StravaService.shared.isConnected else { return }
+        guard anyEnabled else { return }
         let since = now.addingTimeInterval(-retryWindow)
         let runs = (try? context.fetch(FetchDescriptor<RunLogModel>(predicate: #Predicate { $0.isFinished && $0.startedAt >= since }))) ?? []
         for run in runs where run.healthKitWorkoutId == nil || run.stravaActivityId == nil {
