@@ -1,5 +1,12 @@
 # Getting Kinetix onto your iPhone with TestFlight
 
+**This is the default way updates reach your phone.** After each milestone or fix, Claude
+starts the "TestFlight" workflow on GitHub; about 20–40 minutes later the new build appears in
+the TestFlight app on your iPhone and you tap **Update**. No Mac, Xcode or cable needed.
+
+Already done (you published a build from Xcode): steps 1–3 and 8 below. **Still needed once:
+steps 4–6** (an API key and four GitHub secrets), so GitHub can upload builds for you.
+
 TestFlight is Apple's app for installing test versions. Once this is set up, you
 press one button on GitHub (or ask Claude to) and the latest Kinetix arrives on
 your phone 15–30 minutes later. You do this setup once, in a web browser — no Mac needed.
@@ -55,6 +62,8 @@ Secrets are stored encrypted by GitHub; they never appear in the code and Claude
 
 ## 7. Upload a build
 
+Claude normally does this for you. To do it yourself:
+
 1. Open https://github.com/georgeodwyer/New-Fitness-App/actions/workflows/testflight.yml
 2. Click **Run workflow** → choose the branch `claude/hybrid-running-strength-app-8rsowc` → **Run workflow**.
 3. After it finishes (about 10 minutes) Apple processes the build for another 5–20 minutes.
@@ -71,3 +80,11 @@ The first build may ask about "export compliance" — the app already declares i
 special encryption, so this should be skipped automatically.
 
 If the workflow fails, tell Claude — the logs are attached to the run and show what to fix.
+
+## Version and build numbers
+
+- Builds uploaded by GitHub are numbered 101, 102, 103… so they never clash with a build you
+  uploaded by hand from Xcode (Apple rejects a repeated build number).
+- The version shown in the app (currently 1.0.0) is set in `project.yml`; it only needs
+  changing for App Store releases.
+- If you ever upload from Xcode again, let Xcode manage the build number when it offers.

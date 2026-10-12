@@ -134,3 +134,11 @@ After M13: owner's list of faults.
   `RunService/StrengthService.update/delete`, `PlanService.reopen`. Simulated runs listed but
   excluded from totals/bests. Sample history runs now have routes + HR.
 - M12 Gym tracker · M13 Health dashboard + layout: not started.
+
+## Getting builds to the owner's phone (default)
+
+The owner installs via **TestFlight**. After each milestone or fix that's green on CI, trigger
+the `testflight.yml` workflow (workflow_dispatch, branch `claude/hybrid-running-strength-app-8rsowc`)
+with `mcp__github__actions_run_trigger`, check it succeeds, and tell the owner the build will
+appear in TestFlight in ~20–40 min. Build numbers = 100 + run number. Needs the four secrets in
+docs/TESTFLIGHT.md (APPLE_TEAM_ID, ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8).

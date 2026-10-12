@@ -3,6 +3,7 @@ name: TestFlight
 # Builds a signed release of Kinetix and uploads it to TestFlight.
 # Run it from GitHub: Actions → TestFlight → Run workflow.
 # Needs the four repository secrets described in docs/TESTFLIGHT.md.
+# Build numbers are 100 + the run number, so they stay above builds uploaded by hand from Xcode.
 
 on:
   workflow_dispatch:
@@ -63,7 +64,7 @@ jobs:
             -destination 'generic/platform=iOS' \
             -archivePath "$RUNNER_TEMP/Kinetix.xcarchive" \
             DEVELOPMENT_TEAM="$TEAM_ID" \
-            CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
+            CURRENT_PROJECT_VERSION="$((100 + ${{ github.run_number }}))" \
             -allowProvisioningUpdates \
             -authenticationKeyPath "$KEY_PATH" \
             -authenticationKeyID "$ASC_KEY_ID" \
