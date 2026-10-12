@@ -30,6 +30,7 @@
 		4ABFCBB55C182B3A0ED4611A /* KinetixApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71405E462937064340577B61 /* KinetixApp.swift */; };
 		4EF57F21D8A20AD9117AA119 /* KXChip.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8BF6F66B84AE6EFC5020574 /* KXChip.swift */; };
 		4F5922D407E1EEA2B88CB261 /* StrengthWorkoutModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AC850A99E07C7AFAF18354F /* StrengthWorkoutModel.swift */; };
+		5301A43F2906CE8182CCE4F8 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 93A1DCAFCD6F85794718DCAA /* PrivacyInfo.xcprivacy */; };
 		5466848F08C1F98E4764F874 /* RunSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4708069D9CB0D862B6D3765 /* RunSummaryView.swift */; };
 		5F1BC7801AE6C3F4ECEFE1D5 /* SyncMapping.swift in Sources */ = {isa = PBXBuildFile; fileRef = E52E3E78C54380C735C981F1 /* SyncMapping.swift */; };
 		6138BDF777275FD7654DA4D4 /* TrainingProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F327708828E05100B42EDD57 /* TrainingProfileView.swift */; };
@@ -84,6 +85,8 @@
 		EFF93589CAA9CF6D5AE20771 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4999561CDF8222C282BCAEDC /* RootView.swift */; };
 		F030C9653CAED7265051687D /* ProgressScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3000B3D5DB9BC4ADD3017915 /* ProgressScreen.swift */; };
 		F2A324D050EF67C1DB246CEA /* ExerciseHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F546C371EF13550E9BC3897E /* ExerciseHistoryView.swift */; };
+		F611A87F94DBFAB54FFA2E62 /* PrivacyPolicyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCED44B92E0BFCB84A0AFC97 /* PrivacyPolicyView.swift */; };
+		F8FD30FC6BE6998D5DB641B3 /* KXEmptyState.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1664E7DAA11627C79DB8265 /* KXEmptyState.swift */; };
 		FA0E637FA834325958C956CB /* StrengthSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB27DBF74434135E36364597 /* StrengthSummaryView.swift */; };
 		FA8F771A9CCBA11E9BD58893 /* KXOptionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F31D7238D3089FE39D1AF49 /* KXOptionCard.swift */; };
 		FE3C5A0DF03F3DC1CE544053 /* ScreenshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8F9A4EC4A0EB227AB709AD /* ScreenshotTests.swift */; };
@@ -155,6 +158,7 @@
 		8625E979738A82F0E873A0DD /* SyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncService.swift; sourceTree = "<group>"; };
 		8696410FC6193358A919F22E /* SyncServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncServiceTests.swift; sourceTree = "<group>"; };
 		90BA113272970E6AD61E52D1 /* AccountSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountSection.swift; sourceTree = "<group>"; };
+		93A1DCAFCD6F85794718DCAA /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		9D4B9D509AC09C29705FCC4B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		9EB4073696B3EE5AFE2200E5 /* StrengthServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrengthServiceTests.swift; sourceTree = "<group>"; };
 		9F0CC62D8E175B3EDF30B986 /* DashboardWeekCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardWeekCards.swift; sourceTree = "<group>"; };
@@ -167,6 +171,7 @@
 		BB43F58AC57A99553DE11F51 /* Kinetix.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Kinetix.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BCB45CC899A400282E14A651 /* Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Persistence.swift; sourceTree = "<group>"; };
 		BEB367BF9ABEF3898F8358B4 /* AppRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRouter.swift; sourceTree = "<group>"; };
+		C1664E7DAA11627C79DB8265 /* KXEmptyState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXEmptyState.swift; sourceTree = "<group>"; };
 		C29BBA81B297D8EE2CF1FF89 /* SyncTracked.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncTracked.swift; sourceTree = "<group>"; };
 		C45C2DEC18638987AEE83DF7 /* CoachingSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachingSettingsView.swift; sourceTree = "<group>"; };
 		C4708069D9CB0D862B6D3765 /* RunSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunSummaryView.swift; sourceTree = "<group>"; };
@@ -181,6 +186,7 @@
 		D7E3234A649534340E001365 /* KXCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXCard.swift; sourceTree = "<group>"; };
 		DA59942CB66FDA71A6631EDE /* KinetixUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = KinetixUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		DA9718F435F06430788DECB6 /* IntegrationsViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntegrationsViews.swift; sourceTree = "<group>"; };
+		DCED44B92E0BFCB84A0AFC97 /* PrivacyPolicyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyPolicyView.swift; sourceTree = "<group>"; };
 		DFBEFA7B7B4203748B86952F /* AccountServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountServiceTests.swift; sourceTree = "<group>"; };
 		E266EDCEE7A3C5533B50F72F /* KXText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXText.swift; sourceTree = "<group>"; };
 		E29498CEEBE32CAE95B52D85 /* KXHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXHeader.swift; sourceTree = "<group>"; };
@@ -282,6 +288,7 @@
 				CF24C085F57A681388D5C38D /* DesignGalleryView.swift */,
 				76EC9F0A55E7B2D91BA49545 /* HealthDisclaimerView.swift */,
 				DA9718F435F06430788DECB6 /* IntegrationsViews.swift */,
+				DCED44B92E0BFCB84A0AFC97 /* PrivacyPolicyView.swift */,
 				802622121BE8CA378EC34BEB /* SettingsView.swift */,
 				F327708828E05100B42EDD57 /* TrainingProfileView.swift */,
 			);
@@ -389,6 +396,7 @@
 			isa = PBXGroup;
 			children = (
 				9D4B9D509AC09C29705FCC4B /* Assets.xcassets */,
+				93A1DCAFCD6F85794718DCAA /* PrivacyInfo.xcprivacy */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -469,6 +477,7 @@
 				72DC83A5774C0DFA7D49CB52 /* KXButton.swift */,
 				D7E3234A649534340E001365 /* KXCard.swift */,
 				E8BF6F66B84AE6EFC5020574 /* KXChip.swift */,
+				C1664E7DAA11627C79DB8265 /* KXEmptyState.swift */,
 				E29498CEEBE32CAE95B52D85 /* KXHeader.swift */,
 				7DBA1671E84924F9135EF5C2 /* KXMetric.swift */,
 				1F31D7238D3089FE39D1AF49 /* KXOptionCard.swift */,
@@ -598,6 +607,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				019C4AE040EEE60FFD47B6AF /* Assets.xcassets in Resources */,
+				5301A43F2906CE8182CCE4F8 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -633,6 +643,7 @@
 				EDB481995BF3F7256917D1B9 /* KXCard.swift in Sources */,
 				4EF57F21D8A20AD9117AA119 /* KXChip.swift in Sources */,
 				1369ADE963F649AC955FB2F9 /* KXColor.swift in Sources */,
+				F8FD30FC6BE6998D5DB641B3 /* KXEmptyState.swift in Sources */,
 				D06698D33FC2AC066E0A414A /* KXFont.swift in Sources */,
 				0B0FAE936D97D1E2FFDF2B44 /* KXHeader.swift in Sources */,
 				067880B384E37AE558D9400B /* KXMetric.swift in Sources */,
@@ -655,6 +666,7 @@
 				BD17DBB64F9EEE349E1919E5 /* PlanPreviewView.swift in Sources */,
 				BFA529069514CFA98ADFAF18 /* PlanService.swift in Sources */,
 				70C07E1CB04C57F050ED4CD7 /* PlanView.swift in Sources */,
+				F611A87F94DBFAB54FFA2E62 /* PrivacyPolicyView.swift in Sources */,
 				F030C9653CAED7265051687D /* ProgressScreen.swift in Sources */,
 				EFF93589CAA9CF6D5AE20771 /* RootView.swift in Sources */,
 				8B591D9BB2497AB6F03A5E2E /* RunService.swift in Sources */,
@@ -771,7 +783,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 1.0.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -906,7 +918,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 1.0.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
