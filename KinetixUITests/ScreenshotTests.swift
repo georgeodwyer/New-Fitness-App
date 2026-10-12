@@ -53,6 +53,9 @@ final class ScreenshotTests: XCTestCase {
         snap("09-onboarding-doubles"); next()
         tap("Full gym"); snap("10-onboarding-equipment"); next()
         snap("11-onboarding-finish")
+        let notice = app.buttons["onboarding.healthNotice"]
+        if !notice.isHittable { app.swipeUp() }
+        notice.tap()
         tap("Build my plan")
         XCTAssertTrue(app.buttons["Start training"].waitForExistence(timeout: 10))
         snap("12-plan-preview-top")
@@ -73,6 +76,12 @@ final class ScreenshotTests: XCTestCase {
         launch(["-seed-sample", "-seed-history", "-simulate-gps", "120"] + (dark ? ["-dark"] : []))
         XCTAssertTrue(app.tabBars.buttons["Today"].waitForExistence(timeout: 10))
         snap("20-dashboard-1")
+        let bell = app.buttons["Plan updates"].firstMatch
+        if bell.waitForExistence(timeout: 3) {
+            bell.tap()
+            snap("20b-plan-updates")
+            if app.buttons["Done"].waitForExistence(timeout: 3) { app.buttons["Done"].tap() }
+        }
         for index in 2...6 {
             app.swipeUp()
             snap("20-dashboard-\(index)")
@@ -126,6 +135,13 @@ final class ScreenshotTests: XCTestCase {
         }
         app.swipeUp()
         snap("25d-settings-account")
+        let privacy = app.buttons["Privacy policy"].firstMatch
+        if !privacy.exists { app.swipeUp() }
+        if privacy.waitForExistence(timeout: 3) {
+            privacy.tap()
+            snap("25h-privacy")
+            app.navigationBars.buttons.firstMatch.tap()
+        }
         app.swipeUp()
         tap("Design system")
         _ = app.navigationBars["Design system"].waitForExistence(timeout: 5)

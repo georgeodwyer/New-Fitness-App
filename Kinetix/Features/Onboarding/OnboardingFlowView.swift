@@ -51,6 +51,8 @@ struct OnboardingFlowView: View {
                     preview = PlanService.preview(for: model.profile)
                 }
                 .buttonStyle(.kx(.primary, fullWidth: true))
+                .disabled(!model.canContinue)
+                .opacity(model.canContinue ? 1 : 0.5)
             } else {
                 Button("Continue") { withAnimation { model.next() } }
                     .buttonStyle(.kx(.primary, fullWidth: true))
@@ -91,7 +93,7 @@ struct OnboardingFlowView: View {
         case .trainingDays: TrainingDaysStep(model: model)
         case .doubleSessions: DoubleSessionsStep(model: model)
         case .equipment: EquipmentStep(model: model)
-        case .finish: FinishStep()
+        case .finish: FinishStep(model: model)
         }
     }
 }

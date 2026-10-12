@@ -18,7 +18,7 @@ struct KXScreenHeader: View {
             }
             Spacer()
             if let onNotifications {
-                KXIconButton(systemImage: "bell", accessibilityLabel: "Notifications", size: 36, action: onNotifications)
+                KXIconButton(systemImage: "bell", accessibilityLabel: "Plan updates", size: 36, action: onNotifications)
             }
         }
     }

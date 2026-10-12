@@ -273,11 +273,15 @@ struct EquipmentStep: View {
 }
 
 struct FinishStep: View {
+    @Bindable var model: OnboardingModel
     @State private var auth = AuthService.shared
+    @State private var health = HealthService.shared
+    @State private var integrations = IntegrationSettings.shared
     @State private var showAccount = false
+    @State private var showHealthNotice = false
 
     var body: some View {
-        OnboardingQuestion(plain: "Almost", accented: "there", detail: "Two optional extras before we build your plan:")
+        OnboardingQuestion(plain: "Almost", accented: "there", detail: "Two optional extras, and one thing to read, before we build your plan:")
         VStack(spacing: KXSpacing.md) {
             VStack(alignment: .leading, spacing: KXSpacing.md) {
                 infoCard(
@@ -292,13 +296,67 @@ struct FinishStep: View {
                         .buttonStyle(.kx(.secondary, fullWidth: true))
                 }
             }
-            infoCard(
-                symbol: "heart.text.square",
-                title: "Apple Health",
-                text: "Later we'll ask to read heart rate, resting heart rate and workouts (for live heart rate and to balance your training load) and to save your runs and lifts. You choose exactly what to share."
-            )
+            VStack(alignment: .leading, spacing: KXSpacing.md) {
+                infoCard(
+                    symbol: "heart.text.square",
+                    title: "Apple Health",
+                    text: integrations.healthEnabled
+                        ? "Connected. Your sessions are saved to Health, and heart rate and resting heart rate help balance your training."
+                        : "Optional: save your runs and lifts to Health, see Apple Watch heart rate during runs, and let resting heart rate and other workouts balance your load. You choose exactly what to share."
+                )
+                if health.isAvailable && !integrations.healthEnabled {
+                    Button("Connect Apple Health") { Task { await connectHealth() } }
+                        .buttonStyle(.kx(.secondary, fullWidth: true))
+                }
+            }
+            healthNotice
         }
         .sheet(isPresented: $showAccount) { AuthView(mode: .create) }
+        .sheet(isPresented: $showHealthNotice) {
+            NavigationStack {
+                HealthDisclaimerView()
+                    .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { showHealthNotice = false } } }
+            }
+        }
+    }
+
+    /// Required acknowledgement: Kinetix is training guidance, not medical advice.
+    private var healthNotice: some View {
+        VStack(alignment: .leading, spacing: KXSpacing.md) {
+            infoCard(
+                symbol: "cross.case",
+                title: "Train safely",
+                text: "Kinetix gives general training guidance, not medical advice. Check with a doctor before starting a new programme if you have a medical condition, injury or are pregnant, and stop if you feel chest pain, faint or unwell."
+            )
+            Button("Read the full health & safety notes") { showHealthNotice = true }
+                .font(KXFont.captionEmphasis)
+                .foregroundStyle(KXColor.accent)
+            Button {
+                model.acceptedHealthNotice.toggle()
+            } label: {
+                HStack(alignment: .top, spacing: KXSpacing.md) {
+                    Image(systemName: model.acceptedHealthNotice ? "checkmark.square.fill" : "square")
+                        .font(.title2)
+                        .foregroundStyle(model.acceptedHealthNotice ? KXColor.accent : KXColor.inkSecondary)
+                    Text("I understand and I'm fit to start training")
+                        .font(KXFont.bodyEmphasis)
+                        .foregroundStyle(KXColor.ink)
+                        .multilineTextAlignment(.leading)
+                    Spacer(minLength: 0)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("onboarding.healthNotice")
+            .accessibilityValue(model.acceptedHealthNotice ? "Checked" : "Not checked")
+            .accessibilityAddTraits(model.acceptedHealthNotice ? .isSelected : [])
+        }
+    }
+
+    private func connectHealth() async {
+        guard (try? await health.requestAuthorization()) != nil else { return }
+        integrations.healthEnabled = true
+        integrations.healthConnectedAt = .now
     }
 
     private func infoCard(symbol: String, title: String, text: String) -> some View {

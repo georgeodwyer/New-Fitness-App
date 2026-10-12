@@ -303,11 +303,19 @@ struct StravaView: View {
                     Button {
                         Task { await connect() }
                     } label: {
-                        Text(working ? "Connecting…" : "Connect with Strava")
-                            .font(KXFont.bodyEmphasis)
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity, minHeight: 48)
-                            .background(Self.brand, in: RoundedRectangle(cornerRadius: 8))
+                        // Strava's brand rules ask for their official button artwork: add it to
+                        // Assets as "StravaConnectButton" (docs/STRAVA.md). Until then, a plain version.
+                        if UIImage(named: "StravaConnectButton") != nil && !working {
+                            Image("StravaConnectButton").resizable().scaledToFit().frame(height: 48)
+                                .frame(maxWidth: .infinity)
+                                .accessibilityLabel("Connect with Strava")
+                        } else {
+                            Text(working ? "Connecting…" : "Connect with Strava")
+                                .font(KXFont.bodyEmphasis)
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity, minHeight: 48)
+                                .background(Self.brand, in: RoundedRectangle(cornerRadius: 8))
+                        }
                     }
                     .buttonStyle(.plain)
                     .disabled(working)
@@ -339,6 +347,13 @@ struct StravaView: View {
                 Section {
                     Button("Disconnect Strava", role: .destructive) { confirmDisconnect = true }
                 }
+            }
+        }
+        .safeAreaInset(edge: .bottom) {
+            if UIImage(named: "StravaCompatible") != nil {
+                Image("StravaCompatible").resizable().scaledToFit().frame(height: 24)
+                    .padding(.bottom, KXSpacing.md)
+                    .accessibilityLabel("Compatible with Strava")
             }
         }
         .navigationTitle("Strava")

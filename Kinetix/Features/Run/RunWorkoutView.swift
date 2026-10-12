@@ -23,7 +23,7 @@ struct RunWorkoutView: View {
     var body: some View {
         Group {
             if saved, let summary = model.finalSummary {
-                RunSummaryView(title: model.title, summary: summary, units: model.units, simulated: model.isSimulated, onDone: onClose)
+                RunSummaryView(title: model.title, summary: summary, units: model.units, simulated: model.isSimulated, log: model.log, onDone: onClose)
             } else if model.phase == .ready {
                 ready
             } else {

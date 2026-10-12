@@ -19,6 +19,7 @@ struct HomeView: View {
 
     @State private var actionSession: PlannedSessionModel?
     @State private var banner: String?
+    @State private var showUpdates = false
     @State private var health = HealthService.shared
     @State private var integrations = IntegrationSettings.shared
 
@@ -41,7 +42,7 @@ struct HomeView: View {
         let data = data
         ScrollView {
             VStack(alignment: .leading, spacing: KXSpacing.xl) {
-                KXScreenHeader(title: "Dashboard", onNotifications: {})
+                KXScreenHeader(title: "Dashboard", onNotifications: { showUpdates = true })
                 greeting
                 if let banner { changeBanner(banner) }
                 todaySection
@@ -71,6 +72,10 @@ struct HomeView: View {
                 }
                 .presentationDetents([.medium, .large])
             }
+        }
+        .sheet(isPresented: $showUpdates) {
+            PlanUpdatesSheet(changes: Array(changes.filter { !$0.isSoftDeleted }.prefix(30)))
+                .presentationDetents([.medium, .large])
         }
         .onAppear {
             guard let profile else { return }
@@ -212,4 +217,37 @@ extension RecoveryCheckInModel {
     return HomeView()
         .environment(AppRouter())
         .modelContainer(container)
+}
+
+/// Recent automatic plan changes, each with the reason (opened from the bell).
+struct PlanUpdatesSheet: View {
+    let changes: [PlanChangeModel]
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if changes.isEmpty {
+                    ContentUnavailableView {
+                        Label("No plan changes yet", systemImage: "bell")
+                    } description: {
+                        Text("When Kinetix moves, eases or swaps a session (after a skip, a hard week or a poor check-in) you'll see what changed and why here.")
+                    }
+                } else {
+                    List(changes) { change in
+                        VStack(alignment: .leading, spacing: KXSpacing.xxs) {
+                            Text(change.summary).font(KXFont.callout).foregroundStyle(KXColor.ink)
+                            Text(change.createdAt, format: .relative(presentation: .named))
+                                .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+                        }
+                        .padding(.vertical, KXSpacing.xxs)
+                    }
+                }
+            }
+            .navigationTitle("Plan updates")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+        }
+        .tint(KXColor.accent)
+    }
 }

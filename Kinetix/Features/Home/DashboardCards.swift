@@ -96,12 +96,15 @@ struct LoadHeroCard: View {
 
     private var combined: LoadFigures { report.combined }
 
+    /// Scales with Dynamic Type.
+    @ScaledMetric(relativeTo: .largeTitle) private var heroSize: CGFloat = 52
+
     var body: some View {
         VStack(alignment: .leading, spacing: KXSpacing.lg) {
             KXSectionHeader("Training load", subtitle: "Session load = minutes × effort, so running and lifting share one scale")
             HStack(alignment: .firstTextBaseline, spacing: KXSpacing.md) {
                 Text(combined.ratio.map { String(format: "%.2f", $0) } ?? "–")
-                    .font(.system(size: 52, weight: .bold, design: .rounded))
+                    .font(.system(size: heroSize, weight: .bold, design: .rounded))
                     .foregroundStyle(KXColor.ink)
                     .accessibilityLabel("Acute to chronic ratio \(combined.ratio.map { String(format: "%.2f", $0) } ?? "not available yet")")
                 VStack(alignment: .leading, spacing: KXSpacing.xxs) {

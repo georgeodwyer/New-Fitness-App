@@ -101,6 +101,11 @@ struct SettingsView: View {
                     } label: {
                         Label("Health & safety", systemImage: "cross.case")
                     }
+                    NavigationLink {
+                        PrivacyPolicyView()
+                    } label: {
+                        Label("Privacy policy", systemImage: "hand.raised")
+                    }
                     LabeledContent("Version", value: Bundle.main.appVersion)
                 }
 

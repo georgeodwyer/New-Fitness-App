@@ -272,6 +272,9 @@ private struct CompactStepper: View {
                 .foregroundStyle(KXColor.ink)
                 .frame(width: 32, height: 32)
                 .background(KXColor.surface, in: Circle())
+                // Larger touch target around the 32 pt circle (kept compact so two steppers fit a small iPhone).
+                .frame(width: 40, height: 44)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }

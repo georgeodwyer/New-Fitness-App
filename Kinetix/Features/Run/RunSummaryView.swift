@@ -7,9 +7,27 @@ struct RunSummaryView: View {
     let summary: RunSummary
     let units: UnitSystem
     var simulated = false
+    /// The saved run, to show its Strava upload as it happens.
+    var log: RunLogModel? = nil
     let onDone: () -> Void
+    @State private var strava = StravaService.shared
+    @State private var integrations = IntegrationSettings.shared
 
     private var format: DisplayFormat { DisplayFormat(units: units) }
+
+    /// "View on Strava" once uploaded (Strava's required wording and colour), or progress.
+    @ViewBuilder private var stravaStatus: some View {
+        if let id = log?.stravaActivityId, let url = URL(string: "https://www.strava.com/activities/\(id)") {
+            Link(destination: url) {
+                Text("View on Strava").font(KXFont.bodyEmphasis).foregroundStyle(StravaView.brand)
+            }
+        } else if !simulated, strava.isConnected, integrations.stravaUploadRuns, log?.isFinished == true {
+            HStack(spacing: KXSpacing.sm) {
+                ProgressView()
+                Text("Uploading to Strava…").font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
+            }
+        }
+    }
 
     var body: some View {
         ScrollView {
@@ -18,6 +36,7 @@ struct RunSummaryView: View {
                     KXOverline(simulated ? "Run complete · simulated GPS" : "Run complete", color: KXColor.success)
                     Text(title).font(KXFont.display).foregroundStyle(KXColor.ink)
                 }
+                stravaStatus
                 if summary.route.count > 1 {
                     RouteMap(route: summary.route)
                         .frame(height: 220)

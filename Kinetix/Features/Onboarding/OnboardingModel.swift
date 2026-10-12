@@ -54,6 +54,8 @@ final class OnboardingModel {
     var trainingDays: Set<Weekday> = [.monday, .tuesday, .thursday, .saturday]
     var doubleSessionDays = 0
     var equipment: Equipment?
+    /// The health & safety notice must be acknowledged before a plan is built.
+    var acceptedHealthNotice = false
 
     var totalSteps: Int { Step.allCases.count }
     var stepNumber: Int { step.rawValue + 1 }
@@ -70,7 +72,7 @@ final class OnboardingModel {
         case .trainingDays: return (2...7).contains(trainingDays.count)
         case .doubleSessions: return true
         case .equipment: return equipment != nil
-        case .finish: return true
+        case .finish: return acceptedHealthNotice
         }
     }
 
@@ -125,6 +127,7 @@ final class OnboardingModel {
 
     /// Loads existing answers (used when editing the training profile in Settings).
     func load(_ profile: AthleteProfile) {
+        acceptedHealthNotice = true
         units = profile.units
         runningExperience = profile.runningExperience
         if let race = profile.recentRace {

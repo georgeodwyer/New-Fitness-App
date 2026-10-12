@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 import TrainingEngine
 
-/// Progress: lifts (working weights, records, history). Training load arrives in Milestone 5.
+/// Progress: lifts (working weights, records, history), recent runs and sessions, and the load trend.
 struct ProgressScreen: View {
     @Query(sort: \ExerciseStateModel.exerciseName) private var states: [ExerciseStateModel]
     @Query private var records: [PersonalRecordModel]
@@ -10,6 +10,11 @@ struct ProgressScreen: View {
     private var workouts: [StrengthLogModel]
     @Query(filter: #Predicate<UserProfileModel> { $0.deletedAt == nil }) private var profiles: [UserProfileModel]
     @Query private var runs: [RunLogModel]
+    @State private var integrations = IntegrationSettings.shared
+
+    private var finishedRuns: [RunLogModel] {
+        runs.filter { $0.isFinished && !$0.isSoftDeleted }.sorted { $0.startedAt > $1.startedAt }
+    }
 
     private var format: DisplayFormat { DisplayFormat(units: profiles.first?.units ?? .metric) }
 
@@ -34,9 +39,11 @@ struct ProgressScreen: View {
                 VStack(alignment: .leading, spacing: KXSpacing.xl) {
                     KXScreenHeader(title: "Progress")
                     liftsSection
+                    recentRuns
                     recentWorkouts
                     LoadTrendCard(report: LoadModel.report(
-                        entries: DashboardService.loadEntries(runs: runs, lifts: workouts),
+                        entries: DashboardService.loadEntries(runs: runs, lifts: workouts,
+                                                              external: integrations.healthEnabled ? integrations.externalWorkouts : []),
                         today: .now, calendar: .kinetix))
                 }
                 .padding(KXSpacing.screenMargin)
@@ -52,9 +59,8 @@ struct ProgressScreen: View {
         VStack(alignment: .leading, spacing: KXSpacing.md) {
             KXSectionHeader("Lifts", subtitle: "Working weight and best estimated 1-rep max")
             if trainedLifts.isEmpty {
-                Text("Finish a strength session to see your lifts, records and progress here.")
-                    .font(KXFont.callout)
-                    .foregroundStyle(KXColor.inkSecondary)
+                KXEmptyState(symbol: "dumbbell", title: "No lifts yet",
+                             message: "Finish a strength session to see your working weights, records and progress here.")
             }
             ForEach(trainedLifts) { state in
                 NavigationLink(value: state) {
@@ -89,7 +95,8 @@ struct ProgressScreen: View {
         VStack(alignment: .leading, spacing: KXSpacing.md) {
             KXSectionHeader("Recent strength sessions")
             if workouts.isEmpty {
-                Text("No sessions yet.").font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
+                KXEmptyState(symbol: "list.bullet.rectangle", title: "No strength sessions yet",
+                             message: "Completed sessions appear here with their total volume.")
             }
             ForEach(workouts.prefix(5)) { workout in
                 HStack {
@@ -105,5 +112,42 @@ struct ProgressScreen: View {
             }
         }
         .kxCard()
+    }
+
+    private var recentRuns: some View {
+        VStack(alignment: .leading, spacing: KXSpacing.md) {
+            KXSectionHeader("Recent runs")
+            if finishedRuns.isEmpty {
+                KXEmptyState(symbol: "figure.run", title: "No runs yet",
+                             message: "Your runs appear here with distance, pace and heart rate.")
+            }
+            ForEach(finishedRuns.prefix(5)) { run in
+                HStack {
+                    VStack(alignment: .leading, spacing: KXSpacing.xxs) {
+                        Text(run.title.isEmpty ? "Run" : run.title).font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink)
+                        Text(runDetail(run)).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+                    }
+                    Spacer()
+                    Text(format.distance(run.distanceMeters, decimals: 2))
+                        .font(KXFont.callout.monospacedDigit()).foregroundStyle(KXColor.inkSecondary)
+                    if let id = run.stravaActivityId, let url = URL(string: "https://www.strava.com/activities/\(id)") {
+                        Link(destination: url) {
+                            Image(systemName: "arrow.up.forward.app").foregroundStyle(StravaView.brand)
+                                .frame(width: 32, height: 32)
+                        }
+                        .accessibilityLabel("View on Strava")
+                    }
+                }
+                .accessibilityElement(children: .contain)
+            }
+        }
+        .kxCard()
+    }
+
+    private func runDetail(_ run: RunLogModel) -> String {
+        var parts = [run.startedAt.formatted(.dateTime.weekday(.abbreviated).day().month())]
+        if let pace = run.averagePace { parts.append(format.pace(pace)) }
+        if let hr = run.averageHeartRate { parts.append("\(Int(hr)) bpm") }
+        return parts.joined(separator: " · ")
     }
 }
