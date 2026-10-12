@@ -42,6 +42,7 @@ enum RunService {
         log.finishedAt = now
         planned?.status = .completed
         try? context.save()
+        SyncService.shared.requestSync()
     }
 
     static func discard(_ log: RunLogModel, in context: ModelContext) {

@@ -13,6 +13,8 @@ struct KinetixApp: App {
             // A broken store is unrecoverable at launch; surface it loudly in development.
             fatalError("Could not open the Kinetix database: \(error)")
         }
+        let appContainer = self.container
+        MainActor.assumeIsolated { SyncService.shared.configure(container: appContainer) }
         if launch.seedSample {
             MainActor.assumeIsolated {
                 SampleData.seed(into: container.mainContext)

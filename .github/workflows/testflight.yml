@@ -27,6 +27,19 @@ jobs:
           if [ -z "${{ secrets.ASC_KEY_P8 }}" ]; then echo "::error::Secret ASC_KEY_P8 is missing"; missing=1; fi
           exit $missing
 
+      - name: Write app configuration (Supabase)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          # "//" starts a comment in .xcconfig files, so the URL is written as https:/$()/…
+          ESCAPED_URL="${SUPABASE_URL//\/\//\/\$()\/}"
+          {
+            echo "SUPABASE_URL = ${ESCAPED_URL}"
+            echo "SUPABASE_ANON_KEY = ${SUPABASE_ANON_KEY}"
+          } > Config/Secrets.xcconfig
+          if [ -z "$SUPABASE_URL" ]; then echo "::warning::SUPABASE_URL secret not set: accounts will be off in this build"; fi
+
       - name: Install XcodeGen and generate project
         run: |
           brew install xcodegen

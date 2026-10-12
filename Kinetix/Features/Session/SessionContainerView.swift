@@ -7,8 +7,8 @@ struct SessionContainerView: View {
     let session: ActiveSession
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
-    @Query private var profiles: [UserProfileModel]
-    @Query private var coachingSettings: [CoachingSettingsModel]
+    @Query(filter: #Predicate<UserProfileModel> { $0.deletedAt == nil }) private var profiles: [UserProfileModel]
+    @Query(filter: #Predicate<CoachingSettingsModel> { $0.deletedAt == nil }) private var coachingSettings: [CoachingSettingsModel]
     @AppStorage(DeveloperSettings.simulateGPSKey) private var simulateGPS = false
     @AppStorage(DeveloperSettings.simulationSpeedKey) private var simulationSpeed = 10.0
     @State private var strengthModel: StrengthWorkoutModel?

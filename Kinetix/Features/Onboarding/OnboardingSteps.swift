@@ -273,20 +273,32 @@ struct EquipmentStep: View {
 }
 
 struct FinishStep: View {
+    @State private var auth = AuthService.shared
+    @State private var showAccount = false
+
     var body: some View {
-        OnboardingQuestion(plain: "Almost", accented: "there", detail: "Two more things will be set up as the app grows:")
+        OnboardingQuestion(plain: "Almost", accented: "there", detail: "Two optional extras before we build your plan:")
         VStack(spacing: KXSpacing.md) {
-            infoCard(
-                symbol: "person.crop.circle.badge.checkmark",
-                title: "Your account",
-                text: "Sign in with Apple or email will back up and sync your training across devices. For now everything is saved on this iPhone and works without signal."
-            )
+            VStack(alignment: .leading, spacing: KXSpacing.md) {
+                infoCard(
+                    symbol: "person.crop.circle.badge.checkmark",
+                    title: "Your account",
+                    text: auth.isSignedIn
+                        ? "Signed in\(auth.email.map { " as \($0)" } ?? ""). Your training is backed up and syncs across your devices."
+                        : "Back up your training and sync it across devices with Sign in with Apple or email. Optional: everything works on this iPhone without one, even without signal."
+                )
+                if auth.state == .signedOut {
+                    Button("Create an account") { showAccount = true }
+                        .buttonStyle(.kx(.secondary, fullWidth: true))
+                }
+            }
             infoCard(
                 symbol: "heart.text.square",
                 title: "Apple Health",
-                text: "We'll ask to read heart rate, resting heart rate and workouts (for live heart rate and to balance your training load) and to save your runs and lifts. You choose exactly what to share."
+                text: "Later we'll ask to read heart rate, resting heart rate and workouts (for live heart rate and to balance your training load) and to save your runs and lifts. You choose exactly what to share."
             )
         }
+        .sheet(isPresented: $showAccount) { AuthView(mode: .create) }
     }
 
     private func infoCard(symbol: String, title: String, text: String) -> some View {

@@ -6,7 +6,7 @@ import TrainingEngine
 /// with sets × reps × weight.
 struct SessionDetailView: View {
     let session: PlannedSessionModel
-    @Query private var profiles: [UserProfileModel]
+    @Query(filter: #Predicate<UserProfileModel> { $0.deletedAt == nil }) private var profiles: [UserProfileModel]
     @Environment(AppRouter.self) private var router
     @State private var showActions = false
     @State private var lastChange: String?

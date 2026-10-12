@@ -6,8 +6,8 @@ import TrainingEngine
 /// integrations, account (export and delete) and about.
 struct SettingsView: View {
     @Environment(\.modelContext) private var context
-    @Query private var profiles: [UserProfileModel]
-    @Query private var coachingSettings: [CoachingSettingsModel]
+    @Query(filter: #Predicate<UserProfileModel> { $0.deletedAt == nil }) private var profiles: [UserProfileModel]
+    @Query(filter: #Predicate<CoachingSettingsModel> { $0.deletedAt == nil }) private var coachingSettings: [CoachingSettingsModel]
     @AppStorage(DeveloperSettings.simulateGPSKey) private var simulateGPS = false
     @AppStorage(DeveloperSettings.simulationSpeedKey) private var simulationSpeed = 10.0
 
@@ -75,7 +75,7 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    comingSoonRow("Account", detail: "Sign in with Apple or email to back up and sync", symbol: "person.crop.circle")
+                    AccountSection()
                     Button {
                         prepareExport()
                     } label: {
@@ -94,7 +94,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Account & data")
                 } footer: {
-                    Text("Export gives you everything Kinetix stores about you as a JSON file. Deleting removes it all from this iPhone permanently.")
+                    Text("Export gives you everything Kinetix stores about you as a JSON file. Deleting removes your account and all your data, on this iPhone and in the cloud, permanently.")
                 }
 
                 Section("About") {
@@ -144,12 +144,14 @@ struct SettingsView: View {
                 Text("This removes your profile, plan, runs, workouts, records and settings. Consider exporting your data first.")
             }
             .alert("Delete everything permanently?", isPresented: $confirmDeleteFinal) {
-                Button("Delete", role: .destructive) { AccountService.deleteEverything(in: context) }
+                Button("Delete", role: .destructive) { Task { await deleteAccount() } }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text("This can't be undone.")
+                Text(AuthService.shared.isSignedIn
+                     ? "Your account, everything backed up in the cloud and everything on this iPhone will be deleted. This can't be undone."
+                     : "This can't be undone.")
             }
-            .alert("Export failed", isPresented: Binding(get: { exportError != nil }, set: { if !$0 { exportError = nil } })) {
+            .alert("Something went wrong", isPresented: Binding(get: { exportError != nil }, set: { if !$0 { exportError = nil } })) {
                 Button("OK", role: .cancel) {}
             } message: {
                 Text(exportError ?? "")
@@ -201,6 +203,18 @@ struct SettingsView: View {
             get: { profile.units },
             set: { AccountService.changeUnits(to: $0, profile: profile, in: context) }
         )
+    }
+
+    private func deleteAccount() async {
+        if AuthService.shared.isSignedIn {
+            do {
+                try await AuthService.shared.deleteAccount()
+            } catch {
+                exportError = "Couldn't delete your cloud account: \(error.localizedDescription) Nothing has been deleted. Please try again when you're online."
+                return
+            }
+        }
+        AccountService.deleteEverything(in: context)
     }
 
     private func prepareExport() {

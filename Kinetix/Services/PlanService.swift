@@ -57,6 +57,7 @@ enum PlanService {
 
         ensureHorizon(for: plan, profile: profile, in: context, now: now)
         try? context.save()
+        SyncService.shared.requestSync()
         return plan
     }
 

@@ -8,7 +8,7 @@ struct ProgressScreen: View {
     @Query private var records: [PersonalRecordModel]
     @Query(filter: #Predicate<StrengthLogModel> { $0.isFinished }, sort: \StrengthLogModel.startedAt, order: .reverse)
     private var workouts: [StrengthLogModel]
-    @Query private var profiles: [UserProfileModel]
+    @Query(filter: #Predicate<UserProfileModel> { $0.deletedAt == nil }) private var profiles: [UserProfileModel]
     @Query private var runs: [RunLogModel]
 
     private var format: DisplayFormat { DisplayFormat(units: profiles.first?.units ?? .metric) }

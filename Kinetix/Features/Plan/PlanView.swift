@@ -7,7 +7,7 @@ struct PlanView: View {
     @Query(sort: \PlannedSessionModel.date) private var sessions: [PlannedSessionModel]
     @Query(filter: #Predicate<TrainingPlanModel> { $0.isActive }) private var plans: [TrainingPlanModel]
     @Query(sort: \PlanChangeModel.createdAt, order: .reverse) private var changes: [PlanChangeModel]
-    @Query private var profiles: [UserProfileModel]
+    @Query(filter: #Predicate<UserProfileModel> { $0.deletedAt == nil }) private var profiles: [UserProfileModel]
 
     private var format: DisplayFormat { DisplayFormat(units: profiles.first?.units ?? .metric) }
     private var outline: PlanOutline? { plans.first?.outline }

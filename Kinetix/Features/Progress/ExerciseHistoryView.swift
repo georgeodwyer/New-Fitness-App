@@ -10,7 +10,7 @@ struct ExerciseHistoryView: View {
 
     @Query private var sets: [SetLogModel]
     @Query private var records: [PersonalRecordModel]
-    @Query private var profiles: [UserProfileModel]
+    @Query(filter: #Predicate<UserProfileModel> { $0.deletedAt == nil }) private var profiles: [UserProfileModel]
 
     init(exerciseId: String, name: String) {
         self.exerciseId = exerciseId

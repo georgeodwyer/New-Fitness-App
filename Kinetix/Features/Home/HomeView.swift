@@ -9,7 +9,7 @@ struct HomeView: View {
     @Environment(AppRouter.self) private var router
     @Environment(\.modelContext) private var context
     @Query(sort: \PlannedSessionModel.date) private var sessions: [PlannedSessionModel]
-    @Query private var profiles: [UserProfileModel]
+    @Query(filter: #Predicate<UserProfileModel> { $0.deletedAt == nil }) private var profiles: [UserProfileModel]
     @Query private var runs: [RunLogModel]
     @Query private var lifts: [StrengthLogModel]
     @Query(sort: \RecoveryCheckInModel.date, order: .reverse) private var checkIns: [RecoveryCheckInModel]

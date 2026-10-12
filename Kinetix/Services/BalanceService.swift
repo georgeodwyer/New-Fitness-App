@@ -70,6 +70,7 @@ enum BalanceService {
         }
         try? modelContext.save()
         return explanations
+        SyncService.shared.requestSync()
     }
 }
 

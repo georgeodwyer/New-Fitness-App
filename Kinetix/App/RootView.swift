@@ -3,7 +3,7 @@ import SwiftData
 
 /// Shows onboarding until a profile exists, then the main tab bar.
 struct RootView: View {
-    @Query private var profiles: [UserProfileModel]
+    @Query(filter: #Predicate<UserProfileModel> { $0.deletedAt == nil }) private var profiles: [UserProfileModel]
     @State private var router = AppRouter()
     @Environment(\.modelContext) private var context
     @Environment(\.scenePhase) private var scenePhase
@@ -24,7 +24,10 @@ struct RootView: View {
         .tint(KXColor.accent)
         .onChange(of: scenePhase, initial: true) { _, phase in
             // Keep detailed sessions generated about two weeks ahead.
-            if phase == .active { PlanService.refresh(in: context) }
+            if phase == .active {
+                PlanService.refresh(in: context)
+                SyncService.shared.requestSync(after: 0.5)
+            }
         }
     }
 }

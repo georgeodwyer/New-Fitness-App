@@ -164,6 +164,7 @@ enum StrengthService {
         }
         applyNewWeights(newWeights, in: context, now: now)
         try? context.save()
+        SyncService.shared.requestSync()
 
         return Summary(
             title: log.title,

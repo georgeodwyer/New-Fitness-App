@@ -6,6 +6,8 @@ import TrainingEngine
 struct OnboardingFlowView: View {
     @State private var model = OnboardingModel()
     @State private var preview: PlanService.Preview?
+    @State private var showSignIn = false
+    @State private var auth = AuthService.shared
 
     var body: some View {
         if let preview {
@@ -39,6 +41,7 @@ struct OnboardingFlowView: View {
             footer
         }
         .background(KXColor.background.ignoresSafeArea())
+        .sheet(isPresented: $showSignIn) { AuthView(mode: .signIn) }
     }
 
     private var footer: some View {
@@ -57,6 +60,11 @@ struct OnboardingFlowView: View {
                     Button("Skip") { withAnimation { model.skip() } }
                         .buttonStyle(.kx(.outlined, fullWidth: true))
                 }
+            }
+            if model.step == .units && auth.state == .signedOut {
+                Button("Already have an account? Sign in") { showSignIn = true }
+                    .font(KXFont.callout)
+                    .foregroundStyle(KXColor.accent)
             }
             #if DEBUG
             if model.step == .units {
