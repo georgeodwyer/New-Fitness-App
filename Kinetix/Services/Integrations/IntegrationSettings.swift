@@ -1,0 +1,78 @@
+import Foundation
+import Observation
+import TrainingEngine
+
+/// Per-device integration choices (Apple Health, heart rate strap, Strava). These belong
+/// to this iPhone rather than the account, so they live in UserDefaults and aren't synced.
+@Observable
+@MainActor
+final class IntegrationSettings {
+    static let shared = IntegrationSettings()
+
+    @ObservationIgnored private let defaults: UserDefaults
+
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        healthEnabled = defaults.bool(forKey: Keys.healthEnabled)
+        healthConnectedAt = defaults.object(forKey: Keys.healthConnectedAt) as? Date
+        heartRateSensorID = defaults.string(forKey: Keys.sensorID).flatMap(UUID.init(uuidString:))
+        heartRateSensorName = defaults.string(forKey: Keys.sensorName)
+        useWatchHeartRate = defaults.object(forKey: Keys.useWatchHeartRate) as? Bool ?? true
+        stravaUploadRuns = defaults.object(forKey: Keys.stravaRuns) as? Bool ?? true
+        stravaUploadLifts = defaults.object(forKey: Keys.stravaLifts) as? Bool ?? false
+        stravaConnectedAt = defaults.object(forKey: Keys.stravaConnectedAt) as? Date
+        externalWorkouts = defaults.data(forKey: Keys.externalWorkouts)
+            .flatMap { try? JSONDecoder().decode([ExternalWorkout].self, from: $0) } ?? []
+        uploadFailures = defaults.dictionary(forKey: Keys.uploadFailures) as? [String: String] ?? [:]
+    }
+
+    private enum Keys {
+        static let healthEnabled = "integrations.health.enabled"
+        static let healthConnectedAt = "integrations.health.connectedAt"
+        static let sensorID = "integrations.hr.sensorID"
+        static let sensorName = "integrations.hr.sensorName"
+        static let useWatchHeartRate = "integrations.hr.useWatch"
+        static let stravaRuns = "integrations.strava.uploadRuns"
+        static let stravaLifts = "integrations.strava.uploadLifts"
+        static let stravaConnectedAt = "integrations.strava.connectedAt"
+        static let externalWorkouts = "integrations.health.externalWorkouts"
+        static let uploadFailures = "integrations.uploadFailures"
+    }
+
+    /// Save finished sessions to Apple Health and read heart rate and other workouts.
+    var healthEnabled: Bool { didSet { defaults.set(healthEnabled, forKey: Keys.healthEnabled) } }
+    /// Only sessions finished after this are saved automatically (no back-filling surprises).
+    var healthConnectedAt: Date? { didSet { defaults.set(healthConnectedAt, forKey: Keys.healthConnectedAt) } }
+
+    /// The paired Bluetooth heart rate strap.
+    var heartRateSensorID: UUID? { didSet { defaults.set(heartRateSensorID?.uuidString, forKey: Keys.sensorID) } }
+    var heartRateSensorName: String? { didSet { defaults.set(heartRateSensorName, forKey: Keys.sensorName) } }
+    /// Use heart rate from Apple Watch (through Apple Health) during runs.
+    var useWatchHeartRate: Bool { didSet { defaults.set(useWatchHeartRate, forKey: Keys.useWatchHeartRate) } }
+
+    var stravaUploadRuns: Bool { didSet { defaults.set(stravaUploadRuns, forKey: Keys.stravaRuns) } }
+    var stravaUploadLifts: Bool { didSet { defaults.set(stravaUploadLifts, forKey: Keys.stravaLifts) } }
+    var stravaConnectedAt: Date? { didSet { defaults.set(stravaConnectedAt, forKey: Keys.stravaConnectedAt) } }
+
+    /// Workouts from other apps (last 4 weeks), refreshed from Apple Health.
+    var externalWorkouts: [ExternalWorkout] {
+        didSet { defaults.set(try? JSONEncoder().encode(externalWorkouts), forKey: Keys.externalWorkouts) }
+    }
+
+    /// Uploads that failed for a reason retrying won't fix, keyed "strava.<log id>" → message.
+    var uploadFailures: [String: String] { didSet { defaults.set(uploadFailures, forKey: Keys.uploadFailures) } }
+
+    /// Forget everything (used when deleting all data).
+    func reset() {
+        healthEnabled = false
+        healthConnectedAt = nil
+        heartRateSensorID = nil
+        heartRateSensorName = nil
+        useWatchHeartRate = true
+        stravaUploadRuns = true
+        stravaUploadLifts = false
+        stravaConnectedAt = nil
+        externalWorkouts = []
+        uploadFailures = [:]
+    }
+}

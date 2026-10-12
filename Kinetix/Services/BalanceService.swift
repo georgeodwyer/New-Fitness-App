@@ -69,8 +69,8 @@ enum BalanceService {
             explanations.append(adjustment.explanation)
         }
         try? modelContext.save()
+        if !explanations.isEmpty { SyncService.shared.requestSync() }
         return explanations
-        SyncService.shared.requestSync()
     }
 }
 

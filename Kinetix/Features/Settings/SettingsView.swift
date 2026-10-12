@@ -65,13 +65,11 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    comingSoonRow("Apple Health", detail: "Heart rate, workouts and saving your sessions", symbol: "heart.fill")
-                    comingSoonRow("Heart rate monitor", detail: "Bluetooth chest straps and Apple Watch", symbol: "waveform.path.ecg")
-                    comingSoonRow("Strava", detail: "Upload runs automatically", symbol: "arrow.up.forward.app")
+                    IntegrationsSection()
                 } header: {
                     Text("Integrations")
                 } footer: {
-                    Text("These connect in a coming update.")
+                    Text("These settings apply to this iPhone.")
                 }
 
                 Section {
@@ -171,22 +169,6 @@ struct SettingsView: View {
                 Text(detail).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
             }
         }
-    }
-
-    private func comingSoonRow(_ title: String, detail: String, symbol: String) -> some View {
-        HStack {
-            Label {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title).foregroundStyle(KXColor.ink)
-                    Text(detail).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
-                }
-            } icon: {
-                Image(systemName: symbol).foregroundStyle(KXColor.inkSecondary)
-            }
-            Spacer()
-            KXChip(text: "Soon", variant: .outlined)
-        }
-        .accessibilityElement(children: .combine)
     }
 
     private func coachingSummary(_ settings: CoachingSettingsModel, units: UnitSystem) -> String {

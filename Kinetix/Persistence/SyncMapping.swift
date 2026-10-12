@@ -282,11 +282,13 @@ extension StrengthLogModel: SyncableModel {
         var isFinished: Bool
         var finishedAt: Date?
         var healthKitWorkoutId: UUID?
+        var stravaActivityId: String?
     }
     static var syncType: String { "strengthLog" }
     var syncPayload: Payload {
         Payload(plannedSessionId: plannedSessionId, startedAt: startedAt, durationSeconds: durationSeconds, effort: effort,
-                load: load, title: title, isFinished: isFinished, finishedAt: finishedAt, healthKitWorkoutId: healthKitWorkoutId)
+                load: load, title: title, isFinished: isFinished, finishedAt: finishedAt, healthKitWorkoutId: healthKitWorkoutId,
+                stravaActivityId: stravaActivityId)
     }
     func applySync(_ p: Payload, context: ModelContext) {
         plannedSessionId = p.plannedSessionId
@@ -298,6 +300,7 @@ extension StrengthLogModel: SyncableModel {
         isFinished = p.isFinished
         finishedAt = p.finishedAt
         healthKitWorkoutId = p.healthKitWorkoutId
+        stravaActivityId = p.stravaActivityId
     }
     static func makeForSync(id: UUID) -> StrengthLogModel { StrengthLogModel(plannedSessionId: nil, startedAt: .now, id: id) }
 }

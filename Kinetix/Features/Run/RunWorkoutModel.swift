@@ -2,6 +2,7 @@ import Foundation
 import Observation
 import SwiftData
 import CoreLocation
+import HealthKit
 import TrainingEngine
 
 /// Live state of a run: drives the engine from GPS (real or simulated) and a 1 s clock,
@@ -54,6 +55,8 @@ final class RunWorkoutModel {
     // Simulation clock: simulated time advances `speed`× faster than real time.
     @ObservationIgnored private var clockOrigin = Date()
     @ObservationIgnored private var realOrigin = Date()
+    @ObservationIgnored private let heartRateMonitor = HeartRateMonitor.shared
+    @ObservationIgnored private var watchHeartRateQuery: HKQuery?
 
     init(planned: PlannedSessionModel?, units: UnitSystem, settings: CoachingSettingsModel?, simulationSpeed: Double?, context: ModelContext) {
         self.planned = planned
@@ -98,6 +101,8 @@ final class RunWorkoutModel {
 
     /// Call when the ready screen appears: asks for location permission and warms up GPS.
     func prepare() {
+        // Wake the paired heart rate strap so it's connected by the time the run starts.
+        heartRateMonitor.connectToSaved()
         guard let gps else { return }
         authorization = gps.authorizationStatus
         gps.requestPermission()
@@ -115,6 +120,7 @@ final class RunWorkoutModel {
         handle(engine.start(at: now))
         gps?.start()
         simulator?.start()
+        startHeartRate(from: now)
         lastTick = now
         lastCheckpoint = now
         let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
@@ -150,6 +156,7 @@ final class RunWorkoutModel {
         gps?.stop()
         simulator?.stop()
         voice.stop()
+        stopHeartRate()
         let summary = engine.summary()
         finalSummary = summary
         phase = .finished
@@ -166,6 +173,7 @@ final class RunWorkoutModel {
         gps?.stop()
         simulator?.stop()
         voice.stop()
+        stopHeartRate()
         if let log { RunService.discard(log, in: context) }
     }
 
@@ -176,6 +184,32 @@ final class RunWorkoutModel {
     }
 
     // MARK: Internals
+
+    /// Heart rate from a Bluetooth strap (preferred: it updates every second) and/or an
+    /// Apple Watch through Apple Health.
+    private func startHeartRate(from start: Date) {
+        heartRateMonitor.onHeartRate = { [weak self] bpm, _ in self?.receiveHeartRate(bpm, fromStrap: true) }
+        if IntegrationSettings.shared.useWatchHeartRate {
+            watchHeartRateQuery = HealthService.shared.startLiveHeartRate(from: Date.now.addingTimeInterval(-60)) { [weak self] bpm, _ in
+                self?.receiveHeartRate(bpm, fromStrap: false)
+            }
+        }
+    }
+
+    private func stopHeartRate() {
+        heartRateMonitor.onHeartRate = nil
+        heartRateMonitor.disconnect()
+        HealthService.shared.stop(watchHeartRateQuery)
+        watchHeartRateQuery = nil
+    }
+
+    private func receiveHeartRate(_ bpm: Double, fromStrap: Bool) {
+        guard phase == .running else { return }
+        // When a strap is connected, ignore the Watch's slower readings.
+        if !fromStrap && heartRateMonitor.isConnected { return }
+        engine.addHeartRate(bpm, at: clockNow())
+        snapshot = engine.snapshot()
+    }
 
     private func configureSources() {
         gps?.onSample = { [weak self] sample in self?.receive(sample) }

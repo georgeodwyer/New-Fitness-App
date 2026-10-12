@@ -139,6 +139,9 @@ enum AccountService {
         for key in [BalanceService.lastAutoAdjustKey, DeveloperSettings.simulateGPSKey, DeveloperSettings.simulationSpeedKey] {
             UserDefaults.standard.removeObject(forKey: key)
         }
+        HeartRateMonitor.shared.forget()
+        IntegrationSettings.shared.reset()
+        Task { await StravaService.shared.disconnect() }
     }
 
     // MARK: Units

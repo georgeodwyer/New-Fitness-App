@@ -21,8 +21,11 @@ need Xcode and GitHub Desktop.
 To get updates: in GitHub Desktop press **Fetch origin**, then **Pull origin**. Xcode picks
 up the changes (if it asks, choose "Revert" / reload from disk).
 
+**On your iPhone:** see [docs/IPHONE.md](docs/IPHONE.md) (works with a free Apple ID).
+
 Accounts and sync need Supabase keys in `Config/Secrets.xcconfig` (see
-[docs/SUPABASE.md](docs/SUPABASE.md)); without them the app works fully offline.
+[docs/SUPABASE.md](docs/SUPABASE.md)); without them the app works fully offline. Strava
+uploads also need [docs/STRAVA.md](docs/STRAVA.md).
 
 ## Layout
 

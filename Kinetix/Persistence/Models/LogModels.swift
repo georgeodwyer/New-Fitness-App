@@ -64,6 +64,7 @@ final class StrengthLogModel: SyncTracked {
     var effort: Double
     var load: Double
     var healthKitWorkoutId: UUID?
+    var stravaActivityId: String?
     var title: String = ""
     /// False while the workout is in progress (sets are saved as you go, so it can be resumed).
     var isFinished: Bool = false

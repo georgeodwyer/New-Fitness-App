@@ -116,6 +116,14 @@ final class ScreenshotTests: XCTestCase {
             snap("25c-training-profile")
             app.navigationBars.buttons.firstMatch.tap()
         }
+        for (identifier, name) in [("settings.health", "25e-apple-health"), ("settings.heartRate", "25f-heart-rate-strap"), ("settings.strava", "25g-strava")] {
+            let row = app.buttons[identifier].firstMatch
+            if !row.exists { app.swipeUp() }
+            guard row.waitForExistence(timeout: 3) else { continue }
+            row.tap()
+            snap(name)
+            app.navigationBars.buttons.firstMatch.tap()
+        }
         app.swipeUp()
         snap("25d-settings-account")
         app.swipeUp()

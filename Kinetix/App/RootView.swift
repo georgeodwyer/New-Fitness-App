@@ -27,6 +27,11 @@ struct RootView: View {
             if phase == .active {
                 PlanService.refresh(in: context)
                 SyncService.shared.requestSync(after: 0.5)
+                let units = profiles.first?.units ?? .metric
+                Task {
+                    await HealthService.shared.refresh()
+                    await ActivityExportService.retryPending(in: context, units: units)
+                }
             }
         }
     }

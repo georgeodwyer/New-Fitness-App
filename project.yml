@@ -44,7 +44,7 @@ targets:
         CFBundleDisplayName: Kinetix
         UILaunchScreen: {}
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
-        UIBackgroundModes: [location, audio]
+        UIBackgroundModes: [location, audio, bluetooth-central]
         NSLocationWhenInUseUsageDescription: "Kinetix uses your location during runs to measure distance and pace and draw your route."
         NSLocationAlwaysAndWhenInUseUsageDescription: "Kinetix keeps tracking your run with the screen locked so pace coaching and splits keep working."
         NSHealthShareUsageDescription: "Kinetix reads heart rate, resting heart rate and workouts to show live heart rate and balance your training load."

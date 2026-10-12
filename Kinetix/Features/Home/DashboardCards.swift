@@ -7,6 +7,8 @@ import TrainingEngine
 /// Optional daily check-in: sleep, soreness, energy (1–5). Feeds the balancing logic.
 struct CheckInCard: View {
     let existing: RecoveryCheckInModel?
+    /// From Apple Health, when connected.
+    var restingHeartRate: RestingHeartRateSignal? = nil
     let onSave: (RecoveryCheckIn) -> Void
 
     @State private var sleep = 3
@@ -17,18 +19,20 @@ struct CheckInCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: KXSpacing.md) {
             if let existing, !editing {
-                let readiness = existing.engineValue.readiness
+                let checkIn = existing.engineValue(restingHeartRate: restingHeartRate)
+                let readiness = checkIn.readiness
                 HStack(spacing: KXSpacing.lg) {
                     KXRingGauge(value: readiness, label: "\(Int((readiness * 100).rounded()))%", caption: "ready",
-                                tint: existing.engineValue.isPoor ? KXColor.warning : KXColor.success, lineWidth: 8)
+                                tint: checkIn.isPoor ? KXColor.warning : KXColor.success, lineWidth: 8)
                         .frame(width: 84, height: 84)
                     VStack(alignment: .leading, spacing: KXSpacing.xs) {
                         KXSectionHeader("Today's check-in")
-                        Text(existing.engineValue.isPoor
+                        Text(checkIn.isPoor
                              ? "You're not fully recovered, so today's plan has been eased where it can be."
                              : "Recovered and ready. Train as planned.")
                             .font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
                             .fixedSize(horizontal: false, vertical: true)
+                        if let restingHeartRate { restingHeartRateLine(restingHeartRate) }
                         Button("Update") {
                             sleep = existing.sleep; soreness = existing.soreness; energy = existing.energy
                             editing = true
@@ -39,6 +43,7 @@ struct CheckInCard: View {
                 }
             } else {
                 KXSectionHeader("How are you today?", subtitle: "Optional · helps balance your training")
+                if let restingHeartRate { restingHeartRateLine(restingHeartRate) }
                 ratingRow("Sleep", value: $sleep, low: "Poor", high: "Great", symbol: "moon.zzz")
                 ratingRow("Soreness", value: $soreness, low: "None", high: "Very", symbol: "bandage")
                 ratingRow("Energy", value: $energy, low: "Drained", high: "Buzzing", symbol: "bolt")
@@ -50,6 +55,18 @@ struct CheckInCard: View {
             }
         }
         .kxCard()
+    }
+
+    private func restingHeartRateLine(_ signal: RestingHeartRateSignal) -> some View {
+        Label {
+            Text("Resting HR \(signal.description)")
+        } icon: {
+            Image(systemName: signal.isElevated ? "exclamationmark.triangle.fill" : "heart.fill")
+                .foregroundStyle(signal.isElevated ? KXColor.warning : KXColor.danger)
+        }
+        .font(KXFont.caption)
+        .foregroundStyle(KXColor.ink)
+        .accessibilityLabel("Resting heart rate \(signal.description)\(signal.isElevated ? ", higher than usual" : "")")
     }
 
     private func ratingRow(_ title: String, value: Binding<Int>, low: String, high: String, symbol: String) -> some View {

@@ -19,12 +19,15 @@ struct HomeView: View {
 
     @State private var actionSession: PlannedSessionModel?
     @State private var banner: String?
+    @State private var health = HealthService.shared
+    @State private var integrations = IntegrationSettings.shared
 
     private var profile: AthleteProfile? { profiles.first?.profile }
     private var units: UnitSystem { profile?.units ?? .metric }
 
     private var data: DashboardData {
-        DashboardService.make(sessions: sessions, runs: runs, lifts: lifts, checkIns: checkIns, profile: profile)
+        DashboardService.make(sessions: sessions, runs: runs, lifts: lifts, checkIns: checkIns, profile: profile,
+                              external: integrations.healthEnabled ? integrations.externalWorkouts : [])
     }
 
     private var todaysSessions: [PlannedSessionModel] {
@@ -42,7 +45,9 @@ struct HomeView: View {
                 greeting
                 if let banner { changeBanner(banner) }
                 todaySection
-                CheckInCard(existing: data.todaysCheckIn) { checkIn in saveCheckIn(checkIn, status: data.load.combined.status) }
+                CheckInCard(existing: data.todaysCheckIn, restingHeartRate: restingHeartRate) { checkIn in
+                    saveCheckIn(checkIn, status: data.load.combined.status)
+                }
                 LoadHeroCard(report: data.load)
                 DailyLoadChart(daily: data.load.daily)
                 WeekProgressCard(data: data, units: units)
@@ -70,7 +75,7 @@ struct HomeView: View {
         .onAppear {
             guard let profile else { return }
             let changed = BalanceService.autoAdjust(profile: profile, status: data.load.combined.status,
-                                                    checkIn: data.todaysCheckIn?.engineValue, in: context)
+                                                    checkIn: data.todaysCheckIn?.engineValue(restingHeartRate: restingHeartRate), in: context)
             if let first = changed.first { banner = first }
         }
     }
@@ -167,7 +172,13 @@ struct HomeView: View {
         return text
     }
 
-    private func saveCheckIn(_ checkIn: RecoveryCheckIn, status: LoadStatus) {
+    private var restingHeartRate: RestingHeartRateSignal? {
+        integrations.healthEnabled ? health.restingHeartRate : nil
+    }
+
+    private func saveCheckIn(_ answers: RecoveryCheckIn, status: LoadStatus) {
+        var checkIn = answers
+        checkIn.restingHeartRateElevated = restingHeartRate?.isElevated ?? false
         let calendar = Calendar.kinetix
         let today = calendar.startOfDay(for: .now)
         if let existing = checkIns.first(where: { calendar.isDate($0.date, inSameDayAs: today) }) {
@@ -188,6 +199,11 @@ struct HomeView: View {
 
 extension RecoveryCheckInModel {
     var engineValue: RecoveryCheckIn { RecoveryCheckIn(sleep: sleep, soreness: soreness, energy: energy) }
+
+    /// Includes this morning's resting heart rate from Apple Health, when known.
+    func engineValue(restingHeartRate: RestingHeartRateSignal?) -> RecoveryCheckIn {
+        RecoveryCheckIn(sleep: sleep, soreness: soreness, energy: energy, restingHeartRateElevated: restingHeartRate?.isElevated ?? false)
+    }
 }
 
 #Preview {

@@ -24,6 +24,7 @@ enum RunService {
         log.segmentsData = StoredJSON.encode(summary.segments)
         log.averageHeartRate = summary.averageHeartRate
         log.maxHeartRate = summary.maxHeartRate
+        log.heartRateData = summary.heartRateSamples.isEmpty ? nil : StoredJSON.encode(summary.heartRateSamples)
         log.timeInTargetSeconds = summary.timeInTargetSeconds
         log.targetedSeconds = summary.targetedSeconds
         log.touch(now: now)
@@ -43,6 +44,7 @@ enum RunService {
         planned?.status = .completed
         try? context.save()
         SyncService.shared.requestSync()
+        ActivityExportService.runFinished(log, in: context)
     }
 
     static func discard(_ log: RunLogModel, in context: ModelContext) {

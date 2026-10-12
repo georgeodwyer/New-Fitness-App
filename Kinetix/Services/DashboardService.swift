@@ -40,9 +40,16 @@ struct DashboardData {
 
 @MainActor
 enum DashboardService {
-    static func loadEntries(runs: [RunLogModel], lifts: [StrengthLogModel]) -> [LoadEntry] {
-        runs.filter { $0.isFinished && !$0.isSoftDeleted }.map { LoadEntry(date: $0.startedAt, discipline: .run, load: $0.load) }
-            + lifts.filter { $0.isFinished && !$0.isSoftDeleted }.map { LoadEntry(date: $0.startedAt, discipline: .strength, load: $0.load) }
+    /// Load from Kinetix sessions plus workouts recorded by other apps (from Apple Health).
+    static func loadEntries(runs: [RunLogModel], lifts: [StrengthLogModel], external: [ExternalWorkout] = []) -> [LoadEntry] {
+        let finishedRuns = runs.filter { $0.isFinished && !$0.isSoftDeleted }
+        let finishedLifts = lifts.filter { $0.isFinished && !$0.isSoftDeleted }
+        let recorded = finishedRuns.map { DateInterval(start: $0.startedAt, duration: max($0.durationSeconds, ($0.finishedAt ?? $0.startedAt).timeIntervalSince($0.startedAt))) }
+            + finishedLifts.map { DateInterval(start: $0.startedAt, duration: max($0.durationSeconds, ($0.finishedAt ?? $0.startedAt).timeIntervalSince($0.startedAt))) }
+        let maxHeartRate = finishedRuns.compactMap(\.maxHeartRate).max()
+        return finishedRuns.map { LoadEntry(date: $0.startedAt, discipline: .run, load: $0.load) }
+            + finishedLifts.map { LoadEntry(date: $0.startedAt, discipline: .strength, load: $0.load) }
+            + ExternalWorkouts.loadEntries(external, excluding: recorded, maxHeartRate: maxHeartRate)
     }
 
     static func make(
@@ -51,6 +58,7 @@ enum DashboardService {
         lifts: [StrengthLogModel],
         checkIns: [RecoveryCheckInModel],
         profile: AthleteProfile?,
+        external: [ExternalWorkout] = [],
         now: Date = .now
     ) -> DashboardData {
         let calendar = Calendar.kinetix
@@ -92,7 +100,7 @@ enum DashboardService {
         let weekLifts = lifts.filter { $0.isFinished && !$0.isSoftDeleted && $0.startedAt >= monday && $0.startedAt < nextMonday }
 
         return DashboardData(
-            load: LoadModel.report(entries: loadEntries(runs: runs, lifts: lifts), today: now, calendar: calendar),
+            load: LoadModel.report(entries: loadEntries(runs: runs, lifts: lifts, external: external), today: now, calendar: calendar),
             week: week,
             plannedRunMeters: plannedRun,
             actualRunMeters: weekRuns.reduce(0) { $0 + $1.distanceMeters },
