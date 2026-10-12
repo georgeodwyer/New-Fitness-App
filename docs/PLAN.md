@@ -64,7 +64,7 @@ Kinetix/ (iOS app)
 6. ✅ Settings
 7. ✅ Supabase accounts and sync
 8. ✅ HealthKit, Bluetooth HR, Strava
-9. Polish: empty states, errors, accessibility, App Store requirements
+9. ✅ Polish: empty states, errors, accessibility, App Store requirements
 
 ## Things the owner needs to do
 

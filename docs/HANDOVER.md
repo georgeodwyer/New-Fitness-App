@@ -5,8 +5,9 @@ Read this, then `docs/PLAN.md`, before doing anything. Work on branch
 
 ## Status
 
-Milestones 1–8 are done. **Next: Milestone 9** (polish, accessibility, privacy manifest,
-App Store requirements, official Strava brand assets, health disclaimer in onboarding).
+All nine milestones are done. The app is on the owner's iPhone for testing. **Next:** the
+owner's feedback and feature requests (they've mentioned wanting a more visual view of the
+training logic), then App Store submission (docs/APP_STORE.md).
 
 | # | Milestone | State |
 |---|---|---|
@@ -18,7 +19,7 @@ App Store requirements, official Strava brand assets, health disclaimer in onboa
 | 6 | Settings (coaching, training profile, units, export, delete) | ✅ |
 | 7 | Supabase accounts + sync (REST, LWW, RLS) | ✅ code done; owner still has to create the Supabase project (docs/SUPABASE.md) |
 | 8 | HealthKit (read HR, resting HR, workouts; write runs + lifts), live HR from Apple Watch via HealthKit and BLE chest straps (Heart Rate service 0x180D), Strava OAuth + auto-upload of runs | ✅ owner still has to register the Strava app (docs/STRAVA.md) |
-| 9 | Polish: empty states, errors, Dynamic Type/VoiceOver pass, privacy manifest, permission strings, health disclaimer in onboarding | |
+| 9 | Polish: empty states, errors, Dynamic Type/VoiceOver pass, privacy manifest, permission strings, health disclaimer in onboarding | ✅ |
 
 ## About the owner
 
@@ -91,3 +92,16 @@ App Store requirements, official Strava brand assets, health disclaimer in onboa
 - Not done: writing HR samples to Health (avoids duplicating Watch data); pause events in Health workouts.
 - Owner docs: `docs/IPHONE.md` (install on device, free Apple ID OK), `docs/STRAVA.md`.
 
+
+## Milestone 9 (as built)
+
+- Onboarding finish step: required health & safety acknowledgement (`acceptedHealthNotice`),
+  "Connect Apple Health" button. UI test taps `onboarding.healthNotice`.
+- `Kinetix/Resources/PrivacyInfo.xcprivacy`; `PrivacyPolicyView` (Settings → About) mirrored in
+  `docs/privacy-policy.md` (owner must add a contact email and publish it).
+- Dashboard bell → `PlanUpdatesSheet`. Progress: recent runs, `KXEmptyState`.
+- Strava: uses asset images `StravaConnectButton` / `StravaCompatible` if the owner adds them;
+  "View on Strava" links (summary + progress).
+- Version 1.0.0. App Store steps for the owner: `docs/APP_STORE.md`.
+- Owner runs on device with "Debug executable" unticked (Xcode couldn't extract the iOS 26.6
+  shared cache with Xcode 26.3).
