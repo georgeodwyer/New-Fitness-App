@@ -105,3 +105,20 @@ training logic), then App Store submission (docs/APP_STORE.md).
 - Version 1.0.0. App Store steps for the owner: `docs/APP_STORE.md`.
 - Owner runs on device with "Debug executable" unticked (Xcode couldn't extract the iOS 26.6
   shared cache with Xcode 26.3).
+
+## Feature round 2 (owner-approved plan, milestones 10–13)
+
+Decisions: change-history screen only (option C); rules editable via JSON on GitHub (remote
+rules later); Record button centre tab, nothing paywalled; run types Free/Easy/Recovery/Long/
+Tempo/Intervals/Progression/Fartlek, single pace with optional range, templates saved + synced;
+gym tracker with custom exercises, templates, pre-fill from last session; ask "Is this your
+planned session?" (yes / extra / pick another); recorded sessions → load, Health, Strava;
+appearance per phone; Health dashboard (steps, RHR, HRV, sleep, VO2max, active energy,
+respiratory rate; 7/30-day trends) with HRV feeding recovery; dashboard reorder/hide synced.
+After M13: owner's list of faults.
+
+- **M10 ✅** `balance_rules.json` + `BalanceRules` (scheduling flags, load zones, recovery,
+  rebalancing); `ChangeCause` on `Adjustment`; `SessionSnapshot`/`PlanChangeDiff`/`ChangeTrigger`;
+  `PlanChangeModel` stores cause/before/after/triggers (synced); `PlanChangesView`;
+  Settings → Appearance (`AppearanceChoice`, @AppStorage "appearance"); `docs/RULES.md`.
+- M11 Record a run · M12 Gym tracker · M13 Health dashboard + layout: not started.
