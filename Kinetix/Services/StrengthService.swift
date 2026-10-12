@@ -230,4 +230,24 @@ enum StrengthService {
             }
         }
     }
+
+    /// Renames a finished session and/or changes its effort (which changes its load).
+    static func update(_ log: StrengthLogModel, title: String, effort: Double, in context: ModelContext) {
+        log.title = title.trimmingCharacters(in: .whitespaces).isEmpty ? log.title : title
+        log.effort = effort
+        log.load = SessionLoad.srpe(durationSeconds: log.durationSeconds, effort: effort)
+        log.touch()
+        try? context.save()
+        SyncService.shared.requestSync()
+    }
+
+    /// Removes a finished session (and its sets) from Kinetix and the training load. A planned
+    /// session it completed is reopened. Working weights and records already set are kept.
+    static func delete(_ log: StrengthLogModel, in context: ModelContext) {
+        PlanService.reopen(sessionId: log.plannedSessionId, in: context)
+        for set in log.sets { set.softDelete() }
+        log.softDelete()
+        try? context.save()
+        SyncService.shared.requestSync()
+    }
 }

@@ -124,7 +124,7 @@ final class RunWorkoutModel {
         clockOrigin = .now
         let now = clockNow()
         voice.prepare()
-        log = RunService.begin(planned: planned, title: title, simulated: isSimulated, in: context, now: now)
+        log = RunService.begin(planned: planned, title: title, simulated: isSimulated, recordType: custom?.type, in: context, now: now)
         phase = .running
         handle(engine.start(at: now))
         gps?.start()

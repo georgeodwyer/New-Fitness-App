@@ -52,6 +52,13 @@ enum SampleData {
                 run.load = minutes * run.effort
                 run.isFinished = true
                 run.finishedAt = run.startedAt.addingTimeInterval(run.durationSeconds)
+                run.runTypeRaw = weekday == .sunday ? RunSessionType.long.rawValue : RunSessionType.easy.rawValue
+                let (route, heartRate) = sampleRoute(durationSeconds: run.durationSeconds, secondsPerKm: 340,
+                                                     surge: weekday == .friday, seed: Double(offset) / 28)
+                run.routeData = StoredJSON.encode(route)
+                run.heartRateData = StoredJSON.encode(heartRate)
+                run.averageHeartRate = heartRate.map(\.bpm).reduce(0, +) / Double(max(heartRate.count, 1))
+                run.maxHeartRate = heartRate.map(\.bpm).max()
                 context.insert(run)
             }
             if weekday == .monday || weekday == .wednesday || weekday == .friday {
@@ -105,5 +112,31 @@ enum SampleData {
         try? context.delete(model: CoachingSettingsModel.self)
         try? context.delete(model: UserProfileModel.self)
         try? context.save()
+    }
+
+    /// A loop around Hyde Park at roughly the given pace, with a faster middle section on
+    /// "surge" days, plus a matching heart-rate trace (for history charts and best efforts).
+    static func sampleRoute(durationSeconds: Double, secondsPerKm: Double, surge: Bool, seed: Double)
+        -> ([RoutePoint], [HeartRateSample]) {
+        let centre = (latitude: 51.5073, longitude: -0.1657)
+        let radius = 700.0
+        var route: [RoutePoint] = []
+        var heartRate: [HeartRateSample] = []
+        var distance = 0.0
+        var elapsed = 0.0
+        while elapsed <= durationSeconds {
+            let progress = elapsed / max(durationSeconds, 1)
+            let fast = surge && progress > 0.4 && progress < 0.6
+            let pace = secondsPerKm * (fast ? 0.85 : 1) * (1 + 0.03 * sin(elapsed / 90 + seed * 6))
+            let angle = distance / radius
+            let (lat, lon) = Geo.offset(latitude: centre.latitude, longitude: centre.longitude,
+                                        northMeters: radius * cos(angle), eastMeters: radius * sin(angle))
+            route.append(RoutePoint(latitude: lat, longitude: lon, elapsed: elapsed))
+            let bpm = 128 + 18 * min(progress * 4, 1) + (fast ? 16 : 0) + 3 * sin(elapsed / 40)
+            heartRate.append(HeartRateSample(elapsed: elapsed, bpm: bpm.rounded()))
+            elapsed += 10
+            distance += 10 / pace * 1000
+        }
+        return (route, heartRate)
     }
 }

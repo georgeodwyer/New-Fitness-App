@@ -136,4 +136,13 @@ extension TrainingGoal {
         case .balancedHybrid: return "Balanced hybrid fitness"
         }
     }
+
+    /// Puts a completed planned session back to "planned" (when the log that completed it is deleted).
+    static func reopen(sessionId: UUID?, in context: ModelContext) {
+        guard let sessionId,
+              let session = try? context.fetch(FetchDescriptor<PlannedSessionModel>(predicate: #Predicate { $0.id == sessionId })).first,
+              session.status == .completed else { return }
+        session.status = .planned
+        session.touch()
+    }
 }

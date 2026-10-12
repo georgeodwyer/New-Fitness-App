@@ -34,6 +34,10 @@ final class RunLogModel: SyncTracked {
     /// Encoded `[SegmentResult]`.
     var segmentsData: Data?
     var usedSimulatedGPS: Bool = false
+    /// `RunSessionType` raw value (easy, long, tempo…), when known.
+    var runTypeRaw: String?
+    /// `RecordRunType` raw value when the run was started from the Record tab.
+    var recordTypeRaw: String?
 
     init(plannedSessionId: UUID?, startedAt: Date, id: UUID = UUID(), now: Date = .now) {
         self.id = id

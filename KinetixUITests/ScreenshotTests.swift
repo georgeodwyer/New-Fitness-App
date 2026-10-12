@@ -114,13 +114,37 @@ final class ScreenshotTests: XCTestCase {
         }
 
         app.tabBars.buttons["Progress"].tap()
-        snap("24-progress")
+        if app.buttons["Running"].waitForExistence(timeout: 3) { app.buttons["Running"].tap() }
+        snap("24-progress-running")
+        app.swipeUp()
+        snap("24a-progress-running-2")
+        let run = app.buttons.matching(identifier: "progress.run").firstMatch
+        if run.waitForExistence(timeout: 3) {
+            run.tap()
+            snap("24c-run-detail")
+            app.swipeUp()
+            snap("24d-run-detail-charts")
+            app.navigationBars.buttons.firstMatch.tap()
+        }
+        app.swipeDown(); app.swipeDown(); app.swipeDown()
+        if app.buttons["Strength"].waitForExistence(timeout: 3) { app.buttons["Strength"].tap() }
+        snap("24e-progress-strength")
+        let session = app.buttons.matching(identifier: "progress.strengthSession").firstMatch
+        for _ in 0..<3 where !session.exists { app.swipeUp() }
+        if session.waitForExistence(timeout: 3) {
+            session.tap()
+            snap("24f-strength-session-detail")
+            app.navigationBars.buttons.firstMatch.tap()
+        }
+        app.swipeDown(); app.swipeDown(); app.swipeDown()
         let lift = app.buttons.matching(identifier: "progress.lift").firstMatch
         if lift.waitForExistence(timeout: 3) {
             lift.tap()
             snap("24b-exercise-history")
             app.navigationBars.buttons.firstMatch.tap()
         }
+        if app.buttons["Overall"].waitForExistence(timeout: 3) { app.buttons["Overall"].tap() }
+        snap("24g-progress-overall")
 
         app.tabBars.buttons["Settings"].tap()
         snap("25-settings")

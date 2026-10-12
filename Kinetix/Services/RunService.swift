@@ -6,10 +6,17 @@ import TrainingEngine
 /// the run), and the final record with effort and load.
 @MainActor
 enum RunService {
-    static func begin(planned: PlannedSessionModel?, title: String, simulated: Bool, in context: ModelContext, now: Date = .now) -> RunLogModel {
+    static func begin(planned: PlannedSessionModel?, title: String, simulated: Bool, recordType: RecordRunType? = nil,
+                      in context: ModelContext, now: Date = .now) -> RunLogModel {
         let log = RunLogModel(plannedSessionId: planned?.id, startedAt: now)
         log.title = title
         log.usedSimulatedGPS = simulated
+        log.recordTypeRaw = recordType?.rawValue
+        if let type = recordType?.sessionType {
+            log.runTypeRaw = type.rawValue
+        } else if case .run(let type)? = planned?.kind {
+            log.runTypeRaw = type.rawValue
+        }
         context.insert(log)
         try? context.save()
         return log
@@ -53,7 +60,38 @@ enum RunService {
     }
 }
 
+extension RunService {
+    /// Renames a finished run and/or changes its effort (which changes its training load).
+    static func update(_ log: RunLogModel, title: String, effort: Double, in context: ModelContext) {
+        log.title = title.trimmingCharacters(in: .whitespaces).isEmpty ? log.title : title
+        log.effort = effort
+        log.load = SessionLoad.srpe(durationSeconds: log.durationSeconds, effort: effort)
+        log.touch()
+        try? context.save()
+        SyncService.shared.requestSync()
+    }
+
+    /// Removes a run from Kinetix (and its training load). A planned session it completed
+    /// goes back to planned. Copies already in Apple Health or on Strava are left alone.
+    static func delete(_ log: RunLogModel, in context: ModelContext) {
+        PlanService.reopen(sessionId: log.plannedSessionId, in: context)
+        log.softDelete()
+        try? context.save()
+        SyncService.shared.requestSync()
+    }
+}
+
 extension RunLogModel {
+    var heartRateSamples: [HeartRateSample] { StoredJSON.decode([HeartRateSample].self, from: heartRateData) ?? [] }
+    var runType: RunSessionType? { runTypeRaw.flatMap(RunSessionType.init(rawValue:)) }
+    var recordType: RecordRunType? { recordTypeRaw.flatMap(RecordRunType.init(rawValue:)) }
+    /// "Recorded" for Record-tab runs, "Planned" for plan sessions.
+    var sourceTag: String? {
+        if recordTypeRaw != nil { return "Recorded" }
+        return plannedSessionId != nil ? "Planned" : nil
+    }
+    /// Simulated GPS runs are practice data: shown, but left out of totals and best efforts.
+    var countsTowardsHistory: Bool { isFinished && !isSoftDeleted && !usedSimulatedGPS }
     var route: [RoutePoint] { StoredJSON.decode([RoutePoint].self, from: routeData) ?? [] }
     var splits: [Split] { StoredJSON.decode([Split].self, from: splitsData) ?? [] }
     var segmentResults: [SegmentResult] { StoredJSON.decode([SegmentResult].self, from: segmentsData) ?? [] }
