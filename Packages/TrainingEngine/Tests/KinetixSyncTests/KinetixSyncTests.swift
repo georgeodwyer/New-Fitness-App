@@ -175,6 +175,11 @@ final class KinetixSyncTests: XCTestCase {
         XCTAssertEqual(SyncMerge.decide(localUpdatedAt: Date(timeIntervalSince1970: 300), remote: remote), .keepLocal)
     }
 
+    func testNumbersStayNumbers() throws {
+        let decoded = try SyncCoding.decoder.decode(JSONValue.self, from: Data(#"{"a":1,"b":0,"c":true}"#.utf8))
+        XCTAssertEqual(decoded, .object(["a": .number(1), "b": .number(0), "c": .bool(true)]))
+    }
+
     func testJSONValueRoundTrip() throws {
         struct Sample: Codable, Equatable { var name: String; var when: Date; var reps: [Int]; var note: String? }
         let sample = Sample(name: "Squat", when: Date(timeIntervalSince1970: 1_700_000_000.5), reps: [8, 8, 7], note: nil)

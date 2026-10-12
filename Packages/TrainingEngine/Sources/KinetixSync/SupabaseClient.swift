@@ -78,7 +78,7 @@ public actor SupabaseClient {
         guard let current = session else { throw SupabaseError.notSignedIn }
         do {
             return try await token(grant: "refresh_token", body: ["refresh_token": current.refreshToken])
-        } catch let error as SupabaseError where error.isAuthFailure || { if case .server(400, _) = error { return true }; return false }() {
+        } catch let error as SupabaseError where error.isAuthFailure || error.isBadRequest {
             // The refresh token is no longer valid: the user must sign in again.
             setSession(nil)
             throw error
@@ -154,7 +154,9 @@ public actor SupabaseClient {
         if authorized, let current = session, current.needsRefresh(), !retried {
             _ = try await refresh()
         }
-        guard let url = URL(string: path, relativeTo: config.url.appendingPathComponent("")) else { throw SupabaseError.invalidResponse }
+        var base = config.url.absoluteString
+        while base.hasSuffix("/") { base.removeLast() }
+        guard let url = URL(string: base + "/" + path) else { throw SupabaseError.invalidResponse }
         var request = URLRequest(url: url)
         request.httpMethod = method
         request.httpBody = body

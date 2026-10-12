@@ -64,6 +64,11 @@ public enum SupabaseError: Error, Equatable, LocalizedError, Sendable {
         }
     }
 
+    public var isBadRequest: Bool {
+        if case .server(let status, _) = self { return status == 400 }
+        return false
+    }
+
     public var isAuthFailure: Bool {
         if case .server(let status, _) = self { return status == 401 || status == 403 }
         return false
