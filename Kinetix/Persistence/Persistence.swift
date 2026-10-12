@@ -15,7 +15,8 @@ enum Persistence {
         SetLogModel.self,
         ExerciseStateModel.self,
         PersonalRecordModel.self,
-        RecoveryCheckInModel.self
+        RecoveryCheckInModel.self,
+        RunTemplateModel.self
     ])
 
     static var storeURL: URL {

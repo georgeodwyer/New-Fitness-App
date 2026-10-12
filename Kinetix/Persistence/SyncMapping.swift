@@ -41,7 +41,8 @@ enum SyncRegistry {
         SetLogModel.self,
         ExerciseStateModel.self,
         PersonalRecordModel.self,
-        RecoveryCheckInModel.self
+        RecoveryCheckInModel.self,
+        RunTemplateModel.self
     ]
 }
 
@@ -439,5 +440,31 @@ extension RecoveryCheckInModel: SyncableModel {
     }
     static func makeForSync(id: UUID) -> RecoveryCheckInModel {
         RecoveryCheckInModel(date: .now, sleep: 3, soreness: 3, energy: 3, id: id)
+    }
+}
+
+// MARK: - Templates
+
+extension RunTemplateModel: SyncableModel {
+    struct Payload: Codable {
+        var name: String
+        var typeRaw: String
+        var blocksData: Data?
+        var createdAt: Date
+        var lastUsedAt: Date?
+    }
+    static var syncType: String { "runTemplate" }
+    var syncPayload: Payload {
+        Payload(name: name, typeRaw: typeRaw, blocksData: blocksData, createdAt: createdAt, lastUsedAt: lastUsedAt)
+    }
+    func applySync(_ p: Payload, context: ModelContext) {
+        name = p.name
+        typeRaw = p.typeRaw
+        blocksData = p.blocksData
+        createdAt = p.createdAt
+        lastUsedAt = p.lastUsedAt
+    }
+    static func makeForSync(id: UUID) -> RunTemplateModel {
+        RunTemplateModel(workout: CustomRunWorkout(name: "", type: .free), id: id)
     }
 }

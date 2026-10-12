@@ -149,7 +149,7 @@ struct RunWorkoutView: View {
             Button("Keep running", role: .cancel) {}
         }
         .sheet(isPresented: $showEffort) {
-            EffortSheet(title: "How hard was that run?", defaultEffort: model.planned?.plannedEffort ?? 5) { effort in
+            EffortSheet(title: "How hard was that run?", defaultEffort: model.typicalEffort) { effort in
                 model.save(effort: effort)
                 showEffort = false
                 saved = true

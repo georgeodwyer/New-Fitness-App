@@ -49,6 +49,9 @@ struct MainTabView: View {
             PlanView()
                 .tabItem { Label("Plan", systemImage: "calendar") }
                 .tag(AppRouter.Tab.plan)
+            RecordView()
+                .tabItem { Label("Record", systemImage: "record.circle") }
+                .tag(AppRouter.Tab.record)
             ProgressScreen()
                 .tabItem { Label("Progress", systemImage: "chart.bar") }
                 .tag(AppRouter.Tab.progress)

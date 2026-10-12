@@ -77,6 +77,7 @@ enum AccountService {
         var personalRecords: [Record]
         var checkIns: [CheckIn]
         var planChanges: [Change]
+        var runTemplates: [CustomRunWorkout]
     }
 
     static func makeExport(in context: ModelContext, now: Date = .now) -> Export {
@@ -114,7 +115,8 @@ enum AccountService {
             },
             planChanges: all(PlanChangeModel.self).filter { !$0.isSoftDeleted }.sorted { $0.createdAt < $1.createdAt }.map {
                 Export.Change(date: $0.createdAt, summary: $0.summary)
-            }
+            },
+            runTemplates: all(RunTemplateModel.self).filter { !$0.isSoftDeleted }.map(\.workout)
         )
     }
 

@@ -110,6 +110,7 @@ final class ScreenshotTests: XCTestCase {
         if !dark {
             strengthWorkout()
             runWorkout()
+            recordRun()
         }
 
         app.tabBars.buttons["Progress"].tap()
@@ -206,6 +207,46 @@ final class ScreenshotTests: XCTestCase {
         if app.navigationBars.buttons.firstMatch.waitForExistence(timeout: 3) {
             app.navigationBars.buttons.firstMatch.tap()
         }
+    }
+
+    /// Record tab: builds a tempo run, saves it as a template and opens the run screen.
+    private func recordRun() {
+        app.tabBars.buttons["Record"].tap()
+        snap("50-record")
+        let run = app.buttons["record.run"].firstMatch
+        guard run.waitForExistence(timeout: 5) else { return }
+        run.tap()
+        let tempo = app.buttons["record.type.tempo"].firstMatch
+        if tempo.waitForExistence(timeout: 5) { tempo.tap() }
+        snap("51-record-run-setup")
+        let edit = app.buttons["record.editWorkout"].firstMatch
+        if edit.waitForExistence(timeout: 3) {
+            edit.tap()
+            snap("52-record-workout-builder")
+            let effort = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Effort'")).firstMatch
+            if effort.waitForExistence(timeout: 3) {
+                effort.tap()
+                snap("53-record-step-editor")
+                if app.buttons["Done"].waitForExistence(timeout: 3) { app.buttons["Done"].tap() }
+            }
+            app.navigationBars.buttons.firstMatch.tap()
+        }
+        let save = app.buttons["record.saveTemplate"].firstMatch
+        if save.waitForExistence(timeout: 3) { save.tap() }
+        app.buttons["record.startRun"].firstMatch.tap()
+        let extra = app.buttons["No, it's an extra run"]
+        if extra.waitForExistence(timeout: 3) {
+            snap("54-record-planned-question")
+            extra.tap()
+        }
+        XCTAssertTrue(app.buttons["Start run"].waitForExistence(timeout: 10))
+        snap("55-record-run-ready")
+        let close = app.buttons["Close"].firstMatch
+        if close.waitForExistence(timeout: 3) { close.tap() }
+        if app.navigationBars.buttons.firstMatch.waitForExistence(timeout: 3) {
+            app.navigationBars.buttons.firstMatch.tap()
+        }
+        snap("56-record-with-template")
     }
 
     /// Opens a strength session from the Plan tab, logs a set, and finishes.

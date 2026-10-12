@@ -58,10 +58,16 @@ final class RunWorkoutModel {
     @ObservationIgnored private let heartRateMonitor = HeartRateMonitor.shared
     @ObservationIgnored private var watchHeartRateQuery: HKQuery?
 
-    init(planned: PlannedSessionModel?, units: UnitSystem, settings: CoachingSettingsModel?, simulationSpeed: Double?, context: ModelContext) {
+    /// The run built on the Record tab, if any.
+    let custom: CustomRunWorkout?
+
+    init(planned: PlannedSessionModel?, custom: CustomRunWorkout? = nil, units: UnitSystem, settings: CoachingSettingsModel?,
+         simulationSpeed: Double?, context: ModelContext) {
         self.planned = planned
-        self.title = planned?.title ?? "Run"
-        self.structure = planned?.runStructure
+        self.custom = custom
+        self.title = custom?.name ?? planned?.title ?? "Run"
+        // A recorded run follows the runner's own workout even when it counts as a planned session.
+        self.structure = custom.map(\.structure) ?? planned?.runStructure
         self.units = units
         self.simulationSpeed = simulationSpeed
         self.context = context
@@ -92,6 +98,9 @@ final class RunWorkoutModel {
     }
 
     var isSimulated: Bool { simulationSpeed != nil }
+
+    /// Pre-filled answer for "How hard was that run?".
+    var typicalEffort: Double { custom?.type.typicalEffort ?? planned?.plannedEffort ?? 5 }
 
     var needsPermission: Bool {
         !isSimulated && (authorization == .denied || authorization == .restricted)

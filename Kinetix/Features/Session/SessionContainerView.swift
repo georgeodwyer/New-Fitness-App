@@ -38,7 +38,7 @@ struct SessionContainerView: View {
     }
 
     private func plannedSession() -> PlannedSessionModel? {
-        let id = session.id
+        guard let id = session.custom == nil ? session.id : session.linkedPlannedId else { return nil }
         return try? context.fetch(FetchDescriptor<PlannedSessionModel>(predicate: #Predicate { $0.id == id })).first
     }
 
@@ -52,6 +52,7 @@ struct SessionContainerView: View {
         let speed = DeveloperSettings.launchSimulationSpeed ?? (simulateGPS ? simulationSpeed : nil)
         runModel = RunWorkoutModel(
             planned: plannedSession(),
+            custom: session.custom,
             units: units,
             settings: coachingSettings.first,
             simulationSpeed: speed,
