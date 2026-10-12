@@ -42,6 +42,10 @@ Strava), then Milestone 9 (polish, accessibility, App Store requirements).
   `error:` lines just before "---- last 80 lines of build.log ----". A new push cancels the
   in-progress run (concurrency), so batch changes. Docs-only changes skip CI.
 - Wait for CI with a background `sleep N` (foreground sleep is blocked).
+- CI commits the generated `Kinetix.xcodeproj` + `Kinetix/Info.plist` back to the branch
+  (so the owner can open the project without XcodeGen/Homebrew, which their Intel Mac can't
+  run). Always `git pull --rebase` before pushing. Never hand-edit the project: change
+  `project.yml`.
 - Artifacts can't be downloaded from here (blob storage blocked) — read file lists from logs.
 
 ## Architecture (short)

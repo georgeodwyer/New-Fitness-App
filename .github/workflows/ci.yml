@@ -23,6 +23,8 @@ jobs:
   ios:
     name: iOS app build, tests & screenshots
     runs-on: macos-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v5
       - name: Show Xcode version
@@ -31,6 +33,22 @@ jobs:
         run: brew install xcodegen
       - name: Generate Xcode project
         run: xcodegen generate
+
+      # The generated project is committed so it can be opened in Xcode without
+      # installing XcodeGen (Homebrew isn't available on the owner's Intel Mac).
+      - name: Commit generated Xcode project
+        if: github.event_name == 'push'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f Kinetix.xcodeproj Kinetix/Info.plist
+          if git diff --cached --quiet; then
+            echo "Xcode project unchanged"
+          else
+            git commit -m "Update generated Xcode project"
+            git pull --rebase origin "$GITHUB_REF_NAME" && git push origin HEAD:"$GITHUB_REF_NAME" \
+              || echo "::warning::Couldn't push the generated Xcode project (a newer commit arrived); the next run will."
+          fi
       - name: Test TrainingEngine (macOS)
         run: swift test --package-path Packages/TrainingEngine
 
