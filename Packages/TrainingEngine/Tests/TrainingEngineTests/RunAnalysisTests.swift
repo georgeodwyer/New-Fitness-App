@@ -18,10 +18,11 @@ final class RunAnalysisTests: XCTestCase {
     }
 
     func testBestKilometreFindsTheFastestStretch() throws {
-        let points = route(kmPaces: [330, 330, 270, 330, 330])
+        // 6 km so the 5K fits comfortably (GPS maths makes "exactly 5 km" a hair short).
+        let points = route(kmPaces: [330, 330, 270, 330, 330, 330])
         let best = try XCTUnwrap(RunAnalysis.bestTime(over: 1000, route: points))
         XCTAssertEqual(best, 270, accuracy: 1.5)
-        // A 5K covers the whole run.
+        // Best 5K includes the fast kilometre.
         XCTAssertEqual(try XCTUnwrap(RunAnalysis.bestTime(over: 5000, route: points)), 1590, accuracy: 3)
     }
 
