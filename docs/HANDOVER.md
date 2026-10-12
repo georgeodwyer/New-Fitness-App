@@ -121,4 +121,9 @@ After M13: owner's list of faults.
   rebalancing); `ChangeCause` on `Adjustment`; `SessionSnapshot`/`PlanChangeDiff`/`ChangeTrigger`;
   `PlanChangeModel` stores cause/before/after/triggers (synced); `PlanChangesView`;
   Settings → Appearance (`AppearanceChoice`, @AppStorage "appearance"); `docs/RULES.md`.
-- M11 Record a run · M12 Gym tracker · M13 Health dashboard + layout: not started.
+- **M11 ✅** Engine `Recording/CustomRun.swift`: `RecordRunType`, `PaceTarget` (single/range),
+  `WorkoutStep`, `RunBlock` (repeats; note `WorkoutBlock` is the template library's type),
+  `CustomRunWorkout` (structure/estimate/summary/starters). App: `RunTemplateModel` (synced
+  "runTemplate"), Record tab (`Features/Record/`: `RecordView`, `RunSetupView`, `WorkoutBuilderView`,
+  `StepEditorView`, `PacePicker`), `ActiveSession.custom/linkedPlannedId`, `RunWorkoutModel(custom:)`.
+- M12 Gym tracker · M13 Health dashboard + layout: not started.
