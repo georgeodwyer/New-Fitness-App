@@ -78,7 +78,8 @@ public enum WeekScheduler {
                 let candidates = state.days.filter { day in
                     state.runs[day] == nil
                         && state.hasCapacity(on: day)
-                        && !(state.lifts[day.previous]?.focus.loadsLowerBody ?? false)
+                        && !(BalanceRules.current.scheduling.noLowerBodyLiftDayBeforeHardRun
+                             && (state.lifts[day.previous]?.focus.loadsLowerBody ?? false))
                 }
                 let best = candidates.max { a, b in
                     let sa = state.hardRunSpacing(for: a), sb = state.hardRunSpacing(for: b)
@@ -162,10 +163,11 @@ public enum WeekScheduler {
             }
             let lowerLift = items.contains { $0.loadsLowerBody }
             if lowerLift {
-                if byDay[day.next]?.contains(where: { $0.isHardRun }) == true {
+                let rules = BalanceRules.current.scheduling
+                if rules.noLowerBodyLiftDayBeforeHardRun, byDay[day.next]?.contains(where: { $0.isHardRun }) == true {
                     problems.append("lower-body lift on \(day.shortName) before a key run")
                 }
-                if items.contains(where: { $0.item == .run(.long) }) {
+                if rules.noLowerBodyLiftOnLongRunDay, items.contains(where: { $0.item == .run(.long) }) {
                     problems.append("lower-body lift on the long-run day")
                 }
             }
@@ -213,8 +215,9 @@ public enum WeekScheduler {
         func canPlaceLift(_ lift: StrengthSessionTemplate, on day: Weekday) -> Bool {
             guard lifts[day] == nil, hasCapacity(on: day) else { return false }
             if lift.focus.loadsLowerBody {
-                if isHardRunDay(day.next) { return false }
-                if runs[day] == .long { return false }
+                let rules = BalanceRules.current.scheduling
+                if rules.noLowerBodyLiftDayBeforeHardRun && isHardRunDay(day.next) { return false }
+                if rules.noLowerBodyLiftOnLongRunDay && runs[day] == .long { return false }
             }
             return true
         }
@@ -223,7 +226,9 @@ public enum WeekScheduler {
             var score = 0.0
             if let run = runs[day] {
                 // Hard days hard: pair lower-body lifting with a quality run (lift after the run).
-                if run.isQuality { score += lift.focus.loadsLowerBody ? 4 : 1 }
+                if run.isQuality {
+                    score += lift.focus.loadsLowerBody && BalanceRules.current.scheduling.pairLowerBodyLiftsWithHardRuns ? 4 : 1
+                }
             } else {
                 score += 3
             }

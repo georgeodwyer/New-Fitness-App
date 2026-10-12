@@ -24,7 +24,7 @@ public enum LoadStatus: String, Codable, Sendable {
     /// Above 1.3: a spike in load; injury and illness risk rise.
     case high
 
-    public static let optimalRange: ClosedRange<Double> = 0.8...1.3
+    public static var optimalRange: ClosedRange<Double> { BalanceRules.current.load.optimalRange }
 
     public static func from(ratio: Double?) -> LoadStatus {
         guard let ratio else { return .building }
@@ -94,7 +94,7 @@ public struct LoadReport: Equatable, Sendable {
 /// Running and lifting share one scale because both use minutes × effort.
 public enum LoadModel {
     /// Days of history needed before the ratio is shown.
-    public static let minimumHistoryDays = 14
+    public static var minimumHistoryDays: Int { BalanceRules.current.load.minimumHistoryDays }
 
     public static func report(entries: [LoadEntry], today: Date, calendar: Calendar, trendDays: Int = 56) -> LoadReport {
         let day = calendar.startOfDay(for: today)
@@ -169,7 +169,10 @@ public struct RecoveryCheckIn: Equatable, Sendable {
 
     /// Poor recovery: low overall readiness, very sore, or a raised resting heart rate
     /// on a day that doesn't feel great either (a raised RHR alone can be noise).
-    public var isPoor: Bool {
-        readiness < 0.42 || soreness >= 5 || (restingHeartRateElevated && readiness < 0.6)
+    public var isPoor: Bool { isPoor(rules: BalanceRules.current.recovery) }
+
+    public func isPoor(rules: BalanceRules.Recovery) -> Bool {
+        readiness < rules.poorReadinessBelow || soreness >= rules.verySoreAtOrAbove
+            || (restingHeartRateElevated && readiness < rules.bodySignalCountsWhenReadinessBelow)
     }
 }

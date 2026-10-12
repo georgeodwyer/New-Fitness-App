@@ -1,0 +1,28 @@
+{
+  "_comment": "Rules for balancing running and lifting, judging load and recovery, and easing the plan. See docs/RULES.md for what each value does and safe ranges.",
+  "scheduling": {
+    "noLowerBodyLiftDayBeforeHardRun": true,
+    "noLowerBodyLiftOnLongRunDay": true,
+    "pairLowerBodyLiftsWithHardRuns": true
+  },
+  "load": {
+    "optimalRatioLow": 0.8,
+    "optimalRatioHigh": 1.3,
+    "minimumHistoryDays": 14
+  },
+  "recovery": {
+    "poorReadinessBelow": 0.42,
+    "verySoreAtOrAbove": 5,
+    "restingHeartRateElevatedBpm": 7,
+    "restingHeartRateMinimumReadings": 7,
+    "bodySignalCountsWhenReadinessBelow": 0.6
+  },
+  "rebalancing": {
+    "easeHardSessionWithinDays": 3,
+    "highLoadEasyRunFactor": 0.8,
+    "minimumEasyRunMinutes": 20,
+    "reducedLiftSetsFactor": 0.6,
+    "easedLongRunFactor": 0.6,
+    "easedRunMaxMinutes": 45
+  }
+}

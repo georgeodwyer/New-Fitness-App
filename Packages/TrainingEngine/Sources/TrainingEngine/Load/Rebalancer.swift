@@ -49,13 +49,28 @@ public struct WeekSession: Identifiable, Equatable, Sendable {
 }
 
 /// A change to apply to one session, with a one-sentence explanation for the user.
+/// Why the plan changed (shown in the change history with the numbers behind it).
+public enum ChangeCause: String, Codable, Sendable, CaseIterable {
+    /// The athlete skipped a session (a key session may move to another day).
+    case skipped
+    /// The athlete chose a lighter alternative.
+    case swapped
+    /// The acute:chronic load ratio went above the optimal range.
+    case highLoad
+    /// The check-in (and body signals like resting HR) showed poor recovery.
+    case poorRecovery
+    case other
+}
+
 public struct Adjustment: Equatable, Sendable {
     public var session: WeekSession
     public var explanation: String
+    public var cause: ChangeCause
 
-    public init(session: WeekSession, explanation: String) {
+    public init(session: WeekSession, explanation: String, cause: ChangeCause = .other) {
         self.session = session
         self.explanation = explanation
+        self.cause = cause
     }
 }
 
@@ -103,7 +118,7 @@ public enum Rebalancer {
         guard skipped.isKey else {
             let reason = "Skipped your \(name). It won't be squeezed in elsewhere, so the rest of the week stays balanced."
             skipped.changeReason = reason
-            return [Adjustment(session: skipped, explanation: reason)]
+            return [Adjustment(session: skipped, explanation: reason, cause: .skipped)]
         }
 
         // Try to move the key session to a later day this week.
@@ -138,7 +153,7 @@ public enum Rebalancer {
             var dropped = easy
             dropped.status = .skipped
             dropped.changeReason = "Replaced by your \(name), moved from earlier in the week."
-            return [Adjustment(session: moved, explanation: reason), Adjustment(session: dropped, explanation: dropped.changeReason ?? "")]
+            return [Adjustment(session: moved, explanation: reason, cause: .skipped), Adjustment(session: dropped, explanation: dropped.changeReason ?? "", cause: .skipped)]
         }
 
         // 2) Use a free training day.
@@ -150,12 +165,12 @@ public enum Rebalancer {
             guard isValid(remaining + [moved], calendar: calendar) else { continue }
             let reason = "Moved your \(name) to \(weekdayName(date)), a free training day, so you keep this week's key session."
             moved.changeReason = reason
-            return [Adjustment(session: moved, explanation: reason)]
+            return [Adjustment(session: moved, explanation: reason, cause: .skipped)]
         }
 
         let reason = "Your \(name) couldn't fit later this week without crowding other hard sessions, so it's been dropped rather than stacked."
         skipped.changeReason = reason
-        return [Adjustment(session: skipped, explanation: reason)]
+        return [Adjustment(session: skipped, explanation: reason, cause: .skipped)]
     }
 
     private static func isEasyReplaceable(_ candidate: WeekSession, for key: WeekSession) -> Bool {
@@ -197,24 +212,25 @@ public enum Rebalancer {
     public static func swapOptions(for session: WeekSession, context: Context) -> [SwapOption] {
         let name = session.title.lowercased()
         var options: [SwapOption] = []
-        let minutes = max(20, session.durationMinutes)
+        let rules = BalanceRules.current.rebalancing
+        let minutes = max(rules.minimumEasyRunMinutes, session.durationMinutes)
 
         switch session.kind {
         case .run(let type):
-            let easyMinutes = type == .long ? (minutes * 0.6).rounded() : min(minutes, 45)
+            let easyMinutes = type == .long ? (minutes * rules.easedLongRunFactor).rounded() : min(minutes, rules.easedRunMaxMinutes)
             options.append(easyRun(minutes: easyMinutes, from: session, context: context,
                                    explanation: "Swapped your \(name) for an easy \(Int(easyMinutes))-minute run: aerobic work without the strain."))
-            options.append(crossTraining(minutes: min(45, minutes), from: session,
+            options.append(crossTraining(minutes: min(rules.easedRunMaxMinutes, minutes), from: session,
                                          explanation: "Swapped your \(name) for low-impact cardio to give your legs a break from pounding."))
         case .strength:
             if let strength = session.strength {
                 var lighter = session
                 lighter.strength = StrengthPrescription(exercises: strength.exercises.map { exercise in
                     var copy = exercise
-                    copy.sets = max(1, Int((Double(exercise.sets) * 0.6).rounded()))
+                    copy.sets = max(1, Int((Double(exercise.sets) * rules.reducedLiftSetsFactor).rounded()))
                     return copy
                 })
-                lighter.durationMinutes = max(20, (session.durationMinutes * 0.6 / 5).rounded() * 5)
+                lighter.durationMinutes = max(rules.minimumEasyRunMinutes, (session.durationMinutes * rules.reducedLiftSetsFactor / 5).rounded() * 5)
                 lighter.effort = max(3, session.effort - 2)
                 lighter.title = session.title + " (reduced)"
                 lighter.summary = "Same exercises and weights, about 40% fewer sets"
@@ -288,11 +304,13 @@ public enum Rebalancer {
         guard status == .high || poorRecovery else { return [] }
         let calendar = context.calendar
         let today = calendar.startOfDay(for: context.today)
-        let soon = calendar.date(byAdding: .day, value: 3, to: today) ?? today
+        let rules = BalanceRules.current.rebalancing
+        let soon = calendar.date(byAdding: .day, value: rules.easeHardSessionWithinDays, to: today) ?? today
         let upcoming = week
             .filter { $0.status == .planned && $0.changeReason == nil && $0.date >= today }
             .sorted { $0.date < $1.date }
         let why = status == .high ? "your training load has spiked" : "your check-in shows you're not fully recovered"
+        let cause: ChangeCause = status == .high ? .highLoad : .poorRecovery
         var adjustments: [Adjustment] = []
 
         // 1) Ease the next non-key hard session in the next three days.
@@ -302,7 +320,7 @@ public enum Rebalancer {
             if var replacement = preferred?.replacement {
                 let reason = "Eased your \(hard.title.lowercased()) because \(why)."
                 replacement.changeReason = reason
-                adjustments.append(Adjustment(session: replacement, explanation: reason))
+                adjustments.append(Adjustment(session: replacement, explanation: reason, cause: cause))
             }
         }
 
@@ -312,7 +330,7 @@ public enum Rebalancer {
             for session in upcoming where session.date < weekEnd && session.kind == .run(.easy)
                 && !adjustments.contains(where: { $0.session.id == session.id }) {
                 var shorter = session
-                let minutes = max(20, (session.durationMinutes * 0.8 / 5).rounded() * 5)
+                let minutes = max(rules.minimumEasyRunMinutes, (session.durationMinutes * rules.highLoadEasyRunFactor / 5).rounded() * 5)
                 let easyPace = context.zones.typicalPace(for: .easy)
                 let meters = RunBuilder.tidy(minutes * 60 / easyPace.secondsPerKm * 1000)
                 shorter.durationMinutes = minutes
@@ -320,7 +338,7 @@ public enum Rebalancer {
                 shorter.summary = String(format: "%.1f", Units.distance(meters: meters, in: context.units)) + " " + Units.distanceUnitLabel(context.units)
                 let reason = "Shortened your easy run to \(Int(minutes)) minutes because \(why)."
                 shorter.changeReason = reason
-                adjustments.append(Adjustment(session: shorter, explanation: reason))
+                adjustments.append(Adjustment(session: shorter, explanation: reason, cause: cause))
             }
         }
         return adjustments

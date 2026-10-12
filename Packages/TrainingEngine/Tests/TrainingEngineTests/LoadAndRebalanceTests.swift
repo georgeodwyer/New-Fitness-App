@@ -97,6 +97,7 @@ final class RebalancerTests: XCTestCase {
     func testSkippingNonKeySessionIsNotRescheduled() {
         let week = week()
         let result = Rebalancer.skip(week[1].id, week: week, context: context(today: 1))
+        XCTAssertTrue(result.allSatisfy { $0.cause == .skipped })
         XCTAssertEqual(result.count, 1)
         XCTAssertEqual(result[0].session.status, .skipped)
         XCTAssertTrue(result[0].explanation.contains("won't be squeezed in"))
@@ -164,6 +165,7 @@ final class RebalancerTests: XCTestCase {
             ExercisePrescription(exerciseId: "bench", name: "Bench", role: .main, sets: 4, repRange: RepRange(6, 8), weightKg: 60, restSeconds: 150)
         ])
         let result = Rebalancer.adjustForLoad(week: week, status: .high, checkIn: nil, context: context(today: 1))
+        XCTAssertTrue(result.allSatisfy { $0.cause == .highLoad })
         // Wednesday's (non-key) upper session is reduced; Tue and Thu easy runs shortened; key sessions untouched.
         XCTAssertTrue(result.contains { $0.session.id == week[2].id && $0.session.strength?.exercises.first?.sets == 2 })
         XCTAssertTrue(result.contains { $0.session.id == week[1].id && $0.session.durationMinutes == 35 })

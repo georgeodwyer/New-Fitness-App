@@ -86,9 +86,9 @@ public struct RestingHeartRateSignal: Equatable, Sendable {
     /// At least `RestingHeartRateSignal.elevatedThreshold` bpm above usual.
     public var isElevated: Bool { difference >= Self.elevatedThreshold }
 
-    public static let elevatedThreshold: Double = 7
+    public static var elevatedThreshold: Double { BalanceRules.current.recovery.restingHeartRateElevatedBpm }
     /// Readings needed before a baseline means anything.
-    public static let minimumHistory = 7
+    public static var minimumHistory: Int { BalanceRules.current.recovery.restingHeartRateMinimumReadings }
 
     public init(today: Double, baseline: Double) {
         self.today = today
