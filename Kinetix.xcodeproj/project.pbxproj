@@ -59,7 +59,9 @@
 		98464367EEB76116BBCAAB61 /* StrengthProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23ED18C901A4AF49BA72E38A /* StrengthProgressView.swift */; };
 		987F88FE0499291815271F5E /* KXButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72DC83A5774C0DFA7D49CB52 /* KXButton.swift */; };
 		997D9CDDED136526D197815A /* KinetixSync in Frameworks */ = {isa = PBXBuildFile; productRef = 2CA9B1268AB94CE9AE75FDC2 /* KinetixSync */; };
+		9F6D5D7C390529C797D53991 /* UnitPreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A699B6FB1001149DC010A14 /* UnitPreference.swift */; };
 		A37859534B61490F5D344E6B /* IntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3880708490C8993B63991C6A /* IntegrationTests.swift */; };
+		AAB951D77E1C14D2213A481B /* LaunchSplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEBF6BA7F003C6E83A36A08F /* LaunchSplashView.swift */; };
 		AB990DAD91CD53F0EC663C56 /* HistoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54B7256C957EAF28749C4ECF /* HistoryTests.swift */; };
 		ABE991D19232BC6D6AAF9136 /* LocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15A2B8D3E8EAC9797667326F /* LocationService.swift */; };
 		B29A94D91EADFC17D2BA06B6 /* OnboardingModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53E2CA92347B3217FE2818A5 /* OnboardingModel.swift */; };
@@ -174,6 +176,7 @@
 		85DC3ED0960A484ACB127C77 /* RecordTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordTests.swift; sourceTree = "<group>"; };
 		8625E979738A82F0E873A0DD /* SyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncService.swift; sourceTree = "<group>"; };
 		8696410FC6193358A919F22E /* SyncServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncServiceTests.swift; sourceTree = "<group>"; };
+		8A699B6FB1001149DC010A14 /* UnitPreference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnitPreference.swift; sourceTree = "<group>"; };
 		90BA113272970E6AD61E52D1 /* AccountSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountSection.swift; sourceTree = "<group>"; };
 		9379EA201DE82CD3ADB9493E /* PlanChangesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanChangesView.swift; sourceTree = "<group>"; };
 		93A1DCAFCD6F85794718DCAA /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
@@ -191,6 +194,7 @@
 		BB43F58AC57A99553DE11F51 /* Kinetix.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Kinetix.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BCB45CC899A400282E14A651 /* Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Persistence.swift; sourceTree = "<group>"; };
 		BEB367BF9ABEF3898F8358B4 /* AppRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRouter.swift; sourceTree = "<group>"; };
+		BEBF6BA7F003C6E83A36A08F /* LaunchSplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchSplashView.swift; sourceTree = "<group>"; };
 		C1664E7DAA11627C79DB8265 /* KXEmptyState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXEmptyState.swift; sourceTree = "<group>"; };
 		C29BBA81B297D8EE2CF1FF89 /* SyncTracked.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncTracked.swift; sourceTree = "<group>"; };
 		C45C2DEC18638987AEE83DF7 /* CoachingSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachingSettingsView.swift; sourceTree = "<group>"; };
@@ -336,8 +340,10 @@
 				BEB367BF9ABEF3898F8358B4 /* AppRouter.swift */,
 				03230B905B53975A34E0C37E /* Formatters.swift */,
 				71405E462937064340577B61 /* KinetixApp.swift */,
+				BEBF6BA7F003C6E83A36A08F /* LaunchSplashView.swift */,
 				4999561CDF8222C282BCAEDC /* RootView.swift */,
 				C5069ED66DFB790377708F8D /* SampleData.swift */,
+				8A699B6FB1001149DC010A14 /* UnitPreference.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -693,6 +699,7 @@
 				3312F6FAC1B80A1BF812DE48 /* KXText.swift in Sources */,
 				93B0A23AFFF5CCD24A81AF87 /* Keychain.swift in Sources */,
 				4ABFCBB55C182B3A0ED4611A /* KinetixApp.swift in Sources */,
+				AAB951D77E1C14D2213A481B /* LaunchSplashView.swift in Sources */,
 				968DE1EA1D9F5D940E4394C6 /* LoadTrendCard.swift in Sources */,
 				ABE991D19232BC6D6AAF9136 /* LocationService.swift in Sources */,
 				7C7C3B1A994523C342761A39 /* LogModels.swift in Sources */,
@@ -732,6 +739,7 @@
 				7069554845EABC54FCA85309 /* SyncTracked.swift in Sources */,
 				2669CC2AEC3FF0570E2E0F51 /* TemplateModels.swift in Sources */,
 				6138BDF777275FD7654DA4D4 /* TrainingProfileView.swift in Sources */,
+				9F6D5D7C390529C797D53991 /* UnitPreference.swift in Sources */,
 				BDC6DDDC3E501DEEBDC63BE6 /* UserProfileModel.swift in Sources */,
 				0256EAD3B08ADE3512154318 /* VoiceCoach.swift in Sources */,
 				1682D3131EDEDDCF809DC004 /* WorkoutBuilderView.swift in Sources */,
