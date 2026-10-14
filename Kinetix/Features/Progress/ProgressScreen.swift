@@ -16,7 +16,7 @@ struct ProgressScreen: View {
     @State private var integrations = IntegrationSettings.shared
     @AppStorage("progress.section") private var sectionRaw = Section.running.rawValue
 
-    private var units: UnitSystem { profiles.first?.units ?? .metric }
+    private var units: UnitSystem { profiles.first?.units ?? UnitPreference.stored }
     private var section: Binding<Section> {
         Binding(get: { Section(rawValue: sectionRaw) ?? .running }, set: { sectionRaw = $0.rawValue })
     }

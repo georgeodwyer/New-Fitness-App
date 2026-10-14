@@ -1,24 +1,32 @@
 import SwiftUI
 import SwiftData
 
-/// Shows onboarding until a profile exists, then the main tab bar.
+/// The main tab bar, straight away: a plan is optional (it's built from the Plan tab), so
+/// Record, Progress and Settings work from the first launch. A short animated splash covers
+/// start-up.
 struct RootView: View {
     @Query(filter: #Predicate<UserProfileModel> { $0.deletedAt == nil }) private var profiles: [UserProfileModel]
     @State private var router = AppRouter()
+    @State private var showSplash = true
     @Environment(\.modelContext) private var context
     @Environment(\.scenePhase) private var scenePhase
 
-    private var hasProfile: Bool {
-        profiles.contains { !$0.isSoftDeleted }
-    }
-
     var body: some View {
-        Group {
-            if hasProfile {
-                MainTabView()
-            } else {
-                OnboardingFlowView()
+        ZStack {
+            MainTabView()
+            if showSplash {
+                LaunchSplashView()
+                    .transition(.opacity)
+                    .zIndex(1)
             }
+        }
+        .task {
+            AppBootstrap.ensureDefaults(in: context)
+            // Someone who built a plan before this version already read the health notice.
+            if !profiles.isEmpty { HealthNotice.accepted = true }
+            let seconds = LaunchOptions().isUITesting ? 0.2 : 1.4
+            try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+            withAnimation(.easeOut(duration: 0.35)) { showSplash = false }
         }
         .environment(router)
         .tint(KXColor.accent)
@@ -27,7 +35,7 @@ struct RootView: View {
             if phase == .active {
                 PlanService.refresh(in: context)
                 SyncService.shared.requestSync(after: 0.5)
-                let units = profiles.first?.units ?? .metric
+                let units = profiles.first?.units ?? UnitPreference.stored
                 Task {
                     await HealthService.shared.refresh()
                     await ActivityExportService.retryPending(in: context, units: units)

@@ -8,8 +8,9 @@ struct PlanView: View {
     @Query(filter: #Predicate<TrainingPlanModel> { $0.isActive }) private var plans: [TrainingPlanModel]
     @Query(sort: \PlanChangeModel.createdAt, order: .reverse) private var changes: [PlanChangeModel]
     @Query(filter: #Predicate<UserProfileModel> { $0.deletedAt == nil }) private var profiles: [UserProfileModel]
+    @State private var showOnboarding = false
 
-    private var format: DisplayFormat { DisplayFormat(units: profiles.first?.units ?? .metric) }
+    private var format: DisplayFormat { DisplayFormat(units: profiles.first?.units ?? UnitPreference.stored) }
     private var outline: PlanOutline? { plans.first?.outline }
 
     private struct WeekGroup: Identifiable {
@@ -48,8 +49,11 @@ struct PlanView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: KXSpacing.xl) {
                     KXScreenHeader(title: "Training Plan")
+                    if profiles.isEmpty {
+                        PlanIntroCard { showOnboarding = true }
+                    }
                     if let outline { overview(outline) }
-                    if weeks.isEmpty {
+                    if weeks.isEmpty && !profiles.isEmpty {
                         Text("No sessions planned yet.")
                             .font(KXFont.callout)
                             .foregroundStyle(KXColor.inkSecondary)
@@ -63,6 +67,13 @@ struct PlanView: View {
             .background(KXColor.background.ignoresSafeArea())
             .navigationDestination(for: PlannedSessionModel.self) { session in
                 SessionDetailView(session: session)
+            }
+            .fullScreenCover(isPresented: $showOnboarding) {
+                OnboardingFlowView(onClose: { showOnboarding = false })
+            }
+            // Building the plan saves a profile: close the set-up and show the new plan.
+            .onChange(of: profiles.count) { _, count in
+                if count > 0 { showOnboarding = false }
             }
         }
     }
@@ -168,5 +179,39 @@ struct PlanView: View {
     /// Phases are a sequence, so they use one hue from light (base) to dark (taper).
     private func color(for phase: TrainingPhase) -> Color {
         KXColor.phase(TrainingPhase.allCases.firstIndex(of: phase) ?? 0)
+    }
+}
+
+/// Shown on the Plan tab until a plan exists: what a plan does and a button to build one.
+struct PlanIntroCard: View {
+    let onBuild: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: KXSpacing.lg) {
+            KXAccentHeadline(plain: "Your training,", accented: "planned")
+            Text("Answer a few questions (about two minutes) and Kinetix builds a running and lifting plan around your goal, your week and your equipment, then keeps it balanced as you train.")
+                .font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            VStack(alignment: .leading, spacing: KXSpacing.sm) {
+                point("calendar", "Sessions placed so running and lifting don't undermine each other")
+                point("speedometer", "Pace targets and audio coaching for every run")
+                point("chart.line.uptrend.xyaxis", "Weights that progress as you get stronger")
+                point("arrow.triangle.2.circlepath", "Eases off automatically when load or recovery says so")
+            }
+            Button("Build my plan", action: onBuild)
+                .buttonStyle(.kx(.primary, fullWidth: true))
+                .accessibilityIdentifier("plan.build")
+            Text("Don't want a plan? You can still record runs and workouts from the Record tab.")
+                .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+        }
+        .kxCard()
+    }
+
+    private func point(_ symbol: String, _ text: String) -> some View {
+        Label {
+            Text(text).font(KXFont.callout).foregroundStyle(KXColor.ink)
+        } icon: {
+            Image(systemName: symbol).foregroundStyle(KXColor.accent)
+        }
     }
 }

@@ -20,8 +20,8 @@ struct ExerciseHistoryView: View {
         _records = Query(filter: #Predicate<PersonalRecordModel> { $0.recordKey == exerciseId })
     }
 
-    private var format: DisplayFormat { DisplayFormat(units: profiles.first?.units ?? .metric) }
-    private var units: UnitSystem { profiles.first?.units ?? .metric }
+    private var format: DisplayFormat { DisplayFormat(units: profiles.first?.units ?? UnitPreference.stored) }
+    private var units: UnitSystem { profiles.first?.units ?? UnitPreference.stored }
 
     private struct SessionPoint: Identifiable {
         let date: Date

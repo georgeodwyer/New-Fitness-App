@@ -14,7 +14,7 @@ struct SessionContainerView: View {
     @State private var strengthModel: StrengthWorkoutModel?
     @State private var runModel: RunWorkoutModel?
 
-    private var units: UnitSystem { profiles.first?.units ?? .metric }
+    private var units: UnitSystem { profiles.first?.units ?? UnitPreference.stored }
 
     var body: some View {
         Group {

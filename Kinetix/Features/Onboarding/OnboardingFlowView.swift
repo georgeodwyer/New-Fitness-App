@@ -4,6 +4,8 @@ import TrainingEngine
 
 /// Onboarding: one question per screen with a progress indicator, then a plan preview.
 struct OnboardingFlowView: View {
+    /// Closes the flow without building a plan (shown as an × in the corner).
+    var onClose: (() -> Void)? = nil
     @State private var model = OnboardingModel()
     @State private var preview: PlanService.Preview?
     @State private var showSignIn = false
@@ -19,11 +21,17 @@ struct OnboardingFlowView: View {
 
     private var questions: some View {
         VStack(spacing: 0) {
-            KXStepProgress(
-                step: model.stepNumber,
-                total: model.totalSteps,
-                onBack: model.step == .units ? nil : { withAnimation { model.back() } }
-            )
+            HStack(spacing: KXSpacing.sm) {
+                KXStepProgress(
+                    step: model.stepNumber,
+                    total: model.totalSteps,
+                    onBack: model.step == .units ? nil : { withAnimation { model.back() } }
+                )
+                if let onClose {
+                    KXIconButton(systemImage: "xmark", accessibilityLabel: "Close", size: 36, action: onClose)
+                        .accessibilityIdentifier("onboarding.close")
+                }
+            }
             .padding(.horizontal, KXSpacing.screenMargin)
             .padding(.vertical, KXSpacing.md)
 

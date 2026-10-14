@@ -36,3 +36,39 @@ struct HealthDisclaimerView: View {
         .accessibilityElement(children: .combine)
     }
 }
+
+/// One-time health & safety acknowledgement before the first recorded session (people who
+/// build a plan accept it during plan set-up instead).
+struct HealthNoticeSheet: View {
+    let onAccept: () -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: KXSpacing.lg) {
+                    KXAccentHeadline(plain: "Before you", accented: "start")
+                    Text("Kinetix gives general training guidance, not medical advice. Check with a doctor before starting a new exercise routine if you have a medical condition, an injury or are pregnant. Stop and get help if you feel chest pain, faint, dizzy or unusually breathless. When running, keep your audio low enough to hear what's around you.")
+                        .font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    NavigationLink("Read the full health & safety notes") { HealthDisclaimerView() }
+                        .font(KXFont.captionEmphasis)
+                        .foregroundStyle(KXColor.accent)
+                }
+                .padding(KXSpacing.screenMargin)
+            }
+            .background(KXColor.background.ignoresSafeArea())
+            .safeAreaInset(edge: .bottom) {
+                Button("I understand, let's go", action: onAccept)
+                    .buttonStyle(.kx(.primary, fullWidth: true))
+                    .padding(KXSpacing.screenMargin)
+                    .accessibilityIdentifier("healthNotice.accept")
+            }
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .tint(KXColor.accent)
+    }
+}

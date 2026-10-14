@@ -9,7 +9,7 @@ struct PlanChangesView: View {
     var emptyMessage = "When Kinetix moves, eases or swaps a session (after a skip, a training-load spike or a poor check-in) you'll see exactly what changed and why here."
 
     @Query(filter: #Predicate<UserProfileModel> { $0.deletedAt == nil }) private var profiles: [UserProfileModel]
-    private var units: UnitSystem { profiles.first?.units ?? .metric }
+    private var units: UnitSystem { profiles.first?.units ?? UnitPreference.stored }
 
     private var groups: [(day: Date, changes: [PlanChangeModel])] {
         let calendar = Calendar.kinetix

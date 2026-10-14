@@ -16,6 +16,8 @@ struct RunSetupView: View {
     @State private var template: RunTemplateModel?
     @State private var askAboutPlan = false
     @State private var savedMessage: String?
+    @State private var showHealthNotice = false
+    @AppStorage(HealthNotice.key) private var healthNoticeAccepted = false
 
     init(initial: RunTemplateModel?) {
         self.initial = initial
@@ -24,7 +26,7 @@ struct RunSetupView: View {
     }
 
     private var profile: AthleteProfile? { profiles.first?.profile }
-    private var units: UnitSystem { profile?.units ?? .metric }
+    private var units: UnitSystem { profile?.units ?? UnitPreference.stored }
     private var zones: PaceZones? { profile.map(PaceZones.init(profile:)) }
     private var defaultPace: Pace { zones?.typicalPace(for: .easy) ?? Pace(secondsPerKm: 360) }
 
@@ -55,7 +57,7 @@ struct RunSetupView: View {
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: KXSpacing.sm) {
                 Button {
-                    if plannedToday.isEmpty { start(linking: nil) } else { askAboutPlan = true }
+                    if !healthNoticeAccepted { showHealthNotice = true } else { proceed() }
                 } label: {
                     Label("Start run", systemImage: "play.fill")
                 }
@@ -70,6 +72,14 @@ struct RunSetupView: View {
             .padding(KXSpacing.screenMargin)
             .background(KXColor.background)
         }
+        .sheet(isPresented: $showHealthNotice) {
+            HealthNoticeSheet {
+                healthNoticeAccepted = true
+                showHealthNotice = false
+                // Let the sheet close before the run screen opens.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { proceed() }
+            }
+        }
         .confirmationDialog(planQuestion, isPresented: $askAboutPlan, titleVisibility: .visible) {
             if let planned = plannedToday.first {
                 Button("Yes, count it as my \(planned.title.lowercased())") { start(linking: planned) }
@@ -83,6 +93,10 @@ struct RunSetupView: View {
                 Text("Your plan has \(planned.title.lowercased()) (\(planned.summary)) today. If this run replaces it, it's ticked off; if not, both count towards your training load.")
             }
         }
+    }
+
+    private func proceed() {
+        if plannedToday.isEmpty { start(linking: nil) } else { askAboutPlan = true }
     }
 
     private var planQuestion: String {

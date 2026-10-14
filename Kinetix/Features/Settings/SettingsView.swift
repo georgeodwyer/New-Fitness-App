@@ -11,6 +11,8 @@ struct SettingsView: View {
     @AppStorage(DeveloperSettings.simulateGPSKey) private var simulateGPS = false
     @AppStorage(DeveloperSettings.simulationSpeedKey) private var simulationSpeed = 10.0
     @AppStorage(AppearanceChoice.storageKey) private var appearance = AppearanceChoice.system.rawValue
+    @AppStorage(UnitPreference.key) private var storedUnits = UnitPreference.defaultForRegion.rawValue
+    @Environment(AppRouter.self) private var router
 
     @State private var confirmRegenerate = false
     @State private var confirmDelete = false
@@ -23,12 +25,12 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
-                if let settings = coachingSettings.first, let profile = profileModel?.profile {
+                if let settings = coachingSettings.first {
                     Section("Coaching") {
                         NavigationLink {
-                            CoachingSettingsView(settings: settings, units: profile.units)
+                            CoachingSettingsView(settings: settings, units: currentUnits)
                         } label: {
-                            settingsRow("Audio coaching", detail: coachingSummary(settings, units: profile.units),
+                            settingsRow("Audio coaching", detail: coachingSummary(settings, units: currentUnits),
                                         symbol: "headphones", tint: KXColor.run)
                         }
                         .accessibilityIdentifier("settings.coaching")
@@ -54,28 +56,38 @@ struct SettingsView: View {
                     } footer: {
                         Text("Changing your goal, days or equipment offers to rebuild your plan. Completed sessions and progress are always kept.")
                     }
-
-                    Section {
-                        Picker("Appearance", selection: $appearance) {
-                            ForEach(AppearanceChoice.allCases) { Text($0.title).tag($0.rawValue) }
+                } else {
+                    Section("Training") {
+                        Button {
+                            router.selectedTab = .plan
+                        } label: {
+                            settingsRow("Build a training plan", detail: "A running and lifting plan around your goal",
+                                        symbol: "figure.mixed.cardio", tint: KXColor.lift)
                         }
-                        .pickerStyle(.segmented)
-                        .listRowBackground(Color.clear)
-                        .accessibilityIdentifier("settings.appearance")
-                    } header: {
-                        Text("Appearance")
-                    } footer: {
-                        Text("System follows your iPhone's light or dark setting.")
+                        .accessibilityIdentifier("settings.buildPlan")
                     }
+                }
 
-                    Section("Units") {
-                        Picker("Units", selection: unitsBinding(for: profileModel)) {
-                            Text("Kilometres & kg").tag(UnitSystem.metric)
-                            Text("Miles & lb").tag(UnitSystem.imperial)
-                        }
-                        .pickerStyle(.segmented)
-                        .listRowBackground(Color.clear)
+                Section {
+                    Picker("Appearance", selection: $appearance) {
+                        ForEach(AppearanceChoice.allCases) { Text($0.title).tag($0.rawValue) }
                     }
+                    .pickerStyle(.segmented)
+                    .listRowBackground(Color.clear)
+                    .accessibilityIdentifier("settings.appearance")
+                } header: {
+                    Text("Appearance")
+                } footer: {
+                    Text("System follows your iPhone's light or dark setting.")
+                }
+
+                Section("Units") {
+                    Picker("Units", selection: unitsBinding) {
+                        Text("Kilometres & kg").tag(UnitSystem.metric)
+                        Text("Miles & lb").tag(UnitSystem.imperial)
+                    }
+                    .pickerStyle(.segmented)
+                    .listRowBackground(Color.clear)
                 }
 
                 Section {
@@ -199,10 +211,18 @@ struct SettingsView: View {
         "\(profile.goal.displayName) · \(profile.trainingDays.count) days · \(profile.equipment.displayName)"
     }
 
-    private func unitsBinding(for profile: UserProfileModel) -> Binding<UnitSystem> {
+    private var currentUnits: UnitSystem {
+        profileModel?.units ?? UnitSystem(rawValue: storedUnits) ?? UnitPreference.defaultForRegion
+    }
+
+    /// Units live in the profile once there is one; before that, in a per-phone preference.
+    private var unitsBinding: Binding<UnitSystem> {
         Binding(
-            get: { profile.units },
-            set: { AccountService.changeUnits(to: $0, profile: profile, in: context) }
+            get: { currentUnits },
+            set: { units in
+                storedUnits = units.rawValue
+                if let profile = profileModel { AccountService.changeUnits(to: units, profile: profile, in: context) }
+            }
         )
     }
 

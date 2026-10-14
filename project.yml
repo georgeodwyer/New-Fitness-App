@@ -45,7 +45,8 @@ targets:
         # Version numbers come from the build settings (MARKETING_VERSION above; TestFlight sets the build number).
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
-        UILaunchScreen: {}
+        UILaunchScreen:
+          UIColorName: LaunchBackground
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         UIBackgroundModes: [location, audio, bluetooth-central]
         NSLocationWhenInUseUsageDescription: "Kinetix uses your location during runs to measure distance and pace and draw your route."

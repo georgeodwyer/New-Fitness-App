@@ -131,7 +131,9 @@ struct PlanPreviewView: View {
     private func save() {
         let profile = model.profile
         context.insert(UserProfileModel(profile: profile))
-        context.insert(CoachingSettingsModel())
+        AppBootstrap.ensureDefaults(in: context)
+        HealthNotice.accepted = true
+        UnitPreference.stored = profile.units
         PlanService.createPlan(for: profile, in: context)
     }
 }

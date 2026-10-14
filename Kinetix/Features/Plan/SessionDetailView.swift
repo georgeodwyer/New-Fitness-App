@@ -16,7 +16,7 @@ struct SessionDetailView: View {
         allChanges.filter { $0.sessionId == session.id && !$0.isSoftDeleted }
     }
 
-    private var format: DisplayFormat { DisplayFormat(units: profiles.first?.units ?? .metric) }
+    private var format: DisplayFormat { DisplayFormat(units: profiles.first?.units ?? UnitPreference.stored) }
 
     var body: some View {
         ScrollView {

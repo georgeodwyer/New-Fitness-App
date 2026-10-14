@@ -41,6 +41,14 @@ final class ScreenshotTests: XCTestCase {
     func testOnboardingFlow() {
         prefix = "light-"
         launch()
+        // No plan yet: the app opens on the dashboard; the plan is built from the Plan tab.
+        XCTAssertTrue(app.tabBars.buttons["Today"].waitForExistence(timeout: 10))
+        snap("00a-dashboard-no-plan")
+        app.tabBars.buttons["Plan"].tap()
+        let build = app.buttons["plan.build"].firstMatch
+        XCTAssertTrue(build.waitForExistence(timeout: 5))
+        snap("00b-plan-intro")
+        build.tap()
         snap("01-onboarding-units")
         next()
         tap("Intermediate"); snap("02-onboarding-running"); next()
@@ -65,6 +73,8 @@ final class ScreenshotTests: XCTestCase {
         snap("14-plan-preview-first-week")
         tap("Start training")
         XCTAssertTrue(app.tabBars.buttons["Today"].waitForExistence(timeout: 10))
+        snap("14b-plan-tab-with-plan")
+        app.tabBars.buttons["Today"].tap()
         snap("15-today")
     }
 

@@ -24,7 +24,7 @@ struct HomeView: View {
     @State private var integrations = IntegrationSettings.shared
 
     private var profile: AthleteProfile? { profiles.first?.profile }
-    private var units: UnitSystem { profile?.units ?? .metric }
+    private var units: UnitSystem { profile?.units ?? UnitPreference.stored }
 
     private var data: DashboardData {
         DashboardService.make(sessions: sessions, runs: runs, lifts: lifts, checkIns: checkIns, profile: profile,
@@ -45,7 +45,8 @@ struct HomeView: View {
                 KXScreenHeader(title: "Dashboard", onNotifications: { showUpdates = true })
                 greeting
                 if let banner { changeBanner(banner) }
-                todaySection
+                if profile == nil { planPrompt }
+                if profile != nil { todaySection }
                 CheckInCard(existing: data.todaysCheckIn, restingHeartRate: restingHeartRate) { checkIn in
                     saveCheckIn(checkIn, status: data.load.combined.status, ratio: data.load.combined.ratio)
                 }
@@ -116,6 +117,24 @@ struct HomeView: View {
             Button { banner = nil } label: { Image(systemName: "xmark").font(.caption) }
                 .foregroundStyle(KXColor.inkSecondary)
                 .accessibilityLabel("Dismiss")
+        }
+        .kxCard(.accent)
+    }
+
+    /// Shown until a plan exists: everything else on the dashboard works from recorded sessions.
+    private var planPrompt: some View {
+        VStack(alignment: .leading, spacing: KXSpacing.md) {
+            KXSectionHeader("Get a personalised plan", subtitle: "About two minutes")
+            Text("Tell Kinetix your goal, week and equipment and it plans your runs and lifts so they work together. Or just record sessions from the Record tab.")
+                .font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: KXSpacing.sm) {
+                Button("Build my plan") { router.selectedTab = .plan }
+                    .buttonStyle(.kx(.primary, fullWidth: true))
+                    .accessibilityIdentifier("home.buildPlan")
+                Button("Record") { router.selectedTab = .record }
+                    .buttonStyle(.kx(.outlined, fullWidth: true))
+            }
         }
         .kxCard(.accent)
     }

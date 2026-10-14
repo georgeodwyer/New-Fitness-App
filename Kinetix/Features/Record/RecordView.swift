@@ -10,7 +10,7 @@ struct RecordView: View {
     @Query(filter: #Predicate<UserProfileModel> { $0.deletedAt == nil }) private var profiles: [UserProfileModel]
     @Environment(\.modelContext) private var context
 
-    private var units: UnitSystem { profiles.first?.units ?? .metric }
+    private var units: UnitSystem { profiles.first?.units ?? UnitPreference.stored }
 
     /// Most recently used first.
     private var sortedTemplates: [RunTemplateModel] {

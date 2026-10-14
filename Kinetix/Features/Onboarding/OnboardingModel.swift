@@ -34,7 +34,7 @@ final class OnboardingModel {
 
     var step: Step = .units
 
-    var units: UnitSystem = .metric
+    var units: UnitSystem = UnitPreference.stored
     var runningExperience: ExperienceLevel?
     var knowsRaceTime = false
     var raceDistance: RaceDistance = .fiveK
