@@ -133,6 +133,10 @@ After M13: owner's list of faults.
   `TrainingHistory` totals/weekly. `RunLogModel.runTypeRaw/recordTypeRaw` (synced);
   `RunService/StrengthService.update/delete`, `PlanService.reopen`. Simulated runs listed but
   excluded from totals/bests. Sample history runs now have routes + HR.
+- **No-onboarding start ✅**: `RootView` always shows tabs (+ `LaunchSplashView`, launch colour
+  `LaunchBackground`); onboarding opens from Plan tab `PlanIntroCard` (fullScreenCover, closes when a
+  profile appears). `UnitPreference` (units before a plan), `HealthNotice` (accepted in plan set-up or
+  via `HealthNoticeSheet` before the first Record run), `AppBootstrap.ensureDefaults` (coaching settings).
 - M12 Gym tracker · M13 Health dashboard + layout: not started.
 
 ## Getting builds to the owner's phone (default)
