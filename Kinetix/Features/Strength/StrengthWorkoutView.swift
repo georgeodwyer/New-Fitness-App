@@ -91,20 +91,25 @@ struct StrengthWorkoutView: View {
             .presentationDetents([.medium])
         }
         .confirmationDialog("Leave this workout?", isPresented: $showLeave, titleVisibility: .visible) {
-            Button("Keep for later") { onClose() }
+            // Close after the dialog has gone: iOS ignores a dismiss while the dialog is still closing.
+            Button("Keep for later") { closeAfterDialog() }
             Button("Discard workout", role: .destructive) {
                 discarded = true
                 model.endLockScreen()
                 let log = model.log
-                onClose()
+                closeAfterDialog()
                 // Delete once the screen has gone, so SwiftUI never draws a deleted workout.
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
                     StrengthService.discard(log, in: context)
                 }
             }
         } message: {
             Text("Logged sets are saved, so you can pick up where you left off.")
         }
+    }
+
+    private func closeAfterDialog() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { onClose() }
     }
 
     private var header: some View {

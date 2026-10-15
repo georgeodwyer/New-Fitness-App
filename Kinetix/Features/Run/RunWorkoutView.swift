@@ -173,7 +173,8 @@ struct RunWorkoutView: View {
         .confirmationDialog("Leave this run?", isPresented: $showLeave, titleVisibility: .visible) {
             Button("Discard run", role: .destructive) {
                 model.discard()
-                onClose()
+                // Close after the dialog has gone: iOS ignores a dismiss while the dialog is still closing.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { onClose() }
             }
             Button("Keep running", role: .cancel) {}
         }

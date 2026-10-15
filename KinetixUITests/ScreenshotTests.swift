@@ -332,7 +332,10 @@ final class ScreenshotTests: XCTestCase {
             let discard = app.buttons["Discard workout"].firstMatch
             if discard.waitForExistence(timeout: 3) { discard.tap() }
         }
-        XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 10), "The workout screen should close after discarding")
+        let finish = app.buttons["Finish workout"].firstMatch
+        let closed = NSPredicate(format: "exists == false")
+        XCTAssertEqual(XCTWaiter().wait(for: [expectation(for: closed, evaluatedWith: finish)], timeout: 10), .completed,
+                       "The workout screen should close after discarding")
         if app.navigationBars.buttons.firstMatch.waitForExistence(timeout: 3) {
             app.navigationBars.buttons.firstMatch.tap()
         }
