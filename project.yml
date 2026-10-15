@@ -21,11 +21,13 @@ targets:
     platform: iOS
     sources:
       - path: Kinetix
+      - path: Shared
     dependencies:
       - package: TrainingEngine
         product: TrainingEngine
       - package: TrainingEngine
         product: KinetixSync
+      - target: KinetixWidgets
     configFiles:
       Debug: Config/App.xcconfig
       Release: Config/App.xcconfig
@@ -58,6 +60,38 @@ targets:
         SupabaseAnonKey: $(SUPABASE_ANON_KEY)
         StravaClientID: $(STRAVA_CLIENT_ID)
         ITSAppUsesNonExemptEncryption: false
+        NSSupportsLiveActivities: true
+        CFBundleURLTypes:
+          - CFBundleURLName: com.georgeodwyer.kinetix
+            CFBundleURLSchemes: [kinetix]
+  KinetixWidgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: KinetixWidgets
+      - path: Shared
+      - path: Kinetix/DesignSystem/KXColor.swift
+      - path: Kinetix/DesignSystem/KXFont.swift
+      - path: Kinetix/DesignSystem/KXSpacing.swift
+    configFiles:
+      Debug: Config/App.xcconfig
+      Release: Config/App.xcconfig
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.georgeodwyer.kinetix.widgets
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_ENTITLEMENTS: KinetixWidgets/KinetixWidgets.entitlements
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) WIDGET_EXTENSION"
+        SKIP_INSTALL: YES
+    info:
+      path: KinetixWidgets/Info.plist
+      properties:
+        CFBundleDisplayName: Kinetix
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
   KinetixTests:
     type: bundle.unit-test
     platform: iOS

@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import SwiftData
+import TrainingEngine
 
 /// Live state of a strength workout: grouped sets and the rest timer.
 @Observable
@@ -26,10 +27,49 @@ final class StrengthWorkoutModel {
     private(set) var restFinishedCount = 0
     private var restTask: Task<Void, Never>?
 
-    init(log: StrengthLogModel, planned: PlannedSessionModel?, context: ModelContext) {
+    init(log: StrengthLogModel, planned: PlannedSessionModel?, context: ModelContext, units: UnitSystem = .metric) {
         self.log = log
         self.planned = planned
         self.context = context
+        self.units = units
+        WorkoutActivityController.shared.start(title: log.title.isEmpty ? "Strength" : log.title, kind: "strength",
+                                               state: lockScreenState)
+    }
+
+    private let units: UnitSystem
+
+    // MARK: Lock screen
+
+    /// The next set to do, e.g. "Back Squat · set 3 of 5 · 100 kg × 5".
+    private var nextSetText: String? {
+        guard let group = groups.first(where: { !$0.isComplete }),
+              let set = group.sets.first(where: { !$0.isCompleted }),
+              let index = group.sets.firstIndex(where: { $0.id == set.id }) else { return nil }
+        let load = set.isBodyweight ? "\(set.actualReps) reps"
+            : "\(DisplayFormat(units: units).weight(set.actualWeightKg)) × \(set.actualReps)"
+        return "\(group.name) · set \(index + 1) of \(group.sets.count) · \(load)"
+    }
+
+    private var lockScreenState: WorkoutActivityAttributes.ContentState {
+        let resting = restEndsAt.map { $0 > .now } ?? false
+        return WorkoutActivityAttributes.ContentState(
+            mode: resting ? .resting : .lifting,
+            timerStart: log.startedAt,
+            elapsedSeconds: Date.now.timeIntervalSince(log.startedAt),
+            restEndsAt: resting ? restEndsAt : nil,
+            setsDone: completedSets,
+            setsTotal: totalSets,
+            nextSet: nextSetText
+        )
+    }
+
+    private func updateLockScreen() {
+        WorkoutActivityController.shared.update(lockScreenState, important: true)
+    }
+
+    /// Call when leaving the workout (finished, discarded or closed).
+    func endLockScreen() {
+        WorkoutActivityController.shared.end()
     }
 
     var groups: [ExerciseGroup] {
@@ -60,6 +100,7 @@ final class StrengthWorkoutModel {
         }
         set.touch()
         save()
+        updateLockScreen()
     }
 
     func setRPE(_ value: Double?, for set: SetLogModel) {
@@ -88,6 +129,7 @@ final class StrengthWorkoutModel {
         restTotalSeconds = seconds
         restEndsAt = Date.now.addingTimeInterval(seconds)
         scheduleRestEnd()
+        updateLockScreen()
     }
 
     func extendRest(by seconds: Double) {
@@ -95,11 +137,13 @@ final class StrengthWorkoutModel {
         restEndsAt = end.addingTimeInterval(seconds)
         restTotalSeconds += seconds
         scheduleRestEnd()
+        updateLockScreen()
     }
 
     func skipRest() {
         restTask?.cancel()
         restEndsAt = nil
+        updateLockScreen()
     }
 
     private func scheduleRestEnd() {
@@ -111,6 +155,7 @@ final class StrengthWorkoutModel {
             guard !Task.isCancelled else { return }
             self?.restEndsAt = nil
             self?.restFinishedCount += 1
+            self?.updateLockScreen()
         }
     }
 

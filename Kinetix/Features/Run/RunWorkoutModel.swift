@@ -57,6 +57,8 @@ final class RunWorkoutModel {
     @ObservationIgnored private var realOrigin = Date()
     @ObservationIgnored private let heartRateMonitor = HeartRateMonitor.shared
     @ObservationIgnored private var watchHeartRateQuery: HKQuery?
+    private var lockScreen: WorkoutActivityController { .shared }
+    @ObservationIgnored private var lastLockScreenKey: String?
 
     /// The run built on the Record tab, if any.
     let custom: CustomRunWorkout?
@@ -130,6 +132,8 @@ final class RunWorkoutModel {
         gps?.start()
         simulator?.start()
         startHeartRate(from: now)
+        ActiveWorkout.shared.togglePause = { [weak self] in self?.togglePause() }
+        lockScreen.start(title: title, kind: "run", state: .run(snapshot, units: units, now: .now))
         lastTick = now
         lastCheckpoint = now
         let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
@@ -151,6 +155,7 @@ final class RunWorkoutModel {
             voice.speak("Paused.")
         }
         snapshot = engine.snapshot()
+        updateLockScreen(important: true)
     }
 
     func skipSegment() {
@@ -166,6 +171,8 @@ final class RunWorkoutModel {
         simulator?.stop()
         voice.stop()
         stopHeartRate()
+        lockScreen.end()
+        ActiveWorkout.shared.togglePause = nil
         let summary = engine.summary()
         finalSummary = summary
         phase = .finished
@@ -183,6 +190,8 @@ final class RunWorkoutModel {
         simulator?.stop()
         voice.stop()
         stopHeartRate()
+        lockScreen.end()
+        ActiveWorkout.shared.togglePause = nil
         if let log { RunService.discard(log, in: context) }
     }
 
@@ -193,6 +202,14 @@ final class RunWorkoutModel {
     }
 
     // MARK: Internals
+
+    /// Throttled lock-screen update; a new step or pace status goes out straight away.
+    private func updateLockScreen(important: Bool = false) {
+        let key = "\(snapshot.segmentIndex ?? -1)-\(String(describing: snapshot.paceStatus))-\(snapshot.isPaused)"
+        let changed = key != lastLockScreenKey
+        lastLockScreenKey = key
+        lockScreen.update(.run(snapshot, units: units, now: .now), important: important || changed)
+    }
 
     /// Heart rate from a Bluetooth strap (preferred: it updates every second) and/or an
     /// Apple Watch through Apple Health.
@@ -250,6 +267,7 @@ final class RunWorkoutModel {
         lastTick = now
         handle(engine.tick(at: now))
         snapshot = engine.snapshot()
+        updateLockScreen()
         if now.timeIntervalSince(lastCheckpoint) >= 30, let log {
             lastCheckpoint = now
             RunService.checkpoint(engine.summary(), into: log, in: context)

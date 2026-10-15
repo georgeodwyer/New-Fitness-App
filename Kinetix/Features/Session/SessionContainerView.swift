@@ -35,6 +35,13 @@ struct SessionContainerView: View {
                 SessionPlaceholderView(session: session)
             }
         }
+        // Whatever way the workout screen closes, the lock-screen view goes with it,
+        // and the widgets pick up the finished session.
+        .onDisappear {
+            strengthModel?.endLockScreen()
+            WorkoutActivityController.shared.end()
+            WidgetSnapshotService.update(in: context)
+        }
     }
 
     private func plannedSession() -> PlannedSessionModel? {
@@ -45,7 +52,7 @@ struct SessionContainerView: View {
     private func startStrength() {
         guard let planned = plannedSession() else { dismiss(); return }
         let log = StrengthService.startOrResume(planned, in: context)
-        strengthModel = StrengthWorkoutModel(log: log, planned: planned, context: context)
+        strengthModel = StrengthWorkoutModel(log: log, planned: planned, context: context, units: units)
     }
 
     private func startRun() {

@@ -30,6 +30,19 @@ struct RootView: View {
         }
         .environment(router)
         .tint(KXColor.accent)
+        // Links from widgets and the lock screen: kinetix://tab/<today|plan|record|progress|settings>.
+        .onOpenURL { url in
+            guard url.scheme == "kinetix", url.host != "localhost" else { return }
+            if url.host == "tab" {
+                switch url.lastPathComponent {
+                case "plan": router.selectedTab = .plan
+                case "record": router.selectedTab = .record
+                case "progress": router.selectedTab = .progress
+                case "settings": router.selectedTab = .settings
+                default: router.selectedTab = .today
+                }
+            }
+        }
         .onChange(of: scenePhase, initial: true) { _, phase in
             // Keep detailed sessions generated about two weeks ahead.
             if phase == .active {
@@ -39,7 +52,10 @@ struct RootView: View {
                 Task {
                     await HealthService.shared.refresh()
                     await ActivityExportService.retryPending(in: context, units: units)
+                    WidgetSnapshotService.update(in: context)
                 }
+            } else if phase == .background {
+                WidgetSnapshotService.update(in: context)
             }
         }
     }
