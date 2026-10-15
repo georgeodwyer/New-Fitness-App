@@ -14,6 +14,7 @@ struct RunDetailView: View {
     @Query(sort: \PlannedSessionModel.date) private var sessions: [PlannedSessionModel]
     @State private var editing = false
     @State private var confirmDelete = false
+    @State private var sharing = false
 
     private var format: DisplayFormat { DisplayFormat(units: units) }
     private var route: [RoutePoint] { log.route }
@@ -52,8 +53,12 @@ struct RunDetailView: View {
         .navigationTitle(log.startedAt.formatted(.dateTime.weekday(.abbreviated).day().month()))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            Button { sharing = true } label: { Image(systemName: "square.and.arrow.up") }
+                .accessibilityLabel("Share")
+                .accessibilityIdentifier("run.share")
             Button("Edit") { editing = true }.accessibilityIdentifier("run.edit")
         }
+        .sheet(isPresented: $sharing) { ShareSessionView(source: .run(log), units: units) }
         .sheet(isPresented: $editing) {
             EditSessionSheet(title: log.title, effort: log.effort, kind: "run") { title, effort in
                 RunService.update(log, title: title, effort: effort, in: context)

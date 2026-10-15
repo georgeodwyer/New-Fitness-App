@@ -143,6 +143,7 @@ struct StrengthSessionDetailView: View {
     @Query private var records: [PersonalRecordModel]
     @State private var editing = false
     @State private var confirmDelete = false
+    @State private var sharing = false
 
     private var format: DisplayFormat { DisplayFormat(units: units) }
 
@@ -209,7 +210,14 @@ struct StrengthSessionDetailView: View {
         .background(KXColor.background.ignoresSafeArea())
         .navigationTitle(log.startedAt.formatted(.dateTime.weekday(.abbreviated).day().month()))
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar { Button("Edit") { editing = true } }
+        .toolbar {
+            Button { sharing = true } label: { Image(systemName: "square.and.arrow.up") }
+                .accessibilityLabel("Share")
+            Button("Edit") { editing = true }
+        }
+        .sheet(isPresented: $sharing) {
+            ShareSessionView(source: .strength(log, records: recordsSet.count), units: units)
+        }
         .sheet(isPresented: $editing) {
             EditSessionSheet(title: log.title, effort: log.effort, kind: "session") { title, effort in
                 StrengthService.update(log, title: title, effort: effort, in: context)

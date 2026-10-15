@@ -74,6 +74,16 @@ public enum RunAnalysis {
         return best.isFinite ? best : nil
     }
 
+    /// The route without its first and last `meters`, so a shared map doesn't show where
+    /// you live. Short runs keep at least their middle third.
+    public static func privacyTrimmed(_ route: [RoutePoint], meters: Double = 200) -> [RoutePoint] {
+        let cumulative = cumulativeDistances(route)
+        guard let total = cumulative.last, route.count > 2 else { return route }
+        let trim = min(meters, total / 3)
+        let kept = zip(route, cumulative).filter { $0.1 >= trim && $0.1 <= total - trim }.map(\.0)
+        return kept.count >= 2 ? kept : route
+    }
+
     /// Best times for every standard distance the run covered.
     public static func bestEfforts(route: [RoutePoint]) -> [BestEffortDistance: Double] {
         var result: [BestEffortDistance: Double] = [:]

@@ -33,6 +33,7 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           STRAVA_CLIENT_ID: ${{ secrets.STRAVA_CLIENT_ID }}
+          INSTAGRAM_APP_ID: ${{ secrets.INSTAGRAM_APP_ID }}
         run: |
           # "//" starts a comment in .xcconfig files, so the URL is written as https:/$()/…
           ESCAPED_URL="${SUPABASE_URL//\/\//\/\$()\/}"
@@ -40,6 +41,7 @@ jobs:
             echo "SUPABASE_URL = ${ESCAPED_URL}"
             echo "SUPABASE_ANON_KEY = ${SUPABASE_ANON_KEY}"
             echo "STRAVA_CLIENT_ID = ${STRAVA_CLIENT_ID}"
+            echo "INSTAGRAM_APP_ID = ${INSTAGRAM_APP_ID}"
           } > Config/Secrets.xcconfig
           if [ -z "$SUPABASE_URL" ]; then echo "::warning::SUPABASE_URL secret not set: accounts will be off in this build"; fi
           if [ -z "$STRAVA_CLIENT_ID" ]; then echo "::warning::STRAVA_CLIENT_ID secret not set: Strava will be off in this build"; fi

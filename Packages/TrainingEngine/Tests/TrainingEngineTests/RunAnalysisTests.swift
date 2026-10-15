@@ -42,6 +42,18 @@ final class RunAnalysisTests: XCTestCase {
         XCTAssertNil(RunAnalysis.bestTime(over: 1000, route: []))
     }
 
+    func testPrivacyTrimDropsStartAndFinish() {
+        let points = route(kmPaces: [300, 300]) // 2 km, a point every 50 m
+        let trimmed = RunAnalysis.privacyTrimmed(points, meters: 200)
+        let cumulative = RunAnalysis.cumulativeDistances(points)
+        // About 4 points (200 m) gone from each end (GPS rounding can shift one either way).
+        XCTAssertTrue((points.count - 10...points.count - 7).contains(trimmed.count), "\(trimmed.count) of \(points.count)")
+        XCTAssertEqual(trimmed.first, points[cumulative.firstIndex { $0 >= 200 }!])
+        // A very short run keeps its middle third rather than vanishing.
+        let short = Array(points.prefix(7)) // 300 m
+        XCTAssertGreaterThanOrEqual(RunAnalysis.privacyTrimmed(short, meters: 200).count, 2)
+    }
+
     func testPaceSeriesIsSmoothedAndInOrder() {
         let series = RunAnalysis.paceSeries(route: route(kmPaces: [300, 360]), windowSeconds: 60)
         XCTAssertFalse(series.isEmpty)

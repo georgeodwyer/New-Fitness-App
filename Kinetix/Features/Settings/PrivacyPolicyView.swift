@@ -49,6 +49,8 @@ struct PrivacyPolicyView: View {
                 body: "Used only to connect the heart rate strap you choose. The strap's identifier is stored on this iPhone so it can reconnect."),
         Section(title: "Strava",
                 body: "Only if you connect it. Kinetix uploads the sessions you've chosen (runs, and strength sessions if you turn that on) to your Strava account. The Strava sign-in is kept in this iPhone's secure Keychain. Disconnecting revokes Kinetix's access. What happens on Strava is covered by Strava's own privacy policy."),
+        Section(title: "Sharing",
+                body: "Share cards are made on your iPhone. Nothing is posted unless you choose an app to share to; saving a card to Photos asks for permission to add images. The Instagram Stories button hands the image to the Instagram app on your phone."),
         Section(title: "Your choices",
                 body: "Export everything as a file in Settings → Account & data. Delete your account and all your data, on this iPhone and in the cloud, from the same place. Disconnect Apple Health in the Health app and Strava in Settings → Integrations at any time."),
         Section(title: "Children",

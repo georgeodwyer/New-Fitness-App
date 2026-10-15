@@ -61,6 +61,9 @@ targets:
         StravaClientID: $(STRAVA_CLIENT_ID)
         ITSAppUsesNonExemptEncryption: false
         NSSupportsLiveActivities: true
+        NSPhotoLibraryAddUsageDescription: "Kinetix saves the run and workout cards you choose to your photo library."
+        LSApplicationQueriesSchemes: [instagram-stories]
+        InstagramAppID: $(INSTAGRAM_APP_ID)
         CFBundleURLTypes:
           - CFBundleURLName: com.georgeodwyer.kinetix
             CFBundleURLSchemes: [kinetix]

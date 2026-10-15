@@ -11,6 +11,7 @@ struct RunSummaryView: View {
     var log: RunLogModel? = nil
     let onDone: () -> Void
     @State private var strava = StravaService.shared
+    @State private var sharing = false
     @State private var integrations = IntegrationSettings.shared
 
     private var format: DisplayFormat { DisplayFormat(units: units) }
@@ -50,12 +51,22 @@ struct RunSummaryView: View {
             .padding(KXSpacing.screenMargin)
         }
         .safeAreaInset(edge: .bottom) {
-            Button("Done", action: onDone)
-                .buttonStyle(.kx(.primary, fullWidth: true))
-                .padding(KXSpacing.screenMargin)
+            VStack(spacing: KXSpacing.sm) {
+                if let log, log.isFinished {
+                    Button { sharing = true } label: { Label("Share run", systemImage: "square.and.arrow.up") }
+                        .buttonStyle(.kx(.outlined, fullWidth: true))
+                        .accessibilityIdentifier("summary.share")
+                }
+                Button("Done", action: onDone)
+                    .buttonStyle(.kx(.primary, fullWidth: true))
+            }
+            .padding(KXSpacing.screenMargin)
                 .background(KXColor.background)
         }
         .background(KXColor.background.ignoresSafeArea())
+        .sheet(isPresented: $sharing) {
+            if let log { ShareSessionView(source: .run(log), units: units) }
+        }
     }
 
     private var totals: some View {
