@@ -80,6 +80,7 @@ enum AccountService {
         var runTemplates: [CustomRunWorkout]
         var gymTemplates: [GymWorkoutExport]
         var customExercises: [String]
+        var routes: [PlannedRoute]
 
         struct GymWorkoutExport: Codable {
             var name: String
@@ -127,7 +128,8 @@ enum AccountService {
             gymTemplates: all(GymTemplateModel.self).filter { !$0.isSoftDeleted }.map {
                 Export.GymWorkoutExport(name: $0.name, exercises: $0.items)
             },
-            customExercises: all(CustomExerciseModel.self).filter { !$0.isSoftDeleted }.map(\.name)
+            customExercises: all(CustomExerciseModel.self).filter { !$0.isSoftDeleted }.map(\.name),
+            routes: all(RouteModel.self).filter { !$0.isSoftDeleted }.map(\.route)
         )
     }
 

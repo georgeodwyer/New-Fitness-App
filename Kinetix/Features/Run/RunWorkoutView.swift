@@ -45,6 +45,18 @@ struct RunWorkoutView: View {
                         Text(model.planned?.summary ?? "").font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
                     }
                     gpsStatusCard
+                    if let route = model.plannedRoute {
+                        VStack(alignment: .leading, spacing: KXSpacing.sm) {
+                            KXSectionHeader("Your route", subtitle: "\(route.name) · \(format.distance(route.distanceMeters))")
+                            RouteMap(route: [], planned: route.path)
+                                .frame(height: 180)
+                                .clipShape(RoundedRectangle(cornerRadius: KXRadius.md, style: .continuous))
+                            Label("You'll hear each turn before you reach it, and a warning if you leave the route.",
+                                  systemImage: "arrow.triangle.turn.up.right.diamond")
+                                .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+                        }
+                        .kxCard()
+                    }
                     if let structure = model.structure {
                         VStack(alignment: .leading, spacing: KXSpacing.sm) {
                             KXSectionHeader("Your session")
@@ -124,8 +136,9 @@ struct RunWorkoutView: View {
             ))
             ScrollView {
                 VStack(spacing: KXSpacing.md) {
-                    RouteMap(route: model.route, followLatest: true)
-                        .frame(height: 170)
+                    if let status = model.routeStatus { routeCard(status) }
+                    RouteMap(route: model.route, planned: model.plannedRoute?.path ?? [], followLatest: true)
+                        .frame(height: model.plannedRoute == nil ? 170 : 220)
                         .clipShape(RoundedRectangle(cornerRadius: KXRadius.md, style: .continuous))
                         .overlay(alignment: .topLeading) {
                             if model.isSimulated {
@@ -164,6 +177,49 @@ struct RunWorkoutView: View {
             }
             Button("Keep running", role: .cancel) {}
         }
+    }
+
+    /// Next direction, distance left, and an off-route warning.
+    private func routeCard(_ status: RunWorkoutModel.RouteStatus) -> some View {
+        HStack(spacing: KXSpacing.md) {
+            Image(systemName: status.isOffRoute ? "exclamationmark.triangle.fill"
+                  : status.isFinished ? "flag.checkered" : Self.directionSymbol(status.nextDirection))
+                .font(.title2.weight(.semibold))
+                .foregroundStyle(status.isOffRoute ? KXColor.warning : KXColor.accent)
+                .frame(width: 40)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                if status.isOffRoute {
+                    Text("Off route").font(KXFont.headline).foregroundStyle(KXColor.ink)
+                    Text("Head back to the line on the map.").font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+                } else if status.isFinished {
+                    Text("Route complete").font(KXFont.headline).foregroundStyle(KXColor.ink)
+                } else if let next = status.nextDirection, let distance = status.distanceToNext {
+                    Text(next).font(KXFont.headline).foregroundStyle(KXColor.ink).lineLimit(2)
+                    Text("in \(format.shortDistance(distance))").font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+                } else {
+                    Text("Follow the route").font(KXFont.headline).foregroundStyle(KXColor.ink)
+                }
+            }
+            Spacer()
+            VStack(alignment: .trailing, spacing: 0) {
+                Text(format.distance(status.remainingMeters)).font(KXFont.bodyEmphasis.monospacedDigit()).foregroundStyle(KXColor.ink)
+                Text("to go").font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+            }
+        }
+        .kxCard(status.isOffRoute ? .accent : .tinted)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("run.routeCard")
+    }
+
+    static func directionSymbol(_ text: String?) -> String {
+        let lower = text?.lowercased() ?? ""
+        if lower.contains("around") || lower.contains("u-turn") { return "arrow.uturn.down" }
+        if lower.contains("slight left") || lower.contains("bear left") || lower.contains("keep left") { return "arrow.up.left" }
+        if lower.contains("slight right") || lower.contains("bear right") || lower.contains("keep right") { return "arrow.up.right" }
+        if lower.contains("left") { return "arrow.turn.up.left" }
+        if lower.contains("right") { return "arrow.turn.up.right" }
+        return "arrow.up"
     }
 
     private func header(trailing: AnyView) -> some View {
@@ -316,14 +372,28 @@ struct RunWorkoutView: View {
 /// Route on a map (MapKit).
 struct RouteMap: View {
     let route: [RoutePoint]
+    /// A planned route, drawn underneath what's been run.
+    var planned: [RouteCoordinate] = []
     var followLatest = false
 
     private var coordinates: [CLLocationCoordinate2D] {
         route.map { CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude) }
     }
 
+    private var plannedCoordinates: [CLLocationCoordinate2D] { planned.map(\.clCoordinate) }
+
     var body: some View {
         Map(position: .constant(cameraPosition), interactionModes: followLatest ? [] : .all) {
+            if plannedCoordinates.count > 1 {
+                MapPolyline(coordinates: plannedCoordinates)
+                    .stroke(KXColor.teal.opacity(0.75), style: StrokeStyle(lineWidth: 6, lineCap: .round, lineJoin: .round))
+            }
+            if route.isEmpty, let start = plannedCoordinates.first {
+                Annotation("Start", coordinate: start) {
+                    Circle().fill(KXColor.success).frame(width: 12, height: 12)
+                        .overlay(Circle().stroke(.white, lineWidth: 2))
+                }
+            }
             if coordinates.count > 1 {
                 MapPolyline(coordinates: coordinates)
                     .stroke(KXColor.accent, style: StrokeStyle(lineWidth: 5, lineCap: .round, lineJoin: .round))
@@ -346,11 +416,12 @@ struct RouteMap: View {
     }
 
     private var cameraPosition: MapCameraPosition {
-        guard !coordinates.isEmpty else { return .automatic }
         if followLatest, let last = coordinates.last {
             return .camera(MapCamera(centerCoordinate: last, distance: 1200))
         }
-        let lats = coordinates.map(\.latitude), lons = coordinates.map(\.longitude)
+        let all = coordinates.isEmpty ? plannedCoordinates : coordinates + plannedCoordinates
+        guard !all.isEmpty else { return .automatic }
+        let lats = all.map(\.latitude), lons = all.map(\.longitude)
         let center = CLLocationCoordinate2D(latitude: (lats.min()! + lats.max()!) / 2, longitude: (lons.min()! + lons.max()!) / 2)
         let span = MKCoordinateSpan(latitudeDelta: max(0.005, (lats.max()! - lats.min()!) * 1.4),
                                     longitudeDelta: max(0.005, (lons.max()! - lons.min()!) * 1.4))

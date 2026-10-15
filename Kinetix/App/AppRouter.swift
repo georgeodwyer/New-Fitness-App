@@ -23,4 +23,6 @@ struct ActiveSession: Identifiable, Equatable {
     var linkedPlannedId: UUID? = nil
     /// A gym workout started (or resumed) from the Record tab.
     var strengthLogId: UUID? = nil
+    /// A planned route to follow on a run started from the Record tab.
+    var route: PlannedRoute? = nil
 }

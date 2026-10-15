@@ -95,8 +95,10 @@ final class SimulatedLocationSource: RunLocationSource {
     private var simulatedTime: Double = 0
     private var running = false
 
-    init(structure: RunStructure?) {
-        generator = SimulatedRunner.Generator(runner: SimulatedRunner.demo(structure: structure))
+    init(structure: RunStructure?, path: [RouteCoordinate] = []) {
+        var runner = SimulatedRunner.demo(structure: structure)
+        runner.path = path
+        generator = SimulatedRunner.Generator(runner: runner)
     }
 
     func start() { running = true }

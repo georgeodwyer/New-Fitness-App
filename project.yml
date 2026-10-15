@@ -51,7 +51,7 @@ targets:
           UIColorName: LaunchBackground
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         UIBackgroundModes: [location, audio, bluetooth-central]
-        NSLocationWhenInUseUsageDescription: "Kinetix uses your location during runs to measure distance and pace and draw your route."
+        NSLocationWhenInUseUsageDescription: "Kinetix uses your location during runs to measure distance and pace and draw your route, and to centre the map when you plan a route."
         NSLocationAlwaysAndWhenInUseUsageDescription: "Kinetix keeps tracking your run with the screen locked so pace coaching and splits keep working."
         NSHealthShareUsageDescription: "Kinetix reads heart rate, resting heart rate and workouts to show live heart rate and balance your training load."
         NSHealthUpdateUsageDescription: "Kinetix saves your completed runs and strength sessions to Apple Health."

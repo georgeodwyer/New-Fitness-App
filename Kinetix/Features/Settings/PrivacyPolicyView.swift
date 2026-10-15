@@ -42,7 +42,7 @@ struct PrivacyPolicyView: View {
         Section(title: "If you create an account",
                 body: "Your email address (or the private relay address from Sign in with Apple) and a copy of the data above are stored with our database provider, Supabase, so your training is backed up and syncs to your other devices. Only you can read your records."),
         Section(title: "Location",
-                body: "Used only while you're recording a run, to measure distance and pace and draw your route. The route is saved with that run."),
+                body: "Used while you're recording a run, to measure distance and pace and draw your route (the route is saved with that run), and while you plan a route, to centre the map on you. Planned routes are drawn using Apple Maps walking directions: the points you tap are sent to Apple to work out the path, and aren't linked to your account. Routes you save are stored with your other data."),
         Section(title: "Apple Health",
                 body: "Only if you connect it. Kinetix reads heart rate, resting heart rate and workouts from other apps to show live heart rate and balance your training load, and saves your runs and strength sessions to Health. Health data is never used for advertising or shared with anyone for marketing. Heart rate recorded during a Kinetix run is kept with that run (and backed up to your account if you have one)."),
         Section(title: "Bluetooth",

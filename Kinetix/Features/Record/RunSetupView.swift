@@ -11,6 +11,9 @@ struct RunSetupView: View {
     @Environment(AppRouter.self) private var router
     @Query(filter: #Predicate<UserProfileModel> { $0.deletedAt == nil }) private var profiles: [UserProfileModel]
     @Query(sort: \PlannedSessionModel.date) private var sessions: [PlannedSessionModel]
+    @Query(filter: #Predicate<RouteModel> { $0.deletedAt == nil }, sort: \RouteModel.createdAt, order: .reverse)
+    private var savedRoutes: [RouteModel]
+    @State private var route: PlannedRoute?
 
     @State private var workout: CustomRunWorkout
     @State private var template: RunTemplateModel?
@@ -19,10 +22,11 @@ struct RunSetupView: View {
     @State private var showHealthNotice = false
     @AppStorage(HealthNotice.key) private var healthNoticeAccepted = false
 
-    init(initial: RunTemplateModel?) {
+    init(initial: RunTemplateModel?, route: PlannedRoute? = nil) {
         self.initial = initial
         _workout = State(initialValue: initial?.workout ?? CustomRunWorkout.starter(for: .free, zones: nil))
         _template = State(initialValue: initial)
+        _route = State(initialValue: route)
     }
 
     private var profile: AthleteProfile? { profiles.first?.profile }
@@ -43,6 +47,7 @@ struct RunSetupView: View {
             VStack(alignment: .leading, spacing: KXSpacing.xl) {
                 typePicker
                 workoutCard
+                routeCard
                 if let savedMessage {
                     Label(savedMessage, systemImage: "checkmark.circle.fill")
                         .font(KXFont.callout).foregroundStyle(KXColor.ink)
@@ -164,6 +169,46 @@ struct RunSetupView: View {
         .kxCard()
     }
 
+    private var routeCard: some View {
+        VStack(alignment: .leading, spacing: KXSpacing.md) {
+            KXSectionHeader("Route", subtitle: route == nil ? "Optional: follow a route with spoken turns" : nil)
+            if let route {
+                RouteMap(route: [], planned: route.path)
+                    .frame(height: 150)
+                    .clipShape(RoundedRectangle(cornerRadius: KXRadius.md, style: .continuous))
+                    .allowsHitTesting(false)
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(route.name).font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink)
+                        Text("\(DisplayFormat(units: units).distance(route.distanceMeters))\(route.isLoop ? " loop" : "")")
+                            .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+                    }
+                    Spacer()
+                    Button("Remove") { self.route = nil }
+                        .font(KXFont.captionEmphasis)
+                        .foregroundStyle(KXColor.accent)
+                }
+            }
+            if !savedRoutes.isEmpty {
+                Menu {
+                    ForEach(savedRoutes) { saved in
+                        Button("\(saved.name) · \(DisplayFormat(units: units).distance(saved.distanceMeters))") {
+                            route = saved.route
+                        }
+                    }
+                } label: {
+                    Label(route == nil ? "Choose a saved route" : "Change route", systemImage: "map")
+                }
+                .buttonStyle(.kx(.secondary, fullWidth: true))
+                .accessibilityIdentifier("record.chooseRoute")
+            } else if route == nil {
+                Text("Plan routes from the Record tab (Routes), then pick one here.")
+                    .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+            }
+        }
+        .kxCard()
+    }
+
     // MARK: Actions
 
     private func select(_ type: RecordRunType) {
@@ -198,7 +243,13 @@ struct RunSetupView: View {
             try? context.save()
         }
         router.activeSession = ActiveSession(id: UUID(), kind: .run(workout.type.sessionType ?? .easy), title: workout.name,
-                                             custom: workout, linkedPlannedId: planned?.id)
+                                             custom: workout, linkedPlannedId: planned?.id, route: route)
+        if let routeId = route?.id,
+           let saved = savedRoutes.first(where: { $0.id == routeId }) {
+            saved.lastUsedAt = .now
+            saved.touch()
+            try? context.save()
+        }
     }
 }
 

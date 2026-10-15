@@ -154,7 +154,17 @@ After M13: owner's list of faults.
   planned-session question), `GymTemplateEditorView`, `ExercisePickerView`. Recorded sets use
   progression key `<id>.free`, and `StrengthService.finish` skips plan progression for recorded
   logs (PRs, load, Health/Strava still apply). `ActiveSession.strengthLogId` opens/resumes them.
-- Route planner (Record tab): owner asked for it after M12; questions to ask first.
+- **Route planner ✅** (owner: yes to road-following taps, loop generator, turn-by-turn + off-route
+  voice, saved/synced + GPX import/export). Engine `Routes/PlannedRoute.swift`: `RouteCoordinate`,
+  `RouteInstruction`, `PlannedRoute`, `RouteGeometry` (projection, simplify, turn detection),
+  `LoopGenerator` (circle waypoints + road factor), `RouteGuide` (windowed progress so out-and-backs
+  don't jump, off-route after 4 fixes > 40 m, "In 100 metres…" then "Turn left"), `GPXRoute`
+  (parse trk/rte/wpt, write). `SimulatedRunner.path` makes simulated GPS follow the route.
+  App: `RouteModel` (synced "route"), `RouteService` (MKDirections walking legs, cached; straight-line
+  fallback; loops retried up to 3× to land within 10%; GPX file), `RoutePlannerView` (+ `GPXFile`
+  Transferable, `UTType.gpx`), Record tab "My routes" + GPX import, `RunSetupView` route card,
+  `ActiveSession.route`, `RunWorkoutModel.plannedRoute/routeStatus`, run screen route card + planned
+  line on `RouteMap(planned:)`.
 - M13 Health dashboard + layout: not started.
 
 ## Getting builds to the owner's phone (default)

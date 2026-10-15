@@ -35,6 +35,8 @@ public struct SimulatedRunner: Sendable {
     public var driftMeters: Double
     public var speedNoise: Double
     public var seed: UInt64
+    /// A planned route to run along instead of the park loop (laps it if the run is longer).
+    public var path: [RouteCoordinate] = []
 
     public init(
         structure: RunStructure?,
@@ -90,6 +92,7 @@ public struct SimulatedRunner: Sendable {
     /// Stateful sample generator (for live playback).
     public struct Generator: Sendable {
         let runner: SimulatedRunner
+        private let pathCumulative: [Double]
         private var rng: SeededRandom
         private var lastTime = 0.0
         private var distance = 0.0
@@ -101,6 +104,7 @@ public struct SimulatedRunner: Sendable {
 
         public init(runner: SimulatedRunner) {
             self.runner = runner
+            self.pathCumulative = RouteGeometry.cumulative(runner.path)
             self.rng = SeededRandom(seed: runner.seed)
         }
 
@@ -116,11 +120,20 @@ public struct SimulatedRunner: Sendable {
             driftNorth = driftNorth * 0.98 + rng.normal() * runner.driftMeters * 0.15
             driftEast = driftEast * 0.98 + rng.normal() * runner.driftMeters * 0.15
 
-            let angle = distance / runner.loopRadiusMeters
-            let north = runner.loopRadiusMeters * sin(angle) + driftNorth
-            let east = runner.loopRadiusMeters * (1 - cos(angle)) + driftEast
-            let (lat, lon) = Geo.offset(latitude: runner.centerLatitude, longitude: runner.centerLongitude,
+            let position: (Double, Double)
+            if let length = pathCumulative.last, length > 0,
+               let point = RouteGeometry.point(along: distance.truncatingRemainder(dividingBy: length), path: runner.path,
+                                               cumulative: pathCumulative) {
+                position = Geo.offset(latitude: point.latitude, longitude: point.longitude,
+                                        northMeters: driftNorth, eastMeters: driftEast)
+            } else {
+                let angle = distance / runner.loopRadiusMeters
+                let north = runner.loopRadiusMeters * sin(angle) + driftNorth
+                let east = runner.loopRadiusMeters * (1 - cos(angle)) + driftEast
+                position = Geo.offset(latitude: runner.centerLatitude, longitude: runner.centerLongitude,
                                         northMeters: north, eastMeters: east)
+            }
+            let (lat, lon) = position
             let reportedSpeed = max(0, speed + rng.normal() * runner.speedNoise)
             return LocationSample(timestamp: start.addingTimeInterval(t), latitude: lat, longitude: lon,
                                   horizontalAccuracy: 5, speed: reportedSpeed)

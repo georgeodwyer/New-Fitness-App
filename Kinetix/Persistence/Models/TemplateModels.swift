@@ -109,3 +109,55 @@ final class CustomExerciseModel: SyncTracked {
                                   muscle: muscle, libraryOnly: true)
     }
 }
+
+/// A route planned on the map or imported from GPX. Synced to the account.
+@Model
+final class RouteModel: SyncTracked {
+    @Attribute(.unique) var id: UUID
+    var updatedAt: Date
+    var deletedAt: Date?
+    var needsSync: Bool
+
+    var name: String
+    /// Encoded `[RouteCoordinate]`.
+    var waypointsData: Data?
+    var pathData: Data?
+    /// Encoded `[RouteInstruction]`.
+    var instructionsData: Data?
+    var followsRoads: Bool
+    var distanceMeters: Double
+    var createdAt: Date
+    var lastUsedAt: Date?
+
+    init(route: PlannedRoute, now: Date = .now) {
+        self.id = route.id
+        self.updatedAt = now
+        self.deletedAt = nil
+        self.needsSync = true
+        self.name = route.name
+        self.waypointsData = StoredJSON.encode(route.waypoints)
+        self.pathData = StoredJSON.encode(route.path)
+        self.instructionsData = StoredJSON.encode(route.instructions)
+        self.followsRoads = route.followsRoads
+        self.distanceMeters = route.distanceMeters
+        self.createdAt = now
+    }
+
+    var route: PlannedRoute {
+        get {
+            PlannedRoute(id: id, name: name,
+                         waypoints: StoredJSON.decode([RouteCoordinate].self, from: waypointsData) ?? [],
+                         path: StoredJSON.decode([RouteCoordinate].self, from: pathData) ?? [],
+                         instructions: StoredJSON.decode([RouteInstruction].self, from: instructionsData) ?? [],
+                         followsRoads: followsRoads)
+        }
+        set {
+            name = newValue.name
+            waypointsData = StoredJSON.encode(newValue.waypoints)
+            pathData = StoredJSON.encode(newValue.path)
+            instructionsData = StoredJSON.encode(newValue.instructions)
+            followsRoads = newValue.followsRoads
+            distanceMeters = newValue.distanceMeters
+        }
+    }
+}

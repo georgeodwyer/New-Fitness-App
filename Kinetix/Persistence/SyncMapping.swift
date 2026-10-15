@@ -44,7 +44,8 @@ enum SyncRegistry {
         RecoveryCheckInModel.self,
         RunTemplateModel.self,
         GymTemplateModel.self,
-        CustomExerciseModel.self
+        CustomExerciseModel.self,
+        RouteModel.self
     ]
 }
 
@@ -519,5 +520,36 @@ extension CustomExerciseModel: SyncableModel {
     }
     static func makeForSync(id: UUID) -> CustomExerciseModel {
         CustomExerciseModel(name: "", muscle: .fullBody, loading: .dumbbell, id: id)
+    }
+}
+
+extension RouteModel: SyncableModel {
+    struct Payload: Codable {
+        var name: String
+        var waypointsData: Data?
+        var pathData: Data?
+        var instructionsData: Data?
+        var followsRoads: Bool
+        var distanceMeters: Double
+        var createdAt: Date
+        var lastUsedAt: Date?
+    }
+    static var syncType: String { "route" }
+    var syncPayload: Payload {
+        Payload(name: name, waypointsData: waypointsData, pathData: pathData, instructionsData: instructionsData,
+                followsRoads: followsRoads, distanceMeters: distanceMeters, createdAt: createdAt, lastUsedAt: lastUsedAt)
+    }
+    func applySync(_ p: Payload, context: ModelContext) {
+        name = p.name
+        waypointsData = p.waypointsData
+        pathData = p.pathData
+        instructionsData = p.instructionsData
+        followsRoads = p.followsRoads
+        distanceMeters = p.distanceMeters
+        createdAt = p.createdAt
+        lastUsedAt = p.lastUsedAt
+    }
+    static func makeForSync(id: UUID) -> RouteModel {
+        RouteModel(route: PlannedRoute(id: id, name: "", waypoints: [], path: []))
     }
 }

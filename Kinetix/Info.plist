@@ -48,7 +48,7 @@
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Kinetix keeps tracking your run with the screen locked so pace coaching and splits keep working.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Kinetix uses your location during runs to measure distance and pace and draw your route.</string>
+	<string>Kinetix uses your location during runs to measure distance and pace and draw your route, and to centre the map when you plan a route.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Kinetix saves the run and workout cards you choose to your photo library.</string>
 	<key>NSSupportsLiveActivities</key>

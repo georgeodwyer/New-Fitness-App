@@ -16,7 +16,7 @@ Your email address (or the private relay address from Sign in with Apple) and a 
 
 ## Location
 
-Used only while you're recording a run, to measure distance and pace and draw your route. The route is saved with that run.
+Used while you're recording a run, to measure distance and pace and draw your route (the route is saved with that run), and while you plan a route, to centre the map on you. Planned routes are drawn using Apple Maps walking directions: the points you tap are sent to Apple to work out the path, and aren't linked to your account. Routes you save are stored with your other data.
 
 ## Apple Health
 

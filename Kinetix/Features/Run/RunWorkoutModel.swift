@@ -63,10 +63,27 @@ final class RunWorkoutModel {
     /// The run built on the Record tab, if any.
     let custom: CustomRunWorkout?
 
-    init(planned: PlannedSessionModel?, custom: CustomRunWorkout? = nil, units: UnitSystem, settings: CoachingSettingsModel?,
-         simulationSpeed: Double?, context: ModelContext) {
+    // MARK: Route
+
+    /// Where the runner is on a planned route, for the run screen.
+    struct RouteStatus: Equatable {
+        var nextDirection: String?
+        var distanceToNext: Double?
+        var remainingMeters: Double
+        var isOffRoute: Bool
+        var isFinished: Bool
+    }
+
+    /// A route chosen on the Record tab to follow, with spoken directions.
+    let plannedRoute: PlannedRoute?
+    private(set) var routeStatus: RouteStatus?
+    @ObservationIgnored private var guide: RouteGuide?
+
+    init(planned: PlannedSessionModel?, custom: CustomRunWorkout? = nil, route: PlannedRoute? = nil, units: UnitSystem,
+         settings: CoachingSettingsModel?, simulationSpeed: Double?, context: ModelContext) {
         self.planned = planned
         self.custom = custom
+        self.plannedRoute = route.flatMap { $0.path.count > 1 ? $0 : nil }
         self.title = custom?.name ?? planned?.title ?? "Run"
         // A recorded run follows the runner's own workout even when it counts as a planned session.
         self.structure = custom.map(\.structure) ?? planned?.runStructure
@@ -90,10 +107,15 @@ final class RunWorkoutModel {
 
         let simulated = simulationSpeed != nil
         self.gps = simulated ? nil : GPSLocationSource()
-        self.simulator = simulated ? SimulatedLocationSource(structure: structure) : nil
+        self.simulator = simulated ? SimulatedLocationSource(structure: structure, path: plannedRoute?.path ?? []) : nil
         self.authorization = simulated ? .authorizedWhenInUse : .notDetermined
         self.hasGPSFix = simulated
 
+        if let plannedRoute {
+            let guide = RouteGuide(route: plannedRoute, config: RouteGuide.Config(units: units))
+            self.guide = guide
+            self.routeStatus = Self.status(of: guide)
+        }
         voice.voiceIdentifier = settings?.voiceIdentifier
         voice.volume = Float(settings?.cueVolume ?? 1)
         configureSources()
@@ -256,6 +278,28 @@ final class RunWorkoutModel {
         if !snapshot.isPaused, route.last.map({ $0.latitude != sample.latitude }) ?? true {
             route.append(RoutePoint(latitude: sample.latitude, longitude: sample.longitude, elapsed: snapshot.elapsedSeconds))
         }
+        followRoute(sample)
+    }
+
+    private func followRoute(_ sample: LocationSample) {
+        guard var guide, !snapshot.isPaused, sample.horizontalAccuracy >= 0, sample.horizontalAccuracy <= 50 else { return }
+        let events = guide.update(latitude: sample.latitude, longitude: sample.longitude)
+        self.guide = guide
+        let status = Self.status(of: guide)
+        if status != routeStatus { routeStatus = status }
+        for event in events {
+            let text = event.announcement(units: units)
+            announcements.append(Announcement(text: text, isCue: event == .offRoute, time: snapshot.elapsedSeconds))
+            if announcements.count > 20 { announcements.removeFirst() }
+            voice.speak(text)
+        }
+    }
+
+    private static func status(of guide: RouteGuide) -> RouteStatus {
+        RouteStatus(nextDirection: guide.nextInstruction?.text,
+                    distanceToNext: guide.distanceToNext.map { ($0 / 10).rounded() * 10 },
+                    remainingMeters: (guide.remainingMeters / 10).rounded() * 10,
+                    isOffRoute: guide.isOffRoute, isFinished: guide.isFinished)
     }
 
     private func tick() {

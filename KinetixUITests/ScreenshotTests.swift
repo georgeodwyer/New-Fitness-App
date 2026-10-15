@@ -122,6 +122,7 @@ final class ScreenshotTests: XCTestCase {
             runWorkout()
             recordRun()
             recordGym()
+            planRoute()
         }
 
         app.tabBars.buttons["Progress"].tap()
@@ -334,6 +335,57 @@ final class ScreenshotTests: XCTestCase {
         if app.navigationBars.buttons.firstMatch.waitForExistence(timeout: 3) {
             app.navigationBars.buttons.firstMatch.tap()
         }
+    }
+
+    /// Record tab → Plan a route: taps three points (straight lines, so no network needed),
+    /// makes a loop, saves it, and opens it on the run set-up screen.
+    private func planRoute() {
+        app.tabBars.buttons["Record"].tap()
+        let plan = app.buttons["record.planRoute"].firstMatch
+        if !plan.waitForExistence(timeout: 3) { app.swipeUp() }
+        guard plan.waitForExistence(timeout: 5) else { return }
+        plan.tap()
+        let followRoads = app.switches["route.followRoads"].firstMatch
+        if followRoads.waitForExistence(timeout: 5) {
+            followRoads.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5)).tap()
+        }
+        let window = app.windows.firstMatch
+        for (x, y) in [(0.3, 0.25), (0.7, 0.3), (0.6, 0.45)] {
+            window.coordinate(withNormalizedOffset: CGVector(dx: x, dy: y)).tap()
+            sleep(1)
+        }
+        snap("62-route-planner")
+        let loop = app.buttons["route.loop"].firstMatch
+        if loop.waitForExistence(timeout: 3) {
+            loop.tap()
+            snap("63-route-loop")
+            let make = app.buttons["route.makeLoop"].firstMatch
+            if make.waitForExistence(timeout: 3), make.isEnabled {
+                make.tap()
+                sleep(2)
+            } else if app.buttons["Cancel"].exists {
+                app.buttons["Cancel"].tap()
+            }
+        }
+        snap("64-route-loop-made")
+        let save = app.buttons["route.save"].firstMatch
+        if save.waitForExistence(timeout: 3), save.isEnabled {
+            save.tap()
+            if app.alerts.buttons["Save"].waitForExistence(timeout: 3) { app.alerts.buttons["Save"].tap() }
+        }
+        let run = app.buttons["route.run"].firstMatch
+        if run.waitForExistence(timeout: 3), run.isEnabled {
+            run.tap()
+            if app.buttons["record.startRun"].waitForExistence(timeout: 5) {
+                app.swipeUp()
+                snap("65-route-run-setup")
+            }
+            app.navigationBars.buttons.firstMatch.tap()
+        }
+        if app.navigationBars.buttons.firstMatch.waitForExistence(timeout: 3) {
+            app.navigationBars.buttons.firstMatch.tap()
+        }
+        snap("66-record-with-route")
     }
 
     /// Opens a strength session from the Plan tab, logs a set, and finishes.

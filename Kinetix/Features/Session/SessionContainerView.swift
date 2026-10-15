@@ -71,6 +71,7 @@ struct SessionContainerView: View {
         runModel = RunWorkoutModel(
             planned: plannedSession(),
             custom: session.custom,
+            route: session.route,
             units: units,
             settings: coachingSettings.first,
             simulationSpeed: speed,

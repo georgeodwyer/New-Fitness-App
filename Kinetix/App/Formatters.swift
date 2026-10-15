@@ -17,6 +17,15 @@ struct DisplayFormat {
         String(format: "%.\(decimals)f", Units.distance(meters: meters, in: units)) + " " + Units.distanceUnitLabel(units)
     }
 
+    /// Short distances for directions: "80 m" / "90 yd", or km/mi once over 1 km.
+    func shortDistance(_ meters: Double) -> String {
+        guard meters < 1000 else { return distance(meters) }
+        switch units {
+        case .metric: return "\(Int((meters / 10).rounded() * 10)) m"
+        case .imperial: return "\(Int((meters * 1.09361 / 10).rounded() * 10)) yd"
+        }
+    }
+
     func weight(_ kg: Double) -> String {
         Units.formatWeight(kg: kg, units: units) + " " + Units.weightUnitLabel(units)
     }
