@@ -33,6 +33,12 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>InstagramAppID</key>
+	<string>$(INSTAGRAM_APP_ID)</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>instagram-stories</string>
+	</array>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>Kinetix connects to Bluetooth heart rate straps to show live heart rate during workouts.</string>
 	<key>NSHealthShareUsageDescription</key>
@@ -43,6 +49,8 @@
 	<string>Kinetix keeps tracking your run with the screen locked so pace coaching and splits keep working.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Kinetix uses your location during runs to measure distance and pace and draw your route.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Kinetix saves the run and workout cards you choose to your photo library.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>StravaClientID</key>
