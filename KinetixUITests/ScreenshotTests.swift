@@ -307,7 +307,11 @@ final class ScreenshotTests: XCTestCase {
                 if app.buttons["Chest"].firstMatch.waitForExistence(timeout: 5) { app.buttons["Chest"].firstMatch.tap() }
                 snap("58-gym-exercise-picker")
                 let bench = app.buttons["gym.exercise.barbell-bench-press"].firstMatch
-                if bench.waitForExistence(timeout: 5) { bench.tap() }
+                if bench.waitForExistence(timeout: 5) {
+                    bench.tap()
+                } else if app.buttons["Cancel"].firstMatch.exists {
+                    app.buttons["Cancel"].firstMatch.tap()
+                }
             }
             snap("59-gym-template-editor")
             let save = app.buttons["gym.templateSave"].firstMatch
@@ -323,8 +327,18 @@ final class ScreenshotTests: XCTestCase {
         let addExercise = app.buttons["gym.addExercise"].firstMatch
         guard addExercise.waitForExistence(timeout: 10) else { return }
         addExercise.tap()
+        // The list is long; search so the exercise is on screen.
+        let search = app.searchFields.firstMatch
+        if search.waitForExistence(timeout: 5) {
+            search.tap()
+            search.typeText("push-up")
+        }
         let pushUp = app.buttons["gym.exercise.push-up"].firstMatch
-        if pushUp.waitForExistence(timeout: 5) { pushUp.tap() }
+        if pushUp.waitForExistence(timeout: 5) {
+            pushUp.tap()
+        } else if app.buttons["Cancel"].firstMatch.exists {
+            app.buttons["Cancel"].firstMatch.tap()
+        }
         snap("61-gym-workout")
         let leave = app.buttons["Leave workout"].firstMatch
         if leave.waitForExistence(timeout: 3) {
