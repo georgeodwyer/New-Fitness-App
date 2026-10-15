@@ -12,6 +12,7 @@ struct StrengthWorkoutView: View {
     @State private var showFinish = false
     @State private var showLeave = false
     @State private var summary: StrengthService.Summary?
+    @State private var showPicker = false
 
     init(model: StrengthWorkoutModel, units: UnitSystem, onClose: @escaping () -> Void) {
         _model = State(initialValue: model)
@@ -34,9 +35,27 @@ struct StrengthWorkoutView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(spacing: KXSpacing.lg) {
+                        if model.groups.isEmpty {
+                            KXEmptyState(symbol: "dumbbell", title: "No exercises yet",
+                                         message: "Add your first exercise. Weights and reps fill in from last time.")
+                        }
                         ForEach(model.groups) { group in
                             ExerciseCard(group: group, isCurrent: group.key == model.currentKey, units: units, model: model)
                                 .id(group.key)
+                        }
+                        if model.canEditExercises {
+                            Button {
+                                showPicker = true
+                            } label: {
+                                Label("Add exercise", systemImage: "plus")
+                            }
+                            .buttonStyle(.kx(.secondary, fullWidth: true))
+                            .accessibilityIdentifier("gym.addExercise")
+                        }
+                        if let name = model.savedTemplateName {
+                            Label("Saved \u{201C}\(name)\u{201D} to My gym workouts", systemImage: "checkmark.circle.fill")
+                                .font(KXFont.callout).foregroundStyle(KXColor.ink)
+                                .symbolRenderingMode(.multicolor)
                         }
                     }
                     .padding(KXSpacing.screenMargin)
@@ -48,12 +67,18 @@ struct StrengthWorkoutView: View {
             }
             Button("Finish workout") { showFinish = true }
                 .buttonStyle(.kx(.primary, fullWidth: true))
+                .disabled(model.totalSets == 0)
                 .padding(KXSpacing.screenMargin)
         }
         .background(KXColor.background.ignoresSafeArea())
         .sensoryFeedback(.success, trigger: model.restFinishedCount)
         .onAppear { UIApplication.shared.isIdleTimerDisabled = true }
         .onDisappear { UIApplication.shared.isIdleTimerDisabled = false }
+        .sheet(isPresented: $showPicker) {
+            ExercisePickerView(excluding: model.exerciseIds) { exercise in
+                model.addExercise(exercise)
+            }
+        }
         .sheet(isPresented: $showFinish) {
             FinishWorkoutSheet(defaultEffort: model.planned?.plannedEffort ?? 7, completedSets: model.completedSets, totalSets: model.totalSets) { effort in
                 showFinish = false
@@ -76,10 +101,27 @@ struct StrengthWorkoutView: View {
         HStack(spacing: KXSpacing.md) {
             KXIconButton(systemImage: "xmark", accessibilityLabel: "Leave workout", size: 36) { showLeave = true }
             VStack(alignment: .leading, spacing: 0) {
-                KXOverline("Strength Trainer", color: KXColor.accent)
+                KXOverline(model.canEditExercises ? "Gym" : "Strength Trainer", color: KXColor.accent)
                 Text(model.log.title).font(KXFont.headline).foregroundStyle(KXColor.ink).lineLimit(1)
             }
             Spacer()
+            if model.canEditExercises {
+                Menu {
+                    Button {
+                        model.saveAsTemplate()
+                    } label: {
+                        Label("Save as template", systemImage: "bookmark")
+                    }
+                    .disabled(model.totalSets == 0)
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .font(.title3)
+                        .foregroundStyle(KXColor.ink)
+                        .frame(width: 36, height: 44)
+                }
+                .accessibilityLabel("More")
+                .accessibilityIdentifier("gym.more")
+            }
             VStack(alignment: .trailing, spacing: 0) {
                 TimelineView(.periodic(from: .now, by: 1)) { context in
                     Text(Units.formatMinutesSeconds(context.date.timeIntervalSince(model.log.startedAt)))
@@ -142,12 +184,31 @@ private struct ExerciseCard: View {
                 VStack(alignment: .leading, spacing: KXSpacing.xxs) {
                     Text(group.name).font(KXFont.headline).foregroundStyle(KXColor.ink)
                     Text(targetText).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+                    if let lastTime = model.lastTime[group.first.exerciseId] {
+                        Label(lastTime, systemImage: "clock.arrow.circlepath")
+                            .font(KXFont.caption)
+                            .foregroundStyle(KXColor.inkSecondary)
+                    }
                 }
                 Spacer()
                 if group.isComplete {
                     KXChip(text: "Done", systemImage: "checkmark", variant: .success)
                 } else if isCurrent {
                     KXChip(text: "Now", variant: .primary)
+                }
+                if model.canEditExercises {
+                    Menu {
+                        Button(role: .destructive) {
+                            model.removeExercise(group)
+                        } label: {
+                            Label("Remove exercise", systemImage: "trash")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis")
+                            .foregroundStyle(KXColor.inkSecondary)
+                            .frame(width: 32, height: 32)
+                    }
+                    .accessibilityLabel("Options for \(group.name)")
                 }
             }
             ForEach(group.sets) { set in

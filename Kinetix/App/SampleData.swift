@@ -109,6 +109,8 @@ enum SampleData {
         try? context.delete(model: PersonalRecordModel.self)
         try? context.delete(model: RecoveryCheckInModel.self)
         try? context.delete(model: RunTemplateModel.self)
+        try? context.delete(model: GymTemplateModel.self)
+        try? context.delete(model: CustomExerciseModel.self)
         try? context.delete(model: CoachingSettingsModel.self)
         try? context.delete(model: UserProfileModel.self)
         try? context.save()

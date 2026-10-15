@@ -40,3 +40,72 @@ final class RunTemplateModel: SyncTracked {
         }
     }
 }
+
+/// A saved gym workout ("Push day") from the Record tab. Synced to the account.
+@Model
+final class GymTemplateModel: SyncTracked {
+    @Attribute(.unique) var id: UUID
+    var updatedAt: Date
+    var deletedAt: Date?
+    var needsSync: Bool
+
+    var name: String
+    /// Encoded `[GymTemplateItem]`.
+    var itemsData: Data?
+    var createdAt: Date
+    var lastUsedAt: Date?
+
+    init(name: String, items: [GymTemplateItem], id: UUID = UUID(), now: Date = .now) {
+        self.id = id
+        self.updatedAt = now
+        self.deletedAt = nil
+        self.needsSync = true
+        self.name = name
+        self.itemsData = StoredJSON.encode(items)
+        self.createdAt = now
+    }
+
+    var items: [GymTemplateItem] {
+        get { StoredJSON.decode([GymTemplateItem].self, from: itemsData) ?? [] }
+        set { itemsData = StoredJSON.encode(newValue) }
+    }
+}
+
+/// An exercise the user added to the library themselves. Synced to the account.
+@Model
+final class CustomExerciseModel: SyncTracked {
+    @Attribute(.unique) var id: UUID
+    var updatedAt: Date
+    var deletedAt: Date?
+    var needsSync: Bool
+
+    var name: String
+    var muscleRaw: String
+    var loadingRaw: String
+    var createdAt: Date
+
+    init(name: String, muscle: MuscleGroup, loading: ExerciseLoading, id: UUID = UUID(), now: Date = .now) {
+        self.id = id
+        self.updatedAt = now
+        self.deletedAt = nil
+        self.needsSync = true
+        self.name = name
+        self.muscleRaw = muscle.rawValue
+        self.loadingRaw = loading.rawValue
+        self.createdAt = now
+    }
+
+    var exerciseId: String { "custom-\(id.uuidString.lowercased())" }
+
+    var definition: ExerciseDefinition {
+        let muscle = MuscleGroup(rawValue: muscleRaw) ?? .fullBody
+        let region: BodyRegion = switch muscle {
+        case .legs, .glutes, .fullBody: .lower
+        case .core: .core
+        default: .upper
+        }
+        return ExerciseDefinition(id: exerciseId, name: name, pattern: "custom", requires: .bodyweight,
+                                  loading: ExerciseLoading(rawValue: loadingRaw) ?? .dumbbell, region: region,
+                                  muscle: muscle, libraryOnly: true)
+    }
+}

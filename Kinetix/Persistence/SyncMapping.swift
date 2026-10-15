@@ -42,7 +42,9 @@ enum SyncRegistry {
         ExerciseStateModel.self,
         PersonalRecordModel.self,
         RecoveryCheckInModel.self,
-        RunTemplateModel.self
+        RunTemplateModel.self,
+        GymTemplateModel.self,
+        CustomExerciseModel.self
     ]
 }
 
@@ -300,12 +302,13 @@ extension StrengthLogModel: SyncableModel {
         var finishedAt: Date?
         var healthKitWorkoutId: UUID?
         var stravaActivityId: String?
+        var isRecorded: Bool?
     }
     static var syncType: String { "strengthLog" }
     var syncPayload: Payload {
         Payload(plannedSessionId: plannedSessionId, startedAt: startedAt, durationSeconds: durationSeconds, effort: effort,
                 load: load, title: title, isFinished: isFinished, finishedAt: finishedAt, healthKitWorkoutId: healthKitWorkoutId,
-                stravaActivityId: stravaActivityId)
+                stravaActivityId: stravaActivityId, isRecorded: isRecorded)
     }
     func applySync(_ p: Payload, context: ModelContext) {
         plannedSessionId = p.plannedSessionId
@@ -318,6 +321,7 @@ extension StrengthLogModel: SyncableModel {
         finishedAt = p.finishedAt
         healthKitWorkoutId = p.healthKitWorkoutId
         stravaActivityId = p.stravaActivityId
+        isRecorded = p.isRecorded ?? false
     }
     static func makeForSync(id: UUID) -> StrengthLogModel { StrengthLogModel(plannedSessionId: nil, startedAt: .now, id: id) }
 }
@@ -471,5 +475,49 @@ extension RunTemplateModel: SyncableModel {
     }
     static func makeForSync(id: UUID) -> RunTemplateModel {
         RunTemplateModel(workout: CustomRunWorkout(name: "", type: .free), id: id)
+    }
+}
+
+extension GymTemplateModel: SyncableModel {
+    struct Payload: Codable {
+        var name: String
+        var itemsData: Data?
+        var createdAt: Date
+        var lastUsedAt: Date?
+    }
+    static var syncType: String { "gymTemplate" }
+    var syncPayload: Payload {
+        Payload(name: name, itemsData: itemsData, createdAt: createdAt, lastUsedAt: lastUsedAt)
+    }
+    func applySync(_ p: Payload, context: ModelContext) {
+        name = p.name
+        itemsData = p.itemsData
+        createdAt = p.createdAt
+        lastUsedAt = p.lastUsedAt
+    }
+    static func makeForSync(id: UUID) -> GymTemplateModel {
+        GymTemplateModel(name: "", items: [], id: id)
+    }
+}
+
+extension CustomExerciseModel: SyncableModel {
+    struct Payload: Codable {
+        var name: String
+        var muscleRaw: String
+        var loadingRaw: String
+        var createdAt: Date
+    }
+    static var syncType: String { "customExercise" }
+    var syncPayload: Payload {
+        Payload(name: name, muscleRaw: muscleRaw, loadingRaw: loadingRaw, createdAt: createdAt)
+    }
+    func applySync(_ p: Payload, context: ModelContext) {
+        name = p.name
+        muscleRaw = p.muscleRaw
+        loadingRaw = p.loadingRaw
+        createdAt = p.createdAt
+    }
+    static func makeForSync(id: UUID) -> CustomExerciseModel {
+        CustomExerciseModel(name: "", muscle: .fullBody, loading: .dumbbell, id: id)
     }
 }

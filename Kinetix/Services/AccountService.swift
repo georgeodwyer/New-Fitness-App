@@ -78,6 +78,13 @@ enum AccountService {
         var checkIns: [CheckIn]
         var planChanges: [Change]
         var runTemplates: [CustomRunWorkout]
+        var gymTemplates: [GymWorkoutExport]
+        var customExercises: [String]
+
+        struct GymWorkoutExport: Codable {
+            var name: String
+            var exercises: [GymTemplateItem]
+        }
     }
 
     static func makeExport(in context: ModelContext, now: Date = .now) -> Export {
@@ -116,7 +123,11 @@ enum AccountService {
             planChanges: all(PlanChangeModel.self).filter { !$0.isSoftDeleted }.sorted { $0.createdAt < $1.createdAt }.map {
                 Export.Change(date: $0.createdAt, summary: $0.summary)
             },
-            runTemplates: all(RunTemplateModel.self).filter { !$0.isSoftDeleted }.map(\.workout)
+            runTemplates: all(RunTemplateModel.self).filter { !$0.isSoftDeleted }.map(\.workout),
+            gymTemplates: all(GymTemplateModel.self).filter { !$0.isSoftDeleted }.map {
+                Export.GymWorkoutExport(name: $0.name, exercises: $0.items)
+            },
+            customExercises: all(CustomExerciseModel.self).filter { !$0.isSoftDeleted }.map(\.name)
         )
     }
 

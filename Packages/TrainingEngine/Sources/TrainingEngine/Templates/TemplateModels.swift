@@ -47,6 +47,26 @@ public struct ExerciseDefinition: Codable, Equatable, Sendable {
     public var region: BodyRegion
     public var mainLift: MainLift?
     public var defaultWeightKg: [String: Double]?
+    /// Main muscle group, for the gym tracker's filters (worked out from `pattern` when absent).
+    public var muscle: MuscleGroup?
+    /// Extra exercises for the gym tracker only; never chosen when generating plans.
+    public var libraryOnly: Bool?
+
+    public init(id: String, name: String, pattern: String, requires: Equipment, loading: ExerciseLoading, region: BodyRegion,
+                mainLift: MainLift? = nil, defaultWeightKg: [String: Double]? = nil, muscle: MuscleGroup? = nil, libraryOnly: Bool? = nil) {
+        self.id = id
+        self.name = name
+        self.pattern = pattern
+        self.requires = requires
+        self.loading = loading
+        self.region = region
+        self.mainLift = mainLift
+        self.defaultWeightKg = defaultWeightKg
+        self.muscle = muscle
+        self.libraryOnly = libraryOnly
+    }
+
+    public var muscleGroup: MuscleGroup { muscle ?? MuscleGroup(pattern: pattern) }
 
     public func defaultWeight(for level: ExperienceLevel) -> Double? {
         defaultWeightKg?[level.rawValue]

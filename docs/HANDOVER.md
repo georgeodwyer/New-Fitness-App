@@ -145,7 +145,17 @@ After M13: owner's list of faults.
   `Features/Share/` (`ShareCardView` map/photo/sticker, `ShareService` render/map snapshot/
   Instagram Stories via `InstagramAppID` = `INSTAGRAM_APP_ID` xcconfig/secret, docs/SHARING.md),
   `RunAnalysis.privacyTrimmed`.
-- M12 Gym tracker · M13 Health dashboard + layout: not started.
+- **M12 ✅ Gym tracker**: engine `Recording/GymWorkout.swift` (`MuscleGroup`, `ExerciseSearch`,
+  `GymTemplateItem`, `GymTemplate.summary`, `GymPrefill` set-by-set from last time + "Last time" text).
+  `exercises.json` gained 41 `libraryOnly` exercises with a `muscle` (never picked for plans).
+  App: `GymTemplateModel` ("gymTemplate"), `CustomExerciseModel` ("customExercise", id
+  `custom-<uuid>`), `StrengthLogModel.isRecorded` (synced); `GymService` (library, previous sets,
+  start/add/remove/items); `Features/Record/GymSetupView` (+ `gymStartFlow`: health notice +
+  planned-session question), `GymTemplateEditorView`, `ExercisePickerView`. Recorded sets use
+  progression key `<id>.free`, and `StrengthService.finish` skips plan progression for recorded
+  logs (PRs, load, Health/Strava still apply). `ActiveSession.strengthLogId` opens/resumes them.
+- Route planner (Record tab): owner asked for it after M12; questions to ask first.
+- M13 Health dashboard + layout: not started.
 
 ## Getting builds to the owner's phone (default)
 

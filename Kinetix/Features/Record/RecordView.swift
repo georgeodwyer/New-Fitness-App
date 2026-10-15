@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 import TrainingEngine
 
-/// The Record tab: start a run (or, soon, a gym session) without a plan, from scratch or
+/// The Record tab: start a run or a gym session without a plan, from scratch or
 /// from a saved workout. Recorded sessions count towards training load like planned ones.
 struct RecordView: View {
     @Query(filter: #Predicate<RunTemplateModel> { $0.deletedAt == nil }, sort: \RunTemplateModel.createdAt, order: .reverse)
@@ -35,10 +35,14 @@ struct RecordView: View {
                         .buttonStyle(.plain)
                         .accessibilityIdentifier("record.run")
 
-                        choiceCard(title: "Gym", detail: "Build and track your own workouts",
-                                   symbol: "dumbbell.fill", tint: KXColor.lift, badge: "Next update")
-                            .opacity(0.6)
-                            .accessibilityIdentifier("record.gym")
+                        NavigationLink {
+                            GymSetupView()
+                        } label: {
+                            choiceCard(title: "Gym", detail: "Build and track your own workouts",
+                                       symbol: "dumbbell.fill", tint: KXColor.lift)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("record.gym")
                     }
 
                     VStack(alignment: .leading, spacing: KXSpacing.md) {

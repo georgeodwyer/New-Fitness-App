@@ -73,6 +73,8 @@ final class StrengthLogModel: SyncTracked {
     /// False while the workout is in progress (sets are saved as you go, so it can be resumed).
     var isFinished: Bool = false
     var finishedAt: Date?
+    /// Started from the Record tab (your own workout) rather than opened from the plan.
+    var isRecorded: Bool = false
 
     @Relationship(deleteRule: .cascade, inverse: \SetLogModel.session)
     var sets: [SetLogModel] = []
@@ -91,7 +93,7 @@ final class StrengthLogModel: SyncTracked {
 
     /// Volume = Σ reps × weight (kg) over completed sets.
     var volumeKg: Double {
-        sets.filter(\.isCompleted).reduce(0) { $0 + Double($1.actualReps) * $1.actualWeightKg }
+        sets.filter { $0.isCompleted && !$0.isSoftDeleted }.reduce(0) { $0 + Double($1.actualReps) * $1.actualWeightKg }
     }
 
     var orderedSets: [SetLogModel] {

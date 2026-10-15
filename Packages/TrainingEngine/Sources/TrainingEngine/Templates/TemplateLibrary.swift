@@ -59,7 +59,7 @@ public struct TemplateLibrary: Sendable {
 
     /// The best exercise for a movement pattern given the user's equipment.
     public func exercise(pattern: String, equipment: Equipment) -> ExerciseDefinition? {
-        exercises.first { $0.pattern == pattern && equipment.allows($0.requires) }
+        exercises.first { $0.pattern == pattern && $0.libraryOnly != true && equipment.allows($0.requires) }
     }
 
     public func exercise(id: String) -> ExerciseDefinition? {

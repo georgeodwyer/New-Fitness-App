@@ -21,4 +21,6 @@ struct ActiveSession: Identifiable, Equatable {
     var custom: CustomRunWorkout? = nil
     /// The planned session a recorded run counts as, if the runner said so.
     var linkedPlannedId: UUID? = nil
+    /// A gym workout started (or resumed) from the Record tab.
+    var strengthLogId: UUID? = nil
 }

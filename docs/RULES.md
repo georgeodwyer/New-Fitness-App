@@ -125,4 +125,6 @@ existing workout, give it a new unique `id`, and edit.
 Each exercise has a `pattern` (squat, hinge, horizontalPush…), the minimum equipment it
 `requires`, how it's `loading` (barbell, dumbbell, machine, bodyweight), body `region`, and
 starting weights by level. For each pattern the plan picks the first exercise your equipment
-allows, so order matters.
+allows, so order matters. Exercises marked `"libraryOnly": true` (pattern `library`) are only offered in the
+gym tracker's exercise picker, grouped by `muscle` (chest, back, shoulders, arms, legs, glutes,
+core, fullBody); add more the same way.

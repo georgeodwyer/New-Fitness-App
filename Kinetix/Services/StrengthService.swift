@@ -105,31 +105,33 @@ enum StrengthService {
             let definition = templates.exercise(id: first.exerciseId)
             let range = RepRange(first.repRangeLower, first.repRangeUpper)
 
-            // Progression.
-            let stateModel = exerciseState(for: key, first: first, in: context)
-            let state = ProgressionState(workingWeightKg: stateModel?.workingWeightKg ?? first.targetWeightKg,
-                                         stallCount: stateModel?.stallCount ?? 0)
-            let decision = Progression.evaluate(
-                exerciseName: first.exerciseName,
-                loading: definition?.loading ?? (first.isBodyweight ? .bodyweight : .barbell),
-                region: definition?.region ?? .upper,
-                repRange: range,
-                prescribedSets: exerciseSets.count,
-                state: state,
-                sets: results,
-                rules: rules,
-                units: units
-            )
-            if decision.change != .none, let stateModel {
-                stateModel.workingWeightKg = decision.newState.workingWeightKg
-                stateModel.stallCount = decision.newState.stallCount
-                stateModel.lastChangeReason = decision.reason
-                stateModel.lastChangedAt = now
-                stateModel.touch(now: now)
-                newWeights[key] = decision.newState.workingWeightKg
-            }
-            if results.contains(where: \.completed) {
-                changes.append(ExerciseChange(exerciseName: first.exerciseName, change: decision.change, reason: decision.reason))
+            // Progression (plan sessions only; your own workouts pre-fill from last time instead).
+            if !log.isRecorded {
+                let stateModel = exerciseState(for: key, first: first, in: context)
+                let state = ProgressionState(workingWeightKg: stateModel?.workingWeightKg ?? first.targetWeightKg,
+                                             stallCount: stateModel?.stallCount ?? 0)
+                let decision = Progression.evaluate(
+                    exerciseName: first.exerciseName,
+                    loading: definition?.loading ?? (first.isBodyweight ? .bodyweight : .barbell),
+                    region: definition?.region ?? .upper,
+                    repRange: range,
+                    prescribedSets: exerciseSets.count,
+                    state: state,
+                    sets: results,
+                    rules: rules,
+                    units: units
+                )
+                if decision.change != .none, let stateModel {
+                    stateModel.workingWeightKg = decision.newState.workingWeightKg
+                    stateModel.stallCount = decision.newState.stallCount
+                    stateModel.lastChangeReason = decision.reason
+                    stateModel.lastChangedAt = now
+                    stateModel.touch(now: now)
+                    newWeights[key] = decision.newState.workingWeightKg
+                }
+                if results.contains(where: \.completed) {
+                    changes.append(ExerciseChange(exerciseName: first.exerciseName, change: decision.change, reason: decision.reason))
+                }
             }
 
             // Personal records (per exercise, across roles).

@@ -32,6 +32,7 @@ final class StrengthWorkoutModel {
         self.planned = planned
         self.context = context
         self.units = units
+        refreshLastTime()
         WorkoutActivityController.shared.start(title: log.title.isEmpty ? "Strength" : log.title, kind: "strength",
                                                state: lockScreenState)
     }
@@ -88,8 +89,8 @@ final class StrengthWorkoutModel {
     /// The first exercise with sets still to do.
     var currentKey: String? { groups.first { !$0.isComplete }?.key }
 
-    var completedSets: Int { log.sets.filter(\.isCompleted).count }
-    var totalSets: Int { log.sets.count }
+    var completedSets: Int { log.orderedSets.filter(\.isCompleted).count }
+    var totalSets: Int { log.orderedSets.count }
 
     func toggleComplete(_ set: SetLogModel) {
         if set.isCompleted {
@@ -114,6 +115,52 @@ final class StrengthWorkoutModel {
         if let reps { set.actualReps = max(0, reps) }
         set.touch()
         save()
+    }
+
+    // MARK: Your own workouts
+
+    /// "Last time: 3 × 8 @ 60 kg" per exercise id.
+    private(set) var lastTime: [String: String] = [:]
+    /// Set after "Save as template" so the screen can confirm it.
+    private(set) var savedTemplateName: String?
+
+    /// Exercises can be added to, or removed from, workouts started on the Record tab.
+    var canEditExercises: Bool { log.isRecorded }
+
+    var exerciseIds: Set<String> { Set(log.orderedSets.map(\.exerciseId)) }
+
+    private func refreshLastTime() {
+        var result: [String: String] = [:]
+        for group in groups {
+            let first = group.first
+            if let text = GymService.lastTimeText(exerciseId: first.exerciseId, isBodyweight: first.isBodyweight,
+                                                  units: units, excluding: log, in: context) {
+                result[first.exerciseId] = text
+            }
+        }
+        lastTime = result
+    }
+
+    func addExercise(_ exercise: ExerciseDefinition) {
+        GymService.addExercise(GymTemplateItem.starter(for: exercise), to: log, in: context)
+        refreshLastTime()
+        updateLockScreen()
+    }
+
+    func removeExercise(_ group: ExerciseGroup) {
+        GymService.removeExercise(key: group.key, from: log, in: context)
+        updateLockScreen()
+    }
+
+    func saveAsTemplate() {
+        let items = GymService.items(from: log)
+        guard !items.isEmpty else { return }
+        let template = GymTemplateModel(name: log.title, items: items)
+        template.lastUsedAt = .now
+        context.insert(template)
+        save()
+        SyncService.shared.requestSync()
+        savedTemplateName = log.title
     }
 
     func addSet(to group: ExerciseGroup) {

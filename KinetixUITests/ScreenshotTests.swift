@@ -121,6 +121,7 @@ final class ScreenshotTests: XCTestCase {
             strengthWorkout()
             runWorkout()
             recordRun()
+            recordGym()
         }
 
         app.tabBars.buttons["Progress"].tap()
@@ -281,6 +282,58 @@ final class ScreenshotTests: XCTestCase {
             app.navigationBars.buttons.firstMatch.tap()
         }
         snap("56-record-with-template")
+    }
+
+    /// Record tab → Gym: builds a saved workout, then starts an empty one and adds an exercise.
+    private func recordGym() {
+        app.tabBars.buttons["Record"].tap()
+        let gym = app.buttons["record.gym"].firstMatch
+        guard gym.waitForExistence(timeout: 5) else { return }
+        gym.tap()
+        snap("57-gym-setup")
+
+        let newTemplate = app.buttons["gym.newTemplate"].firstMatch
+        if newTemplate.waitForExistence(timeout: 5) {
+            newTemplate.tap()
+            let name = app.textFields["gym.templateName"].firstMatch
+            if name.waitForExistence(timeout: 5) {
+                name.tap()
+                name.typeText("Push day")
+            }
+            let add = app.buttons["gym.templateAddExercise"].firstMatch
+            if add.waitForExistence(timeout: 5) {
+                add.tap()
+                if app.buttons["Chest"].firstMatch.waitForExistence(timeout: 5) { app.buttons["Chest"].firstMatch.tap() }
+                snap("58-gym-exercise-picker")
+                let bench = app.buttons["gym.exercise.barbell-bench-press"].firstMatch
+                if bench.waitForExistence(timeout: 5) { bench.tap() }
+            }
+            snap("59-gym-template-editor")
+            let save = app.buttons["gym.templateSave"].firstMatch
+            if save.waitForExistence(timeout: 5) { save.tap() }
+        }
+        snap("60-gym-with-template")
+
+        let empty = app.buttons["gym.startEmpty"].firstMatch
+        guard empty.waitForExistence(timeout: 5) else { return }
+        empty.tap()
+        let extra = app.buttons["No, it's an extra session"]
+        if extra.waitForExistence(timeout: 3) { extra.tap() }
+        let addExercise = app.buttons["gym.addExercise"].firstMatch
+        guard addExercise.waitForExistence(timeout: 10) else { return }
+        addExercise.tap()
+        let pushUp = app.buttons["gym.exercise.push-up"].firstMatch
+        if pushUp.waitForExistence(timeout: 5) { pushUp.tap() }
+        snap("61-gym-workout")
+        let leave = app.buttons["Leave workout"].firstMatch
+        if leave.waitForExistence(timeout: 3) {
+            leave.tap()
+            let discard = app.buttons["Discard workout"].firstMatch
+            if discard.waitForExistence(timeout: 3) { discard.tap() }
+        }
+        if app.navigationBars.buttons.firstMatch.waitForExistence(timeout: 3) {
+            app.navigationBars.buttons.firstMatch.tap()
+        }
     }
 
     /// Opens a strength session from the Plan tab, logs a set, and finishes.

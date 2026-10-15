@@ -50,6 +50,17 @@ struct SessionContainerView: View {
     }
 
     private func startStrength() {
+        if let logId = session.strengthLogId {
+            guard let log = try? context.fetch(FetchDescriptor<StrengthLogModel>(predicate: #Predicate { $0.id == logId })).first else {
+                dismiss(); return
+            }
+            let plannedId = log.plannedSessionId
+            let planned = plannedId.flatMap { id in
+                try? context.fetch(FetchDescriptor<PlannedSessionModel>(predicate: #Predicate { $0.id == id })).first
+            }
+            strengthModel = StrengthWorkoutModel(log: log, planned: planned, context: context, units: units)
+            return
+        }
         guard let planned = plannedSession() else { dismiss(); return }
         let log = StrengthService.startOrResume(planned, in: context)
         strengthModel = StrengthWorkoutModel(log: log, planned: planned, context: context, units: units)
