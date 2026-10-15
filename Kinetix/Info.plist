@@ -18,6 +18,17 @@
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.georgeodwyer.kinetix</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>kinetix</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
@@ -32,6 +43,8 @@
 	<string>Kinetix keeps tracking your run with the screen locked so pace coaching and splits keep working.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Kinetix uses your location during runs to measure distance and pace and draw your route.</string>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
 	<key>StravaClientID</key>
 	<string>$(STRAVA_CLIENT_ID)</string>
 	<key>SupabaseAnonKey</key>
