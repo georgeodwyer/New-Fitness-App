@@ -70,6 +70,9 @@ final class StrengthWorkoutModel {
 
     /// Call when leaving the workout (finished, discarded or closed).
     func endLockScreen() {
+        restTask?.cancel()
+        restTask = nil
+        restEndsAt = nil
         WorkoutActivityController.shared.end()
     }
 

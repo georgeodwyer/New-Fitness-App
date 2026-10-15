@@ -13,6 +13,8 @@ struct StrengthWorkoutView: View {
     @State private var showLeave = false
     @State private var summary: StrengthService.Summary?
     @State private var showPicker = false
+    /// Set just before a discarded workout is deleted, so nothing reads it afterwards.
+    @State private var discarded = false
 
     init(model: StrengthWorkoutModel, units: UnitSystem, onClose: @escaping () -> Void) {
         _model = State(initialValue: model)
@@ -21,7 +23,9 @@ struct StrengthWorkoutView: View {
     }
 
     var body: some View {
-        if let summary {
+        if discarded {
+            KXColor.background.ignoresSafeArea()
+        } else if let summary {
             StrengthSummaryView(summary: summary, units: units, onDone: onClose)
         } else {
             workout
@@ -89,8 +93,14 @@ struct StrengthWorkoutView: View {
         .confirmationDialog("Leave this workout?", isPresented: $showLeave, titleVisibility: .visible) {
             Button("Keep for later") { onClose() }
             Button("Discard workout", role: .destructive) {
-                StrengthService.discard(model.log, in: context)
+                discarded = true
+                model.endLockScreen()
+                let log = model.log
                 onClose()
+                // Delete once the screen has gone, so SwiftUI never draws a deleted workout.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                    StrengthService.discard(log, in: context)
+                }
             }
         } message: {
             Text("Logged sets are saved, so you can pick up where you left off.")
