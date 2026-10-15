@@ -88,3 +88,11 @@ If the workflow fails, tell Claude — the logs are attached to the run and show
 - The version shown in the app (currently 1.0.0) is set in `project.yml`; it only needs
   changing for App Store releases.
 - If you ever upload from Xcode again, let Xcode manage the build number when it offers.
+
+## App Group (done once, for widgets)
+
+The widgets read the app's data through the App Group `group.com.georgeodwyer.kinetix`.
+It's registered at developer.apple.com → Identifiers → App Groups and enabled on both App
+IDs (`com.georgeodwyer.kinetix` and `com.georgeodwyer.kinetix.widgets`). Automatic signing
+can't switch this on by itself; if a future capability fails the same way ("provisioning
+profile doesn't match the entitlements file"), it needs ticking there too.

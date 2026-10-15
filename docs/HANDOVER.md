@@ -137,6 +137,14 @@ After M13: owner's list of faults.
   `LaunchBackground`); onboarding opens from Plan tab `PlanIntroCard` (fullScreenCover, closes when a
   profile appears). `UnitPreference` (units before a plan), `HealthNotice` (accepted in plan set-up or
   via `HealthNoticeSheet` before the first Record run), `AppBootstrap.ensureDefaults` (coaching settings).
+- **Lock screen, widgets, sharing ✅**: `KinetixWidgets` app-extension target (WidgetKit +
+  ActivityKit) with `Shared/WorkoutActivity.swift` (attributes, `ToggleWorkoutPauseIntent`,
+  `WidgetSnapshot`, `AppGroup`; `WIDGET_EXTENSION` flag in the extension). App:
+  `WorkoutActivityController`, `ActiveWorkout`, `WidgetSnapshotService`; links `kinetix://tab/…`.
+  App Group `group.com.georgeodwyer.kinetix` (owner enabled it on both App IDs). Sharing:
+  `Features/Share/` (`ShareCardView` map/photo/sticker, `ShareService` render/map snapshot/
+  Instagram Stories via `InstagramAppID` = `INSTAGRAM_APP_ID` xcconfig/secret, docs/SHARING.md),
+  `RunAnalysis.privacyTrimmed`.
 - M12 Gym tracker · M13 Health dashboard + layout: not started.
 
 ## Getting builds to the owner's phone (default)
