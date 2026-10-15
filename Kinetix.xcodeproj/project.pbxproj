@@ -32,6 +32,7 @@
 		2EEFF256098339590EEE70FD /* BalanceServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A150A73A24DB8D5355ECAE20 /* BalanceServiceTests.swift */; };
 		31ED552C55B36D3CBDB1CD53 /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCB45CC899A400282E14A651 /* Persistence.swift */; };
 		3312F6FAC1B80A1BF812DE48 /* KXText.swift in Sources */ = {isa = PBXBuildFile; fileRef = E266EDCEE7A3C5533B50F72F /* KXText.swift */; };
+		3475818B671B0DE68253CA00 /* RouteService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3238845C1F80144B68E1D0D4 /* RouteService.swift */; };
 		3C6F7C2B9C73500FAB98611A /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 802622121BE8CA378EC34BEB /* SettingsView.swift */; };
 		3C7556B959F1D015AAC35685 /* HomeWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09F31049BEE6448D25F4EED4 /* HomeWidgets.swift */; };
 		3FA853E7300E79023E932CCF /* RunServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0147DFFEB3CB167E9DF43A4B /* RunServiceTests.swift */; };
@@ -78,7 +79,9 @@
 		ABE991D19232BC6D6AAF9136 /* LocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15A2B8D3E8EAC9797667326F /* LocationService.swift */; };
 		B29A94D91EADFC17D2BA06B6 /* OnboardingModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53E2CA92347B3217FE2818A5 /* OnboardingModel.swift */; };
 		B3732468744D9B820C1E44A5 /* OnboardingSteps.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71127FE0289D140375A18838 /* OnboardingSteps.swift */; };
+		B7AD8F90B5F92D126482BD26 /* RouteModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6D1D0ED0DB03CD0353CFE18 /* RouteModelTests.swift */; };
 		B86925D4CFEAF0F0AB267E19 /* DesignGalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF24C085F57A681388D5C38D /* DesignGalleryView.swift */; };
+		B9DF27A2A87851CD83A8AA2E /* RoutePlannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6FACB92EC2C6DF95CCBEFF5 /* RoutePlannerView.swift */; };
 		BAF5F5CDD35377946754A4BE /* DashboardCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D6CEBF47C9E4CCE5F22FE91 /* DashboardCards.swift */; };
 		BD17DBB64F9EEE349E1919E5 /* PlanPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2388FFC3629A913F08C12797 /* PlanPreviewView.swift */; };
 		BD94D0B027551866392B9A74 /* ShareService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0194D5106F49F620FDB86E8 /* ShareService.swift */; };
@@ -189,6 +192,7 @@
 		27D5D1CA3AE70EB8EF9D18FD /* AccountService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountService.swift; sourceTree = "<group>"; };
 		2FCE0202A3E975345AA0F2B0 /* KXProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXProgress.swift; sourceTree = "<group>"; };
 		3000B3D5DB9BC4ADD3017915 /* ProgressScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressScreen.swift; sourceTree = "<group>"; };
+		3238845C1F80144B68E1D0D4 /* RouteService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteService.swift; sourceTree = "<group>"; };
 		3880708490C8993B63991C6A /* IntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntegrationTests.swift; sourceTree = "<group>"; };
 		3996EB82CA6A8C8F088B7F7C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		3CB8951AE011CBA263FE6226 /* VoiceCoach.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceCoach.swift; sourceTree = "<group>"; };
@@ -234,6 +238,7 @@
 		A150A73A24DB8D5355ECAE20 /* BalanceServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BalanceServiceTests.swift; sourceTree = "<group>"; };
 		A4869AF91B0E573C72D5565D /* UserProfileModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfileModel.swift; sourceTree = "<group>"; };
 		A4F90BB8590CAE95AEE03BF5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		A6D1D0ED0DB03CD0353CFE18 /* RouteModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteModelTests.swift; sourceTree = "<group>"; };
 		AB63E4848B35BB437454824E /* RunDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunDetailView.swift; sourceTree = "<group>"; };
 		ABE151BB82821F03C677FAAB /* KinetixTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = KinetixTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AE4D2B82E6F373D0D19923E8 /* StrengthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrengthService.swift; sourceTree = "<group>"; };
@@ -251,6 +256,7 @@
 		C49960012FF421B7459C2F62 /* RunService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunService.swift; sourceTree = "<group>"; };
 		C5069ED66DFB790377708F8D /* SampleData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleData.swift; sourceTree = "<group>"; };
 		C66B591B87308C029372D75D /* TrainingEngine */ = {isa = PBXFileReference; lastKnownFileType = folder; name = TrainingEngine; path = Packages/TrainingEngine; sourceTree = SOURCE_ROOT; };
+		C6FACB92EC2C6DF95CCBEFF5 /* RoutePlannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutePlannerView.swift; sourceTree = "<group>"; };
 		CD05F4DDF2E3BCB21AE7455E /* PersistenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceTests.swift; sourceTree = "<group>"; };
 		CE8F9A4EC4A0EB227AB709AD /* ScreenshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotTests.swift; sourceTree = "<group>"; };
 		CF24C085F57A681388D5C38D /* DesignGalleryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignGalleryView.swift; sourceTree = "<group>"; };
@@ -367,6 +373,7 @@
 				9AFFA954318BD83DFBE4F5ED /* GymSetupView.swift */,
 				DE60D8E623FC5E87ABB1C84E /* GymTemplateEditorView.swift */,
 				12C7EAFA6B4C80F5771EBF80 /* RecordView.swift */,
+				C6FACB92EC2C6DF95CCBEFF5 /* RoutePlannerView.swift */,
 				0B1D6E40D21B520457920C21 /* RunSetupView.swift */,
 				B16CC86849C40BB16FD55693 /* WorkoutBuilderView.swift */,
 			);
@@ -459,6 +466,7 @@
 				3880708490C8993B63991C6A /* IntegrationTests.swift */,
 				CD05F4DDF2E3BCB21AE7455E /* PersistenceTests.swift */,
 				85DC3ED0960A484ACB127C77 /* RecordTests.swift */,
+				A6D1D0ED0DB03CD0353CFE18 /* RouteModelTests.swift */,
 				0147DFFEB3CB167E9DF43A4B /* RunServiceTests.swift */,
 				9EB4073696B3EE5AFE2200E5 /* StrengthServiceTests.swift */,
 				8696410FC6193358A919F22E /* SyncServiceTests.swift */,
@@ -544,6 +552,7 @@
 				E6E63C3F1C7645CF45D08433 /* Keychain.swift */,
 				15A2B8D3E8EAC9797667326F /* LocationService.swift */,
 				0D792A73A46409ABE2ED5AF2 /* PlanService.swift */,
+				3238845C1F80144B68E1D0D4 /* RouteService.swift */,
 				C49960012FF421B7459C2F62 /* RunService.swift */,
 				AE4D2B82E6F373D0D19923E8 /* StrengthService.swift */,
 				8625E979738A82F0E873A0DD /* SyncService.swift */,
@@ -835,6 +844,8 @@
 				F030C9653CAED7265051687D /* ProgressScreen.swift in Sources */,
 				241BA0522DD83EFC4814952E /* RecordView.swift in Sources */,
 				EFF93589CAA9CF6D5AE20771 /* RootView.swift in Sources */,
+				B9DF27A2A87851CD83A8AA2E /* RoutePlannerView.swift in Sources */,
+				3475818B671B0DE68253CA00 /* RouteService.swift in Sources */,
 				CACA374A1C695897F27F3846 /* RunDetailView.swift in Sources */,
 				8B591D9BB2497AB6F03A5E2E /* RunService.swift in Sources */,
 				9271E01947C63FB49107979B /* RunSetupView.swift in Sources */,
@@ -881,6 +892,7 @@
 				A37859534B61490F5D344E6B /* IntegrationTests.swift in Sources */,
 				90CD0CC8516E0A04C6BA5AFD /* PersistenceTests.swift in Sources */,
 				67E40FA365E4371536043DA4 /* RecordTests.swift in Sources */,
+				B7AD8F90B5F92D126482BD26 /* RouteModelTests.swift in Sources */,
 				3FA853E7300E79023E932CCF /* RunServiceTests.swift in Sources */,
 				2A4AA22FE91E593A94B94CC9 /* StrengthServiceTests.swift in Sources */,
 				C34EAB3E216D85D3BD92BA60 /* SyncServiceTests.swift in Sources */,
