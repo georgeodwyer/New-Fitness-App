@@ -18,7 +18,10 @@ struct KinetixApp: App {
         if launch.seedSample {
             MainActor.assumeIsolated {
                 SampleData.seed(into: container.mainContext)
-                if launch.seedHistory { SampleData.seedHistory(into: container.mainContext) }
+                if launch.seedHistory {
+                    SampleData.seedHistory(into: container.mainContext)
+                    HealthService.shared.loadSample()
+                }
             }
         }
     }

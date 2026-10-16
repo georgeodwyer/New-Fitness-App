@@ -20,7 +20,7 @@ Used while you're recording a run, to measure distance and pace and draw your ro
 
 ## Apple Health
 
-Only if you connect it. Kinetix reads heart rate, resting heart rate and workouts from other apps to show live heart rate and balance your training load, and saves your runs and strength sessions to Health. Health data is never used for advertising or shared with anyone for marketing. Heart rate recorded during a Kinetix run is kept with that run (and backed up to your account if you have one).
+Only if you connect it. Kinetix reads heart rate, resting heart rate, heart rate variability, sleep, steps, active energy, VO2 max, breathing rate and workouts from other apps to show live heart rate and your body trends, judge recovery and balance your training load, and saves your runs and strength sessions to Health. These readings are read fresh from Health on this iPhone each time and are not stored in Kinetix or sent to our servers. Health data is never used for advertising or shared with anyone for marketing. Heart rate recorded during a Kinetix run is kept with that run (and backed up to your account if you have one).
 
 ## Bluetooth
 

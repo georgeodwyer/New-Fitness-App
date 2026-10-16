@@ -96,6 +96,7 @@ final class ScreenshotTests: XCTestCase {
             app.swipeUp()
             snap("20-dashboard-\(index)")
         }
+        bodyAndLayout()
         if !dark { skipOrSwap() }
 
         app.tabBars.buttons["Plan"].tap()
@@ -157,6 +158,13 @@ final class ScreenshotTests: XCTestCase {
         }
         if app.buttons["Overall"].waitForExistence(timeout: 3) { app.buttons["Overall"].tap() }
         snap("24g-progress-overall")
+        if app.buttons["Health"].waitForExistence(timeout: 3) {
+            app.buttons["Health"].tap()
+            snap("24h-progress-health")
+            app.swipeUp()
+            snap("24i-progress-health-2")
+            app.swipeDown(); app.swipeDown()
+        }
 
         app.tabBars.buttons["Settings"].tap()
         snap("25-settings")
@@ -198,6 +206,28 @@ final class ScreenshotTests: XCTestCase {
     }
 
     /// Opens the skip/swap sheet for today's first session and swaps it.
+    /// Dashboard: a Body tile's detail (sample Health data), then Edit dashboard.
+    private func bodyAndLayout() {
+        let tile = app.buttons["body.tile.hrv"].firstMatch
+        if tile.waitForExistence(timeout: 3) {
+            tile.tap()
+            snap("20c-body-hrv")
+            if app.buttons["30 days"].waitForExistence(timeout: 3) {
+                app.buttons["7 days"].tap()
+                snap("20d-body-hrv-7-days")
+                app.buttons["30 days"].tap()
+            }
+            app.navigationBars.buttons.firstMatch.tap()
+        }
+        let edit = app.buttons["dashboard.edit"].firstMatch
+        if edit.waitForExistence(timeout: 3) {
+            edit.tap()
+            snap("20e-edit-dashboard")
+            let done = app.buttons["dashboard.done"].firstMatch
+            if done.waitForExistence(timeout: 3) { done.tap() }
+        }
+    }
+
     private func skipOrSwap() {
         app.swipeDown(); app.swipeDown(); app.swipeDown(); app.swipeDown(); app.swipeDown()
         let button = app.buttons["Skip or swap"].firstMatch

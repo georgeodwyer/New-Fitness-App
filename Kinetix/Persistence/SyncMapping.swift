@@ -95,13 +95,14 @@ extension CoachingSettingsModel: SyncableModel {
         var splitAnnouncementsEnabled: Bool
         var segmentAnnouncementsEnabled: Bool
         var cuesDuringWarmUpCoolDown: Bool
+        var dashboardLayoutData: Data?
     }
     static var syncType: String { "coachingSettings" }
     var syncPayload: Payload {
         Payload(paceCueDelaySeconds: paceCueDelaySeconds, paceToleranceSecondsPerKm: paceToleranceSecondsPerKm,
                 voiceIdentifier: voiceIdentifier, cueVolume: cueVolume, paceCuesEnabled: paceCuesEnabled,
                 splitAnnouncementsEnabled: splitAnnouncementsEnabled, segmentAnnouncementsEnabled: segmentAnnouncementsEnabled,
-                cuesDuringWarmUpCoolDown: cuesDuringWarmUpCoolDown)
+                cuesDuringWarmUpCoolDown: cuesDuringWarmUpCoolDown, dashboardLayoutData: dashboardLayoutData)
     }
     func applySync(_ p: Payload, context: ModelContext) {
         paceCueDelaySeconds = p.paceCueDelaySeconds
@@ -112,6 +113,7 @@ extension CoachingSettingsModel: SyncableModel {
         splitAnnouncementsEnabled = p.splitAnnouncementsEnabled
         segmentAnnouncementsEnabled = p.segmentAnnouncementsEnabled
         cuesDuringWarmUpCoolDown = p.cuesDuringWarmUpCoolDown
+        dashboardLayoutData = p.dashboardLayoutData
     }
     static func makeForSync(id: UUID) -> CoachingSettingsModel { CoachingSettingsModel(id: id) }
 }

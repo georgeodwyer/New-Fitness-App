@@ -25,6 +25,10 @@ public struct BalanceRules: Codable, Equatable, Sendable {
         public var restingHeartRateMinimumReadings: Int
         /// A raised resting HR (or low HRV) only counts as poor recovery when readiness is also below this.
         public var bodySignalCountsWhenReadinessBelow: Double
+        /// HRV this many percent below the usual counts as a warning sign.
+        public var hrvSuppressedPercent: Double = 15
+        /// HRV readings needed before a baseline means anything.
+        public var hrvMinimumReadings: Int = 7
     }
 
     public struct Rebalancing: Codable, Equatable, Sendable {
@@ -73,6 +77,8 @@ public struct BalanceRules: Codable, Equatable, Sendable {
         try check(recovery.restingHeartRateElevatedBpm > 0, "recovery: restingHeartRateElevatedBpm must be positive")
         try check(recovery.restingHeartRateMinimumReadings >= 3, "recovery: restingHeartRateMinimumReadings must be at least 3")
         try check((0...1).contains(recovery.bodySignalCountsWhenReadinessBelow), "recovery: bodySignalCountsWhenReadinessBelow must be 0–1")
+        try check((1...60).contains(recovery.hrvSuppressedPercent), "recovery: hrvSuppressedPercent must be 1–60")
+        try check(recovery.hrvMinimumReadings >= 3, "recovery: hrvMinimumReadings must be at least 3")
         try check((1...7).contains(rebalancing.easeHardSessionWithinDays), "rebalancing: easeHardSessionWithinDays must be 1–7")
         for (name, value) in [("highLoadEasyRunFactor", rebalancing.highLoadEasyRunFactor), ("reducedLiftSetsFactor", rebalancing.reducedLiftSetsFactor),
                               ("easedLongRunFactor", rebalancing.easedLongRunFactor)] {
@@ -85,4 +91,24 @@ public struct BalanceRules: Codable, Equatable, Sendable {
 
 extension BalanceRules.Load {
     public var optimalRange: ClosedRange<Double> { optimalRatioLow...optimalRatioHigh }
+}
+
+extension BalanceRules.Recovery {
+    private enum CodingKeys: String, CodingKey {
+        case poorReadinessBelow, verySoreAtOrAbove, restingHeartRateElevatedBpm, restingHeartRateMinimumReadings
+        case bodySignalCountsWhenReadinessBelow, hrvSuppressedPercent, hrvMinimumReadings
+    }
+
+    /// Newer values are optional in the file, so an older rules file still loads.
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let defaults = BalanceRules.defaults.recovery
+        self.init(poorReadinessBelow: try container.decode(Double.self, forKey: .poorReadinessBelow),
+                  verySoreAtOrAbove: try container.decode(Int.self, forKey: .verySoreAtOrAbove),
+                  restingHeartRateElevatedBpm: try container.decode(Double.self, forKey: .restingHeartRateElevatedBpm),
+                  restingHeartRateMinimumReadings: try container.decode(Int.self, forKey: .restingHeartRateMinimumReadings),
+                  bodySignalCountsWhenReadinessBelow: try container.decode(Double.self, forKey: .bodySignalCountsWhenReadinessBelow),
+                  hrvSuppressedPercent: try container.decodeIfPresent(Double.self, forKey: .hrvSuppressedPercent) ?? defaults.hrvSuppressedPercent,
+                  hrvMinimumReadings: try container.decodeIfPresent(Int.self, forKey: .hrvMinimumReadings) ?? defaults.hrvMinimumReadings)
+    }
 }

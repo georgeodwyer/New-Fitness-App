@@ -4,8 +4,10 @@ import HealthKit
 import CoreLocation
 import TrainingEngine
 
-/// Apple Health: saves finished runs (with route) and strength sessions, reads resting
-/// heart rate and other apps' workouts, and streams Apple Watch heart rate during runs.
+/// Apple Health: saves finished runs (with route) and strength sessions; reads resting heart
+/// rate, HRV, sleep, steps, active energy, VO2 max, breathing rate and other apps' workouts;
+/// and streams Apple Watch heart rate during runs. Health readings stay on the phone (they're
+/// read fresh, never stored in Kinetix's database or synced).
 @Observable
 @MainActor
 final class HealthService {
@@ -26,16 +28,83 @@ final class HealthService {
     @ObservationIgnored let store: HKHealthStore? = HKHealthStore.isHealthDataAvailable() ? HKHealthStore() : nil
     /// This morning's resting heart rate compared with usual (nil without enough data).
     private(set) var restingHeartRate: RestingHeartRateSignal?
+    /// Last night's HRV compared with usual (nil without enough data).
+    private(set) var hrv: HRVSignal?
+    /// Daily values for the last 30 days, per metric (missing days left out).
+    private(set) var metricDays: [HealthMetric: [HealthDay]] = [:]
+    /// True when Kinetix hasn't yet asked for some of the Health data it can show
+    /// (e.g. after an update added new types).
+    private(set) var needsPermission = false
     private(set) var lastRefresh: Date?
 
-    var isAvailable: Bool { store != nil }
+    var isAvailable: Bool { store != nil || isSample }
+
+    /// Screenshot tests only: made-up body data instead of reading Health.
+    private(set) var isSample = false
+
+    /// Health is connected (or sample data is showing), so body data can be shown.
+    var isConnected: Bool { isSample || IntegrationSettings.shared.healthEnabled }
+
+    /// Fills in 30 days of made-up readings (screenshot tests; never used otherwise).
+    func loadSample(now: Date = .now) {
+        isSample = true
+        let calendar = Calendar.kinetix
+        let today = calendar.startOfDay(for: now)
+        func series(_ value: (Int) -> Double) -> [HealthDay] {
+            (0..<30).reversed().compactMap { offset in
+                calendar.date(byAdding: .day, value: -offset, to: today).map { HealthDay(date: $0, value: value(offset)) }
+            }
+        }
+        let wave = { (offset: Int, size: Double) in sin(Double(offset) * 1.3) * size }
+        metricDays = [
+            .restingHeartRate: series { 51 + wave($0, 2) + ($0 == 0 ? 6 : 0) },
+            .hrv: series { $0 == 0 ? 47 : 62 + wave($0, 6) },
+            .sleep: series { 7.3 + wave($0, 0.7) - ($0 == 0 ? 1.1 : 0) },
+            .steps: series { 9_500 + wave($0, 3_000) },
+            .activeEnergy: series { 620 + wave($0, 180) },
+            .vo2Max: series { 49.5 - Double($0) * 0.03 },
+            .respiratoryRate: series { 14.2 + wave($0, 0.4) }
+        ]
+        restingHeartRate = RestingHeartRateSignal.assess(today: metricDays[.restingHeartRate]?.last?.value ?? 51,
+                                                         history: metricDays[.restingHeartRate]?.dropLast().map(\.value) ?? [])
+        hrv = Self.hrvSignal(from: metricDays[.hrv] ?? [], now: now)
+    }
 
     private static let heartRateUnit = HKUnit.count().unitDivided(by: .minute())
     private let heartRateType = HKQuantityType(.heartRate)
     private let restingType = HKQuantityType(.restingHeartRate)
     private let distanceType = HKQuantityType(.distanceWalkingRunning)
 
-    private var readTypes: Set<HKObjectType> { [heartRateType, restingType, HKObjectType.workoutType()] }
+    private let sleepType = HKCategoryType(.sleepAnalysis)
+
+    private var readTypes: Set<HKObjectType> {
+        var types: Set<HKObjectType> = [heartRateType, restingType, HKObjectType.workoutType(), sleepType]
+        for metric in HealthMetric.allCases { if let type = Self.quantityType(for: metric) { types.insert(type) } }
+        return types
+    }
+
+    private static func quantityType(for metric: HealthMetric) -> HKQuantityType? {
+        switch metric {
+        case .restingHeartRate: return HKQuantityType(.restingHeartRate)
+        case .hrv: return HKQuantityType(.heartRateVariabilitySDNN)
+        case .steps: return HKQuantityType(.stepCount)
+        case .activeEnergy: return HKQuantityType(.activeEnergyBurned)
+        case .vo2Max: return HKQuantityType(.vo2Max)
+        case .respiratoryRate: return HKQuantityType(.respiratoryRate)
+        case .sleep: return nil
+        }
+    }
+
+    private static func unit(for metric: HealthMetric) -> HKUnit {
+        switch metric {
+        case .restingHeartRate, .respiratoryRate: return HKUnit.count().unitDivided(by: .minute())
+        case .hrv: return .secondUnit(with: .milli)
+        case .steps: return .count()
+        case .activeEnergy: return .kilocalorie()
+        case .vo2Max: return HKUnit(from: "ml/kg*min")
+        case .sleep: return .hour()
+        }
+    }
     private var shareTypes: Set<HKSampleType> { [HKObjectType.workoutType(), distanceType, HKSeriesType.workoutRoute()] }
 
     // MARK: - Permission
@@ -106,10 +175,13 @@ final class HealthService {
 
     /// Re-reads resting heart rate and other apps' workouts (at most every 15 minutes unless forced).
     func refresh(settings: IntegrationSettings = .shared, force: Bool = false, now: Date = .now) async {
-        guard store != nil, settings.healthEnabled else { return }
+        guard store != nil, settings.healthEnabled, !isSample else { return }
         if !force, let lastRefresh, now.timeIntervalSince(lastRefresh) < 15 * 60 { return }
         lastRefresh = now
         restingHeartRate = await readRestingHeartRate(now: now)
+        metricDays = await readMetricDays(now: now)
+        hrv = Self.hrvSignal(from: metricDays[.hrv] ?? [], now: now)
+        needsPermission = await checkNeedsPermission()
         if let workouts = await readExternalWorkouts(now: now) {
             settings.externalWorkouts = workouts
         }
@@ -133,6 +205,89 @@ final class HealthService {
         guard let todayValue = byDay[today] else { return nil }
         let history = byDay.filter { $0.key < today }.map(\.value)
         return RestingHeartRateSignal.assess(today: todayValue, history: history)
+    }
+
+    /// Hours asleep last night, when Health has it.
+    var lastNightSleepHours: Double? {
+        guard let last = metricDays[.sleep]?.last, Calendar.kinetix.isDateInToday(last.date) else { return nil }
+        return last.value
+    }
+
+    /// The latest value of each metric against usual, for metrics with data.
+    var trends: [HealthTrend] {
+        HealthMetric.allCases.compactMap { metric in
+            metricDays[metric].flatMap { HealthTrend.make(metric: metric, days: $0, calendar: .kinetix) }
+        }
+    }
+
+    private func checkNeedsPermission() async -> Bool {
+        guard let store else { return false }
+        let status = try? await store.statusForAuthorizationRequest(toShare: shareTypes, read: readTypes)
+        return status == .shouldRequest
+    }
+
+    private func readMetricDays(now: Date) async -> [HealthMetric: [HealthDay]] {
+        var result: [HealthMetric: [HealthDay]] = [:]
+        for metric in HealthMetric.allCases {
+            let days = metric == .sleep ? await readSleepDays(now: now) : await readQuantityDays(metric, now: now)
+            if !days.isEmpty { result[metric] = days }
+        }
+        return result
+    }
+
+    /// One value per day: the total for steps and energy, the average for readings.
+    private func readQuantityDays(_ metric: HealthMetric, now: Date) async -> [HealthDay] {
+        guard let store, let type = Self.quantityType(for: metric) else { return [] }
+        let calendar = Calendar.kinetix
+        let today = calendar.startOfDay(for: now)
+        guard let from = calendar.date(byAdding: .day, value: -30, to: today) else { return [] }
+        let cumulative = metric.isDailyTotal
+        let descriptor = HKStatisticsCollectionQueryDescriptor(
+            predicate: .quantitySample(type: type, predicate: HKQuery.predicateForSamples(withStart: from, end: now)),
+            options: cumulative ? .cumulativeSum : .discreteAverage,
+            anchorDate: from,
+            intervalComponents: DateComponents(day: 1)
+        )
+        guard let collection = try? await descriptor.result(for: store) else { return [] }
+        let unit = Self.unit(for: metric)
+        return collection.statistics().compactMap { statistics in
+            let quantity = cumulative ? statistics.sumQuantity() : statistics.averageQuantity()
+            guard let value = quantity?.doubleValue(for: unit), value > 0 else { return nil }
+            return HealthDay(date: calendar.startOfDay(for: statistics.startDate), value: value)
+        }
+    }
+
+    /// Hours asleep per night, counted on the day you woke up. When several apps or devices
+    /// record the same night (say an Apple Watch and a Whoop), the longest is used.
+    private func readSleepDays(now: Date) async -> [HealthDay] {
+        guard let store else { return [] }
+        let calendar = Calendar.kinetix
+        guard let from = calendar.date(byAdding: .day, value: -31, to: calendar.startOfDay(for: now)) else { return [] }
+        let descriptor = HKSampleQueryDescriptor(
+            predicates: [.categorySample(type: sleepType, predicate: HKQuery.predicateForSamples(withStart: from, end: now))],
+            sortDescriptors: [SortDescriptor(\.startDate)]
+        )
+        guard let samples = try? await descriptor.result(for: store) else { return [] }
+        let asleep = HKCategoryValueSleepAnalysis.allAsleepValues.map(\.rawValue)
+        var bySource: [String: [Date: Double]] = [:]
+        for sample in samples where asleep.contains(sample.value) {
+            let source = sample.sourceRevision.source.bundleIdentifier
+            let day = calendar.startOfDay(for: sample.endDate)
+            bySource[source, default: [:]][day, default: 0] += sample.endDate.timeIntervalSince(sample.startDate) / 3600
+        }
+        var best: [Date: Double] = [:]
+        for nights in bySource.values {
+            for (day, hours) in nights { best[day] = max(best[day] ?? 0, hours) }
+        }
+        return best.filter { $0.value >= 0.5 }.map { HealthDay(date: $0.key, value: $0.value) }.sorted { $0.date < $1.date }
+    }
+
+    /// Today's HRV against the previous days' readings.
+    static func hrvSignal(from days: [HealthDay], now: Date) -> HRVSignal? {
+        let calendar = Calendar.kinetix
+        guard let latest = days.last, calendar.isDate(latest.date, inSameDayAs: now) else { return nil }
+        let history = days.dropLast().filter { now.timeIntervalSince($0.date) <= 31 * 86_400 }.map(\.value)
+        return HRVSignal.assess(today: latest.value, history: history)
     }
 
     /// Workouts from the last 28 days recorded by other apps. nil if Health couldn't be read.

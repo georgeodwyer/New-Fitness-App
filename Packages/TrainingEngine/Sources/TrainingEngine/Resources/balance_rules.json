@@ -15,7 +15,9 @@
     "verySoreAtOrAbove": 5,
     "restingHeartRateElevatedBpm": 7,
     "restingHeartRateMinimumReadings": 7,
-    "bodySignalCountsWhenReadinessBelow": 0.6
+    "bodySignalCountsWhenReadinessBelow": 0.6,
+    "hrvSuppressedPercent": 15,
+    "hrvMinimumReadings": 7
   },
   "rebalancing": {
     "easeHardSessionWithinDays": 3,

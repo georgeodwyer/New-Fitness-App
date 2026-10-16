@@ -53,7 +53,7 @@ enum BalanceService {
     @discardableResult
     static func autoAdjust(profile: AthleteProfile, status: LoadStatus, checkIn: RecoveryCheckIn?, in modelContext: ModelContext,
                            now: Date = .now, force: Bool = false, ratio: Double? = nil,
-                           restingHeartRate: RestingHeartRateSignal? = nil) -> [String] {
+                           restingHeartRate: RestingHeartRateSignal? = nil, hrv: HRVSignal? = nil) -> [String] {
         let calendar = Calendar.kinetix
         let dayKey = ISO8601DateFormatter().string(from: calendar.startOfDay(for: now))
         if !force, UserDefaults.standard.string(forKey: lastAutoAdjustKey) == dayKey { return [] }
@@ -61,7 +61,7 @@ enum BalanceService {
         let models = week(containing: now, in: modelContext)
         let adjustments = Rebalancer.adjustForLoad(week: models.map(\.weekSession), status: status, checkIn: checkIn,
                                                    context: context(profile: profile, now: now))
-        let triggers = loadTriggers(status: status, ratio: ratio) + recoveryTriggers(checkIn, restingHeartRate: restingHeartRate)
+        let triggers = loadTriggers(status: status, ratio: ratio) + recoveryTriggers(checkIn, restingHeartRate: restingHeartRate, hrv: hrv)
         return apply(adjustments, to: models, profile: profile, triggers: triggers, in: modelContext, now: now)
     }
 
@@ -98,7 +98,8 @@ extension BalanceService {
     }
 
     /// The check-in answers and body signals behind a poor-recovery change.
-    static func recoveryTriggers(_ checkIn: RecoveryCheckIn?, restingHeartRate: RestingHeartRateSignal?) -> [ChangeTrigger] {
+    static func recoveryTriggers(_ checkIn: RecoveryCheckIn?, restingHeartRate: RestingHeartRateSignal?,
+                                 hrv: HRVSignal? = nil) -> [ChangeTrigger] {
         guard let checkIn, checkIn.isPoor else { return [] }
         let rules = BalanceRules.current.recovery
         var triggers = [
@@ -112,6 +113,11 @@ extension BalanceService {
             triggers.append(ChangeTrigger(label: "Resting HR", value: "+\(Int(restingHeartRate.difference.rounded())) bpm",
                                           detail: "\(Int(restingHeartRate.today.rounded())) vs usual \(Int(restingHeartRate.baseline.rounded()))",
                                           symbol: "heart"))
+        }
+        if checkIn.hrvSuppressed, let hrv {
+            triggers.append(ChangeTrigger(label: "HRV", value: "\(Int((hrv.change * 100).rounded()))%",
+                                          detail: "\(Int(hrv.today.rounded())) ms vs usual \(Int(hrv.baseline.rounded()))",
+                                          symbol: "waveform.path.ecg"))
         }
         return triggers
     }

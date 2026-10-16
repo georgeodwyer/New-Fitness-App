@@ -1,7 +1,8 @@
 import Foundation
 import SwiftData
+import TrainingEngine
 
-/// Audio coaching preferences for runs.
+/// Audio coaching preferences for runs, plus the dashboard layout (both synced).
 @Model
 final class CoachingSettingsModel: SyncTracked {
     @Attribute(.unique) var id: UUID
@@ -20,6 +21,13 @@ final class CoachingSettingsModel: SyncTracked {
     var splitAnnouncementsEnabled: Bool
     var segmentAnnouncementsEnabled: Bool
     var cuesDuringWarmUpCoolDown: Bool
+    /// Encoded `DashboardLayout` (nil = default order, nothing hidden).
+    var dashboardLayoutData: Data? = nil
+
+    var dashboardLayout: DashboardLayout {
+        get { StoredJSON.decode(DashboardLayout.self, from: dashboardLayoutData) ?? .default }
+        set { dashboardLayoutData = newValue == .default ? nil : StoredJSON.encode(newValue) }
+    }
 
     init(id: UUID = UUID(), now: Date = .now) {
         self.id = id

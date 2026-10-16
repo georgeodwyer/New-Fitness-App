@@ -2,11 +2,12 @@ import SwiftUI
 import SwiftData
 import TrainingEngine
 
-/// Progress, split three ways: Running (totals, weekly distance, best efforts, every run),
-/// Strength (weekly volume, lifts, every session) and Overall (combined training load).
+/// Progress, split four ways: Running (totals, weekly distance, best efforts, every run),
+/// Strength (weekly volume, lifts, every session), Overall (combined training load) and
+/// Health (body data from Apple Health over 7 or 30 days).
 struct ProgressScreen: View {
     enum Section: String, CaseIterable, Identifiable {
-        case running = "Running", strength = "Strength", overall = "Overall"
+        case running = "Running", strength = "Strength", overall = "Overall", health = "Health"
         var id: String { rawValue }
     }
 
@@ -35,6 +36,7 @@ struct ProgressScreen: View {
                     case .running: RunningProgressView(units: units)
                     case .strength: StrengthProgressView(units: units)
                     case .overall: overall
+                    case .health: HealthProgressView()
                     }
                 }
                 .padding(KXSpacing.screenMargin)

@@ -154,25 +154,31 @@ public struct RecoveryCheckIn: Equatable, Sendable {
     public var energy: Int
     /// Resting heart rate from Apple Health is well above the runner's usual.
     public var restingHeartRateElevated: Bool
+    /// Overnight HRV from Apple Health is well below the runner's usual.
+    public var hrvSuppressed: Bool
 
-    public init(sleep: Int, soreness: Int, energy: Int, restingHeartRateElevated: Bool = false) {
+    public init(sleep: Int, soreness: Int, energy: Int, restingHeartRateElevated: Bool = false, hrvSuppressed: Bool = false) {
         self.sleep = min(max(sleep, 1), 5)
         self.soreness = min(max(soreness, 1), 5)
         self.energy = min(max(energy, 1), 5)
         self.restingHeartRateElevated = restingHeartRateElevated
+        self.hrvSuppressed = hrvSuppressed
     }
+
+    /// A body signal from Apple Health says recovery may be down.
+    public var hasBodyWarning: Bool { restingHeartRateElevated || hrvSuppressed }
 
     /// 0…1 readiness (higher is better).
     public var readiness: Double {
         Double((sleep - 1) + (5 - soreness) + (energy - 1)) / 12
     }
 
-    /// Poor recovery: low overall readiness, very sore, or a raised resting heart rate
-    /// on a day that doesn't feel great either (a raised RHR alone can be noise).
+    /// Poor recovery: low overall readiness, very sore, or a raised resting heart rate or low
+    /// HRV on a day that doesn't feel great either (one body reading alone can be noise).
     public var isPoor: Bool { isPoor(rules: BalanceRules.current.recovery) }
 
     public func isPoor(rules: BalanceRules.Recovery) -> Bool {
         readiness < rules.poorReadinessBelow || soreness >= rules.verySoreAtOrAbove
-            || (restingHeartRateElevated && readiness < rules.bodySignalCountsWhenReadinessBelow)
+            || (hasBodyWarning && readiness < rules.bodySignalCountsWhenReadinessBelow)
     }
 }

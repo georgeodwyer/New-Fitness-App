@@ -89,7 +89,7 @@ struct AppleHealthView: View {
         List {
             Section {
                 IntegrationHeader(symbol: "heart.fill", tint: Color(red: 1, green: 0.22, blue: 0.37), title: "Apple Health",
-                                  text: "Save your runs (with route) and strength sessions to Health, use your Apple Watch heart rate during runs, and let resting heart rate and workouts from other apps inform your training load.")
+                                  text: "Save your runs (with route) and strength sessions to Health, use your Apple Watch heart rate during runs, see your body trends (resting HR, HRV, sleep, steps, VO\u{2082} max and more) and let them and other apps' workouts inform your training. Works with any wearable that writes to Health, such as Whoop or Garmin.")
             }
             .listRowBackground(Color.clear)
 
@@ -119,6 +119,18 @@ struct AppleHealthView: View {
                         }
                     } else {
                         LabeledContent("Resting heart rate", value: "Not enough data yet")
+                    }
+                    if let hrv = health.hrv {
+                        LabeledContent("HRV", value: hrv.description)
+                        if hrv.isSuppressed {
+                            Label("Lower than usual. If you also feel run down, Kinetix eases today's plan.", systemImage: "exclamationmark.triangle.fill")
+                                .font(KXFont.caption)
+                                .foregroundStyle(KXColor.ink)
+                                .symbolRenderingMode(.multicolor)
+                        }
+                    }
+                    if let hours = health.lastNightSleepHours {
+                        LabeledContent("Sleep last night", value: HealthMetric.sleep.format(hours))
                     }
                     LabeledContent("Other workouts (4 weeks)", value: "\(settings.externalWorkouts.count)")
                 }

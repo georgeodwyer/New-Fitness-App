@@ -42,7 +42,7 @@
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>Kinetix connects to Bluetooth heart rate straps to show live heart rate during workouts.</string>
 	<key>NSHealthShareUsageDescription</key>
-	<string>Kinetix reads heart rate, resting heart rate and workouts to show live heart rate and balance your training load.</string>
+	<string>Kinetix reads heart rate, resting heart rate, HRV, sleep, steps, active energy, VO2 max, breathing rate and workouts to show your body trends, judge recovery and balance your training load.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Kinetix saves your completed runs and strength sessions to Apple Health.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>

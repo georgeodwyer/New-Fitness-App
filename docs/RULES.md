@@ -62,6 +62,8 @@ Readiness is 0–1 from sleep, soreness and energy (all answers in the middle �
 | `restingHeartRateElevatedBpm` | 7 | Resting HR this far above your usual counts as raised. |
 | `restingHeartRateMinimumReadings` | 7 | Days of readings needed before "usual" means anything. |
 | `bodySignalCountsWhenReadinessBelow` | 0.6 | A raised resting HR (or low HRV) only counts if readiness is also below this, because one odd reading on a good day is often noise. Set to 1 to always count it. |
+| `hrvSuppressedPercent` | 15 | Overnight HRV this many percent below your usual counts as low. (Safe range 10–30.) |
+| `hrvMinimumReadings` | 7 | Days of HRV readings needed before "usual" means anything. |
 
 ### `rebalancing`: how the plan is eased
 | Setting | Default | What it does |

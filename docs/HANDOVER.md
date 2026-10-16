@@ -165,7 +165,20 @@ After M13: owner's list of faults.
   Transferable, `UTType.gpx`), Record tab "My routes" + GPX import, `RunSetupView` route card,
   `ActiveSession.route`, `RunWorkoutModel.plannedRoute/routeStatus`, run screen route card + planned
   line on `RouteMap(planned:)`.
-- M13 Health dashboard + layout: not started.
+- **M13 ✅ Health dashboard + layout** (owner: metrics on the dashboard AND a Progress tab; HRV acts like
+  resting HR, i.e. only with a so-so check-in; Health sleep suggests the check-in sleep score; Edit
+  dashboard screen). Engine `Health/HealthMetrics.swift`: `HealthMetric` (7 metrics, units, format,
+  explanation), `HealthDay`, `HealthTrend` (latest vs 30-day median "usual", 7/30-day averages),
+  `HealthSeries.window`, `HRVSignal` (rules `hrvSuppressedPercent`/`hrvMinimumReadings`, optional in
+  the JSON), `SleepScore`, `DashboardCard` + `DashboardLayout` (raw strings, forward-compatible).
+  `RecoveryCheckIn.hrvSuppressed` / `hasBodyWarning`. App: `HealthService` reads daily stats
+  (HKStatisticsCollectionQuery; sleep = asleep stages per wake day, longest source wins), `hrv`,
+  `lastNightSleepHours`, `needsPermission` (asks again for newly added types), `loadSample()` for
+  screenshot runs (`-seed-history`). Health readings are never stored or synced. UI:
+  `Features/Health/HealthViews.swift` (`BodyCard`, `HealthTile`, `TrendBadge`, `HealthMetricDetailView`,
+  `HealthChart`, `HealthProgressView`), Progress "Health" tab, `CheckInCard` HRV line + sleep
+  suggestion, `EditDashboardView`; layout stored on `CoachingSettingsModel.dashboardLayoutData` (synced).
+  HomeView is now in a NavigationStack (bar hidden) so tiles can push detail screens.
 
 ## Getting builds to the owner's phone (default)
 

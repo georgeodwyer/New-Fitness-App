@@ -2,9 +2,10 @@ import SwiftUI
 import SwiftData
 import TrainingEngine
 
-/// Dashboard: today's sessions, recovery check-in, training load (running, lifting,
-/// combined; acute:chronic ratio), this week against plan, the week at a glance,
-/// progress towards the goal, recent PRs and estimated race times.
+/// Dashboard: today's sessions, recovery check-in, body data from Apple Health, training
+/// load (running, lifting, combined; acute:chronic ratio), this week against plan, the week
+/// at a glance, progress towards the goal, recent PRs and estimated race times. Cards can be
+/// reordered and hidden (Edit dashboard); the layout syncs with the account.
 struct HomeView: View {
     @Environment(AppRouter.self) private var router
     @Environment(\.modelContext) private var context
@@ -16,6 +17,8 @@ struct HomeView: View {
     @Query(sort: \PlanChangeModel.createdAt, order: .reverse) private var changes: [PlanChangeModel]
     @Query(filter: #Predicate<TrainingPlanModel> { $0.isActive }) private var plans: [TrainingPlanModel]
     @Query(sort: \PersonalRecordModel.achievedAt, order: .reverse) private var records: [PersonalRecordModel]
+    @Query(filter: #Predicate<CoachingSettingsModel> { $0.deletedAt == nil }) private var settingsModels: [CoachingSettingsModel]
+    @State private var showEditDashboard = false
 
     @State private var actionSession: PlannedSessionModel?
     @State private var banner: String?
@@ -38,33 +41,38 @@ struct HomeView: View {
             .sorted { $0.slot == .morning && $1.slot == .evening }
     }
 
+    private var layout: DashboardLayout { settingsModels.first?.dashboardLayout ?? .default }
+
     var body: some View {
         let data = data
-        ScrollView {
-            VStack(alignment: .leading, spacing: KXSpacing.xl) {
-                KXScreenHeader(title: "Dashboard", onNotifications: { showUpdates = true })
-                greeting
-                if let banner { changeBanner(banner) }
-                if profile == nil { planPrompt }
-                if profile != nil { todaySection }
-                CheckInCard(existing: data.todaysCheckIn, restingHeartRate: restingHeartRate) { checkIn in
-                    saveCheckIn(checkIn, status: data.load.combined.status, ratio: data.load.combined.ratio)
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: KXSpacing.xl) {
+                    KXScreenHeader(title: "Dashboard", onNotifications: { showUpdates = true })
+                    greeting
+                    if let banner { changeBanner(banner) }
+                    if profile == nil { planPrompt }
+                    ForEach(layout.visibleCards, id: \.self) { card in
+                        dashboardCard(card, data: data)
+                    }
+                    Button {
+                        showEditDashboard = true
+                    } label: {
+                        Label("Edit dashboard", systemImage: "slider.horizontal.3")
+                            .font(KXFont.captionEmphasis)
+                    }
+                    .foregroundStyle(KXColor.inkSecondary)
+                    .frame(maxWidth: .infinity)
+                    .accessibilityIdentifier("dashboard.edit")
                 }
-                LoadHeroCard(report: data.load)
-                DailyLoadChart(daily: data.load.daily)
-                WeekProgressCard(data: data, units: units)
-                WeekStripCard(days: data.week)
-                if let plan = plans.first, let outline = plan.outline {
-                    GoalProgressCard(outline: outline, goal: profile?.goal ?? .balancedHybrid)
-                }
-                HStack(alignment: .top, spacing: KXSpacing.md) {
-                    RecentRecordsCard(records: Array(records.filter { $0.kindRaw == RecordKind.estimatedOneRepMax.rawValue }.prefix(3)), units: units)
-                    if let profile { RaceEstimatesCard(profile: profile) }
-                }
+                .padding(KXSpacing.screenMargin)
             }
-            .padding(KXSpacing.screenMargin)
+            .background(KXColor.background.ignoresSafeArea())
+            .toolbar(.hidden, for: .navigationBar)
         }
-        .background(KXColor.background.ignoresSafeArea())
+        .sheet(isPresented: $showEditDashboard) {
+            EditDashboardView(layout: layout) { saveLayout($0) }
+        }
         .sheet(item: $actionSession) { session in
             if let profile {
                 SessionActionsSheet(session: session, profile: profile) { explanations in
@@ -81,8 +89,8 @@ struct HomeView: View {
         .onAppear {
             guard let profile else { return }
             let changed = BalanceService.autoAdjust(profile: profile, status: data.load.combined.status,
-                                                    checkIn: data.todaysCheckIn?.engineValue(restingHeartRate: restingHeartRate), in: context,
-                                                    ratio: data.load.combined.ratio, restingHeartRate: restingHeartRate)
+                                                    checkIn: data.todaysCheckIn?.engineValue(restingHeartRate: restingHeartRate, hrv: hrv), in: context,
+                                                    ratio: data.load.combined.ratio, restingHeartRate: restingHeartRate, hrv: hrv)
             if let first = changed.first { banner = first }
         }
     }
@@ -198,12 +206,63 @@ struct HomeView: View {
     }
 
     private var restingHeartRate: RestingHeartRateSignal? {
-        integrations.healthEnabled ? health.restingHeartRate : nil
+        health.isConnected ? health.restingHeartRate : nil
+    }
+
+    private var hrv: HRVSignal? {
+        health.isConnected ? health.hrv : nil
+    }
+
+    @ViewBuilder
+    private func dashboardCard(_ card: DashboardCard, data: DashboardData) -> some View {
+        switch card {
+        case .today:
+            if profile != nil { todaySection }
+        case .checkIn:
+            CheckInCard(existing: data.todaysCheckIn, restingHeartRate: restingHeartRate, hrv: hrv,
+                        sleepHours: health.isConnected ? health.lastNightSleepHours : nil) { checkIn in
+                saveCheckIn(checkIn, status: data.load.combined.status, ratio: data.load.combined.ratio)
+            }
+        case .body:
+            BodyCard()
+        case .load:
+            LoadHeroCard(report: data.load)
+        case .dailyLoad:
+            DailyLoadChart(daily: data.load.daily)
+        case .week:
+            WeekProgressCard(data: data, units: units)
+        case .weekStrip:
+            WeekStripCard(days: data.week)
+        case .goal:
+            if let plan = plans.first, let outline = plan.outline {
+                GoalProgressCard(outline: outline, goal: profile?.goal ?? .balancedHybrid)
+            }
+        case .records:
+            HStack(alignment: .top, spacing: KXSpacing.md) {
+                RecentRecordsCard(records: Array(records.filter { $0.kindRaw == RecordKind.estimatedOneRepMax.rawValue }.prefix(3)), units: units)
+                if let profile { RaceEstimatesCard(profile: profile) }
+            }
+        }
+    }
+
+    private func saveLayout(_ layout: DashboardLayout) {
+        let settings: CoachingSettingsModel
+        if let existing = settingsModels.first {
+            settings = existing
+        } else {
+            settings = CoachingSettingsModel()
+            context.insert(settings)
+        }
+        settings.dashboardLayout = layout
+        settings.touch()
+        try? context.save()
+        SyncService.shared.requestSync()
     }
 
     private func saveCheckIn(_ answers: RecoveryCheckIn, status: LoadStatus, ratio: Double?) {
         var checkIn = answers
         checkIn.restingHeartRateElevated = restingHeartRate?.isElevated ?? false
+        checkIn.hrvSuppressed = hrv?.isSuppressed ?? false
         let calendar = Calendar.kinetix
         let today = calendar.startOfDay(for: .now)
         if let existing = checkIns.first(where: { calendar.isDate($0.date, inSameDayAs: today) }) {
@@ -217,7 +276,7 @@ struct HomeView: View {
         try? context.save()
         if let profile {
             let changed = BalanceService.autoAdjust(profile: profile, status: status, checkIn: checkIn, in: context, force: true,
-                                                    ratio: ratio, restingHeartRate: restingHeartRate)
+                                                    ratio: ratio, restingHeartRate: restingHeartRate, hrv: hrv)
             if let first = changed.first { banner = first }
         }
     }
@@ -226,9 +285,10 @@ struct HomeView: View {
 extension RecoveryCheckInModel {
     var engineValue: RecoveryCheckIn { RecoveryCheckIn(sleep: sleep, soreness: soreness, energy: energy) }
 
-    /// Includes this morning's resting heart rate from Apple Health, when known.
-    func engineValue(restingHeartRate: RestingHeartRateSignal?) -> RecoveryCheckIn {
-        RecoveryCheckIn(sleep: sleep, soreness: soreness, energy: energy, restingHeartRateElevated: restingHeartRate?.isElevated ?? false)
+    /// Includes this morning's resting heart rate and HRV from Apple Health, when known.
+    func engineValue(restingHeartRate: RestingHeartRateSignal?, hrv: HRVSignal? = nil) -> RecoveryCheckIn {
+        RecoveryCheckIn(sleep: sleep, soreness: soreness, energy: energy, restingHeartRateElevated: restingHeartRate?.isElevated ?? false,
+                        hrvSuppressed: hrv?.isSuppressed ?? false)
     }
 }
 
