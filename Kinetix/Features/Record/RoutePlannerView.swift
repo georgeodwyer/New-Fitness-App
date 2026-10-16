@@ -16,7 +16,11 @@ struct RoutePlannerView: View {
     @State private var route: PlannedRoute
     @State private var followRoads: Bool
     @State private var position: MapCameraPosition
-    @State private var mapCenter: RouteCoordinate?
+    /// Where the map is centred. Kept outside SwiftUI state on purpose: updating it must not
+    /// redraw the screen, or the map and the screen can keep nudging each other.
+    @State private var mapCenter = MapCenter()
+    /// The route being run, frozen when "Run it" is tapped.
+    @State private var runRoute: PlannedRoute?
     @State private var isRouting = false
     @State private var note: String?
     @State private var buildTask: Task<Void, Never>?
@@ -76,7 +80,7 @@ struct RoutePlannerView: View {
                 }
             }
             .onMapCameraChange(frequency: .onEnd) { context in
-                mapCenter = RouteCoordinate(context.region.center)
+                mapCenter.value = RouteCoordinate(context.region.center)
             }
             .accessibilityLabel("Map. Tap to add a point to your route.")
             .accessibilityIdentifier("route.map")
@@ -108,6 +112,9 @@ struct RoutePlannerView: View {
             if locationManager.authorizationStatus == .notDetermined { locationManager.requestWhenInUseAuthorization() }
         }
         .onDisappear { buildTask?.cancel() }
+        .navigationDestination(item: $runRoute) { route in
+            RunSetupView(initial: nil, route: route)
+        }
         .sheet(isPresented: $showLoop) { loopSheet }
         .alert("Save route", isPresented: $showSave) {
             TextField("Name", text: $saveName)
@@ -177,8 +184,8 @@ struct RoutePlannerView: View {
                 .buttonStyle(.kx(.outlined, fullWidth: true))
                 .disabled(!hasRoute || isRouting)
                 .accessibilityIdentifier("route.save")
-                NavigationLink {
-                    RunSetupView(initial: nil, route: namedRoute)
+                Button {
+                    runRoute = namedRoute
                 } label: {
                     Label("Run it", systemImage: "figure.run")
                 }
@@ -208,7 +215,7 @@ struct RoutePlannerView: View {
     // MARK: Loop
 
     private var loopStart: RouteCoordinate? {
-        waypoints.first ?? locationManager.location.map { RouteCoordinate($0.coordinate) } ?? mapCenter
+        waypoints.first ?? locationManager.location.map { RouteCoordinate($0.coordinate) } ?? mapCenter.value
     }
 
     private var loopSheet: some View {
@@ -349,6 +356,11 @@ struct RoutePlannerView: View {
         SyncService.shared.requestSync()
         savedMessage = "Saved to My routes"
     }
+}
+
+/// Holds the map centre without triggering redraws.
+final class MapCenter {
+    var value: RouteCoordinate?
 }
 
 // MARK: - GPX files

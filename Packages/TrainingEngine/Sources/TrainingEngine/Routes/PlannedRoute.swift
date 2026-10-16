@@ -16,7 +16,7 @@ public struct RouteCoordinate: Codable, Equatable, Hashable, Sendable {
 }
 
 /// A spoken direction that applies at a point along the route ("Turn left onto Park Lane").
-public struct RouteInstruction: Codable, Equatable, Sendable {
+public struct RouteInstruction: Codable, Hashable, Sendable {
     /// Metres from the start of the route.
     public var distanceMeters: Double
     public var text: String
@@ -28,7 +28,7 @@ public struct RouteInstruction: Codable, Equatable, Sendable {
 }
 
 /// A route planned on the map (or imported from GPX) to follow during a run.
-public struct PlannedRoute: Codable, Equatable, Identifiable, Sendable {
+public struct PlannedRoute: Codable, Hashable, Identifiable, Sendable {
     public var id: UUID
     public var name: String
     /// The points the runner tapped (the line between them comes from `path`).

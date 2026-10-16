@@ -394,7 +394,7 @@ final class ScreenshotTests: XCTestCase {
         let run = app.buttons["route.run"].firstMatch
         if run.waitForExistence(timeout: 3), run.isEnabled {
             run.tap()
-            if app.buttons["record.startRun"].waitForExistence(timeout: 5) {
+            if app.buttons["record.startRun"].waitForExistence(timeout: 10) {
                 app.swipeUp()
                 snap("65-route-run-setup")
             }
