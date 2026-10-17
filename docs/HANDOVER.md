@@ -35,9 +35,12 @@ training logic), then App Store submission (docs/APP_STORE.md).
 - The cloud container is **Linux with no Swift toolchain** (download.swift.org is blocked).
   You can't compile locally. **GitHub Actions is the compiler**:
   - `engine-linux` job: `swift test` for the package (TrainingEngine + KinetixSync), ~1 min.
-  - `ios` job (macos-latest): XcodeGen → build-for-testing → app unit tests → UI screenshot
-    walk-through (`KinetixUITests/ScreenshotTests.swift`) → uploads `screenshots` artifact
-    (PNGs + `walkthrough.mp4`). ~15–18 min.
+  - `ios` job (macos-latest): XcodeGen → build-for-testing → app unit tests, ~12 min.
+    The UI screenshot walk-through (`KinetixUITests/ScreenshotTests.swift`) is **off by default
+    at the owner's request** (they test each build themselves via TestFlight). Run it only on
+    request: workflow_dispatch with input `screenshots: true`. Keep its steps compiling.
+  - The macOS runner is sometimes not assigned (job cancelled after 15 min with no steps):
+    that's GitHub capacity / Actions minutes, not the code. Re-run once.
 - Check CI with the GitHub MCP tools (`actions_list` list_workflow_runs/list_workflow_jobs,
   `get_job_logs` with failed_only or job_id + tail_lines). Compiler errors appear as
   `error:` lines just before "---- last 80 lines of build.log ----". A new push cancels the

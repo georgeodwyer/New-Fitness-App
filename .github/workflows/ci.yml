@@ -5,6 +5,11 @@ on:
     paths-ignore: ['docs/**', '**/*.md', 'Designs/**']
   pull_request:
   workflow_dispatch:
+    inputs:
+      screenshots:
+        description: "Also run the screenshot walk-through (slow; off by default)"
+        type: boolean
+        default: false
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -21,7 +26,7 @@ jobs:
         run: swift test --package-path Packages/TrainingEngine
 
   ios:
-    name: iOS app build, tests & screenshots
+    name: iOS app build & tests
     runs-on: macos-latest
     permissions:
       contents: write
@@ -72,7 +77,10 @@ jobs:
             -project Kinetix.xcodeproj -scheme Kinetix -destination "id=$UDID" \
             -derivedDataPath DerivedData -only-testing:KinetixTests
 
+      # Off by default (the owner tests builds through TestFlight). Run it by hand from
+      # Actions → CI → Run workflow, ticking "screenshots".
       - name: Screenshots and screen recording
+        if: github.event_name == 'workflow_dispatch' && inputs.screenshots
         run: |
           mkdir -p screenshots
           xcrun simctl io "$UDID" recordVideo --codec=h264 --force screenshots/walkthrough.mp4 &
@@ -92,7 +100,7 @@ jobs:
           exit $status
 
       - name: Upload screenshots
-        if: always()
+        if: always() && github.event_name == 'workflow_dispatch' && inputs.screenshots
         uses: actions/upload-artifact@v5
         with:
           name: screenshots
