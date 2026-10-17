@@ -54,14 +54,14 @@ public struct ExternalWorkout: Codable, Equatable, Sendable, Identifiable {
 
 public enum ExternalWorkouts {
     /// Joins lists from different sources (Apple Health, Strava). A workout that overlaps one
-    /// already kept by at least half its length, in the same discipline, is the same workout
+    /// already kept by at least half its length, of the same kind (ride, walk…), is the same workout
     /// seen twice (e.g. a Garmin ride synced to both) and is dropped.
     public static func merged(_ lists: [ExternalWorkout]...) -> [ExternalWorkout] {
         var kept: [ExternalWorkout] = []
         for workout in lists.joined() {
             let interval = DateInterval(start: workout.start, end: max(workout.start, workout.end))
             let duplicate = kept.contains { other in
-                guard other.discipline == workout.discipline else { return false }
+                guard other.kind == workout.kind else { return false }
                 let otherInterval = DateInterval(start: other.start, end: max(other.start, other.end))
                 guard let overlap = interval.intersection(with: otherInterval) else { return false }
                 let shorter = min(interval.duration, otherInterval.duration)
