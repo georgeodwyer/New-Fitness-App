@@ -98,7 +98,7 @@ enum WidgetSnapshotService {
         let integrations = IntegrationSettings.shared
         let data = DashboardService.make(sessions: sessions, runs: all(RunLogModel.self), lifts: all(StrengthLogModel.self),
                                          checkIns: all(RecoveryCheckInModel.self), profile: profile?.profile,
-                                         external: integrations.healthEnabled ? integrations.externalWorkouts : [], now: now)
+                                         external: integrations.loadWorkouts, now: now)
         let calendar = Calendar.kinetix
         let today = sessions.filter { calendar.isDate($0.date, inSameDayAs: now) }
             .sorted { $0.slot == .morning && $1.slot == .evening }

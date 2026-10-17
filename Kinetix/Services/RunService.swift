@@ -87,9 +87,12 @@ extension RunLogModel {
     var recordType: RecordRunType? { recordTypeRaw.flatMap(RecordRunType.init(rawValue:)) }
     /// "Recorded" for Record-tab runs, "Planned" for plan sessions.
     var sourceTag: String? {
+        if isImportedFromStrava { return "From Strava" }
         if recordTypeRaw != nil { return "Recorded" }
         return plannedSessionId != nil ? "Planned" : nil
     }
+    /// Recorded elsewhere and brought in from Strava (never sent back to Strava or Health).
+    var isImportedFromStrava: Bool { importSourceRaw == "strava" }
     /// Simulated GPS runs are practice data: shown, but left out of totals and best efforts.
     var countsTowardsHistory: Bool { isFinished && !isSoftDeleted && !usedSimulatedGPS }
     var route: [RoutePoint] { StoredJSON.decode([RoutePoint].self, from: routeData) ?? [] }

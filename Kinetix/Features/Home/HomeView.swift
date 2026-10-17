@@ -31,7 +31,7 @@ struct HomeView: View {
 
     private var data: DashboardData {
         DashboardService.make(sessions: sessions, runs: runs, lifts: lifts, checkIns: checkIns, profile: profile,
-                              external: integrations.healthEnabled ? integrations.externalWorkouts : [])
+                              external: integrations.loadWorkouts)
     }
 
     private var todaysSessions: [PlannedSessionModel] {

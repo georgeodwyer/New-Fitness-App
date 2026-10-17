@@ -26,7 +26,7 @@ struct StrengthWorkoutView: View {
         if discarded {
             KXColor.background.ignoresSafeArea()
         } else if let summary {
-            StrengthSummaryView(summary: summary, units: units, onDone: onClose)
+            StrengthSummaryView(summary: summary, units: units, log: model.log, onDone: onClose)
         } else {
             workout
         }

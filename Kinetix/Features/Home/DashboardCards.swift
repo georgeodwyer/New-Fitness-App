@@ -251,8 +251,19 @@ private struct LoadTile: View {
 
 /// Last 28 days of load, running and lifting stacked per day, with tap-to-inspect.
 struct DailyLoadChart: View {
-    let daily: [DailyLoad]
+    /// Up to the last 30 days, oldest first.
+    let allDays: [DailyLoad]
     @State private var selected: Date?
+    /// 7 (week) or 30 (month): a per-phone choice.
+    @AppStorage("dashboard.loadRange") private var range = 30
+
+    init(daily: [DailyLoad]) {
+        self.allDays = daily
+    }
+
+    private var daily: [DailyLoad] { Array(allDays.suffix(range)) }
+    private var isWeek: Bool { range == 7 }
+    private var barWidth: CGFloat { isWeek ? 22 : 7 }
 
     private var maxTotal: Double { max(daily.map(\.total).max() ?? 0, 100) }
     /// A 2 pt surface gap between stacked segments, in data units (plot is 150 pt tall).
@@ -265,7 +276,17 @@ struct DailyLoadChart: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: KXSpacing.md) {
-            KXSectionHeader("Daily load", subtitle: "Last 28 days")
+            HStack(alignment: .firstTextBaseline) {
+                KXSectionHeader("Daily load", subtitle: isWeek ? "Last 7 days" : "Last 30 days")
+                Spacer()
+                Picker("Period", selection: $range) {
+                    Text("Week").tag(7)
+                    Text("Month").tag(30)
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 140)
+                .accessibilityIdentifier("dashboard.loadRange")
+            }
             HStack(spacing: KXSpacing.lg) {
                 legendItem("Running", KXColor.run)
                 legendItem("Lifting", KXColor.lift)
@@ -275,19 +296,19 @@ struct DailyLoadChart: View {
             Chart {
                 ForEach(daily) { day in
                     if day.running > 0 {
-                        BarMark(x: .value("Day", day.date, unit: .day), yStart: .value("Load", 0), yEnd: .value("Load", day.running), width: .fixed(7))
+                        BarMark(x: .value("Day", day.date, unit: .day), yStart: .value("Load", 0), yEnd: .value("Load", day.running), width: .fixed(barWidth))
                             .foregroundStyle(KXColor.run)
                             .cornerRadius(3)
                     }
                     if day.lifting > 0 {
                         let start = day.running > 0 ? day.running + gap : 0
-                        BarMark(x: .value("Day", day.date, unit: .day), yStart: .value("Load", start), yEnd: .value("Load", start + day.lifting), width: .fixed(7))
+                        BarMark(x: .value("Day", day.date, unit: .day), yStart: .value("Load", start), yEnd: .value("Load", start + day.lifting), width: .fixed(barWidth))
                             .foregroundStyle(KXColor.lift)
                             .cornerRadius(3)
                     }
                     if day.other > 0 {
                         let start = (day.running > 0 ? day.running + gap : 0) + (day.lifting > 0 ? day.lifting + gap : 0)
-                        BarMark(x: .value("Day", day.date, unit: .day), yStart: .value("Load", start), yEnd: .value("Load", start + day.other), width: .fixed(7))
+                        BarMark(x: .value("Day", day.date, unit: .day), yStart: .value("Load", start), yEnd: .value("Load", start + day.other), width: .fixed(barWidth))
                             .foregroundStyle(KXColor.other)
                             .cornerRadius(3)
                     }
@@ -303,8 +324,8 @@ struct DailyLoadChart: View {
             }
             .chartYScale(domain: 0...(maxTotal * 1.15))
             .chartXAxis {
-                AxisMarks(values: .stride(by: .day, count: 7)) { _ in
-                    AxisValueLabel(format: .dateTime.day().month(.abbreviated))
+                AxisMarks(values: .stride(by: .day, count: isWeek ? 1 : 7)) { _ in
+                    AxisValueLabel(format: isWeek ? .dateTime.weekday(.abbreviated) : .dateTime.day().month(.abbreviated))
                         .foregroundStyle(KXColor.inkSecondary)
                 }
             }
@@ -316,7 +337,7 @@ struct DailyLoadChart: View {
             }
             .chartXSelection(value: $selected)
             .frame(height: 190)
-            .accessibilityLabel("Daily training load, last 28 days")
+            .accessibilityLabel("Daily training load, last \(range) days")
             if daily.allSatisfy({ $0.total == 0 }) {
                 Text("Complete a run or lift to see your load build up here.")
                     .font(KXFont.caption).foregroundStyle(KXColor.inkTertiary)

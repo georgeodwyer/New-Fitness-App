@@ -37,8 +37,9 @@ enum ActivityExportService {
     }
 
     static func export(run log: RunLogModel, in context: ModelContext, settings: IntegrationSettings = .shared) async {
-        // Simulated GPS runs are practice data: keep them out of Health and Strava.
-        guard log.isFinished, !log.isSoftDeleted, !log.usedSimulatedGPS, !inFlight.contains(log.id) else { return }
+        // Simulated GPS runs are practice data, and runs imported from Strava came from
+        // another app: keep both out of Health and Strava.
+        guard log.isFinished, !log.isSoftDeleted, !log.usedSimulatedGPS, !log.isImportedFromStrava, !inFlight.contains(log.id) else { return }
         inFlight.insert(log.id)
         defer { inFlight.remove(log.id) }
         var changed = false
@@ -89,12 +90,21 @@ enum ActivityExportService {
         save(log, changed: changed, in: context)
     }
 
+    /// "Upload to Strava" on a gym session's summary (when gym sessions don't go up automatically).
+    static func uploadStrengthToStrava(_ log: StrengthLogModel, units: UnitSystem, in context: ModelContext) async throws {
+        guard log.stravaActivityId == nil, !inFlight.contains(log.id) else { return }
+        inFlight.insert(log.id)
+        defer { inFlight.remove(log.id) }
+        log.stravaActivityId = try await StravaService.shared.upload(strength: log, units: units)
+        save(log, changed: true, in: context)
+    }
+
     /// Retries recent sessions that haven't reached Health or Strava yet.
     static func retryPending(in context: ModelContext, units: UnitSystem, now: Date = .now) async {
         guard anyEnabled else { return }
         let since = now.addingTimeInterval(-retryWindow)
         let runs = (try? context.fetch(FetchDescriptor<RunLogModel>(predicate: #Predicate { $0.isFinished && $0.startedAt >= since }))) ?? []
-        for run in runs where run.healthKitWorkoutId == nil || run.stravaActivityId == nil {
+        for run in runs where !run.isImportedFromStrava && (run.healthKitWorkoutId == nil || run.stravaActivityId == nil) {
             await export(run: run, in: context)
         }
         let lifts = (try? context.fetch(FetchDescriptor<StrengthLogModel>(predicate: #Predicate { $0.isFinished && $0.startedAt >= since }))) ?? []

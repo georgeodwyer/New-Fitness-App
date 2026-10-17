@@ -38,6 +38,8 @@ final class RunLogModel: SyncTracked {
     var runTypeRaw: String?
     /// `RecordRunType` raw value when the run was started from the Record tab.
     var recordTypeRaw: String?
+    /// "strava" for runs imported from Strava (recorded elsewhere, e.g. a Garmin); nil for Kinetix runs.
+    var importSourceRaw: String?
 
     init(plannedSessionId: UUID?, startedAt: Date, id: UUID = UUID(), now: Date = .now) {
         self.id = id

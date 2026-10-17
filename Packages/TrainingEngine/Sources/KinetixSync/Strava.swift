@@ -5,37 +5,57 @@ import FoundationNetworking
 
 /// Where Kinetix talks to Strava.
 ///
-/// The client ID is public, but the client secret must never ship in the app, so the
+/// The client ID is public, but the client secret shouldn't ship in the app, so normally the
 /// code-for-token exchange (and token refresh) goes through a small Supabase Edge Function
-/// (`supabase/functions/strava-token`) that holds the secret.
+/// (`supabase/functions/strava-token`) that holds the secret. Until Supabase is set up, a
+/// build can instead carry the secret and talk to Strava directly (fine for testing; switch
+/// to the Edge Function before release; see docs/STRAVA.md).
 public struct StravaConfig: Equatable, Sendable {
     public var clientID: String
     public var tokenExchangeURL: URL
     /// Sent as `apikey` to the Edge Function.
     public var supabaseAnonKey: String
+    /// Only in builds without Supabase: the exchange then goes straight to Strava.
+    public var clientSecret: String?
     public var redirectURI: String
+
+    public static let directTokenURL = URL(string: "https://www.strava.com/oauth/token")!
 
     public static let callbackScheme = "kinetix"
     /// Strava's app settings must use "localhost" as the Authorization Callback Domain.
     public static let defaultRedirectURI = "kinetix://localhost/strava"
 
-    public init(clientID: String, tokenExchangeURL: URL, supabaseAnonKey: String, redirectURI: String = StravaConfig.defaultRedirectURI) {
+    public init(clientID: String, tokenExchangeURL: URL, supabaseAnonKey: String, clientSecret: String? = nil,
+                redirectURI: String = StravaConfig.defaultRedirectURI) {
         self.clientID = clientID
         self.tokenExchangeURL = tokenExchangeURL
         self.supabaseAnonKey = supabaseAnonKey
+        self.clientSecret = clientSecret
         self.redirectURI = redirectURI
     }
 
-    /// Reads `StravaClientID` plus the Supabase settings from Info.plist. nil when any is
-    /// missing (the Strava option then explains what's needed).
+    /// Talks to Strava directly, carrying the client secret (testing builds without Supabase).
+    public static func direct(clientID: String, clientSecret: String) -> StravaConfig {
+        StravaConfig(clientID: clientID, tokenExchangeURL: directTokenURL, supabaseAnonKey: "", clientSecret: clientSecret)
+    }
+
+    public var isDirect: Bool { clientSecret != nil }
+
+    /// Reads `StravaClientID` plus either the Supabase settings (preferred) or
+    /// `StravaClientSecret` from Info.plist. nil when Strava can't work in this build.
     public init?(info: [String: Any]?) {
         guard let clientID = (info?["StravaClientID"] as? String)?.trimmingCharacters(in: .whitespaces),
-              !clientID.isEmpty, clientID.allSatisfy(\.isNumber),
-              let supabase = SupabaseConfig(info: info)
-        else { return nil }
-        self.init(clientID: clientID,
-                  tokenExchangeURL: supabase.url.appendingPathComponent("functions/v1/strava-token"),
-                  supabaseAnonKey: supabase.anonKey)
+              !clientID.isEmpty, clientID.allSatisfy(\.isNumber) else { return nil }
+        if let supabase = SupabaseConfig(info: info) {
+            self.init(clientID: clientID,
+                      tokenExchangeURL: supabase.url.appendingPathComponent("functions/v1/strava-token"),
+                      supabaseAnonKey: supabase.anonKey)
+        } else if let secret = (info?["StravaClientSecret"] as? String)?.trimmingCharacters(in: .whitespaces),
+                  !secret.isEmpty, !secret.hasPrefix("$(") {
+            self = .direct(clientID: clientID, clientSecret: secret)
+        } else {
+            return nil
+        }
     }
 }
 
@@ -45,14 +65,21 @@ public struct StravaTokens: Codable, Equatable, Sendable {
     public var expiresAt: Date
     public var athleteId: Int?
     public var athleteName: String?
+    /// Permissions the athlete granted (nil for connections made before Kinetix asked to read).
+    public var scopes: [String]?
 
-    public init(accessToken: String, refreshToken: String, expiresAt: Date, athleteId: Int? = nil, athleteName: String? = nil) {
+    public init(accessToken: String, refreshToken: String, expiresAt: Date, athleteId: Int? = nil, athleteName: String? = nil,
+                scopes: [String]? = nil) {
         self.accessToken = accessToken
         self.refreshToken = refreshToken
         self.expiresAt = expiresAt
         self.athleteId = athleteId
         self.athleteName = athleteName
+        self.scopes = scopes
     }
+
+    /// Allowed to read activities (for importing them).
+    public var canReadActivities: Bool { scopes?.contains { $0.hasPrefix("activity:read") } ?? false }
 
     public func needsRefresh(now: Date = Date()) -> Bool { now.addingTimeInterval(120) >= expiresAt }
 }
@@ -158,7 +185,7 @@ public actor StravaClient {
             URLQueryItem(name: "redirect_uri", value: config.redirectURI),
             URLQueryItem(name: "response_type", value: "code"),
             URLQueryItem(name: "approval_prompt", value: "auto"),
-            URLQueryItem(name: "scope", value: "read,activity:write"),
+            URLQueryItem(name: "scope", value: "read,activity:read_all,activity:write"),
             URLQueryItem(name: "state", value: state)
         ]
         return components.url!
@@ -175,11 +202,18 @@ public actor StravaClient {
         return code
     }
 
-    /// Swaps the authorisation code for tokens (via the Edge Function).
+    /// The permissions granted, from the redirect ("read,activity:read_all,activity:write").
+    public static func grantedScopes(from callback: URL) -> [String] {
+        let items = URLComponents(url: callback, resolvingAgainstBaseURL: false)?.queryItems ?? []
+        return (items.first { $0.name == "scope" }?.value ?? "").split(separator: ",").map(String.init)
+    }
+
+    /// Swaps the authorisation code for tokens (via the Edge Function, or Strava directly).
     @discardableResult
-    public func connect(code: String) async throws -> StravaTokens {
+    public func connect(code: String, scopes: [String]? = nil) async throws -> StravaTokens {
         let response = try await exchange(["grant_type": "authorization_code", "code": code])
-        let tokens = response.tokens(keeping: nil)
+        var tokens = response.tokens(keeping: nil)
+        tokens.scopes = scopes
         setTokens(tokens)
         return tokens
     }
@@ -213,10 +247,16 @@ public actor StravaClient {
     private func exchange(_ body: [String: String]) async throws -> TokenResponse {
         var request = URLRequest(url: config.tokenExchangeURL)
         request.httpMethod = "POST"
-        request.httpBody = try JSONEncoder().encode(body)
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue(config.supabaseAnonKey, forHTTPHeaderField: "apikey")
-        request.setValue("Bearer \(config.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+        if let secret = config.clientSecret {
+            let fields = [("client_id", config.clientID), ("client_secret", secret)] + body.sorted { $0.key < $1.key }.map { ($0.key, $0.value) }
+            request.httpBody = Data(Self.formURLEncoded(fields).utf8)
+            request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        } else {
+            request.httpBody = try JSONEncoder().encode(body)
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue(config.supabaseAnonKey, forHTTPHeaderField: "apikey")
+            request.setValue("Bearer \(config.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+        }
         let data = try await perform(request)
         do {
             return try JSONDecoder().decode(TokenResponse.self, from: data)
@@ -262,6 +302,20 @@ public actor StravaClient {
         return status.activityId ?? status.duplicateActivityId
     }
 
+    /// The athlete's activities that started after `after`, one page at a time (Strava's
+    /// maximum page size is 200).
+    public func activities(after: Date, page: Int = 1, perPage: Int = 100) async throws -> [StravaActivity] {
+        let query = [URLQueryItem(name: "after", value: String(Int(after.timeIntervalSince1970))),
+                     URLQueryItem(name: "page", value: String(page)),
+                     URLQueryItem(name: "per_page", value: String(perPage))]
+        let data = try await authorized(path: "api/v3/athlete/activities", method: "GET", body: nil, contentType: nil, query: query)
+        do {
+            return try StravaActivity.decoder.decode([StravaActivity].self, from: data)
+        } catch {
+            throw StravaError.invalidCallback
+        }
+    }
+
     /// Creates an activity without a GPS file (used for strength sessions).
     public func createActivity(name: String, sportType: String, start: Date, elapsedSeconds: Int, description: String?,
                                timeZone: TimeZone = .current) async throws -> Int {
@@ -298,9 +352,12 @@ public actor StravaClient {
         return status
     }
 
-    private func authorized(path: String, method: String, body: Data?, contentType: String?, retried: Bool = false) async throws -> Data {
+    private func authorized(path: String, method: String, body: Data?, contentType: String?, query: [URLQueryItem] = [],
+                            retried: Bool = false) async throws -> Data {
         let token = try await validAccessToken(forceRefresh: retried)
-        var request = URLRequest(url: apiBase.appendingPathComponent(path))
+        var components = URLComponents(url: apiBase.appendingPathComponent(path), resolvingAgainstBaseURL: false)!
+        if !query.isEmpty { components.queryItems = query }
+        var request = URLRequest(url: components.url!)
         request.httpMethod = method
         request.httpBody = body
         if let contentType { request.setValue(contentType, forHTTPHeaderField: "Content-Type") }
@@ -308,7 +365,7 @@ public actor StravaClient {
         do {
             return try await perform(request)
         } catch StravaError.server(let status, _) where status == 401 && !retried {
-            return try await authorized(path: path, method: method, body: body, contentType: contentType, retried: true)
+            return try await authorized(path: path, method: method, body: body, contentType: contentType, query: query, retried: true)
         }
     }
 
@@ -353,7 +410,8 @@ public actor StravaClient {
             return StravaTokens(accessToken: accessToken, refreshToken: refreshToken,
                                 expiresAt: Date(timeIntervalSince1970: expiresAt),
                                 athleteId: athlete?.id ?? previous?.athleteId,
-                                athleteName: name.isEmpty ? previous?.athleteName : name)
+                                athleteName: name.isEmpty ? previous?.athleteName : name,
+                                scopes: previous?.scopes)
         }
     }
 
@@ -389,4 +447,137 @@ struct MultipartForm {
 
     /// Call once after the last part (done by `body` users through `finished`).
     var finished: Data { body + Data("--\(boundary)--\r\n".utf8) }
+}
+
+// MARK: - Activities from Strava
+
+/// One activity from the athlete's Strava feed (summary fields only).
+public struct StravaActivity: Decodable, Equatable, Sendable {
+    public struct Map: Decodable, Equatable, Sendable {
+        public var summaryPolyline: String?
+        enum CodingKeys: String, CodingKey { case summaryPolyline = "summary_polyline" }
+        public init(summaryPolyline: String?) { self.summaryPolyline = summaryPolyline }
+    }
+
+    public var id: Int
+    public var name: String
+    /// e.g. "Run", "TrailRun", "Ride", "WeightTraining".
+    public var sportType: String
+    public var startDate: Date
+    /// Seconds, including pauses.
+    public var elapsedTime: Int
+    /// Seconds moving.
+    public var movingTime: Int
+    /// Metres.
+    public var distance: Double
+    public var averageHeartrate: Double?
+    public var maxHeartrate: Double?
+    /// Set by the app that uploaded it; Kinetix's own uploads start "kinetix-".
+    public var externalId: String?
+    public var map: Map?
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, distance, map, type
+        case sportType = "sport_type"
+        case startDate = "start_date"
+        case elapsedTime = "elapsed_time"
+        case movingTime = "moving_time"
+        case averageHeartrate = "average_heartrate"
+        case maxHeartrate = "max_heartrate"
+        case externalId = "external_id"
+    }
+
+    public init(id: Int, name: String, sportType: String, startDate: Date, elapsedTime: Int, movingTime: Int, distance: Double,
+                averageHeartrate: Double? = nil, maxHeartrate: Double? = nil, externalId: String? = nil, map: Map? = nil) {
+        self.id = id
+        self.name = name
+        self.sportType = sportType
+        self.startDate = startDate
+        self.elapsedTime = elapsedTime
+        self.movingTime = movingTime
+        self.distance = distance
+        self.averageHeartrate = averageHeartrate
+        self.maxHeartrate = maxHeartrate
+        self.externalId = externalId
+        self.map = map
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int.self, forKey: .id)
+        name = try container.decodeIfPresent(String.self, forKey: .name) ?? "Activity"
+        // Older activities may only have the legacy "type".
+        sportType = try container.decodeIfPresent(String.self, forKey: .sportType)
+            ?? container.decodeIfPresent(String.self, forKey: .type) ?? "Workout"
+        startDate = try container.decode(Date.self, forKey: .startDate)
+        elapsedTime = try container.decodeIfPresent(Int.self, forKey: .elapsedTime) ?? 0
+        movingTime = try container.decodeIfPresent(Int.self, forKey: .movingTime) ?? elapsedTime
+        distance = try container.decodeIfPresent(Double.self, forKey: .distance) ?? 0
+        averageHeartrate = try container.decodeIfPresent(Double.self, forKey: .averageHeartrate)
+        maxHeartrate = try container.decodeIfPresent(Double.self, forKey: .maxHeartrate)
+        externalId = try container.decodeIfPresent(String.self, forKey: .externalId)
+        map = try container.decodeIfPresent(Map.self, forKey: .map)
+    }
+
+    static let decoder: JSONDecoder = {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return decoder
+    }()
+
+    /// What it is, for Kinetix's purposes.
+    public enum Category: Equatable, Sendable { case run, strength, cycling, walking, other }
+
+    public var category: Category {
+        switch sportType {
+        case "Run", "TrailRun", "VirtualRun": return .run
+        case "WeightTraining", "Crossfit", "HighIntensityIntervalTraining", "Workout": return .strength
+        case "Ride", "VirtualRide", "MountainBikeRide", "GravelRide", "EBikeRide", "EMountainBikeRide", "Velomobile", "Handcycle": return .cycling
+        case "Walk", "Hike": return .walking
+        default: return .other
+        }
+    }
+
+    /// Uploaded by Kinetix itself (so not imported back).
+    public var isFromKinetix: Bool { externalId?.hasPrefix("kinetix-") ?? false }
+
+    /// The route's points from Strava's summary map. Empty without GPS.
+    public var routeCoordinates: [Polyline.Point] {
+        map?.summaryPolyline.map(Polyline.decode) ?? []
+    }
+
+    public var endDate: Date { startDate.addingTimeInterval(TimeInterval(max(elapsedTime, movingTime))) }
+}
+
+/// Google's encoded polyline format (used by Strava for maps).
+public enum Polyline {
+    public struct Point: Equatable, Sendable {
+        public var latitude: Double
+        public var longitude: Double
+    }
+
+    public static func decode(_ encoded: String) -> [Point] {
+        var result: [Point] = []
+        let bytes = Array(encoded.utf8)
+        var index = 0
+        var latitude = 0, longitude = 0
+        func nextValue() -> Int? {
+            var shift = 0, value = 0
+            while index < bytes.count {
+                let byte = Int(bytes[index]) - 63
+                index += 1
+                value |= (byte & 0x1F) << shift
+                shift += 5
+                if byte < 0x20 { return (value & 1) != 0 ? ~(value >> 1) : (value >> 1) }
+            }
+            return nil
+        }
+        while index < bytes.count {
+            guard let dLat = nextValue(), let dLon = nextValue() else { break }
+            latitude += dLat
+            longitude += dLon
+            result.append(Point(latitude: Double(latitude) / 1e5, longitude: Double(longitude) / 1e5))
+        }
+        return result
+    }
 }

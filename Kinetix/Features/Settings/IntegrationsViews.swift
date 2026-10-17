@@ -289,6 +289,7 @@ struct StravaView: View {
     static let brand = Color(red: 252 / 255, green: 82 / 255, blue: 0)
 
     @Environment(\.webAuthenticationSession) private var webAuthenticationSession
+    @Environment(\.modelContext) private var context
     @Query(filter: #Predicate<UserProfileModel> { $0.deletedAt == nil }) private var profiles: [UserProfileModel]
     @State private var settings = IntegrationSettings.shared
     @State private var strava = StravaService.shared
@@ -300,7 +301,7 @@ struct StravaView: View {
         List {
             Section {
                 IntegrationHeader(symbol: "arrow.up.forward.app", tint: Self.brand, title: "Strava",
-                                  text: "Upload your runs to Strava automatically when you finish them, with route, splits and heart rate. Strength sessions can go up too.")
+                                  text: "Upload your runs to Strava automatically when you finish them, with route, splits and heart rate, and bring in activities recorded elsewhere (a Garmin, the Strava app, Zwift…) so your history and training load are complete.")
             }
             .listRowBackground(Color.clear)
 
@@ -334,7 +335,7 @@ struct StravaView: View {
                     .listRowBackground(Color.clear)
                     .accessibilityIdentifier("strava.connect")
                 } footer: {
-                    Text("You'll sign in on Strava's website and choose what Kinetix may do. Only sessions you finish after connecting are uploaded.")
+                    Text("You'll sign in on Strava's website and choose what Kinetix may do. Leave both boxes ticked: uploading your activities, and viewing them (for importing). Only sessions you finish after connecting are uploaded; the last 90 days of activities are imported.")
                 }
             case .connected(let name):
                 Section("Account") {
@@ -342,11 +343,38 @@ struct StravaView: View {
                 }
                 Section {
                     Toggle("Upload runs", isOn: $settings.stravaUploadRuns)
-                    Toggle("Upload strength sessions", isOn: $settings.stravaUploadLifts)
+                    Toggle("Upload gym sessions", isOn: $settings.stravaUploadLifts)
                 } header: {
                     Text("Automatic uploads")
                 } footer: {
-                    Text("Runs recorded with simulated GPS are never uploaded. If you're offline, uploads are retried the next time you open Kinetix.")
+                    Text("With gym sessions off, each workout's summary has an Upload to Strava button instead. Runs recorded with simulated GPS are never uploaded. If you're offline, uploads are retried the next time you open Kinetix.")
+                }
+                Section {
+                    Toggle("Import activities", isOn: $settings.stravaImportEnabled)
+                        .accessibilityIdentifier("strava.import")
+                    if settings.stravaImportEnabled {
+                        if strava.canReadActivities {
+                            LabeledContent("Last checked", value: settings.stravaLastImport.map { $0.formatted(.relative(presentation: .named)) } ?? "Not yet")
+                            LabeledContent("Other activities (4 weeks)", value: "\(settings.stravaWorkouts.count)")
+                            Button(working ? "Checking…" : "Check now") {
+                                Task {
+                                    working = true
+                                    await strava.importRecent(in: context, force: true)
+                                    working = false
+                                }
+                            }
+                            .disabled(working)
+                        } else {
+                            Label("Kinetix isn't allowed to view your activities. Disconnect, connect again and leave \u{201C}View data about your activities\u{201D} ticked.",
+                                  systemImage: "exclamationmark.triangle.fill")
+                                .font(KXFont.caption)
+                                .symbolRenderingMode(.multicolor)
+                        }
+                    }
+                } header: {
+                    Text("From Strava")
+                } footer: {
+                    Text("Runs recorded elsewhere appear in Progress (marked From Strava) and count towards your training load; rides, gym sessions and other activities count towards load. Kinetix's own uploads and anything already recorded in Kinetix or Apple Health are counted once.")
                 }
                 if !settings.uploadFailures.isEmpty {
                     Section("Couldn't upload") {

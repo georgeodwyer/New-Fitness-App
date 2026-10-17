@@ -95,7 +95,8 @@ struct RunningProgressView: View {
 
     private func computeBests() -> [BestEffortRow] {
         var best: [BestEffortDistance: BestEffortRow] = [:]
-        for run in counted where run.distanceMeters >= BestEffortDistance.oneKilometre.meters {
+        // Strava's summary map has no timestamps, so imported runs can't give best efforts.
+        for run in counted where run.distanceMeters >= BestEffortDistance.oneKilometre.meters && !run.isImportedFromStrava {
             for (distance, seconds) in RunAnalysis.bestEfforts(route: run.route)
             where best[distance].map({ seconds < $0.seconds }) ?? true {
                 best[distance] = BestEffortRow(distance: distance, seconds: seconds, runId: run.id, date: run.startedAt)

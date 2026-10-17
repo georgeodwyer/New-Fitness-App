@@ -48,7 +48,7 @@ struct ProgressScreen: View {
     private var overall: some View {
         let report = LoadModel.report(
             entries: DashboardService.loadEntries(runs: runs, lifts: workouts,
-                                                  external: integrations.healthEnabled ? integrations.externalWorkouts : []),
+                                                  external: integrations.loadWorkouts),
             today: .now, calendar: .kinetix)
         return VStack(alignment: .leading, spacing: KXSpacing.xl) {
             LoadHeroCard(report: report)

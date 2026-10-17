@@ -78,7 +78,7 @@ public struct LoadReport: Equatable, Sendable {
     public var running: LoadFigures
     public var lifting: LoadFigures
     public var combined: LoadFigures
-    /// Last 28 days, oldest first (today last).
+    /// Last 30 days, oldest first (today last).
     public var daily: [DailyLoad]
     /// Combined ratio for each of the last `trendDays` days (nil where history was too short).
     public var ratioTrend: [(date: Date, ratio: Double?)]
@@ -117,7 +117,7 @@ public enum LoadModel {
             return LoadFigures(acute: acute, chronic: chronic, ratio: ratio)
         }
 
-        let daily: [DailyLoad] = (0..<28).reversed().compactMap { offset in
+        let daily: [DailyLoad] = (0..<30).reversed().compactMap { offset in
             guard let date = calendar.date(byAdding: .day, value: -offset, to: day),
                   let next = calendar.date(byAdding: .day, value: 1, to: date) else { return nil }
             let onDay = entries.filter { $0.date >= date && $0.date < next }

@@ -52,6 +52,7 @@ struct RootView: View {
                 Task {
                     await HealthService.shared.refresh()
                     await ActivityExportService.retryPending(in: context, units: units)
+                    await StravaService.shared.importRecent(in: context)
                     WidgetSnapshotService.update(in: context)
                 }
             } else if phase == .background {

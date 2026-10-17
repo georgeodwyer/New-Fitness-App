@@ -33,7 +33,7 @@ struct RunDetailView: View {
                         .clipShape(RoundedRectangle(cornerRadius: KXRadius.md, style: .continuous))
                 }
                 totals
-                let pace = RunAnalysis.paceSeries(route: route)
+                let pace = log.isImportedFromStrava ? [] : RunAnalysis.paceSeries(route: route)
                 if pace.count >= 3 { RunLineChart(title: "Pace", points: pace, kind: .pace(units)) }
                 let heartRate = RunAnalysis.heartRateSeries(log.heartRateSamples)
                 if heartRate.count >= 3 { RunLineChart(title: "Heart rate", points: heartRate, kind: .heartRate) }
@@ -214,10 +214,16 @@ struct RunDetailView: View {
 
     private var destinationsCard: some View {
         VStack(alignment: .leading, spacing: KXSpacing.sm) {
-            HStack {
-                Label("Apple Health", systemImage: "heart.fill")
-                Spacer()
-                Text(log.healthKitWorkoutId != nil ? "Saved" : "Not saved").foregroundStyle(KXColor.inkSecondary)
+            if log.isImportedFromStrava {
+                Text("Recorded in another app and imported from Strava. Effort is estimated from heart rate; tap Edit to set it.")
+                    .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                HStack {
+                    Label("Apple Health", systemImage: "heart.fill")
+                    Spacer()
+                    Text(log.healthKitWorkoutId != nil ? "Saved" : "Not saved").foregroundStyle(KXColor.inkSecondary)
+                }
             }
             HStack {
                 Label("Strava", systemImage: "arrow.up.forward.app")

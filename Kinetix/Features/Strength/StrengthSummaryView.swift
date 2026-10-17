@@ -1,11 +1,20 @@
 import SwiftUI
+import SwiftData
 import TrainingEngine
 
 /// After a workout: totals, new records and what changes next time (and why).
 struct StrengthSummaryView: View {
     let summary: StrengthService.Summary
     let units: UnitSystem
+    /// The saved workout (for "Upload to Strava").
+    var log: StrengthLogModel? = nil
     let onDone: () -> Void
+
+    @Environment(\.modelContext) private var context
+    @State private var strava = StravaService.shared
+    @State private var settings = IntegrationSettings.shared
+    @State private var uploading = false
+    @State private var uploadError: String?
 
     private var format: DisplayFormat { DisplayFormat(units: units) }
 
@@ -47,6 +56,11 @@ struct StrengthSummaryView: View {
                     .kxCard(.accent)
                 }
 
+                if let log, strava.isConnected, !settings.stravaUploadLifts {
+                    stravaCard(log)
+                }
+
+                if !summary.changes.isEmpty {
                 VStack(alignment: .leading, spacing: KXSpacing.md) {
                     KXSectionHeader("Next time", subtitle: "How your weights progress")
                     ForEach(summary.changes) { change in
@@ -61,6 +75,7 @@ struct StrengthSummaryView: View {
                     }
                 }
                 .kxCard()
+                }
             }
             .padding(KXSpacing.screenMargin)
         }
@@ -71,6 +86,47 @@ struct StrengthSummaryView: View {
                 .background(KXColor.background)
         }
         .background(KXColor.background.ignoresSafeArea())
+    }
+
+    private func stravaCard(_ log: StrengthLogModel) -> some View {
+        VStack(alignment: .leading, spacing: KXSpacing.sm) {
+            if let id = log.stravaActivityId {
+                Label("On Strava", systemImage: "checkmark.circle.fill")
+                    .font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink)
+                    .symbolRenderingMode(.multicolor)
+                if let url = URL(string: "https://www.strava.com/activities/\(id)") {
+                    Link("View on Strava", destination: url)
+                        .font(KXFont.captionEmphasis)
+                        .foregroundStyle(StravaView.brand)
+                }
+            } else {
+                Button {
+                    Task {
+                        uploading = true
+                        uploadError = nil
+                        do {
+                            try await ActivityExportService.uploadStrengthToStrava(log, units: units, in: context)
+                        } catch {
+                            uploadError = error.localizedDescription
+                        }
+                        uploading = false
+                    }
+                } label: {
+                    Label(uploading ? "Uploading…" : "Upload to Strava", systemImage: "arrow.up.forward.app")
+                        .font(KXFont.bodyEmphasis)
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity, minHeight: 48)
+                        .background(StravaView.brand, in: RoundedRectangle(cornerRadius: KXRadius.sm, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .disabled(uploading)
+                .accessibilityIdentifier("strength.uploadStrava")
+                if let uploadError {
+                    Text(uploadError).font(KXFont.caption).foregroundStyle(KXColor.ink)
+                }
+            }
+        }
+        .kxCard()
     }
 
     private func symbol(for change: ProgressionDecision.Change) -> String {

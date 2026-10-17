@@ -33,6 +33,8 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           STRAVA_CLIENT_ID: ${{ secrets.STRAVA_CLIENT_ID }}
+          # Only used while Supabase isn't set up (the app then talks to Strava directly).
+          STRAVA_CLIENT_SECRET: ${{ secrets.STRAVA_CLIENT_SECRET }}
           INSTAGRAM_APP_ID: ${{ secrets.INSTAGRAM_APP_ID }}
         run: |
           # "//" starts a comment in .xcconfig files, so the URL is written as https:/$()/…
@@ -41,6 +43,7 @@ jobs:
             echo "SUPABASE_URL = ${ESCAPED_URL}"
             echo "SUPABASE_ANON_KEY = ${SUPABASE_ANON_KEY}"
             echo "STRAVA_CLIENT_ID = ${STRAVA_CLIENT_ID}"
+            if [ -z "$SUPABASE_URL" ]; then echo "STRAVA_CLIENT_SECRET = ${STRAVA_CLIENT_SECRET}"; fi
             echo "INSTAGRAM_APP_ID = ${INSTAGRAM_APP_ID}"
           } > Config/Secrets.xcconfig
           if [ -z "$SUPABASE_URL" ]; then echo "::warning::SUPABASE_URL secret not set: accounts will be off in this build"; fi

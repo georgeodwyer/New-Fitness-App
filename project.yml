@@ -59,6 +59,7 @@ targets:
         SupabaseURL: $(SUPABASE_URL)
         SupabaseAnonKey: $(SUPABASE_ANON_KEY)
         StravaClientID: $(STRAVA_CLIENT_ID)
+        StravaClientSecret: $(STRAVA_CLIENT_SECRET)
         ITSAppUsesNonExemptEncryption: false
         NSSupportsLiveActivities: true
         NSPhotoLibraryAddUsageDescription: "Kinetix saves the run and workout cards you choose to your photo library."

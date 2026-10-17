@@ -256,6 +256,7 @@ extension RunLogModel: SyncableModel {
         var stravaActivityId: String?
         var runTypeRaw: String?
         var recordTypeRaw: String?
+        var importSourceRaw: String?
     }
     static var syncType: String { "runLog" }
     var syncPayload: Payload {
@@ -264,7 +265,7 @@ extension RunLogModel: SyncableModel {
                 maxHeartRate: maxHeartRate, timeInTargetSeconds: timeInTargetSeconds, targetedSeconds: targetedSeconds,
                 segmentsData: segmentsData, effort: effort, load: load, title: title, isFinished: isFinished, finishedAt: finishedAt,
                 usedSimulatedGPS: usedSimulatedGPS, healthKitWorkoutId: healthKitWorkoutId, stravaActivityId: stravaActivityId,
-                runTypeRaw: runTypeRaw, recordTypeRaw: recordTypeRaw)
+                runTypeRaw: runTypeRaw, recordTypeRaw: recordTypeRaw, importSourceRaw: importSourceRaw)
     }
     func applySync(_ p: Payload, context: ModelContext) {
         plannedSessionId = p.plannedSessionId
@@ -289,6 +290,7 @@ extension RunLogModel: SyncableModel {
         stravaActivityId = p.stravaActivityId
         runTypeRaw = p.runTypeRaw
         recordTypeRaw = p.recordTypeRaw
+        importSourceRaw = p.importSourceRaw
     }
     static func makeForSync(id: UUID) -> RunLogModel { RunLogModel(plannedSessionId: nil, startedAt: .now, id: id) }
 }

@@ -183,6 +183,21 @@ After M13: owner's list of faults.
   suggestion, `EditDashboardView`; layout stored on `CoachingSettingsModel.dashboardLayoutData` (synced).
   HomeView is now in a NavigationStack (bar hidden) so tiles can push detail screens.
 
+- **Strava, done properly + load chart period ✅** (owner: upload + import; NO server for now, so the
+  client secret is a GitHub secret baked into TestFlight builds only while `SUPABASE_URL` is unset;
+  runs auto-upload, gym sessions get an "Upload to Strava" button unless auto is on; load chart
+  Week = last 7 days / Month = last 30 days). KinetixSync `Strava.swift`: `StravaConfig.direct`
+  (form-encoded exchange to strava.com/oauth/token), scope `read,activity:read_all,activity:write`,
+  `StravaTokens.scopes/canReadActivities`, `activities(after:page:perPage:)`, `StravaActivity`
+  (+ `category`, `isFromKinetix`), `Polyline.decode`. App: `StravaService.importRecent` (90 days first
+  time, then since last check − 1 day, every app open, ≥15 min apart) → runs become `RunLogModel` with
+  `importSourceRaw = "strava"` (synced; "From Strava" tag; excluded from best efforts/pace chart and
+  from Health/Strava export), others → `IntegrationSettings.stravaWorkouts` (28 days) merged with
+  Health's via `ExternalWorkouts.merged` into `loadWorkouts`. `StravaImport.plan` dedupes (own uploads,
+  known ids, ≥50% overlap with Kinetix sessions). `LoadReport.daily` is now 30 days; `DailyLoadChart`
+  has a Week/Month picker (@AppStorage "dashboard.loadRange"). **Before App Store release: move the
+  secret to Supabase (docs/STRAVA.md) and reset it on Strava.**
+
 ## Getting builds to the owner's phone (default)
 
 The owner installs via **TestFlight**. After each milestone or fix that's green on CI, trigger

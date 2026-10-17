@@ -43,11 +43,11 @@ final class LoadModelTests: XCTestCase {
         let entries = [LoadEntry(date: day(0).addingTimeInterval(3600 * 9), discipline: .run, load: 200),
                        LoadEntry(date: day(0).addingTimeInterval(3600 * 18), discipline: .strength, load: 250)]
         let report = LoadModel.report(entries: entries, today: today, calendar: calendar)
-        XCTAssertEqual(report.daily.count, 28)
+        XCTAssertEqual(report.daily.count, 30)
         XCTAssertEqual(report.daily.last?.running, 200)
         XCTAssertEqual(report.daily.last?.lifting, 250)
         XCTAssertEqual(report.daily.last?.total, 450)
-        XCTAssertLessThan(report.daily[0].date, report.daily[27].date)
+        XCTAssertLessThan(report.daily[0].date, report.daily[29].date)
         XCTAssertEqual(report.ratioTrend.count, 56)
     }
 
