@@ -1,16 +1,15 @@
 import SwiftUI
 
-/// Screen header from the designs: logo + "KINETIX" overline, screen title,
-/// notification bell and avatar.
+/// Screen header: the Kinetix wordmark top left, the screen title under it, and an
+/// optional notification bell.
 struct KXScreenHeader: View {
     let title: String
     var onNotifications: (() -> Void)?
 
     var body: some View {
-        HStack(spacing: KXSpacing.md) {
-            KXLogo(size: 32)
-            VStack(alignment: .leading, spacing: 0) {
-                KXOverline("Kinetix")
+        HStack(alignment: .bottom, spacing: KXSpacing.md) {
+            VStack(alignment: .leading, spacing: KXSpacing.xs) {
+                KXWordmark(height: 16)
                 Text(title)
                     .font(KXFont.title)
                     .foregroundStyle(KXColor.ink)
@@ -24,18 +23,40 @@ struct KXScreenHeader: View {
     }
 }
 
-/// Placeholder brand mark: a dark disc with an orange "K" stroke.
+/// The KINETIX wordmark: black in light mode, white in dark mode.
+struct KXWordmark: View {
+    var height: CGFloat = 16
+    /// Force a colour (e.g. on share cards over a photo); nil follows light/dark mode.
+    var forcedWhite: Bool? = nil
+
+    private var imageName: String {
+        switch forcedWhite {
+        case true?: return "WordmarkWhite"
+        case false?: return "WordmarkBlack"
+        case nil: return "Wordmark"
+        }
+    }
+
+    var body: some View {
+        Image(imageName)
+            .resizable()
+            .interpolation(.high)
+            .scaledToFit()
+            .frame(height: height)
+            .accessibilityLabel("Kinetix")
+    }
+}
+
+/// The Kinetix "K" mark on its rounded tile (dark tile in light mode, light tile in dark mode).
 struct KXLogo: View {
     var size: CGFloat = 32
 
     var body: some View {
-        ZStack {
-            Circle().fill(KXColor.inverted)
-            Image(systemName: "bolt.fill")
-                .font(.system(size: size * 0.45, weight: .bold))
-                .foregroundStyle(KXColor.accent)
-        }
-        .frame(width: size, height: size)
-        .accessibilityHidden(true)
+        Image("LogoMark")
+            .resizable()
+            .interpolation(.high)
+            .scaledToFit()
+            .frame(width: size, height: size)
+            .accessibilityHidden(true)
     }
 }

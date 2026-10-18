@@ -29,6 +29,8 @@ struct AuthView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: KXSpacing.xl) {
                     VStack(alignment: .leading, spacing: KXSpacing.sm) {
+                        KXLogo(size: 48)
+                            .padding(.bottom, KXSpacing.xs)
                         KXAccentHeadline(plain: mode == .create ? "Back up your" : "Welcome", accented: mode == .create ? "training" : "back")
                         Text("An account backs up your plan, runs and lifts, and keeps them in sync across your devices. Everything still works offline.")
                             .font(KXFont.callout)

@@ -121,7 +121,7 @@ struct SettingsView: View {
                     Text("Export gives you everything Kinetix stores about you as a JSON file. Deleting removes your account and all your data, on this iPhone and in the cloud, permanently.")
                 }
 
-                Section("About") {
+                Section {
                     NavigationLink {
                         HealthDisclaimerView()
                     } label: {
@@ -133,6 +133,15 @@ struct SettingsView: View {
                         Label("Privacy policy", systemImage: "hand.raised")
                     }
                     LabeledContent("Version", value: Bundle.main.appVersion)
+                } header: {
+                    Text("About")
+                } footer: {
+                    HStack(spacing: KXSpacing.sm) {
+                        KXLogo(size: 28)
+                        KXWordmark(height: 13)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, KXSpacing.lg)
                 }
 
                 Section {

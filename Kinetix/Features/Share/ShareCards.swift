@@ -150,10 +150,7 @@ struct ShareCardView: View {
             ForEach(data.lines.prefix(3), id: \.self) { line in
                 Text(line).font(.system(size: 13, weight: .semibold))
             }
-            HStack(spacing: 6) {
-                Image(systemName: "bolt.fill").foregroundStyle(KXColor.accent)
-                Text("KINETIX").font(.system(size: 13, weight: .heavy)).tracking(3)
-            }
+            KXWordmark(height: 14, forcedWhite: true)
         }
         .foregroundStyle(.white)
         .shadow(color: .black.opacity(0.45), radius: 4, y: 1)
@@ -203,13 +200,6 @@ struct ShareCardView: View {
     }
 
     private func brand(dark: Bool) -> some View {
-        HStack(spacing: 6) {
-            ZStack {
-                Circle().fill(dark ? .white : KXColor.inverted).frame(width: 22, height: 22)
-                Image(systemName: "bolt.fill").font(.system(size: 11, weight: .bold)).foregroundStyle(KXColor.accent)
-            }
-            Text("KINETIX").font(.system(size: 13, weight: .heavy)).tracking(3)
-                .foregroundStyle(dark ? .white : KXColor.ink)
-        }
+        KXWordmark(height: 14, forcedWhite: dark ? true : nil)
     }
 }
