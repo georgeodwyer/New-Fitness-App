@@ -85,6 +85,23 @@ public struct RunSummary: Codable, Equatable, Sendable {
     /// Heart rate through the run (at most one sample every 5 s).
     public var heartRateSamples: [HeartRateSample] = []
 
+    /// For building a summary outside the engine (e.g. a run sent from the watch, tests).
+    public init(durationSeconds: Double, distanceMeters: Double, averagePace: Pace?, splits: [Split] = [], segments: [SegmentResult] = [],
+                timeInTargetSeconds: Double = 0, targetedSeconds: Double = 0, averageHeartRate: Double? = nil, maxHeartRate: Double? = nil,
+                route: [RoutePoint] = [], heartRateSamples: [HeartRateSample] = []) {
+        self.durationSeconds = durationSeconds
+        self.distanceMeters = distanceMeters
+        self.averagePace = averagePace
+        self.splits = splits
+        self.segments = segments
+        self.timeInTargetSeconds = timeInTargetSeconds
+        self.targetedSeconds = targetedSeconds
+        self.averageHeartRate = averageHeartRate
+        self.maxHeartRate = maxHeartRate
+        self.route = route
+        self.heartRateSamples = heartRateSamples
+    }
+
     /// Fraction of measured target time spent on target (nil if nothing was targeted).
     public var timeInTargetFraction: Double? {
         targetedSeconds > 0 ? timeInTargetSeconds / targetedSeconds : nil
