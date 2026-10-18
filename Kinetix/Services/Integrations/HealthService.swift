@@ -297,9 +297,10 @@ final class HealthService {
         let descriptor = HKSampleQueryDescriptor(predicates: [.workout(predicate)],
                                                  sortDescriptors: [SortDescriptor(\.startDate, order: .reverse)])
         guard let workouts = try? await descriptor.result(for: store) else { return nil }
-        let ownBundle = Bundle.main.bundleIdentifier
+        // Kinetix's own workouts (iPhone and Apple Watch apps) are already in Kinetix.
+        let ownBundle = Bundle.main.bundleIdentifier ?? "com.georgeodwyer.kinetix"
         return workouts
-            .filter { $0.sourceRevision.source.bundleIdentifier != ownBundle }
+            .filter { !$0.sourceRevision.source.bundleIdentifier.hasPrefix(ownBundle) }
             .map { workout in
                 ExternalWorkout(
                     id: workout.uuid,

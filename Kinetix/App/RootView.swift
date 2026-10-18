@@ -53,10 +53,12 @@ struct RootView: View {
                     await HealthService.shared.refresh()
                     await ActivityExportService.retryPending(in: context, units: units)
                     await StravaService.shared.importRecent(in: context)
+                    WatchSyncService.shared.sendPlan()
                     WidgetSnapshotService.update(in: context)
                 }
             } else if phase == .background {
                 WidgetSnapshotService.update(in: context)
+                WatchSyncService.shared.sendPlan()
             }
         }
     }

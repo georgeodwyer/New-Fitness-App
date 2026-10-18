@@ -198,6 +198,19 @@ After M13: owner's list of faults.
   has a Week/Month picker (@AppStorage "dashboard.loadRange"). **Before App Store release: move the
   secret to Supabase (docs/STRAVA.md) and reset it on Strava.**
 
+- **W1 ✅ Apple Watch app: runs** (owner: watch app, standalone; runs + gym, runs first; Garmin parked).
+  Engine `Watch/WatchSync.swift`: `WatchRunOption` (planned/template/free, structure, typical
+  effort), `WatchPlan` (units, coaching, runs; JSON), `WatchRunResult` (summary, effort, Health
+  workout id; `thinned()` route); `RunSummary` is now Codable. Target `KinetixWatch` (watchOS 10,
+  bundle `…kinetix.watchkitapp`, embedded in the iOS app; shares `Kinetix/App/Formatters.swift`):
+  `WatchStore` (WCSession: plan from application context, results via `transferFile` with an
+  outbox), `RunWorkoutManager` (HKWorkoutSession + live builder for HR, CLLocation GPS + route
+  builder, the same `RunEngine`, haptics + AVSpeech), `RunListView`/`RunReadyView`/`RunLiveView`
+  (controls | metrics | step pages)/`RunFinishedView` (Digital Crown effort). iPhone:
+  `WatchSyncService` (sends `makePlan` on app active/background when changed; `save(_:)` creates the
+  run with the result id so repeats are ignored, keeps the Health id so it isn't saved twice).
+  HealthService ignores workouts from any Kinetix bundle. docs/WATCH.md. **Next: W2 gym on watch.**
+
 ## Getting builds to the owner's phone (default)
 
 The owner installs via **TestFlight**. After each milestone or fix that's green on CI, trigger

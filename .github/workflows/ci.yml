@@ -46,7 +46,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f Kinetix.xcodeproj Kinetix/Info.plist KinetixWidgets/Info.plist
+          git add -f Kinetix.xcodeproj Kinetix/Info.plist KinetixWidgets/Info.plist KinetixWatch/Info.plist
           if git diff --cached --quiet; then
             echo "Xcode project unchanged"
           else

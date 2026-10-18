@@ -71,7 +71,7 @@ public struct RunSnapshot: Equatable, Sendable {
     public var gpsAvailable: Bool
 }
 
-public struct RunSummary: Equatable, Sendable {
+public struct RunSummary: Codable, Equatable, Sendable {
     public var durationSeconds: Double
     public var distanceMeters: Double
     public var averagePace: Pace?

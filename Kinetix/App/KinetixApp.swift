@@ -14,7 +14,10 @@ struct KinetixApp: App {
             fatalError("Could not open the Kinetix database: \(error)")
         }
         let appContainer = self.container
-        MainActor.assumeIsolated { SyncService.shared.configure(container: appContainer) }
+        MainActor.assumeIsolated {
+            SyncService.shared.configure(container: appContainer)
+            if !LaunchOptions().isUITesting { WatchSyncService.shared.configure(container: appContainer) }
+        }
         if launch.seedSample {
             MainActor.assumeIsolated {
                 SampleData.seed(into: container.mainContext)

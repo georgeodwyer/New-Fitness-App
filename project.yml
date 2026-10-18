@@ -5,6 +5,7 @@ options:
   bundleIdPrefix: com.georgeodwyer
   deploymentTarget:
     iOS: "17.0"
+    watchOS: "10.0"
   createIntermediateGroups: true
   developmentLanguage: en-GB
 settings:
@@ -28,6 +29,7 @@ targets:
       - package: TrainingEngine
         product: KinetixSync
       - target: KinetixWidgets
+      - target: KinetixWatch
     configFiles:
       Debug: Config/App.xcconfig
       Release: Config/App.xcconfig
@@ -96,6 +98,37 @@ targets:
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
+  # The Apple Watch app (runs on its own: GPS, heart rate and coaching without the iPhone).
+  KinetixWatch:
+    type: application
+    platform: watchOS
+    sources:
+      - path: KinetixWatch
+      - path: Kinetix/App/Formatters.swift
+    dependencies:
+      - package: TrainingEngine
+        product: TrainingEngine
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.georgeodwyer.kinetix.watchkitapp
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_ENTITLEMENTS: KinetixWatch/KinetixWatch.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        TARGETED_DEVICE_FAMILY: "4"
+        SKIP_INSTALL: YES
+    info:
+      path: KinetixWatch/Info.plist
+      properties:
+        CFBundleDisplayName: Kinetix
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        WKApplication: true
+        WKCompanionAppBundleIdentifier: com.georgeodwyer.kinetix
+        WKBackgroundModes: [workout-processing]
+        UIBackgroundModes: [location]
+        NSLocationWhenInUseUsageDescription: "Kinetix uses your watch's GPS during runs to measure distance and pace and draw your route."
+        NSHealthShareUsageDescription: "Kinetix reads your heart rate during workouts to show it live and judge your effort."
+        NSHealthUpdateUsageDescription: "Kinetix saves the runs you record on your watch to Apple Health."
   KinetixTests:
     type: bundle.unit-test
     platform: iOS
