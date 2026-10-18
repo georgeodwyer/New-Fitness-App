@@ -1,19 +1,26 @@
 import SwiftUI
 import TrainingEngine
 
-/// During a run: controls (swipe right), metrics (main page) and the current step.
+/// During a run: controls (swipe right), the main page and, for structured runs, the whole
+/// run (swipe left). Structured runs open on the current rep: pace against its target and
+/// how much of it is left. Free runs open on the whole-run numbers.
 struct RunLiveView: View {
     @State private var workout = RunWorkoutManager.shared
     @State private var page = 1
     @State private var confirmEnd = false
 
     private var format: DisplayFormat { DisplayFormat(units: workout.units) }
+    private var isStructured: Bool { workout.option?.structure != nil }
 
     var body: some View {
         TabView(selection: $page) {
             controls.tag(0)
-            metrics.tag(1)
-            if workout.option?.structure != nil { step.tag(2) }
+            if isStructured {
+                repPage.tag(1)
+                wholeRunPage.tag(2)
+            } else {
+                wholeRunPage.tag(1)
+            }
         }
         .tabViewStyle(.page)
         .confirmationDialog("End this run?", isPresented: $confirmEnd) {
@@ -22,71 +29,102 @@ struct RunLiveView: View {
         }
     }
 
-    // MARK: Metrics
+    // MARK: Current rep (main page for structured runs)
 
-    private var metrics: some View {
+    private var repPage: some View {
         let snapshot = workout.snapshot
-        return VStack(alignment: .leading, spacing: 2) {
-            Text(Units.formatMinutesSeconds(snapshot?.elapsedSeconds ?? 0))
-                .font(.system(.title3, design: .rounded).monospacedDigit())
-                .foregroundStyle(WatchColor.accent)
-            Text(snapshot?.currentPace.map { Units.formatPace($0, units: workout.units) } ?? "–:––")
-                .font(.system(size: 44, weight: .semibold, design: .rounded).monospacedDigit())
-                .foregroundStyle(WatchColor.pace(snapshot?.paceStatus))
-                .minimumScaleFactor(0.6)
-                .lineLimit(1)
-            HStack {
-                Text(Units.paceUnitLabel(workout.units)).font(.caption2).foregroundStyle(.secondary)
-                if let target = snapshot?.segment?.targetPace {
-                    Text("target \(Units.formatPace(target.fastest, units: workout.units))–\(Units.formatPace(target.slowest, units: workout.units))")
-                        .font(.caption2).foregroundStyle(.secondary)
+        return VStack(alignment: .leading, spacing: 1) {
+            if let segment = snapshot?.segment {
+                HStack(alignment: .firstTextBaseline) {
+                    Text(segment.label ?? segment.kind.displayName)
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(segment.kind == .work ? WatchColor.accent : .teal)
+                        .lineLimit(1)
+                    Spacer()
+                    if let remaining = snapshot?.segmentRemaining {
+                        Text("\(format.segmentLength(remaining)) left")
+                            .font(.system(.footnote, design: .rounded).monospacedDigit().weight(.semibold))
+                    }
                 }
+                ProgressView(value: snapshot?.segmentProgress ?? 0)
+                    .tint(segment.kind == .work ? WatchColor.accent : .teal)
+                paceLine(snapshot)
+                if let target = segment.targetPace {
+                    Text("target \(Units.formatPace(target.fastest, units: workout.units))–\(Units.formatPace(target.slowest, units: workout.units))\(Units.paceUnitLabel(workout.units))")
+                        .font(.caption2).foregroundStyle(.secondary)
+                } else {
+                    Text(Units.paceUnitLabel(workout.units)).font(.caption2).foregroundStyle(.secondary)
+                }
+                HStack {
+                    heartRate(snapshot)
+                    Spacer()
+                    if let next = snapshot?.nextSegment {
+                        Text("Next: \(next.label ?? next.kind.displayName)")
+                            .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                    }
+                }
+            } else {
+                Text(snapshot?.isStructureComplete == true ? "Workout complete" : "Starting…").font(.headline)
+                paceLine(snapshot)
+                Text("Keep running or end when you're ready.").font(.caption2).foregroundStyle(.secondary)
             }
-            HStack {
-                Text(format.distance(snapshot?.distanceMeters ?? 0, decimals: 2))
-                    .font(.system(.title3, design: .rounded).monospacedDigit())
-                Spacer()
-                Label(snapshot?.heartRate.map { "\(Int($0.rounded()))" } ?? "--", systemImage: "heart.fill")
-                    .font(.system(.title3, design: .rounded).monospacedDigit())
-                    .foregroundStyle(WatchColor.heart)
-            }
-            if workout.isPaused {
-                Text("Paused").font(.caption).foregroundStyle(WatchColor.offPace)
-            } else if snapshot?.gpsAvailable == false {
-                Text("Finding GPS…").font(.caption2).foregroundStyle(.secondary)
-            }
+            status(snapshot)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .accessibilityElement(children: .combine)
     }
 
-    // MARK: Current step
+    // MARK: Whole run
 
-    private var step: some View {
+    private var wholeRunPage: some View {
         let snapshot = workout.snapshot
-        return VStack(alignment: .leading, spacing: 4) {
-            if let segment = snapshot?.segment {
-                Text(segment.label ?? segment.kind.displayName)
-                    .font(.headline).foregroundStyle(segment.kind == .work ? WatchColor.accent : .teal)
-                if let remaining = snapshot?.segmentRemaining {
-                    Text("\(format.segmentLength(remaining)) left")
-                        .font(.system(.title2, design: .rounded).monospacedDigit())
-                }
-                ProgressView(value: snapshot?.segmentProgress ?? 0)
-                    .tint(WatchColor.accent)
-                if let target = segment.targetPace {
-                    Text(format.paceRange(target)).font(.caption).foregroundStyle(.secondary)
-                }
-                if let next = snapshot?.nextSegment {
-                    Text("Next: \(next.label ?? next.kind.displayName) · \(format.segmentLength(next.length))")
-                        .font(.caption2).foregroundStyle(.secondary).lineLimit(2)
-                }
-            } else if snapshot?.isStructureComplete == true {
-                Text("Workout complete").font(.headline)
-                Text("Keep running or end when you're ready.").font(.caption).foregroundStyle(.secondary)
+        return VStack(alignment: .leading, spacing: 2) {
+            Text(Units.formatMinutesSeconds(snapshot?.elapsedSeconds ?? 0))
+                .font(.system(.title3, design: .rounded).monospacedDigit())
+                .foregroundStyle(WatchColor.accent)
+            Text(format.distance(snapshot?.distanceMeters ?? 0, decimals: 2))
+                .font(.system(size: 34, weight: .semibold, design: .rounded).monospacedDigit())
+                .minimumScaleFactor(0.6)
+                .lineLimit(1)
+            if isStructured {
+                // The rep page has the live pace; here the whole run's average.
+                Text("\(snapshot?.averagePace.map { Units.formatPace($0, units: workout.units) } ?? "–:––")\(Units.paceUnitLabel(workout.units)) avg")
+                    .font(.system(.title3, design: .rounded).monospacedDigit())
+            } else {
+                paceLine(snapshot)
+                Text("\(snapshot?.averagePace.map { Units.formatPace($0, units: workout.units) } ?? "–:––")\(Units.paceUnitLabel(workout.units)) avg")
+                    .font(.caption2).foregroundStyle(.secondary)
             }
+            heartRate(snapshot)
+            status(snapshot)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .accessibilityElement(children: .combine)
+    }
+
+    // MARK: Pieces
+
+    private func paceLine(_ snapshot: RunSnapshot?) -> some View {
+        Text(snapshot?.currentPace.map { Units.formatPace($0, units: workout.units) } ?? "–:––")
+            .font(.system(size: 44, weight: .semibold, design: .rounded).monospacedDigit())
+            .foregroundStyle(WatchColor.pace(snapshot?.paceStatus))
+            .minimumScaleFactor(0.6)
+            .lineLimit(1)
+    }
+
+    private func heartRate(_ snapshot: RunSnapshot?) -> some View {
+        Label(snapshot?.heartRate.map { "\(Int($0.rounded()))" } ?? "--", systemImage: "heart.fill")
+            .font(.system(.body, design: .rounded).monospacedDigit())
+            .foregroundStyle(WatchColor.heart)
+    }
+
+    @ViewBuilder
+    private func status(_ snapshot: RunSnapshot?) -> some View {
+        if workout.isPaused {
+            Text("Paused").font(.caption).foregroundStyle(WatchColor.offPace)
+        } else if snapshot?.gpsAvailable == false {
+            Text("Finding GPS…").font(.caption2).foregroundStyle(.secondary)
+        }
     }
 
     // MARK: Controls
@@ -105,7 +143,7 @@ struct RunLiveView: View {
                 if workout.option?.structure != nil {
                     controlButton("Next step", symbol: "forward.end.fill", tint: .teal) {
                         workout.skipStep()
-                        page = 2
+                        page = 1
                     }
                 }
                 controlButton(workout.voiceEnabled ? "Voice on" : "Voice off",

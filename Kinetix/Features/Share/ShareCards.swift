@@ -93,7 +93,7 @@ struct ShareCardView: View {
                 metricRow(dark: false)
                 if !data.lines.isEmpty { linesView(dark: false) }
                 Spacer(minLength: 0)
-                brand(dark: false)
+                brand(dark: false, height: 32)
             }
             .padding(22)
             .frame(width: Self.size.width, height: Self.size.height - 380, alignment: .topLeading)
@@ -135,22 +135,23 @@ struct ShareCardView: View {
     // MARK: Sticker (transparent)
 
     private var sticker: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 10) {
             if !data.route.isEmpty {
                 RouteShape(route: data.route)
                     .stroke(.white, style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
-                    .frame(width: 180, height: 180)
+                    .frame(width: 150, height: 150)
             }
             ForEach(Array(data.metrics.enumerated()), id: \.offset) { _, metric in
                 VStack(spacing: 0) {
-                    Text(metric.label.uppercased()).font(.system(size: 12, weight: .bold)).tracking(1.5)
-                    Text(metric.value).font(.system(size: 34, weight: .heavy, design: .rounded)).monospacedDigit()
+                    Text(metric.label.uppercased()).font(.system(size: 10, weight: .bold)).tracking(1.2)
+                    Text(metric.value).font(.system(size: 24, weight: .heavy, design: .rounded)).monospacedDigit()
                 }
             }
             ForEach(data.lines.prefix(3), id: \.self) { line in
-                Text(line).font(.system(size: 13, weight: .semibold))
+                Text(line).font(.system(size: 11, weight: .semibold))
             }
-            KXWordmark(height: 14, forcedWhite: true)
+            KXWordmark(height: 34, forcedWhite: true)
+                .padding(.top, 6)
         }
         .foregroundStyle(.white)
         .shadow(color: .black.opacity(0.45), radius: 4, y: 1)
@@ -199,7 +200,7 @@ struct ShareCardView: View {
         }
     }
 
-    private func brand(dark: Bool) -> some View {
-        KXWordmark(height: 14, forcedWhite: dark ? true : nil)
+    private func brand(dark: Bool, height: CGFloat = 14) -> some View {
+        KXWordmark(height: height, forcedWhite: dark ? true : nil)
     }
 }
