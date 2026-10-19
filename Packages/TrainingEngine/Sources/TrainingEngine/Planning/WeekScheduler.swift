@@ -112,7 +112,7 @@ public enum WeekScheduler {
                 if let day = best {
                     state.addLift(lift, on: day)
                 } else {
-                    notes.append("\(lift.name) was left out this week: there was no day that wouldn't tire your legs before a key run.")
+                    notes.append("\(lift.name) was left out this week: there was no day that wouldn't tire your legs before a hard run or long run.")
                 }
             }
         }
@@ -138,7 +138,7 @@ public enum WeekScheduler {
             if let day = best {
                 state.addRun(type, on: day)
             } else {
-                notes.append("One easy run was dropped this week to keep enough recovery around your key sessions.")
+                notes.append("One easy run was dropped this week to keep enough recovery around your hard sessions.")
             }
         }
 
@@ -165,7 +165,7 @@ public enum WeekScheduler {
             if lowerLift {
                 let rules = BalanceRules.current.scheduling
                 if rules.noLowerBodyLiftDayBeforeHardRun, byDay[day.next]?.contains(where: { $0.isHardRun }) == true {
-                    problems.append("lower-body lift on \(day.shortName) before a key run")
+                    problems.append("lower-body lift on \(day.shortName) before a hard run")
                 }
                 if rules.noLowerBodyLiftOnLongRunDay, items.contains(where: { $0.item == .run(.long) }) {
                     problems.append("lower-body lift on the long-run day")

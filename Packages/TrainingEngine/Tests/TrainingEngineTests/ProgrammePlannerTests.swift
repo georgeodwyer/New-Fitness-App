@@ -217,13 +217,21 @@ final class ProgrammePlannerTests: XCTestCase {
     /// Prints every week for the three example runners as JSON lines starting "PREVIEW ",
     /// for the programme preview page.
     func testPrintPreview() {
+        // Short lines, one per week and one per run, flushed as they go: very long stdout lines
+        // can be cut short in CI logs.
         struct Segment: Encodable { var label: String; var length: String; var pace: String? }
-        struct Run: Encodable { var date: String; var title: String; var km: Double; var summary: String; var segments: [Segment] }
+        struct Run: Encodable { var runner: String; var week: Int; var date: String; var title: String; var km: Double; var summary: String; var segments: [Segment] }
         struct Week: Encodable {
             var runner: String; var week: Int; var programmeWeek: Int?; var phase: String; var deload: Bool
-            var targetKm: Double; var plannedKm: Double; var runs: [Run]; var lifts: Int; var notes: [String]
+            var targetKm: Double; var plannedKm: Double; var lifts: Int; var notes: [String]
         }
         let encoder = JSONEncoder()
+        func emit<T: Encodable>(_ prefix: String, _ value: T) {
+            if let data = try? encoder.encode(value), let line = String(data: data, encoding: .utf8) {
+                print(prefix + " " + line)
+                fflush(stdout)
+            }
+        }
         let dayFormat = DateFormatter()
         dayFormat.calendar = calendar
         dayFormat.timeZone = calendar.timeZone
@@ -233,7 +241,12 @@ final class ProgrammePlannerTests: XCTestCase {
             let zones = PaceZones(profile: athlete)
             let (outline, weeks) = plan(athlete)
             for (week, target) in zip(weeks, outline.weeks) {
-                let weekRuns = runs(week).map { run -> Run in
+                emit("PREVIEW-WEEK", Week(runner: runner.name, week: target.index + 1, programmeWeek: target.programmeWeek,
+                                          phase: target.isPostProgrammeRecovery == true ? "Recovery" : target.phase.displayName,
+                                          deload: target.isRecoveryWeek, targetKm: (target.runVolumeMeters / 100).rounded() / 10,
+                                          plannedKm: (week.plannedRunMeters / 100).rounded() / 10,
+                                          lifts: week.sessions.filter { $0.kind.discipline == .strength }.count, notes: week.notes))
+                for run in runs(week) {
                     let segments = (run.runStructure?.segments ?? []).map { segment -> Segment in
                         let length: String
                         switch segment.length {
@@ -246,17 +259,8 @@ final class ProgrammePlannerTests: XCTestCase {
                         }
                         return Segment(label: segment.label ?? segment.kind.rawValue, length: length, pace: pace)
                     }
-                    _ = zones
-                    return Run(date: dayFormat.string(from: run.date), title: run.title,
-                               km: ((run.estimatedDistanceMeters ?? 0) / 100).rounded() / 10, summary: run.summary, segments: segments)
-                }
-                let preview = Week(runner: runner.name, week: target.index + 1, programmeWeek: target.programmeWeek,
-                                   phase: target.isPostProgrammeRecovery == true ? "Recovery" : target.phase.displayName,
-                                   deload: target.isRecoveryWeek, targetKm: (target.runVolumeMeters / 100).rounded() / 10,
-                                   plannedKm: (week.plannedRunMeters / 100).rounded() / 10, runs: weekRuns,
-                                   lifts: week.sessions.filter { $0.kind.discipline == .strength }.count, notes: week.notes)
-                if let data = try? encoder.encode(preview), let line = String(data: data, encoding: .utf8) {
-                    print("PREVIEW " + line)
+                    emit("PREVIEW-RUN", Run(runner: runner.name, week: target.index + 1, date: dayFormat.string(from: run.date), title: run.title,
+                                            km: ((run.estimatedDistanceMeters ?? 0) / 100).rounded() / 10, summary: run.summary, segments: segments))
                 }
             }
             // The runner's paces.
@@ -265,6 +269,7 @@ final class ProgrammePlannerTests: XCTestCase {
                 return "\"\(zone.rawValue)\": \"\(Units.formatPace(range.fastest, units: .metric))–\(Units.formatPace(range.slowest, units: .metric))\""
             }
             print("PREVIEW-PACES {\"runner\": \"\(runner.name)\", " + paces.joined(separator: ", ") + "}")
+            fflush(stdout)
         }
     }
 }
