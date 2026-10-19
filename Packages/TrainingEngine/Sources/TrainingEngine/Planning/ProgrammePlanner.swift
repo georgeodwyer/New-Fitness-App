@@ -190,7 +190,6 @@ enum ProgrammePlanner {
 
         let weekMeters = week.runVolumeMeters
         let shortest = rules.shortestRunMeters
-        let warmMeters = min(max(weekMeters * 0.08, 1500), 3000)
 
         // Long run cap: the programme, the Rules tab and, early on, their longest recent run.
         var longCap = min(programme.longRunCapMeters, rules.longestRunMeters)
@@ -198,83 +197,23 @@ enum ProgrammePlanner {
             longCap = min(longCap, max(longest * pow(1.1, Double(index + 1)), shortest))
         }
 
-        var runs = sessions.map { PlannedRun(session: $0) }
-        var longMeters = 0.0
-
-        // 1) Race and long run.
-        for i in runs.indices {
-            let session = runs[i].session
-            if session.isRace {
-                let distance = programme.raceDistanceMeters ?? 21097.5
-                runs[i].meters = distance
-                runs[i].structure = RunStructure(segments: [
-                    RunSegment(kind: .work, length: .distance(meters: distance), targetPace: zones.range(for: programme.racePaceZone),
-                               label: hasEventThisWeek ? "Race" : "Time trial")
-                ])
-                runs[i].summary = "\(programme.name) \(hasEventThisWeek ? "race" : "time trial")"
-            } else if session.runType == .long {
-                let spec = session.distance.kind == "auto" ? (programmeWeek?.longRun ?? .auto) : session.distance
-                var meters: Double
-                switch spec.kind {
-                case "meters": meters = spec.value ?? weekMeters * rules.longRunShare
-                case "share": meters = weekMeters * (spec.value ?? rules.longRunShare)
-                default: meters = weekMeters * rules.longRunShare
-                }
-                meters = RunBuilder.tidy(min(max(meters, shortest), longCap))
-                longMeters = meters
-                runs[i].meters = meters
-            }
-        }
-
-        // 2) Rep sessions: reps trimmed to the runner's volume, plus warm-up and cool-down
-        //    (down to the minimum if the long run and sessions already fill the week).
-        func buildStructured(warm: Double) {
-            for i in runs.indices where runs[i].session.isStructured && !runs[i].session.isRace {
-                let built = structured(runs[i].session, warmMeters: warm, weekMeters: weekMeters, zones: zones)
-                runs[i].structure = built.structure
-                runs[i].meters = built.structure.estimate(zones: zones).distanceMeters
-                runs[i].summary = built.summary
-            }
-        }
-        buildStructured(warm: warmMeters)
-        let committed = runs.filter { !$0.session.isRace }.reduce(0) { $0 + $1.meters }
-        if committed > weekMeters && warmMeters > 1500 { buildStructured(warm: 1500) }
-
-        // 3) Everything else shares what's left of the week.
-        func isFlexible(_ run: PlannedRun) -> Bool {
-            !run.session.isRace && run.session.runType != .long && !run.session.isStructured
-        }
-        while true {
-            let fixed = runs.filter { !isFlexible($0) && !$0.session.isRace }.reduce(0) { $0 + $1.meters }
-            let explicit = runs.filter { isFlexible($0) && $0.session.distance.kind != "auto" }
-            let explicitMeters = explicit.reduce(0) { $0 + explicitDistance($1.session.distance, weekMeters: weekMeters) }
-            let autoRuns = runs.indices.filter { isFlexible(runs[$0]) && runs[$0].session.distance.kind == "auto" }
-            let remaining = max(weekMeters - fixed - explicitMeters, 0)
-            let totalWeight = autoRuns.reduce(0) { $0 + weight(runs[$1].session) }
-            let perWeight = totalWeight > 0 ? remaining / totalWeight : 0
-            // A run that would be too short is dropped (lowest priority first) and the rest re-shared.
-            let tooShort = autoRuns.filter { weight(runs[$0].session) * perWeight < shortest }
-            if !tooShort.isEmpty, let drop = tooShort.min(by: { dropPriority(runs[$0].session) ?? 9 < dropPriority(runs[$1].session) ?? 9 }) {
-                runs.remove(at: drop)
-                continue
-            }
-            let flexCap = longMeters > 0 ? max(longMeters, shortest) : rules.longestRunMeters
-            for i in runs.indices where isFlexible(runs[i]) {
-                let meters = runs[i].session.distance.kind == "auto"
-                    ? weight(runs[i].session) * perWeight
-                    : explicitDistance(runs[i].session.distance, weekMeters: weekMeters)
-                runs[i].meters = RunBuilder.tidy(min(max(meters, shortest), flexCap, rules.longestRunMeters))
-            }
-            break
-        }
-        for i in runs.indices where runs[i].structure.segments.isEmpty {
-            let built = flexible(runs[i].session, meters: runs[i].meters, zones: zones)
-            runs[i].structure = built.structure
-            runs[i].summary = built.summary
+        let context = WeekContext(weekMeters: weekMeters, shortest: shortest, longestRun: rules.longestRunMeters,
+                                  longShare: rules.longRunShare, longCap: longCap, longSpec: programmeWeek?.longRun ?? .auto,
+                                  raceMeters: programme.raceDistanceMeters ?? 21097.5, raceZone: programme.racePaceZone,
+                                  raceLabel: hasEventThisWeek ? "race" : "time trial", programmeName: programme.name, zones: zones)
+        var runs = allocate(sessions, context: context)
+        // Volume left over (easy runs were capped) and a free day: add an easy run.
+        let room = min(programme.runsPerWeekMax, mix.days.count)
+        for _ in 0..<2 {
+            let planned = runs.filter { !$0.session.isRace }.reduce(0) { $0 + $1.meters }
+            guard weekMeters - planned > shortest * 1.5, sessions.count < room else { break }
+            sessions.append(easySession(order: (sessions.map(\.order).max() ?? 0) + 1))
+            runs = allocate(sessions, context: context)
         }
 
         // 4) Days: the usual scheduler, then the race moved to race day.
-        let liftCount = strengthEmphasis == "none" ? 0 : weekCounts.lifts
+        let slots = mix.days.count + mix.doubles
+        let liftCount = strengthEmphasis == "none" ? 0 : max(0, min(weekCounts.lifts, slots - runs.count))
         let lifts = templates.split(liftingDays: liftCount)
         let schedule = WeekScheduler.schedule(days: mix.days, doubleDays: mix.doubles, runs: runs.map(\.session.runType), lifts: lifts,
                                               prioritiseLifts: false)
@@ -355,6 +294,117 @@ enum ProgrammePlanner {
         return GeneratedWeek(target: week, sessions: generated, plannedRunMeters: plannedRunMeters, notes: notes)
     }
 
+    // MARK: Sizing the runs
+
+    /// What sizing a week's runs needs.
+    private struct WeekContext {
+        var weekMeters: Double
+        var shortest: Double
+        var longestRun: Double
+        var longShare: Double
+        var longCap: Double
+        var longSpec: ProgrammeDistance
+        var raceMeters: Double
+        var raceZone: PaceZone
+        var raceLabel: String
+        var programmeName: String
+        var zones: PaceZones
+    }
+
+    /// Sizes and builds the week's runs:
+    /// 1) the race and the long run;
+    /// 2) rep sessions, with reps trimmed (further if the week is over) and a warm-up and cool-down;
+    /// 3) everything else shares what's left, in the shape written, within sensible lengths.
+    private static func allocate(_ sessions: [ProgrammeSession], context c: WeekContext) -> [PlannedRun] {
+        var runs = sessions.map { PlannedRun(session: $0) }
+        var longMeters = 0.0
+
+        // 1) Race and long run.
+        for i in runs.indices {
+            let session = runs[i].session
+            if session.isRace {
+                runs[i].meters = c.raceMeters
+                runs[i].structure = RunStructure(segments: [
+                    RunSegment(kind: .work, length: .distance(meters: c.raceMeters), targetPace: c.zones.range(for: c.raceZone),
+                               label: c.raceLabel == "race" ? "Race" : "Time trial")
+                ])
+                runs[i].summary = "\(c.programmeName) \(c.raceLabel)"
+            } else if session.runType == .long {
+                let spec = session.distance.kind == "auto" ? c.longSpec : session.distance
+                var meters: Double
+                switch spec.kind {
+                case "meters": meters = spec.value ?? c.weekMeters * c.longShare
+                case "share": meters = c.weekMeters * (spec.value ?? c.longShare)
+                default: meters = c.weekMeters * c.longShare
+                }
+                meters = RunBuilder.tidy(min(max(meters, c.shortest), c.longCap))
+                longMeters = meters
+                runs[i].meters = meters
+            }
+        }
+
+        func isFlexible(_ run: PlannedRun) -> Bool {
+            !run.session.isRace && run.session.runType != .long && !run.session.isStructured
+        }
+        let flexibleAuto = runs.filter { isFlexible($0) && $0.session.distance.kind == "auto" }.count
+
+        // 2) Rep sessions. If the long run and sessions leave too little for the other runs,
+        //    warm-ups go down to the minimum and then the reps are trimmed further.
+        let warmUp = min(max(c.weekMeters * 0.06, 1500), 2500)
+        for (budget, warm) in [(1.0, warmUp), (1.0, 1500.0), (0.8, 1500.0), (0.65, 1500.0), (0.5, 1500.0)] {
+            for i in runs.indices where runs[i].session.isStructured && !runs[i].session.isRace {
+                let built = structured(runs[i].session, warmMeters: warm, weekMeters: c.weekMeters, budget: budget, zones: c.zones)
+                runs[i].structure = built.structure
+                runs[i].meters = built.structure.estimate(zones: c.zones).distanceMeters
+                runs[i].summary = built.summary
+            }
+            let committed = runs.filter { !$0.session.isRace }.reduce(0) { $0 + $1.meters }
+            if committed + c.shortest * Double(flexibleAuto) <= c.weekMeters * 1.05 { break }
+        }
+
+        // 3) Everything else shares what's left of the week.
+        while true {
+            let fixed = runs.filter { !isFlexible($0) && !$0.session.isRace }.reduce(0) { $0 + $1.meters }
+            let explicitMeters = runs.filter { isFlexible($0) && $0.session.distance.kind != "auto" }
+                .reduce(0) { $0 + explicitDistance($1.session.distance, weekMeters: c.weekMeters) }
+            let autoRuns = runs.indices.filter { isFlexible(runs[$0]) && runs[$0].session.distance.kind == "auto" }
+            let remaining = max(c.weekMeters - fixed - explicitMeters, 0)
+            let totalWeight = autoRuns.reduce(0) { $0 + weight(runs[$1].session) }
+            let perWeight = totalWeight > 0 ? remaining / totalWeight : 0
+            // A run that would be too short is dropped (lowest priority first) and the rest re-shared.
+            let tooShort = autoRuns.filter { weight(runs[$0].session) * perWeight < c.shortest }
+            if !tooShort.isEmpty, let drop = tooShort.min(by: { dropPriority(runs[$0].session) ?? 9 < dropPriority(runs[$1].session) ?? 9 }) {
+                runs.remove(at: drop)
+                continue
+            }
+            for i in runs.indices where isFlexible(runs[i]) {
+                let meters = runs[i].session.distance.kind == "auto"
+                    ? weight(runs[i].session) * perWeight
+                    : explicitDistance(runs[i].session.distance, weekMeters: c.weekMeters)
+                let cap = maxLength(runs[i].session, longMeters: longMeters, context: c)
+                runs[i].meters = RunBuilder.tidy(min(max(meters, c.shortest), max(cap, c.shortest)))
+            }
+            break
+        }
+        for i in runs.indices where runs[i].structure.segments.isEmpty {
+            let built = flexible(runs[i].session, meters: runs[i].meters, zones: c.zones)
+            runs[i].structure = built.structure
+            runs[i].summary = built.summary
+        }
+        return runs
+    }
+
+    /// The longest an easier run should be: recovery runs well short of the long run, easy
+    /// runs a little short of it, shakeouts short.
+    private static func maxLength(_ session: ProgrammeSession, longMeters: Double, context c: WeekContext) -> Double {
+        let long = longMeters > 0 ? longMeters : c.longestRun
+        switch session.type {
+        case "recovery": return min(long * 0.6, c.longestRun)
+        case "easy": return session.name == "Shakeout" ? max(c.weekMeters * 0.15, c.shortest) : min(long * 0.85, c.longestRun)
+        default: return min(long, c.longestRun)
+        }
+    }
+
     // MARK: Fitting sessions to run days
 
     /// Which runs go first when there are fewer run days (nil = never dropped).
@@ -422,16 +472,16 @@ enum ProgrammePlanner {
 
         func cap(weekMeters: Double) -> Double {
             switch self {
-            case .fast: return max(weekMeters * 0.10, 3000)
-            case .threshold: return max(weekMeters * 0.15, 4000)
-            case .sustained: return max(weekMeters * 0.25, 5000)
+            case .fast: return max(weekMeters * 0.10, 2000)
+            case .threshold: return max(weekMeters * 0.15, 3000)
+            case .sustained: return max(weekMeters * 0.25, 4000)
             case .easy: return .infinity
             }
         }
     }
 
     /// Reps for this runner: as written, or fewer so the hard running fits their week.
-    static func repeats(for part: WorkoutPart, weekMeters: Double, zones: PaceZones) -> Int {
+    static func repeats(for part: WorkoutPart, weekMeters: Double, budget: Double = 1, zones: PaceZones) -> Int {
         let written = max(part.repeats ?? 1, 1)
         guard written > 1 else { return written }
         var perRep: [Intensity: Double] = [:]
@@ -440,7 +490,7 @@ enum ProgrammePlanner {
         }
         var allowed = written
         for (intensity, meters) in perRep where meters > 0 {
-            allowed = min(allowed, Int((intensity.cap(weekMeters: weekMeters) / meters).rounded(.down)))
+            allowed = min(allowed, Int((intensity.cap(weekMeters: weekMeters) * budget / meters).rounded(.down)))
         }
         return min(written, max(allowed, written >= 4 ? 2 : 1))
     }
@@ -564,13 +614,13 @@ enum ProgrammePlanner {
     }
 
     /// A rep or tempo session with an easy warm-up and cool-down.
-    private static func structured(_ session: ProgrammeSession, warmMeters: Double, weekMeters: Double,
+    private static func structured(_ session: ProgrammeSession, warmMeters: Double, weekMeters: Double, budget: Double,
                                    zones: PaceZones) -> (structure: RunStructure, summary: String) {
         let easy = zones.range(for: .easy)
         var segments = [RunSegment(kind: .warmUp, length: .distance(meters: RunBuilder.tidy(warmMeters)), targetPace: easy, label: "Warm-up")]
         var summaries: [String] = []
         for part in session.parts where part.kind == "reps" {
-            let count = repeats(for: part, weekMeters: weekMeters, zones: zones)
+            let count = repeats(for: part, weekMeters: weekMeters, budget: budget, zones: zones)
             let block = expand(part, repeats: count, zones: zones)
             segments += block.segments
             summaries.append(block.summary)
