@@ -16,7 +16,15 @@ enum TestSupport {
         calendar.date(from: DateComponents(year: year, month: month, day: day))!
     }
 
+    /// The rule-based planner only (the coach's programmes are tested on their own).
     static let templates: TemplateLibrary = {
+        var library = try! TemplateLibrary.bundled()
+        library.programmes = .empty
+        return library
+    }()
+
+    /// Everything shipped, including the coach's programmes.
+    static let bundledTemplates: TemplateLibrary = {
         try! TemplateLibrary.bundled()
     }()
 

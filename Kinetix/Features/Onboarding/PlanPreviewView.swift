@@ -110,7 +110,6 @@ struct PlanPreviewView: View {
                             Text(session.summary).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
                         }
                         Spacer()
-                        if session.isKey { KXChip(text: "Key", variant: .secondary) }
                     }
                     .accessibilityElement(children: .combine)
                 }

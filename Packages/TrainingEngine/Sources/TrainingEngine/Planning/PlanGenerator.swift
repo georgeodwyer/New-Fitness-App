@@ -5,7 +5,7 @@ public struct GeneratedSession: Codable, Equatable, Sendable {
     public var date: Date
     public var slot: SessionSlot
     public var kind: SessionKind
-    /// Key sessions are protected when the week is rebalanced.
+    /// No longer used (all sessions are false); kept so saved plans still load.
     public var isKey: Bool
     public var title: String
     /// Short description, e.g. "6 × 800 m · 9.5 km".
@@ -45,11 +45,23 @@ public struct PlanGenerator: Sendable {
     }
 
     public func weeklyMixCounts(for profile: AthleteProfile) -> (runs: Int, lifts: Int) {
+        if let programme = templates.programmes.programme(for: profile.goal) {
+            return ProgrammePlanner.counts(profile: profile, programme: programme, rules: templates.rules)
+        }
         let counts = MixBuilder.sessionCounts(profile: profile, rules: templates.rules)
         return (counts.runs, counts.lifts)
     }
 
+    /// The coach's programme for the profile's goal, if one has been written.
+    public func programme(for goal: TrainingGoal) -> Programme? {
+        templates.programmes.programme(for: goal)
+    }
+
     public func makeOutline(for profile: AthleteProfile, startingOn monday: Date) -> PlanOutline {
+        if let programme = templates.programmes.programme(for: profile.goal) {
+            return ProgrammePlanner.outline(programme: programme, profile: profile, startMonday: calendar.startOfISOWeek(for: monday),
+                                            rules: templates.programmes.rules(for: profile.runningExperience), calendar: calendar)
+        }
         let counts = MixBuilder.sessionCounts(profile: profile, rules: templates.rules)
         return OutlineBuilder.build(
             profile: profile,
@@ -58,6 +70,16 @@ public struct PlanGenerator: Sendable {
             rules: templates.rules,
             calendar: calendar
         )
+    }
+
+    /// After a programme's last week (and the recovery week), the programme again, starting
+    /// from what the runner has actually been running. Nil if the plan doesn't repeat.
+    public func nextCycle(of outline: PlanOutline, profile: AthleteProfile, recentWeeklyRunMeters: Double?) -> PlanOutline? {
+        guard let goal = outline.programmeGoal, let programme = templates.programmes.programme(for: goal),
+              programme.afterLastWeek != "stop" else { return nil }
+        return ProgrammePlanner.nextCycle(after: outline, programme: programme, profile: profile,
+                                          recentWeeklyRunMeters: recentWeeklyRunMeters,
+                                          rules: templates.programmes.rules(for: profile.runningExperience), calendar: calendar)
     }
 
     /// Generates the detailed sessions for one week of the outline.
@@ -72,6 +94,10 @@ public struct PlanGenerator: Sendable {
         notBefore: Date? = nil
     ) -> GeneratedWeek? {
         guard outline.weeks.indices.contains(index) else { return nil }
+        if let goal = outline.programmeGoal, let programme = templates.programmes.programme(for: goal) {
+            return ProgrammePlanner.generateWeek(index, outline: outline, programme: programme, profile: profile, templates: templates,
+                                                 workingWeights: workingWeights, notBefore: notBefore, calendar: calendar)
+        }
         let week = outline.weeks[index]
         let zones = PaceZones(profile: profile)
         let mix = MixBuilder.build(profile: profile, week: week, templates: templates)
@@ -123,8 +149,6 @@ public struct PlanGenerator: Sendable {
         var crossTrainingNoteAdded = false
 
         let strengthContext = StrengthBuilder.Context(profile: profile, templates: templates, week: week, workingWeights: workingWeights)
-        let liftsAreKey = !profile.goal.isRunningFocused
-        let runsAreKey = profile.goal != .buildStrength && profile.goal != .buildMuscle
 
         var sessions: [GeneratedSession] = []
         var extraNotes: [String] = []
@@ -170,7 +194,7 @@ public struct PlanGenerator: Sendable {
                     date: date,
                     slot: placement.slot,
                     kind: .run(type),
-                    isKey: runsAreKey && type.isQuality,
+                    isKey: false,
                     title: SessionKind.run(type).displayName,
                     summary: summaryPrefix
                         + String(format: "%.1f", Units.distance(meters: estimate.distanceMeters, in: profile.units))
@@ -191,7 +215,7 @@ public struct PlanGenerator: Sendable {
                     date: date,
                     slot: placement.slot,
                     kind: .strength(template.focus),
-                    isKey: liftsAreKey,
+                    isKey: false,
                     title: template.name,
                     summary: "\(prescription.exercises.count) exercises · \(totalSets) sets",
                     plannedDurationMinutes: StrengthBuilder.estimatedMinutes(prescription),

@@ -11,6 +11,13 @@ public struct WeekTarget: Codable, Equatable, Sendable {
     /// Planned down week (~20% less volume) to absorb training.
     public var isRecoveryWeek: Bool
     public var runVolumeMeters: Double
+    /// The coach's programme week this is (nil for rule-based plans and the recovery week
+    /// after a race).
+    public var programmeWeek: Int? = nil
+    /// Which time through the programme (1 = first).
+    public var programmeCycle: Int? = nil
+    /// Easy week after the race (or after the last week) before the programme repeats.
+    public var isPostProgrammeRecovery: Bool? = nil
 }
 
 public struct PlanBlock: Equatable, Sendable {
@@ -25,6 +32,8 @@ public struct PlanOutline: Codable, Equatable, Sendable {
     public var startDate: Date
     public var eventDate: Date?
     public var weeks: [WeekTarget]
+    /// Set when the plan follows the coach's programme for this goal.
+    public var programmeGoal: TrainingGoal? = nil
 
     public var blocks: [PlanBlock] {
         var result: [PlanBlock] = []

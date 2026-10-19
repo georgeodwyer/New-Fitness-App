@@ -200,7 +200,6 @@ struct HomeView: View {
     private func overline(for session: PlannedSessionModel, index: Int) -> String {
         let letters = ["A", "B", "C", "D"]
         var text = "Session \(letters[min(index, 3)]) · \(session.slot == .morning ? "Morning" : "Evening")"
-        if session.isKey { text += " · Key" }
         if session.status == .swapped { text += " · Swapped" }
         return text
     }

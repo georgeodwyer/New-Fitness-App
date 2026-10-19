@@ -141,9 +141,6 @@ struct PlanView: View {
                     .foregroundStyle(KXColor.inkSecondary)
             }
             Spacer()
-            if session.isKey {
-                KXChip(text: "Key", systemImage: "star.fill", variant: .secondary)
-            }
             Image(systemName: "chevron.right")
                 .font(.caption)
                 .foregroundStyle(KXColor.inkTertiary)

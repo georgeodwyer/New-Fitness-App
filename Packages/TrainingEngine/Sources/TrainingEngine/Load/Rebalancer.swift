@@ -46,12 +46,18 @@ public struct WeekSession: Identifiable, Equatable, Sendable {
     }
 
     var isRun: Bool { kind.discipline == .run }
+
+    /// Hard runs, long runs and lifts are moved to a later day if skipped; easy sessions
+    /// are just dropped.
+    var movesWhenSkipped: Bool {
+        isHardRun || kind.discipline == .strength
+    }
 }
 
 /// A change to apply to one session, with a one-sentence explanation for the user.
 /// Why the plan changed (shown in the change history with the numbers behind it).
 public enum ChangeCause: String, Codable, Sendable, CaseIterable {
-    /// The athlete skipped a session (a key session may move to another day).
+    /// The athlete skipped a session (a hard session or lift may move to another day).
     case skipped
     /// The athlete chose a lighter alternative.
     case swapped
@@ -86,8 +92,8 @@ public struct SwapOption: Identifiable, Equatable, Sendable {
 }
 
 /// Rebalances the rest of the week after skips, swaps, high load or poor recovery:
-/// missed sessions aren't stacked, key sessions are protected (moved if there's a
-/// sensible slot), and load is reduced when the acute:chronic ratio is high.
+/// missed sessions aren't stacked, skipped hard sessions and lifts are moved if there's a
+/// sensible slot, and load is reduced when the acute:chronic ratio is high.
 public enum Rebalancer {
     public struct Context: Sendable {
         public var trainingDays: [Weekday]
@@ -107,21 +113,22 @@ public enum Rebalancer {
 
     // MARK: - Skip
 
-    /// Skips a session. A key session is moved to a suitable later day this week if one
-    /// exists (taking the place of an easy session of the same discipline where possible);
-    /// otherwise it's dropped. Nothing is ever doubled up to "make up" for a skip.
+    /// Skips a session. A hard run, long run or lift is moved to a suitable later day this
+    /// week if one exists (taking the place of an easy session of the same discipline where
+    /// possible); otherwise it's dropped, as are easy sessions. Nothing is ever doubled up to
+    /// "make up" for a skip.
     public static func skip(_ id: UUID, week: [WeekSession], context: Context) -> [Adjustment] {
         guard var skipped = week.first(where: { $0.id == id }) else { return [] }
         let name = skipped.title.lowercased()
         skipped.status = .skipped
 
-        guard skipped.isKey else {
+        guard skipped.movesWhenSkipped else {
             let reason = "Skipped your \(name). It won't be squeezed in elsewhere, so the rest of the week stays balanced."
             skipped.changeReason = reason
             return [Adjustment(session: skipped, explanation: reason, cause: .skipped)]
         }
 
-        // Try to move the key session to a later day this week.
+        // Try to move the session to a later day this week.
         let calendar = context.calendar
         let today = calendar.startOfDay(for: context.today)
         let weekEnd = calendar.date(byAdding: .day, value: 7, to: calendar.startOfISOWeek(for: skipped.date)) ?? today
@@ -148,7 +155,7 @@ public enum Rebalancer {
             moved.slot = easy.slot
             let others = remaining.filter { $0.id != easy.id } + [moved]
             guard isValid(others, calendar: calendar) else { continue }
-            let reason = "Moved your \(name) to \(weekdayName(date)) in place of the \(easy.title.lowercased()), so you keep this week's key session without adding extra load."
+            let reason = "Moved your \(name) to \(weekdayName(date)) in place of the \(easy.title.lowercased()), so you keep it without adding extra load."
             moved.changeReason = reason
             var dropped = easy
             dropped.status = .skipped
@@ -163,7 +170,7 @@ public enum Rebalancer {
             moved.date = date
             moved.slot = .morning
             guard isValid(remaining + [moved], calendar: calendar) else { continue }
-            let reason = "Moved your \(name) to \(weekdayName(date)), a free training day, so you keep this week's key session."
+            let reason = "Moved your \(name) to \(weekdayName(date)), a free training day, so you still get it in this week."
             moved.changeReason = reason
             return [Adjustment(session: moved, explanation: reason, cause: .skipped)]
         }
@@ -174,7 +181,7 @@ public enum Rebalancer {
     }
 
     private static func isEasyReplaceable(_ candidate: WeekSession, for key: WeekSession) -> Bool {
-        guard !candidate.isKey, candidate.changeReason == nil else { return false }
+        guard !candidate.movesWhenSkipped, candidate.changeReason == nil else { return false }
         switch (candidate.kind, key.kind) {
         case (.run(let type), .run): return type == .easy || type == .recovery
         case (.crossTraining, .run): return true
@@ -297,8 +304,8 @@ public enum Rebalancer {
     // MARK: - Load & recovery
 
     /// Lightens the next few days when load is spiking or recovery is poor:
-    /// the next non-key hard session becomes easier, and (for a load spike) remaining
-    /// easy runs this week are shortened. Key sessions are protected.
+    /// the next hard session becomes easier, and (for a load spike) remaining easy runs
+    /// this week are shortened.
     public static func adjustForLoad(week: [WeekSession], status: LoadStatus, checkIn: RecoveryCheckIn?, context: Context) -> [Adjustment] {
         let poorRecovery = checkIn?.isPoor ?? false
         guard status == .high || poorRecovery else { return [] }
@@ -313,8 +320,8 @@ public enum Rebalancer {
         let cause: ChangeCause = status == .high ? .highLoad : .poorRecovery
         var adjustments: [Adjustment] = []
 
-        // 1) Ease the next non-key hard session in the next three days.
-        if let hard = upcoming.first(where: { $0.date < soon && !$0.isKey && ($0.isHardRun || $0.kind.discipline == .strength) }) {
+        // 1) Ease the next hard session in the next three days.
+        if let hard = upcoming.first(where: { $0.date < soon && ($0.isHardRun || $0.kind.discipline == .strength) }) {
             let options = swapOptions(for: hard, context: context)
             let preferred = hard.isHardRun ? options.first { $0.id == "easyRun" } : options.first { $0.id == "reduced" }
             if var replacement = preferred?.replacement {

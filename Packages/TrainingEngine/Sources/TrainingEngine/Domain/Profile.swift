@@ -104,6 +104,10 @@ public struct AthleteProfile: Codable, Equatable, Sendable {
     public var doubleSessionDays: Int
     public var equipment: Equipment
     public var units: UnitSystem
+    /// How far they run in a typical week now (nil = not asked or don't know; 0 = not running).
+    public var weeklyRunMeters: Double?
+    /// Their longest run in the last month.
+    public var longestRecentRunMeters: Double?
 
     public init(
         runningExperience: ExperienceLevel,
@@ -115,7 +119,9 @@ public struct AthleteProfile: Codable, Equatable, Sendable {
         trainingDays: [Weekday],
         doubleSessionDays: Int = 0,
         equipment: Equipment,
-        units: UnitSystem = .metric
+        units: UnitSystem = .metric,
+        weeklyRunMeters: Double? = nil,
+        longestRecentRunMeters: Double? = nil
     ) {
         self.runningExperience = runningExperience
         self.recentRace = recentRace
@@ -127,6 +133,8 @@ public struct AthleteProfile: Codable, Equatable, Sendable {
         self.doubleSessionDays = doubleSessionDays
         self.equipment = equipment
         self.units = units
+        self.weeklyRunMeters = weeklyRunMeters
+        self.longestRecentRunMeters = longestRecentRunMeters
     }
 }
 
@@ -146,6 +154,9 @@ extension AthleteProfile {
         if liftingExperience != other.liftingExperience { changes.append("lifting experience") }
         if recentRace != other.recentRace { changes.append("race time") }
         if liftEstimates != other.liftEstimates { changes.append("lift numbers") }
+        if weeklyRunMeters != other.weeklyRunMeters || longestRecentRunMeters != other.longestRecentRunMeters {
+            changes.append("current running")
+        }
         return changes
     }
 }

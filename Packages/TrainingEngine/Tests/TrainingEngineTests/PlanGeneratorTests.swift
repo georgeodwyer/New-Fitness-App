@@ -134,10 +134,9 @@ final class PlanGeneratorTests: XCTestCase {
         XCTAssertTrue(week.notes.contains { $0.contains("low-impact") })
     }
 
-    func testKeySessionsFollowGoal() {
-        let runner = fullPlan(TestSupport.profile(goal: .halfMarathon))[4]
-        XCTAssertTrue(runner.sessions.filter(\.isKey).allSatisfy { $0.kind.discipline == .run })
-        let lifter = fullPlan(TestSupport.profile(goal: .buildMuscle))[4]
-        XCTAssertTrue(lifter.sessions.filter(\.isKey).allSatisfy { $0.kind.discipline == .strength })
+    func testNoSessionIsMarkedKey() {
+        for goal in [TrainingGoal.halfMarathon, .buildMuscle] {
+            XCTAssertTrue(fullPlan(TestSupport.profile(goal: goal)).flatMap(\.sessions).allSatisfy { !$0.isKey })
+        }
     }
 }

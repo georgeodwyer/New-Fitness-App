@@ -12,12 +12,16 @@ public struct TemplateLibrary: Sendable {
     public var exercises: [ExerciseDefinition]
     public var strength: StrengthProgrammeFile
     public var rules: PlanRules
+    /// Programmes written by the coach (goals without one use the rule-based planner).
+    public var programmes: ProgrammeFile
 
-    public init(runWorkouts: [RunWorkoutTemplate], exercises: [ExerciseDefinition], strength: StrengthProgrammeFile, rules: PlanRules) {
+    public init(runWorkouts: [RunWorkoutTemplate], exercises: [ExerciseDefinition], strength: StrengthProgrammeFile, rules: PlanRules,
+                programmes: ProgrammeFile = .empty) {
         self.runWorkouts = runWorkouts
         self.exercises = exercises
         self.strength = strength
         self.rules = rules
+        self.programmes = programmes
     }
 
     /// Loads the templates shipped with the app.
@@ -26,7 +30,8 @@ public struct TemplateLibrary: Sendable {
             runWorkouts: load(RunWorkoutFile.self, "run_workouts").workouts,
             exercises: load(ExerciseFile.self, "exercises").exercises,
             strength: load(StrengthProgrammeFile.self, "strength_programmes"),
-            rules: load(PlanRules.self, "plan_rules")
+            rules: load(PlanRules.self, "plan_rules"),
+            programmes: bundledProgrammes()
         )
     }
 

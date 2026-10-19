@@ -138,13 +138,6 @@ struct WeekStripCard: View {
                 .font(.system(size: 11, weight: .bold))
                 .foregroundStyle(session.status == .skipped ? KXColor.inkTertiary : .white)
         }
-        .overlay(alignment: .topTrailing) {
-            if session.isKey && session.status == .planned {
-                Circle().fill(KXColor.ink).frame(width: 8, height: 8)
-                    .overlay(Circle().stroke(KXColor.surface, lineWidth: 2))
-                    .offset(x: 2, y: -2)
-            }
-        }
     }
 
     private func statusSymbol(_ session: PlannedSessionModel) -> String {
@@ -172,7 +165,7 @@ struct WeekStripCard: View {
     private func accessibilityText(_ day: DashboardData.WeekDay) -> String {
         let name = day.date.formatted(.dateTime.weekday(.wide))
         guard !day.sessions.isEmpty else { return "\(name): rest" }
-        let items = day.sessions.map { "\($0.title), \($0.status.rawValue)\($0.isKey ? ", key session" : "")" }
+        let items = day.sessions.map { "\($0.title), \($0.status.rawValue)" }
         return "\(name): " + items.joined(separator: "; ")
     }
 }
@@ -326,7 +319,7 @@ struct SessionActionsSheet: View {
         ScrollView {
             VStack(alignment: .leading, spacing: KXSpacing.lg) {
                 VStack(alignment: .leading, spacing: KXSpacing.xs) {
-                    KXOverline(session.isKey ? "Key session" : "Session", color: KXColor.accent)
+                    KXOverline("Session", color: KXColor.accent)
                     Text(session.title).font(KXFont.title).foregroundStyle(KXColor.ink)
                     Text("Not feeling it? Swap for something lighter, or skip. The rest of your week rebalances.")
                         .font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
@@ -356,7 +349,7 @@ struct SessionActionsSheet: View {
                 Button(role: .destructive) {
                     onDone(BalanceService.skip(session, profile: profile, in: context))
                 } label: {
-                    Label(session.isKey ? "Skip (we'll try to move it)" : "Skip this session", systemImage: "xmark.circle")
+                    Label(session.movesWhenSkipped ? "Skip (we'll try to move it)" : "Skip this session", systemImage: "xmark.circle")
                 }
                 .buttonStyle(.kx(.outlined, fullWidth: true))
             }

@@ -29,7 +29,6 @@ struct SessionDetailView: View {
                 HStack(spacing: KXSpacing.xl) {
                     KXMetric(label: "Duration", value: "\(Int(session.plannedDurationMinutes))", unit: "min", size: .small)
                     KXMetric(label: "Effort", value: "\(Int(session.plannedEffort))", unit: "/10", size: .small)
-                    if session.isKey { KXChip(text: "Key session", systemImage: "star.fill", variant: .secondary) }
                 }
                 if let reason = lastChange ?? session.changeReason {
                     NavigationLink {

@@ -129,6 +129,15 @@ final class PlannedSessionModel: SyncTracked {
 
     var slot: SessionSlot { SessionSlot(rawValue: slotRaw) ?? .morning }
 
+    /// Hard runs, long runs and lifts are moved to a later day if skipped (easy sessions aren't).
+    var movesWhenSkipped: Bool {
+        switch kind {
+        case .run(let type): return type.isQuality
+        case .strength: return true
+        default: return false
+        }
+    }
+
     var status: SessionStatus {
         get { SessionStatus(rawValue: statusRaw) ?? .planned }
         set {
