@@ -172,7 +172,9 @@ scaling = [
     "Safety: a week is never more than Rules → 'Max weekly increase' above what the runner actually did the week before, "
     "and no single run exceeds Rules → 'Longest run' for their level (or the programme's long-run cap).",
     "Fewer run days than the programme has sessions? The app drops easy and recovery runs first. More days? It adds easy runs.",
-    "Rep sessions keep their rep lengths; lower-volume runners get fewer reps so hard running stays a sensible share of their week.",
+    "Rep sessions keep their rep lengths; lower-volume runners get fewer reps so hard running stays a sensible share of their week (Rules: fast, threshold and steady reps max).",
+    "Rep and tempo sessions get an easy warm-up and cool-down (Rules: warm-up). Other runs share what's left: easy 1, recovery 0.75, shakeout 0.6, progression 1.15, within the Rules' run-length limits.",
+    "A race date lines the programme up so its last week is race week (early weeks skipped if it's sooner, base weeks repeated first if it's further away). The race is its full distance and isn't counted in the week's %.",
     "The worked example columns (grey) show what each week would be for a runner at the volume in Rules → 'Example runner'.",
 ]
 for t in scaling:
@@ -196,7 +198,24 @@ rule_rows = [
     ("Max weekly increase (fraction)", 0.10, 0.10, 0.12, "0.10 = 10%. Applies to what they actually ran, not just the plan."),
     ("Long run share when 'auto' (fraction of week)", 0.30, 0.30, 0.32, "Used when Run weeks → Long run is 'auto'."),
     ("Example runner (km/week)", 15, 30, 50, "Only for the grey example columns in Run weeks."),
+    ("Warm-up and cool-down, each (fraction of week)", 0.06, 0.06, 0.06, "Added to rep and tempo sessions. Kept between the min and max below."),
+    ("Warm-up minimum (km)", 1.5, 1.5, 1.5, "Also used when the long run and sessions already fill the week."),
+    ("Warm-up maximum (km)", 2.5, 2.5, 2.5, ""),
+    ("Fast reps max (fraction of week): I, R, 5K, hills", 0.10, 0.10, 0.10, "Hard running per session. Lower-volume runners get fewer reps; rep lengths never change."),
+    ("Fast reps floor (km)", 2, 2, 2, "Always allowed at least this much, whatever the week's volume."),
+    ("Threshold reps max (fraction of week): T, 10K", 0.15, 0.15, 0.15, ""),
+    ("Threshold reps floor (km)", 3, 3, 3, ""),
+    ("Steady reps max (fraction of week): STEADY, M, HM", 0.25, 0.25, 0.25, ""),
+    ("Steady reps floor (km)", 4, 4, 4, ""),
+    ("Recovery run max (fraction of long run)", 0.60, 0.60, 0.60, "Spare volume beyond these lengths adds an easy run if there's a free day."),
+    ("Easy run max (fraction of long run)", 0.85, 0.85, 0.85, ""),
+    ("Shakeout max (fraction of week)", 0.15, 0.15, 0.15, ""),
+    ("Recovery week after the programme (fraction of starting)", 0.60, 0.60, 0.60, "Easy running only, then the programme repeats from their recent running."),
 ]
+# Keep the owner's values when rebuilding from an existing copy.
+if src and "Rules" in src.sheetnames:
+    saved = {r[0]: r[1:4] for r in src["Rules"].iter_rows(min_row=2, values_only=True) if r and r[0]}
+    rule_rows = [(r[0], *(saved[r[0]] if r[0] in saved and None not in saved[r[0]] else r[1:4]), r[4]) for r in rule_rows]
 for i, row in enumerate(rule_rows, start=2):
     put(rules, i, row)
     rules.cell(row=i, column=1).font = BOLD
@@ -206,7 +225,7 @@ for i, row in enumerate(rule_rows, start=2):
         cell.fill, cell.font, cell.border = INPUT, Font(name=FONT, size=10, color="0000FF"), BOX
         if "fraction" in row[0]:
             cell.number_format = "0%"
-rules.cell(row=11, column=1, value="Current app defaults are filled in; change any yellow value.").font = NOTE
+rules.cell(row=len(rule_rows) + 3, column=1, value="Current app defaults are filled in; change any yellow value.").font = NOTE
 
 # ---------------------------------------------------------------- Programmes
 prog = wb.create_sheet("Programmes")

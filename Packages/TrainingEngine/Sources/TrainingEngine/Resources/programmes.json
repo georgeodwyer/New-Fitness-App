@@ -8,7 +8,20 @@
    "longestRunMeters": 10000.0,
    "shortestRunMeters": 3000.0,
    "maxWeeklyIncrease": 0.1,
-   "longRunShare": 0.3
+   "longRunShare": 0.3,
+   "warmUpShare": 0.06,
+   "warmUpMinMeters": 1500.0,
+   "warmUpMaxMeters": 2500.0,
+   "fastRepsShare": 0.1,
+   "fastRepsFloorMeters": 2000.0,
+   "thresholdRepsShare": 0.15,
+   "thresholdRepsFloorMeters": 3000.0,
+   "steadyRepsShare": 0.25,
+   "steadyRepsFloorMeters": 4000.0,
+   "recoveryRunOfLong": 0.6,
+   "easyRunOfLong": 0.85,
+   "shakeoutOfWeek": 0.15,
+   "recoveryWeekShare": 0.6
   },
   "intermediate": {
    "defaultStartMeters": 15000.0,
@@ -17,7 +30,20 @@
    "longestRunMeters": 21000.0,
    "shortestRunMeters": 3000.0,
    "maxWeeklyIncrease": 0.1,
-   "longRunShare": 0.3
+   "longRunShare": 0.3,
+   "warmUpShare": 0.06,
+   "warmUpMinMeters": 1500.0,
+   "warmUpMaxMeters": 2500.0,
+   "fastRepsShare": 0.1,
+   "fastRepsFloorMeters": 2000.0,
+   "thresholdRepsShare": 0.15,
+   "thresholdRepsFloorMeters": 3000.0,
+   "steadyRepsShare": 0.25,
+   "steadyRepsFloorMeters": 4000.0,
+   "recoveryRunOfLong": 0.6,
+   "easyRunOfLong": 0.85,
+   "shakeoutOfWeek": 0.15,
+   "recoveryWeekShare": 0.6
   },
   "advanced": {
    "defaultStartMeters": 25000.0,
@@ -26,7 +52,20 @@
    "longestRunMeters": 32000.0,
    "shortestRunMeters": 4000.0,
    "maxWeeklyIncrease": 0.12,
-   "longRunShare": 0.32
+   "longRunShare": 0.32,
+   "warmUpShare": 0.06,
+   "warmUpMinMeters": 1500.0,
+   "warmUpMaxMeters": 2500.0,
+   "fastRepsShare": 0.1,
+   "fastRepsFloorMeters": 2000.0,
+   "thresholdRepsShare": 0.15,
+   "thresholdRepsFloorMeters": 3000.0,
+   "steadyRepsShare": 0.25,
+   "steadyRepsFloorMeters": 4000.0,
+   "recoveryRunOfLong": 0.6,
+   "easyRunOfLong": 0.85,
+   "shakeoutOfWeek": 0.15,
+   "recoveryWeekShare": 0.6
   }
  },
  "programmes": [

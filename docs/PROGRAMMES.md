@@ -37,11 +37,13 @@ marathon for three example runners and prints a week-by-week preview (lines star
   long-run cap; early long runs stay close to their longest recent run.
 - **Long run:** `auto` is the Rules share of the week.
 - **Rep sessions** keep their rep lengths. Lower-volume runners get fewer reps so hard
-  running stays a sensible share of the week (fast reps ≤ 10% of the week, threshold ≤ 15%,
-  half-marathon/steady ≤ 25%, each with a floor). An easy warm-up and cool-down are added
-  (8% of the week each, between 1.5 and 3 km).
+  running stays a sensible share of the week (Rules tab: fast reps ≤ 10% of the week,
+  threshold ≤ 15%, steady/HM/M ≤ 25%, each with a floor). An easy warm-up and cool-down are
+  added (6% of the week each, 1.5–2.5 km). All of these are editable on the Rules tab.
 - **Other runs** share what's left: easy 1, recovery 0.75, shakeout 0.6, progression 1.15.
-  A run that would be shorter than the Rules' shortest run is left out.
+  A run that would be shorter than the Rules' shortest run is left out. Recovery runs are at
+  most 60% of the long run, easy runs 85%, shakeouts 15% of the week; spare volume adds an
+  easy run when there's a free day.
 - **Run days:** fewer days than sessions → recovery runs go first, then easy runs, then
   shakeouts; more days → easy runs are added.
 - **Race:** its full distance on race day, at race pace, not counted in the week's %. No

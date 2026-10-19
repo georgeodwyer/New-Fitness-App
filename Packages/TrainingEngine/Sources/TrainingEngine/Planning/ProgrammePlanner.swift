@@ -128,7 +128,7 @@ enum ProgrammePlanner {
                 isRecovery = week.isDeload
             case .recovery:
                 phase = .base
-                share = 0.6
+                share = rules.recoveryWeek
                 isRecovery = true
                 isPostProgramme = true
             }
@@ -200,7 +200,8 @@ enum ProgrammePlanner {
         let context = WeekContext(weekMeters: weekMeters, shortest: shortest, longestRun: rules.longestRunMeters,
                                   longShare: rules.longRunShare, longCap: longCap, longSpec: programmeWeek?.longRun ?? .auto,
                                   raceMeters: programme.raceDistanceMeters ?? 21097.5, raceZone: programme.racePaceZone,
-                                  raceLabel: hasEventThisWeek ? "race" : "time trial", programmeName: programme.name, zones: zones)
+                                  raceLabel: hasEventThisWeek ? "race" : "time trial", programmeName: programme.name, zones: zones,
+                                  rules: rules)
         var runs = allocate(sessions, context: context)
         // Volume left over (easy runs were capped) and a free day: add an easy run.
         let room = min(programme.runsPerWeekMax, mix.days.count)
@@ -309,6 +310,7 @@ enum ProgrammePlanner {
         var raceLabel: String
         var programmeName: String
         var zones: PaceZones
+        var rules: ProgrammeRules
     }
 
     /// Sizes and builds the week's runs:
@@ -350,10 +352,11 @@ enum ProgrammePlanner {
 
         // 2) Rep sessions. If the long run and sessions leave too little for the other runs,
         //    warm-ups go down to the minimum and then the reps are trimmed further.
-        let warmUp = min(max(c.weekMeters * 0.06, 1500), 2500)
-        for (budget, warm) in [(1.0, warmUp), (1.0, 1500.0), (0.8, 1500.0), (0.65, 1500.0), (0.5, 1500.0)] {
+        let warmMin = c.rules.warmUpMin, warmUp = min(max(c.weekMeters * c.rules.warmUp, warmMin), max(c.rules.warmUpMax, warmMin))
+        for (budget, warm) in [(1.0, warmUp), (1.0, warmMin), (0.8, warmMin), (0.65, warmMin), (0.5, warmMin)] {
             for i in runs.indices where runs[i].session.isStructured && !runs[i].session.isRace {
-                let built = structured(runs[i].session, warmMeters: warm, weekMeters: c.weekMeters, budget: budget, zones: c.zones)
+                let built = structured(runs[i].session, warmMeters: warm, weekMeters: c.weekMeters, budget: budget, rules: c.rules,
+                                       zones: c.zones)
                 runs[i].structure = built.structure
                 runs[i].meters = built.structure.estimate(zones: c.zones).distanceMeters
                 runs[i].summary = built.summary
@@ -399,8 +402,9 @@ enum ProgrammePlanner {
     private static func maxLength(_ session: ProgrammeSession, longMeters: Double, context c: WeekContext) -> Double {
         let long = longMeters > 0 ? longMeters : c.longestRun
         switch session.type {
-        case "recovery": return min(long * 0.6, c.longestRun)
-        case "easy": return session.name == "Shakeout" ? max(c.weekMeters * 0.15, c.shortest) : min(long * 0.85, c.longestRun)
+        case "recovery": return min(long * c.rules.recoveryRunLimit, c.longestRun)
+        case "easy": return session.name == "Shakeout" ? max(c.weekMeters * c.rules.shakeoutLimit, c.shortest)
+            : min(long * c.rules.easyRunLimit, c.longestRun)
         default: return min(long, c.longestRun)
         }
     }
@@ -470,18 +474,19 @@ enum ProgrammePlanner {
             }
         }
 
-        func cap(weekMeters: Double) -> Double {
+        func cap(weekMeters: Double, rules: ProgrammeRules) -> Double {
             switch self {
-            case .fast: return max(weekMeters * 0.10, 2000)
-            case .threshold: return max(weekMeters * 0.15, 3000)
-            case .sustained: return max(weekMeters * 0.25, 4000)
+            case .fast: return max(weekMeters * (rules.fastRepsShare ?? 0.10), rules.fastRepsFloorMeters ?? 2000)
+            case .threshold: return max(weekMeters * (rules.thresholdRepsShare ?? 0.15), rules.thresholdRepsFloorMeters ?? 3000)
+            case .sustained: return max(weekMeters * (rules.steadyRepsShare ?? 0.25), rules.steadyRepsFloorMeters ?? 4000)
             case .easy: return .infinity
             }
         }
     }
 
     /// Reps for this runner: as written, or fewer so the hard running fits their week.
-    static func repeats(for part: WorkoutPart, weekMeters: Double, budget: Double = 1, zones: PaceZones) -> Int {
+    static func repeats(for part: WorkoutPart, weekMeters: Double, budget: Double = 1, rules: ProgrammeRules = .fallback,
+                        zones: PaceZones) -> Int {
         let written = max(part.repeats ?? 1, 1)
         guard written > 1 else { return written }
         var perRep: [Intensity: Double] = [:]
@@ -490,7 +495,7 @@ enum ProgrammePlanner {
         }
         var allowed = written
         for (intensity, meters) in perRep where meters > 0 {
-            allowed = min(allowed, Int((intensity.cap(weekMeters: weekMeters) * budget / meters).rounded(.down)))
+            allowed = min(allowed, Int((intensity.cap(weekMeters: weekMeters, rules: rules) * budget / meters).rounded(.down)))
         }
         return min(written, max(allowed, written >= 4 ? 2 : 1))
     }
@@ -615,12 +620,13 @@ enum ProgrammePlanner {
 
     /// A rep or tempo session with an easy warm-up and cool-down.
     private static func structured(_ session: ProgrammeSession, warmMeters: Double, weekMeters: Double, budget: Double,
+                                   rules: ProgrammeRules,
                                    zones: PaceZones) -> (structure: RunStructure, summary: String) {
         let easy = zones.range(for: .easy)
         var segments = [RunSegment(kind: .warmUp, length: .distance(meters: RunBuilder.tidy(warmMeters)), targetPace: easy, label: "Warm-up")]
         var summaries: [String] = []
         for part in session.parts where part.kind == "reps" {
-            let count = repeats(for: part, weekMeters: weekMeters, budget: budget, zones: zones)
+            let count = repeats(for: part, weekMeters: weekMeters, budget: budget, rules: rules, zones: zones)
             let block = expand(part, repeats: count, zones: zones)
             segments += block.segments
             summaries.append(block.summary)

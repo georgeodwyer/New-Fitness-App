@@ -273,9 +273,19 @@ def convert(path):
         ("shortest run", "shortestRunMeters", 1000), ("max weekly increase", "maxWeeklyIncrease", 1),
         ("long run share", "longRunShare", 1),
     ]
+    # Sizing rules (optional: the app has the same defaults).
+    optional_keys = [
+        ("warm-up and cool-down", "warmUpShare", 1), ("warm-up minimum", "warmUpMinMeters", 1000),
+        ("warm-up maximum", "warmUpMaxMeters", 1000), ("fast reps max", "fastRepsShare", 1),
+        ("fast reps floor", "fastRepsFloorMeters", 1000), ("threshold reps max", "thresholdRepsShare", 1),
+        ("threshold reps floor", "thresholdRepsFloorMeters", 1000), ("steady reps max", "steadyRepsShare", 1),
+        ("steady reps floor", "steadyRepsFloorMeters", 1000), ("recovery run max", "recoveryRunOfLong", 1),
+        ("easy run max", "easyRunOfLong", 1), ("shakeout max", "shakeoutOfWeek", 1),
+        ("recovery week after", "recoveryWeekShare", 1),
+    ]
     for row, values in rows(wb["Rules"]):
         name = str(values.get("Rule", "")).lower()
-        for prefix, key, scale in rule_keys:
+        for prefix, key, scale in rule_keys + optional_keys:
             if name.startswith(prefix):
                 for level in rules:
                     try:

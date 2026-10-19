@@ -37,6 +37,33 @@ public struct ProgrammeRules: Codable, Equatable, Sendable {
     public var maxWeeklyIncrease: Double
     /// Long run's share of the week when the programme says "auto".
     public var longRunShare: Double
+    // Sizing rules (optional in the file; the defaults are the values agreed with the coach).
+    /// Warm-up and cool-down, each, as a share of the week, kept between min and max.
+    public var warmUpShare: Double? = nil
+    public var warmUpMinMeters: Double? = nil
+    public var warmUpMaxMeters: Double? = nil
+    /// Hard running per session as a share of the week, with a floor: fast (I, R, 5K, hills),
+    /// threshold (T, 10K) and steady (STEADY, M, HM).
+    public var fastRepsShare: Double? = nil
+    public var fastRepsFloorMeters: Double? = nil
+    public var thresholdRepsShare: Double? = nil
+    public var thresholdRepsFloorMeters: Double? = nil
+    public var steadyRepsShare: Double? = nil
+    public var steadyRepsFloorMeters: Double? = nil
+    /// Longest recovery and easy runs as a share of the long run; shakeout as a share of the week.
+    public var recoveryRunOfLong: Double? = nil
+    public var easyRunOfLong: Double? = nil
+    public var shakeoutOfWeek: Double? = nil
+    /// The easy week after the programme, as a share of the starting volume.
+    public var recoveryWeekShare: Double? = nil
+
+    var warmUp: Double { warmUpShare ?? 0.06 }
+    var warmUpMin: Double { warmUpMinMeters ?? 1500 }
+    var warmUpMax: Double { warmUpMaxMeters ?? 2500 }
+    var recoveryRunLimit: Double { recoveryRunOfLong ?? 0.6 }
+    var easyRunLimit: Double { easyRunOfLong ?? 0.85 }
+    var shakeoutLimit: Double { shakeoutOfWeek ?? 0.15 }
+    var recoveryWeek: Double { recoveryWeekShare ?? 0.6 }
 
     public static let fallback = ProgrammeRules(defaultStartMeters: 15000, minStartMeters: 10000, maxStartMeters: 60000,
                                                 longestRunMeters: 21000, shortestRunMeters: 3000, maxWeeklyIncrease: 0.1,
