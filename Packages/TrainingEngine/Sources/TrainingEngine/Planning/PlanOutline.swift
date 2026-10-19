@@ -18,6 +18,8 @@ public struct WeekTarget: Codable, Equatable, Sendable {
     public var programmeCycle: Int? = nil
     /// Easy week after the race (or after the last week) before the programme repeats.
     public var isPostProgrammeRecovery: Bool? = nil
+    /// Easy first week the runner asked for after a race.
+    public var isEasyStart: Bool? = nil
 }
 
 public struct PlanBlock: Equatable, Sendable {

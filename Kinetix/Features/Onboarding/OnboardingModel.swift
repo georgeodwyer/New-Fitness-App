@@ -45,6 +45,14 @@ final class OnboardingModel {
     var knowsCurrentRunning = true
     var weeklyRunMeters: Double = 20000
     var longestRunMeters: Double = 8000
+    /// Their last four weeks from Kinetix, Strava and Apple Health, if the app has any.
+    var recentHistory: RecentRunning.Summary?
+    /// New plans use the history straight away; editing in Settings offers it instead.
+    var applyHistoryAutomatically = true
+    /// "Have you raced in the last two weeks?" and "Start with an easy week?"
+    var racedRecently = false
+    var easyFirstWeek = true
+    private var easyFirstWeekRequestedAt: Date?
     var liftingExperience: ExperienceLevel?
     var liftEntries: [LiftEntry] = [
         LiftEntry(lift: .squat, weightKg: 60),
@@ -129,8 +137,19 @@ final class OnboardingModel {
             equipment: equipment ?? .fullGym,
             units: units,
             weeklyRunMeters: knowsCurrentRunning ? weeklyRunMeters : nil,
-            longestRecentRunMeters: knowsCurrentRunning && weeklyRunMeters > 0 ? longestRunMeters : nil
+            longestRecentRunMeters: knowsCurrentRunning && weeklyRunMeters > 0 ? longestRunMeters : nil,
+            racedRecently: racedRecently ? true : nil,
+            easyFirstWeek: racedRecently ? easyFirstWeek : nil,
+            easyFirstWeekRequestedAt: racedRecently && easyFirstWeek ? (easyFirstWeekRequestedAt ?? Date()) : nil
         )
+    }
+
+    /// Fills in the running answers from their history.
+    func useHistory() {
+        guard let recentHistory else { return }
+        knowsCurrentRunning = true
+        weeklyRunMeters = (recentHistory.weeklyMeters / 1000).rounded() * 1000
+        longestRunMeters = max((recentHistory.longestMeters / 1000).rounded() * 1000, 1000)
     }
 
     /// Loads existing answers (used when editing the training profile in Settings).
@@ -148,6 +167,10 @@ final class OnboardingModel {
         } else {
             knowsRaceTime = false
         }
+        applyHistoryAutomatically = false
+        racedRecently = profile.racedRecently ?? false
+        easyFirstWeek = profile.easyFirstWeek ?? true
+        easyFirstWeekRequestedAt = profile.easyFirstWeekRequestedAt
         knowsCurrentRunning = profile.weeklyRunMeters != nil
         if let weekly = profile.weeklyRunMeters { weeklyRunMeters = weekly }
         if let longest = profile.longestRecentRunMeters { longestRunMeters = longest }

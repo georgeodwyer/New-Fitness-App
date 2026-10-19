@@ -23,7 +23,8 @@ struct TrainingProfileView: View {
         let unit = Units.distanceUnitLabel(model.units)
         let weekly = Int(Units.distance(meters: model.weeklyRunMeters, in: model.units).rounded())
         let longest = Int(Units.distance(meters: model.longestRunMeters, in: model.units).rounded())
-        return "\(weekly) \(unit) a week · longest \(longest) \(unit)"
+        let race = model.racedRecently ? (model.easyFirstWeek ? " · easy first week" : " · raced recently") : ""
+        return "\(weekly) \(unit) a week · longest \(longest) \(unit)\(race)"
     }
 
     private var changes: [String] { model.profile.planAffectingChanges(comparedTo: original) }

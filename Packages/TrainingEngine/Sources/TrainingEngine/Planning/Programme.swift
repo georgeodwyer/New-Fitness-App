@@ -56,6 +56,10 @@ public struct ProgrammeRules: Codable, Equatable, Sendable {
     public var shakeoutOfWeek: Double? = nil
     /// The easy week after the programme, as a share of the starting volume.
     public var recoveryWeekShare: Double? = nil
+    /// How fast volume comes down to race-ready when the runner is doing more (per week).
+    public var easeDownPerWeek: Double? = nil
+    /// The easy first week after a race, as a share of current volume.
+    public var easyStartShare: Double? = nil
 
     var warmUp: Double { warmUpShare ?? 0.06 }
     var warmUpMin: Double { warmUpMinMeters ?? 1500 }
@@ -64,6 +68,8 @@ public struct ProgrammeRules: Codable, Equatable, Sendable {
     var easyRunLimit: Double { easyRunOfLong ?? 0.85 }
     var shakeoutLimit: Double { shakeoutOfWeek ?? 0.15 }
     var recoveryWeek: Double { recoveryWeekShare ?? 0.6 }
+    var easeDown: Double { easeDownPerWeek ?? 0.15 }
+    var easyStart: Double { easyStartShare ?? 0.6 }
 
     public static let fallback = ProgrammeRules(defaultStartMeters: 15000, minStartMeters: 10000, maxStartMeters: 60000,
                                                 longestRunMeters: 21000, shortestRunMeters: 3000, maxWeeklyIncrease: 0.1,
@@ -81,11 +87,17 @@ public struct Programme: Codable, Equatable, Sendable {
     public var runsPerWeekMax: Int
     public var longRunCapMeters: Double
     public var weeklyCapMeters: Double?
+    /// The weekly volume this race needs, by level (`beginner`, `intermediate`, `advanced`).
+    public var raceReadyMeters: [String: Double]? = nil
     public var taperWeeks: Int
     public var weeks: [ProgrammeWeek]
     public var sessions: [ProgrammeSession]
 
     public func week(_ number: Int) -> ProgrammeWeek? { weeks.first { $0.week == number } }
+
+    public func raceReady(for level: ExperienceLevel) -> Double? {
+        raceReadyMeters?[level.rawValue].flatMap { $0 > 0 ? $0 : nil }
+    }
 
     public func sessions(inWeek number: Int) -> [ProgrammeSession] {
         sessions.filter { $0.week == number }.sorted { $0.order < $1.order }

@@ -29,9 +29,17 @@ marathon for three example runners and prints a week-by-week preview (lines star
 
 ## What the app does with it
 
-- **Starting volume** = the runner's answer to "How far do you run in a typical week?",
+- **Race-ready volume** (Programmes tab, by level) is what 100% means in Run weeks.
+- **Where they start:** their answer to "How far do you run in a typical week?" (pre-filled
+  from the last four weeks of runs in Kinetix, Strava and Apple Health when there are any),
   kept between the Rules tab's minimum and maximum for their level (or the default if they
-  skip or don't run yet). Each week = its % × the starting volume.
+  skip or don't run yet).
+- **Each week** = its % × a base that starts at their current volume and moves towards
+  race-ready: up by the max weekly increase after each normal week, or down by the Rules
+  tab's ease-down rate (15%) each week if they're doing more than the race needs.
+- **Easy first week:** only if they say in onboarding (or Settings) that they've raced in the
+  last two weeks and want one: easy running at 60% of their current volume, then week 1.
+  With a race date it comes out of the time before the race.
 - **Safety:** a week is never more than the Rules tab's max increase above the biggest of
   the last three weeks; no run is longer than the Rules' longest run or the programme's
   long-run cap; early long runs stay close to their longest recent run.

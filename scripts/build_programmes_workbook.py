@@ -166,8 +166,11 @@ for name, text in syntax:
 r += 1
 start.cell(row=r, column=2, value="How volume is scaled").font = SUB; r += 1
 scaling = [
-    "Starting volume = the runner's answer to 'How far do you run in a typical week?' (km), kept between the minimum and maximum "
-    "in Rules for their level. 100% in Run weeks = that starting volume.",
+    "100% in Run weeks = the programme's race-ready volume for the runner's level (Programmes tab).",
+    "Where they start: their answer to 'How far do you run in a typical week?' (pre-filled from their last 4 weeks of runs when the app has them), "
+    "kept between the minimum and maximum in Rules. Below race-ready, they build up to it (within the max weekly increase); "
+    "above it, they ease down to it (Rules: ease down per week). Your weekly % shape, deloads and taper are kept either way.",
+    "Raced in the last two weeks? Onboarding asks, and if they want it they get an easy first week before week 1. Nothing else adds that week.",
     "'auto' easy runs share whatever volume is left in the week after the long run and the workouts, evenly.",
     "Safety: a week is never more than Rules → 'Max weekly increase' above what the runner actually did the week before, "
     "and no single run exceeds Rules → 'Longest run' for their level (or the programme's long-run cap).",
@@ -211,6 +214,8 @@ rule_rows = [
     ("Easy run max (fraction of long run)", 0.85, 0.85, 0.85, ""),
     ("Shakeout max (fraction of week)", 0.15, 0.15, 0.15, ""),
     ("Recovery week after the programme (fraction of starting)", 0.60, 0.60, 0.60, "Easy running only, then the programme repeats from their recent running."),
+    ("Ease down per week when above race-ready (fraction)", 0.15, 0.15, 0.15, "Runners doing more than the race needs come down to its race-ready volume this much a week."),
+    ("Easy first week after a race (fraction of current)", 0.60, 0.60, 0.60, "Only if they say in onboarding they've raced in the last two weeks and want an easy week."),
 ]
 # Keep the owner's values when rebuilding from an existing copy.
 if src and "Rules" in src.sheetnames:
@@ -230,9 +235,14 @@ rules.cell(row=len(rule_rows) + 3, column=1, value="Current app defaults are fil
 # ---------------------------------------------------------------- Programmes
 prog = wb.create_sheet("Programmes")
 pcols = ["Programme", "Name shown in app", "Length (weeks)", "After the last week", "Runs per week (min)", "Runs per week (max)",
-         "Lifts per week (min)", "Lifts per week (max)", "Long-run cap (km)", "Weekly volume cap (km)", "Taper weeks", "Default split", "Description shown in onboarding",
-         "Weeks written", "Sessions written"]
-header(prog, pcols, [18, 22, 10, 18, 10, 10, 10, 10, 10, 10, 9, 20, 60, 10, 10])
+         "Lifts per week (min)", "Lifts per week (max)", "Long-run cap (km)", "Weekly volume cap (km)",
+         "Race-ready volume: beginner (km/week)", "Race-ready volume: intermediate (km/week)", "Race-ready volume: advanced (km/week)",
+         "Taper weeks", "Default split", "Description shown in onboarding", "Weeks written", "Sessions written"]
+header(prog, pcols, [18, 22, 10, 18, 10, 10, 10, 10, 10, 10, 12, 12, 12, 9, 20, 60, 10, 10])
+prog.cell(row=1, column=11).comment = Comment("The weekly volume this race needs at each level. Run weeks' % are a % of this. "
+                                              "Runners below it build up to it; runners above it ease down to it.", "Kinetix")
+READY = {"first5k": (20, 30, 45), "faster10k": (25, 40, 55), "halfMarathon": (30, 45, 65), "marathon": (40, 60, 85),
+         "buildStrength": (10, 15, 25), "buildMuscle": (10, 15, 25), "balancedHybrid": (15, 25, 40)}
 defaults = {
     "first5k": (8, "Repeat", 3, 4, 1, 2, 8, 25, 1, "Full body ×2", "Build up to running 5K comfortably, then race it."),
     "faster10k": (10, "Repeat", 3, 5, 1, 2, 16, 45, 1, "Full body ×2", "Sharper speed and threshold work to lower your 10K time."),
@@ -244,30 +254,33 @@ defaults = {
 }
 for i, (display, code) in enumerate(PROGRAMMES, start=2):
     length, after, rmin, rmax, lmin, lmax, cap, wcap, taper, split, desc = defaults[code]
-    values = [display, display, length, after, rmin, rmax, lmin, lmax, cap, wcap, taper, split, desc]
+    values = [display, display, length, after, rmin, rmax, lmin, lmax, cap, wcap, *READY[code], taper, split, desc]
     if src:
-        srow = [c.value for c in src["Programmes"][i]]
+        # Copy the owner's values by column name, so added columns keep their defaults.
         sheader = [c.value for c in src["Programmes"][1]]
-        if "Weekly volume cap (km)" in sheader:
-            values = srow[:13]
+        srow = [c.value for c in src["Programmes"][i]]
+        saved = dict(zip(sheader, srow))
+        values = [saved[name] if name in saved and saved[name] is not None and name not in ("Weeks written", "Sessions written") else v
+                  for name, v in zip(pcols, values)]
     put(prog, i, values)
-    prog.cell(row=i, column=14, value=f"=COUNTIF('Run weeks'!$A$2:$A${ROWS + 1},A{i})")
-    prog.cell(row=i, column=15, value=f"=COUNTIF('Run sessions'!$A$2:$A${ROWS + 1},A{i})")
-prepare(prog, 2, 8, input_cols=range(2, 14), calc_cols=(14, 15))
+    prog.cell(row=i, column=17, value=f"=COUNTIF('Run weeks'!$A$2:$A${ROWS + 1},A{i})")
+    prog.cell(row=i, column=18, value=f"=COUNTIF('Run sessions'!$A$2:$A${ROWS + 1},A{i})")
+prepare(prog, 2, 8, input_cols=range(2, 17), calc_cols=(17, 18))
 for i in range(2, 9):
     prog.cell(row=i, column=1).font = BOLD
 dropdown(prog, "D2:D8", '"Repeat,Repeat harder,Maintenance,Stop"', "What happens when the last week is done.")
-dropdown(prog, "L2:L8", LIST_REF["Splits"], "The split suggested in onboarding (the user can change it).")
+dropdown(prog, "O2:O8", LIST_REF["Splits"], "The split suggested in onboarding (the user can change it).")
 prog.cell(row=10, column=1, value="Programme names in column A are fixed (they match the onboarding goals). Values shown are the app's current defaults.").font = NOTE
 
 # ---------------------------------------------------------------- Run weeks
 weeks = wb.create_sheet("Run weeks")
-wcols = ["Programme", "Week", "Phase", "Volume (% of starting)", "Long run", "Strength emphasis", "Notes for the runner",
+wcols = ["Programme", "Week", "Phase", "Volume (% of race-ready)", "Long run", "Strength emphasis", "Notes for the runner",
          "Sessions written", "Example: week km", "Example: long run km"]
 header(weeks, wcols, [18, 7, 12, 12, 12, 12, 50, 10, 11, 11])
-weeks.cell(row=1, column=4).comment = Comment("100% = the runner's starting volume (from onboarding). 1.2 = 120%.", "Kinetix")
+weeks.cell(row=1, column=4).comment = Comment("100% = the programme's race-ready volume for the runner's level "
+                                               "(Programmes tab), reached gradually from where they are now. 1.2 = 120%.", "Kinetix")
 weeks.cell(row=1, column=5).comment = Comment("'auto' (Rules share of the week), a % of the week (e.g. 30%), or km (e.g. 14km).", "Kinetix")
-weeks.cell(row=1, column=9).comment = Comment("For the intermediate example runner in Rules.", "Kinetix")
+weeks.cell(row=1, column=9).comment = Comment("An intermediate runner already at race-ready volume (Programmes tab).", "Kinetix")
 prepare(weeks, 2, ROWS + 1, input_cols=range(1, 8), calc_cols=range(8, 11))
 week_rows = [r[:7] for r in src["Run weeks"].iter_rows(min_row=2, values_only=True) if r[0]] if src else []
 for i, row in enumerate(week_rows, start=2):
@@ -275,7 +288,7 @@ for i, row in enumerate(week_rows, start=2):
 for i in range(2, ROWS + 2):
     weeks.cell(row=i, column=4).number_format = "0%"
     weeks.cell(row=i, column=8, value=f'=IF(A{i}="","",COUNTIFS(\'Run sessions\'!$A$2:$A${ROWS + 1},A{i},\'Run sessions\'!$B$2:$B${ROWS + 1},B{i}))')
-    weeks.cell(row=i, column=9, value=f'=IF(OR(A{i}="",D{i}=""),"",ROUND(D{i}*Rules!$C$9,1))')
+    weeks.cell(row=i, column=9, value=f'=IF(OR(A{i}="",D{i}=""),"",ROUND(D{i}*INDEX(Programmes!$L$2:$L$8,MATCH(A{i},Programmes!$A$2:$A$8,0)),1))')
     weeks.cell(row=i, column=10, value=(f'=IF(I{i}="","",IF(LOWER(E{i})="auto",ROUND(I{i}*Rules!$C$8,1),'
                                        f'IF(RIGHT(E{i},1)="%",ROUND(I{i}*VALUE(LEFT(E{i},LEN(E{i})-1))/100,1),'
                                        f'IF(RIGHT(LOWER(E{i}),2)="km",VALUE(LEFT(E{i},LEN(E{i})-2)),IF(LOWER(E{i})="race","race",E{i})))))'))

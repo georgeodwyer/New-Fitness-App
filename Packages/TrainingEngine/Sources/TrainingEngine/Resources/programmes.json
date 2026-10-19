@@ -21,7 +21,9 @@
    "recoveryRunOfLong": 0.6,
    "easyRunOfLong": 0.85,
    "shakeoutOfWeek": 0.15,
-   "recoveryWeekShare": 0.6
+   "recoveryWeekShare": 0.6,
+   "easeDownPerWeek": 0.15,
+   "easyStartShare": 0.6
   },
   "intermediate": {
    "defaultStartMeters": 15000.0,
@@ -43,7 +45,9 @@
    "recoveryRunOfLong": 0.6,
    "easyRunOfLong": 0.85,
    "shakeoutOfWeek": 0.15,
-   "recoveryWeekShare": 0.6
+   "recoveryWeekShare": 0.6,
+   "easeDownPerWeek": 0.15,
+   "easyStartShare": 0.6
   },
   "advanced": {
    "defaultStartMeters": 25000.0,
@@ -65,7 +69,9 @@
    "recoveryRunOfLong": 0.6,
    "easyRunOfLong": 0.85,
    "shakeoutOfWeek": 0.15,
-   "recoveryWeekShare": 0.6
+   "recoveryWeekShare": 0.6,
+   "easeDownPerWeek": 0.15,
+   "easyStartShare": 0.6
   }
  },
  "programmes": [
@@ -80,6 +86,11 @@
    "longRunCapMeters": 22000.0,
    "weeklyCapMeters": 70000.0,
    "taperWeeks": 2,
+   "raceReadyMeters": {
+    "beginner": 30000.0,
+    "intermediate": 45000.0,
+    "advanced": 65000.0
+   },
    "weeks": [
     {
      "week": 1,

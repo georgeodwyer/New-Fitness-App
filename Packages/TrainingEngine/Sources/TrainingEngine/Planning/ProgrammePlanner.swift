@@ -40,7 +40,17 @@ enum ProgrammePlanner {
 
     private enum Slot {
         case programme(ProgrammeWeek, volumeShare: Double)
+        /// The easy week after the programme.
         case recovery
+        /// An easy first week, for runners who've just raced and asked for one.
+        case easyStart
+    }
+
+    /// The runner asked for an easy first week in the last three weeks (so an old answer
+    /// doesn't add one to a plan rebuilt months later).
+    static func wantsEasyStart(_ profile: AthleteProfile, startMonday: Date) -> Bool {
+        guard profile.easyFirstWeek == true, let asked = profile.easyFirstWeekRequestedAt else { return false }
+        return startMonday.timeIntervalSince(asked) < 21 * 86_400
     }
 
     /// The plan's weeks. With a race date, the programme is lined up so its last week is
@@ -50,12 +60,15 @@ enum ProgrammePlanner {
     static func outline(programme: Programme, profile: AthleteProfile, startMonday: Date, rules: ProgrammeRules,
                         calendar: Calendar) -> PlanOutline {
         let length = programme.weeks.count
+        let easyStart = wantsEasyStart(profile, startMonday: startMonday)
         var eventDate: Date?
         var firstWeek = 1
         var leadIn = 0
         if let event = profile.eventDate, event >= startMonday {
             let eventMonday = calendar.startOfISOWeek(for: event)
-            let weeksToEvent = max((calendar.dateComponents([.day], from: startMonday, to: eventMonday).day ?? 0) / 7 + 1, 1)
+            // The easy week (if any) comes out of the time before the race.
+            let weeksToEvent = max((calendar.dateComponents([.day], from: startMonday, to: eventMonday).day ?? 0) / 7 + 1
+                                   - (easyStart ? 1 : 0), 1)
             eventDate = event
             if weeksToEvent >= length {
                 leadIn = min(weeksToEvent - length, 40)
@@ -64,7 +77,7 @@ enum ProgrammePlanner {
             }
         }
 
-        var slots: [Slot] = []
+        var slots: [Slot] = easyStart ? [.easyStart] : []
         // Lead-in: the base weeks again at the starting volume, every fourth a little lighter.
         let baseWeeks = programme.weeks.filter { $0.phase == .base && !$0.isDeload }
         let leadPattern = baseWeeks.isEmpty ? Array(programme.weeks.prefix(1)) : baseWeeks
@@ -80,22 +93,21 @@ enum ProgrammePlanner {
         if programme.afterLastWeek != "stop" { slots.append(.recovery) }
 
         let start = startVolume(profile: profile, programme: programme, rules: rules)
-        let weeks = buildWeeks(slots, programme: programme, start: start, startMonday: startMonday, firstIndex: 0,
-                               history: [], cycle: 1, rules: rules, calendar: calendar)
+        let weeks = buildWeeks(slots, programme: programme, start: start, target: programme.raceReady(for: profile.runningExperience),
+                               startMonday: startMonday, firstIndex: 0, history: [start], cycle: 1, rules: rules, calendar: calendar)
         var outline = PlanOutline(startDate: startMonday, eventDate: eventDate, weeks: weeks)
         outline.programmeGoal = programme.goal
         return outline
     }
 
     /// The programme again after the recovery week, starting from what the runner has
-    /// actually been running (never below their original starting volume).
+    /// actually been running and moving towards the race-ready volume as before.
     static func nextCycle(after outline: PlanOutline, programme: Programme, profile: AthleteProfile,
                           recentWeeklyRunMeters: Double?, rules: ProgrammeRules, calendar: Calendar) -> PlanOutline {
         guard let last = outline.weeks.last else { return outline }
-        let original = startVolume(profile: profile, programme: programme, rules: rules)
-        var start = original
+        var start = startVolume(profile: profile, programme: programme, rules: rules)
         if let recent = recentWeeklyRunMeters, recent > 0 {
-            start = min(max(recent, original), rules.maxStartMeters)
+            start = min(max(recent, rules.minStartMeters), rules.maxStartMeters)
             if let cap = programme.weeklyCapMeters { start = min(start, cap) }
         }
         let slots: [Slot] = programme.weeks.map { .programme($0, volumeShare: $0.volume) } + [.recovery]
@@ -103,36 +115,59 @@ enum ProgrammePlanner {
         let cycle = (last.programmeCycle ?? 1) + 1
         let history = outline.weeks.suffix(3).map(\.runVolumeMeters)
         var extended = outline
-        extended.weeks += buildWeeks(slots, programme: programme, start: start, startMonday: startMonday,
-                                     firstIndex: outline.weeks.count, history: history, cycle: cycle, rules: rules, calendar: calendar)
+        extended.weeks += buildWeeks(slots, programme: programme, start: start, target: programme.raceReady(for: profile.runningExperience),
+                                     startMonday: startMonday, firstIndex: outline.weeks.count, history: history, cycle: cycle,
+                                     rules: rules, calendar: calendar)
         return extended
     }
 
-    private static func buildWeeks(_ slots: [Slot], programme: Programme, start: Double, startMonday: Date, firstIndex: Int,
-                                   history: [Double], cycle: Int, rules: ProgrammeRules, calendar: Calendar) -> [WeekTarget] {
+    /// Each week's volume = its % × a base. The base starts at the runner's current volume and
+    /// moves towards the race-ready volume: up by the max weekly increase after each normal
+    /// week, or down by the ease-down rate each week. Without a race-ready volume the base
+    /// stays at their current volume.
+    private static func buildWeeks(_ slots: [Slot], programme: Programme, start: Double, target: Double?, startMonday: Date,
+                                   firstIndex: Int, history: [Double], cycle: Int, rules: ProgrammeRules,
+                                   calendar: Calendar) -> [WeekTarget] {
         var history = history
         var weeks: [WeekTarget] = []
         var previousPhase: TrainingPhase?
         var weekInPhase = 0
+        var base = start
+        var startedProgramme = false
+        var previousWasDeload = false
         for (offset, slot) in slots.enumerated() {
             let phase: TrainingPhase
-            var share: Double
+            var volume: Double
             var programmeWeek: Int?
             var isRecovery = false
             var isPostProgramme = false
+            var isEasyStart = false
             switch slot {
             case .programme(let week, let volumeShare):
+                if startedProgramme, let target {
+                    if base < target, !previousWasDeload {
+                        base = min(target, base * (1 + rules.maxWeeklyIncrease))
+                    } else if base > target {
+                        base = max(target, base * (1 - rules.easeDown))
+                    }
+                }
+                startedProgramme = true
+                previousWasDeload = week.isDeload
                 phase = week.phase
-                share = volumeShare
+                volume = base * volumeShare
                 programmeWeek = week.week
                 isRecovery = week.isDeload
             case .recovery:
                 phase = .base
-                share = rules.recoveryWeek
+                volume = base * rules.recoveryWeek
                 isRecovery = true
                 isPostProgramme = true
+            case .easyStart:
+                phase = .base
+                volume = start * rules.easyStart
+                isRecovery = true
+                isEasyStart = true
             }
-            var volume = start * share
             if let cap = programme.weeklyCapMeters { volume = min(volume, cap) }
             // Never more than the allowed increase over the biggest of the last three weeks.
             let recent = history.suffix(3).max() ?? start
@@ -144,7 +179,8 @@ enum ProgrammePlanner {
             let monday = calendar.date(byAdding: .day, value: offset * 7, to: startMonday) ?? startMonday
             weeks.append(WeekTarget(index: firstIndex + offset, startDate: monday, phase: phase, weekInPhase: weekInPhase,
                                     isRecoveryWeek: isRecovery, runVolumeMeters: volume, programmeWeek: programmeWeek,
-                                    programmeCycle: cycle, isPostProgrammeRecovery: isPostProgramme ? true : nil))
+                                    programmeCycle: cycle, isPostProgrammeRecovery: isPostProgramme ? true : nil,
+                                    isEasyStart: isEasyStart ? true : nil))
         }
         return weeks
     }
@@ -167,12 +203,16 @@ enum ProgrammePlanner {
         let rules = templates.programmes.rules(for: profile.runningExperience)
         let planRules = templates.rules
         let zones = PaceZones(profile: profile)
-        let isPostProgramme = week.isPostProgrammeRecovery == true
+        let isPostProgramme = week.isPostProgrammeRecovery == true || week.isEasyStart == true
         let programmeWeek = week.programmeWeek.flatMap(programme.week)
         let strengthEmphasis = isPostProgramme ? "light" : (programmeWeek?.strength ?? "normal")
         var notes: [String] = []
         if let note = programmeWeek?.note { notes.append(note) }
-        if isPostProgramme { notes.append("Recovery week: easy running only before the programme starts again.") }
+        if week.isEasyStart == true {
+            notes.append("Easy week after your race: easy running only, then your programme starts.")
+        } else if isPostProgramme {
+            notes.append("Recovery week: easy running only before the programme starts again.")
+        }
 
         // Sessions, fitted to the runner's run days.
         let mix = MixBuilder.sessionCounts(profile: profile, rules: planRules)

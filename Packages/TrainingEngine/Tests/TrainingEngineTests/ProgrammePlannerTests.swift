@@ -69,17 +69,96 @@ final class ProgrammePlannerTests: XCTestCase {
         XCTAssertEqual(ProgrammePlanner.startVolume(profile: advanced, programme: programme, rules: rules.rules(for: .advanced)), 25000)
     }
 
-    func testVolumesFollowTheProgramme() {
-        let outline = generator.makeOutline(for: profile(runners[1]), startingOn: monday)
+    /// Weekly km for a runner at `weeklyKm` now.
+    private func volumes(level: ExperienceLevel, weeklyKm: Double, easyStart: Bool = false) -> (km: [Double], outline: PlanOutline) {
+        var runner = profile(Runner(name: "", level: level, weeklyKm: weeklyKm, longestKm: weeklyKm * 0.3, fiveK: 22 * 60))
+        if easyStart {
+            runner.racedRecently = true
+            runner.easyFirstWeek = true
+            runner.easyFirstWeekRequestedAt = monday
+        }
+        let outline = generator.makeOutline(for: runner, startingOn: monday)
+        return (outline.weeks.map { ($0.runVolumeMeters / 100).rounded() / 10 }, outline)
+    }
+
+    func testAtRaceReadyTheProgrammeIsAsWritten() {
+        // Intermediate race-ready volume is 45 km.
+        let (km, outline) = volumes(level: .intermediate, weeklyKm: 45)
         XCTAssertEqual(outline.programmeGoal, .halfMarathon)
         XCTAssertEqual(outline.weeks.count, 13, "12 weeks and a recovery week")
-        let km = outline.weeks.map { ($0.runVolumeMeters / 100).rounded() / 10 }
         // 100%, 105%, 110%, deload 90%, then 115%: not cut, because it's measured against week 3.
-        XCTAssertEqual(Array(km.prefix(5)), [30, 31.5, 33, 27, 34.5])
-        XCTAssertEqual(km[8], 39) // peak, 130%
-        XCTAssertEqual(km[11], 16.5) // race week, 55% (not counting the race)
+        XCTAssertEqual(Array(km.prefix(5)), [45, 47.3, 49.5, 40.5, 51.8])
+        XCTAssertEqual(km[8], 58.5) // peak, 130%
+        XCTAssertEqual(km[11], 24.8) // race week, 55% (not counting the race)
         XCTAssertTrue(outline.weeks[3].isRecoveryWeek)
         XCTAssertEqual(outline.weeks.last?.isPostProgrammeRecovery, true)
+    }
+
+    func testBelowRaceReadyBuildsUpSafely() {
+        let (km, outline) = volumes(level: .intermediate, weeklyKm: 25)
+        XCTAssertEqual(km[0], 25, "Starts from what they run now")
+        for i in 1..<12 {
+            let recent = km[max(0, i - 3)..<i].max()!
+            XCTAssertLessThanOrEqual(km[i], recent * 1.1 + 0.1, "week \(i + 1)")
+        }
+        XCTAssertLessThan(km[3], km[2], "Deload weeks still dip")
+        XCTAssertGreaterThan(km[8], 40, "Builds towards the race-ready 45 km")
+        XCTAssertLessThanOrEqual(km[8], 45 * 1.3 + 0.1)
+        XCTAssertNil(outline.weeks[0].isEasyStart)
+    }
+
+    func testAboveRaceReadyEasesDown() {
+        // A marathoner on 60 km/week doing the half (intermediate race-ready 45 km).
+        let (km, _) = volumes(level: .intermediate, weeklyKm: 60)
+        XCTAssertEqual(km[0], 60, "No sudden drop")
+        XCTAssertEqual(km[1], 1.05 * 51, accuracy: 0.1, "Base down 15%")
+        XCTAssertEqual(km[2], 1.1 * 45, accuracy: 0.1, "Then at race-ready")
+        XCTAssertEqual(km[8], 1.3 * 45, accuracy: 0.1)
+    }
+
+    func testEasyFirstWeekOnlyWhenAsked() {
+        let (km, outline) = volumes(level: .intermediate, weeklyKm: 45, easyStart: true)
+        XCTAssertEqual(outline.weeks[0].isEasyStart, true)
+        XCTAssertEqual(km[0], 27, "60% of current volume")
+        XCTAssertEqual(outline.weeks[1].programmeWeek, 1)
+        XCTAssertEqual(km[1], 45, "Week 1 isn't held back by the easy week")
+        let generated = try! XCTUnwrap(generator.generateWeek(0, outline: outline, profile: {
+            var p = profile(runners[1]); p.weeklyRunMeters = 45000; p.easyFirstWeek = true; p.racedRecently = true
+            p.easyFirstWeekRequestedAt = monday; return p
+        }(), notBefore: nil))
+        XCTAssertTrue(runs(generated).allSatisfy { $0.title == "Easy run" })
+        XCTAssertTrue(generated.notes.contains { $0.contains("Easy week after your race") })
+
+        // An old answer doesn't add an easy week to a plan built months later.
+        var old = profile(runners[1])
+        old.easyFirstWeek = true
+        old.easyFirstWeekRequestedAt = calendar.date(byAdding: .day, value: -60, to: monday)
+        XCTAssertNil(generator.makeOutline(for: old, startingOn: monday).weeks[0].isEasyStart)
+
+        // With a race date, the easy week comes out of the time before the race.
+        var racing = profile(runners[1], event: raceDay)
+        racing.easyFirstWeek = true
+        racing.easyFirstWeekRequestedAt = monday
+        let aligned = generator.makeOutline(for: racing, startingOn: monday)
+        XCTAssertEqual(aligned.weeks[0].isEasyStart, true)
+        XCTAssertEqual(aligned.weeks[1].programmeWeek, 2)
+        XCTAssertEqual(aligned.weeks[11].programmeWeek, 12)
+    }
+
+    func testRecentRunningFromHistory() {
+        let day: TimeInterval = 86_400
+        let kinetix = [RecentRunning.Run(start: monday.addingTimeInterval(-2 * day), meters: 10000),
+                       RecentRunning.Run(start: monday.addingTimeInterval(-9 * day), meters: 18000)]
+        let health = [RecentRunning.Run(start: monday.addingTimeInterval(-2 * day + 300), meters: 10050), // same run
+                      RecentRunning.Run(start: monday.addingTimeInterval(-5 * day), meters: 12000),
+                      RecentRunning.Run(start: monday.addingTimeInterval(-40 * day), meters: 30000)] // too old
+        let merged = RecentRunning.merge(primary: kinetix, other: health)
+        XCTAssertEqual(merged.count, 4)
+        let summary = try! XCTUnwrap(RecentRunning.summary(merged, now: monday))
+        XCTAssertEqual(summary.weeklyMeters, 40000 / 4, accuracy: 1)
+        XCTAssertEqual(summary.longestMeters, 18000)
+        XCTAssertEqual(summary.runCount, 3)
+        XCTAssertNil(RecentRunning.summary([], now: monday))
     }
 
     func testPlanLinesUpWithRaceDay() {
@@ -236,13 +315,20 @@ final class ProgrammePlannerTests: XCTestCase {
         dayFormat.calendar = calendar
         dayFormat.timeZone = calendar.timeZone
         dayFormat.dateFormat = "EEE d MMM"
-        for runner in runners {
-            let athlete = profile(runner, event: raceDay)
+        let marathoner = Runner(name: "85 km/week after a marathon", level: .advanced, weeklyKm: 85, longestKm: 32, fiveK: 18.5 * 60)
+        for runner in runners + [marathoner] {
+            var athlete = profile(runner, event: raceDay)
+            if runner.weeklyKm == 85 {
+                athlete.racedRecently = true
+                athlete.easyFirstWeek = true
+                athlete.easyFirstWeekRequestedAt = monday
+            }
             let zones = PaceZones(profile: athlete)
             let (outline, weeks) = plan(athlete)
             for (week, target) in zip(weeks, outline.weeks) {
                 emit("PREVIEW-WEEK", Week(runner: runner.name, week: target.index + 1, programmeWeek: target.programmeWeek,
-                                          phase: target.isPostProgrammeRecovery == true ? "Recovery" : target.phase.displayName,
+                                          phase: target.isEasyStart == true ? "Easy start"
+                                              : target.isPostProgrammeRecovery == true ? "Recovery" : target.phase.displayName,
                                           deload: target.isRecoveryWeek, targetKm: (target.runVolumeMeters / 100).rounded() / 10,
                                           plannedKm: (week.plannedRunMeters / 100).rounded() / 10,
                                           lifts: week.sessions.filter { $0.kind.discipline == .strength }.count, notes: week.notes))

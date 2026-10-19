@@ -24,6 +24,10 @@ final class UserProfileModel: SyncTracked {
     /// Typical weekly running and longest recent run when they answered (nil = not given).
     var weeklyRunMeters: Double?
     var longestRecentRunMeters: Double?
+    /// Raced in the two weeks before answering, and whether they asked for an easy first week.
+    var racedRecently: Bool?
+    var easyFirstWeek: Bool?
+    var easyFirstWeekRequestedAt: Date?
 
     init(profile: AthleteProfile, id: UUID = UUID(), now: Date = .now) {
         self.id = id
@@ -43,6 +47,9 @@ final class UserProfileModel: SyncTracked {
         self.createdAt = now
         self.weeklyRunMeters = profile.weeklyRunMeters
         self.longestRecentRunMeters = profile.longestRecentRunMeters
+        self.racedRecently = profile.racedRecently
+        self.easyFirstWeek = profile.easyFirstWeek
+        self.easyFirstWeekRequestedAt = profile.easyFirstWeekRequestedAt
     }
 
     /// The engine's view of this profile.
@@ -60,7 +67,10 @@ final class UserProfileModel: SyncTracked {
                 equipment: Equipment(rawValue: equipmentRaw) ?? .fullGym,
                 units: UnitSystem(rawValue: unitsRaw) ?? .metric,
                 weeklyRunMeters: weeklyRunMeters,
-                longestRecentRunMeters: longestRecentRunMeters
+                longestRecentRunMeters: longestRecentRunMeters,
+                racedRecently: racedRecently,
+                easyFirstWeek: easyFirstWeek,
+                easyFirstWeekRequestedAt: easyFirstWeekRequestedAt
             )
         }
         set {
@@ -76,6 +86,9 @@ final class UserProfileModel: SyncTracked {
             unitsRaw = newValue.units.rawValue
             weeklyRunMeters = newValue.weeklyRunMeters
             longestRecentRunMeters = newValue.longestRecentRunMeters
+            racedRecently = newValue.racedRecently
+            easyFirstWeek = newValue.easyFirstWeek
+            easyFirstWeekRequestedAt = newValue.easyFirstWeekRequestedAt
             touch()
         }
     }

@@ -281,7 +281,8 @@ def convert(path):
         ("threshold reps floor", "thresholdRepsFloorMeters", 1000), ("steady reps max", "steadyRepsShare", 1),
         ("steady reps floor", "steadyRepsFloorMeters", 1000), ("recovery run max", "recoveryRunOfLong", 1),
         ("easy run max", "easyRunOfLong", 1), ("shakeout max", "shakeoutOfWeek", 1),
-        ("recovery week after", "recoveryWeekShare", 1),
+        ("recovery week after", "recoveryWeekShare", 1), ("ease down per week", "easeDownPerWeek", 1),
+        ("easy first week after a race", "easyStartShare", 1),
     ]
     for row, values in rows(wb["Rules"]):
         name = str(values.get("Rule", "")).lower()
@@ -316,6 +317,11 @@ def convert(path):
                 "weeklyCapMeters": number(v.get("Weekly volume cap (km)"), "Weekly volume cap") * 1000
                     if v.get("Weekly volume cap (km)") not in (None, "") else None,
                 "taperWeeks": int(number(v.get("Taper weeks") or 0, "Taper weeks")),
+                "raceReadyMeters": {
+                    level: number(v.get(f"Race-ready volume: {level} (km/week)"), f"Race-ready volume ({level})") * 1000
+                    for level in ("beginner", "intermediate", "advanced")
+                    if v.get(f"Race-ready volume: {level} (km/week)") not in (None, "")
+                },
                 "weeks": [],
                 "sessions": [],
             }
@@ -342,7 +348,7 @@ def convert(path):
             emphasis = EMPHASIS.get(str(v.get("Strength emphasis") or "normal").strip().lower())
             if emphasis is None:
                 raise ParseError(f"unknown strength emphasis '{v.get('Strength emphasis')}'")
-            volume = v.get("Volume (% of starting)")
+            volume = v.get("Volume (% of race-ready)", v.get("Volume (% of starting)"))
             volume = number(volume.rstrip("%"), "Volume") / 100 if isinstance(volume, str) else number(volume, "Volume")
             note = v.get("Notes for the runner")
             programmes[goal]["weeks"].append({

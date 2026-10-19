@@ -108,11 +108,20 @@ enum PlanService {
 
     /// Average weekly running over the last four weeks (nil if nothing was recorded).
     static func recentWeeklyRunMeters(in context: ModelContext, now: Date = .now) -> Double? {
-        let start = Calendar.kinetix.date(byAdding: .day, value: -28, to: now) ?? now
-        let runs = ((try? context.fetch(FetchDescriptor<RunLogModel>())) ?? [])
-            .filter { !$0.isSoftDeleted && $0.isFinished && $0.startedAt >= start && $0.startedAt <= now }
-        let total = runs.reduce(0) { $0 + $1.distanceMeters }
-        return total > 0 ? total / 4 : nil
+        recentRunning(in: context, now: now)?.weeklyMeters
+    }
+
+    /// The last four weeks of running: runs recorded in Kinetix or imported from Strava, plus
+    /// other apps' runs in Apple Health (copies of the same run counted once).
+    static func recentRunning(in context: ModelContext, now: Date = .now) -> RecentRunning.Summary? {
+        let logs = ((try? context.fetch(FetchDescriptor<RunLogModel>())) ?? [])
+            .filter { !$0.isSoftDeleted && $0.isFinished && !$0.usedSimulatedGPS }
+            .map { RecentRunning.Run(start: $0.startedAt, meters: $0.distanceMeters) }
+        let settings = IntegrationSettings.shared
+        let health = (settings.healthEnabled ? settings.externalWorkouts : [])
+            .filter { $0.kind == .run }
+            .compactMap { workout in workout.distanceMeters.map { RecentRunning.Run(start: workout.start, meters: $0) } }
+        return RecentRunning.summary(RecentRunning.merge(primary: logs, other: health), now: now)
     }
 
     /// Current working weights by progression key.

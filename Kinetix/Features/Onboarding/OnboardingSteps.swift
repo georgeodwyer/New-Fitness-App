@@ -87,6 +87,7 @@ struct RaceTimeStep: View {
 
 struct CurrentRunningStep: View {
     @Bindable var model: OnboardingModel
+    @Environment(\.modelContext) private var context
 
     private var unit: String { Units.distanceUnitLabel(model.units) }
     private var metersPerUnit: Double { model.units == .imperial ? 1609.344 : 1000 }
@@ -119,9 +120,43 @@ struct CurrentRunningStep: View {
         .kxCard()
         .onChange(of: model.weeklyRunMeters) { model.knowsCurrentRunning = true }
         .onChange(of: model.longestRunMeters) { model.knowsCurrentRunning = true }
-        Text("Not sure? Skip and we'll start you at a sensible level for your experience.")
-            .font(KXFont.callout)
-            .foregroundStyle(KXColor.inkSecondary)
+        if let history = model.recentHistory {
+            let weekly = Int(Units.distance(meters: history.weeklyMeters, in: model.units).rounded())
+            let longest = Int(Units.distance(meters: history.longestMeters, in: model.units).rounded())
+            VStack(alignment: .leading, spacing: KXSpacing.sm) {
+                Label("From your last 4 weeks (\(history.runCount) runs in Kinetix, Strava and Apple Health): about \(weekly) \(unit) a week, longest \(longest) \(unit).",
+                      systemImage: "clock.arrow.circlepath")
+                    .font(KXFont.callout)
+                    .foregroundStyle(KXColor.inkSecondary)
+                if !model.applyHistoryAutomatically {
+                    Button("Use these") { model.useHistory() }
+                        .buttonStyle(.kx(.secondary))
+                }
+            }
+        } else {
+            Text("Not sure? Skip and we'll start you at a sensible level for your experience.")
+                .font(KXFont.callout)
+                .foregroundStyle(KXColor.inkSecondary)
+        }
+        VStack(alignment: .leading, spacing: KXSpacing.md) {
+            Toggle("I've raced in the last two weeks", isOn: $model.racedRecently)
+                .font(KXFont.bodyEmphasis)
+                .accessibilityIdentifier("onboarding.racedRecently")
+            if model.racedRecently {
+                Toggle("Start with an easy week", isOn: $model.easyFirstWeek)
+                    .font(KXFont.bodyEmphasis)
+                Text("Your answer here is the only thing that decides whether your plan starts with an easy week: easy running only, then your programme.")
+                    .font(KXFont.caption)
+                    .foregroundStyle(KXColor.inkSecondary)
+            }
+        }
+        .tint(KXColor.accent)
+        .kxCard()
+        .task {
+            guard model.recentHistory == nil, let history = PlanService.recentRunning(in: context) else { return }
+            model.recentHistory = history
+            if model.applyHistoryAutomatically { model.useHistory() }
+        }
     }
 }
 
