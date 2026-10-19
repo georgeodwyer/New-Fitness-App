@@ -135,23 +135,23 @@ struct ShareCardView: View {
     // MARK: Sticker (transparent)
 
     private var sticker: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 12) {
             if !data.route.isEmpty {
                 RouteShape(route: data.route)
                     .stroke(.white, style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
-                    .frame(width: 150, height: 150)
+                    .frame(width: 165, height: 165)
             }
             ForEach(Array(data.metrics.enumerated()), id: \.offset) { _, metric in
                 VStack(spacing: 0) {
-                    Text(metric.label.uppercased()).font(.system(size: 10, weight: .bold)).tracking(1.2)
-                    Text(metric.value).font(.system(size: 24, weight: .heavy, design: .rounded)).monospacedDigit()
+                    Text(metric.label.uppercased()).font(.system(size: 11, weight: .bold)).tracking(1.3)
+                    Text(metric.value).font(.system(size: 29, weight: .heavy, design: .rounded)).monospacedDigit()
                 }
             }
             ForEach(data.lines.prefix(3), id: \.self) { line in
-                Text(line).font(.system(size: 11, weight: .semibold))
+                Text(line).font(.system(size: 12, weight: .semibold))
             }
-            KXWordmark(height: 34, forcedWhite: true)
-                .padding(.top, 6)
+            KXWordmark(height: 24, forcedWhite: true)
+                .padding(.top, 4)
         }
         .foregroundStyle(.white)
         .shadow(color: .black.opacity(0.45), radius: 4, y: 1)
