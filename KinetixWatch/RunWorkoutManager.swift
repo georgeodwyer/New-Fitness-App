@@ -10,10 +10,16 @@ import TrainingEngine
 /// running with the screen down, records heart rate and saves the workout), GPS from the
 /// watch, and the same run engine as the iPhone for pace targets, steps and cues, which
 /// arrive as wrist taps and, through AirPods or the speaker, spoken prompts.
+///
+/// It can also mirror a run recorded on the iPhone: the phone opens the watch app, which
+/// starts a workout session (to stay awake and read heart rate) and shows the phone's run
+/// screen, tapping the wrist when the phone says to. Buttons and heart rate go back to the
+/// phone, which saves the run, so the watch throws its own copy of the workout away.
 @Observable
 @MainActor
 final class RunWorkoutManager: NSObject {
     enum Phase: Equatable { case idle, starting, running, finished }
+    enum Mode: Equatable { case standalone, mirroring }
 
     static let shared = RunWorkoutManager()
 
@@ -26,6 +32,17 @@ final class RunWorkoutManager: NSObject {
     private(set) var lastMessage: String?
     private(set) var errorText: String?
     var voiceEnabled = true
+    private(set) var mode: Mode = .standalone
+    /// No word from the phone for a while during a mirrored run.
+    private(set) var isPhoneLinkStale = false
+    /// Shown on the run list after a mirrored run, e.g. "Run finished on your iPhone".
+    private(set) var notice: String?
+    private(set) var mirrorIsStructured = false
+    private(set) var mirrorUnits: UnitSystem?
+    @ObservationIgnored private var mirrorRunId: UUID?
+    @ObservationIgnored private var lastFrameAt: Date?
+    /// Phone runs that have finished, so a late frame doesn't bring one back.
+    @ObservationIgnored private var endedMirrorRuns: Set<UUID> = []
 
     @ObservationIgnored private var engine: RunEngine?
     @ObservationIgnored private let healthStore = HKHealthStore()
@@ -38,8 +55,11 @@ final class RunWorkoutManager: NSObject {
     @ObservationIgnored private var timer: Timer?
     @ObservationIgnored private let speech = AVSpeechSynthesizer()
 
-    var units: UnitSystem { WatchStore.shared.plan.units }
+    var units: UnitSystem { mirrorUnits ?? WatchStore.shared.plan.units }
     var isPaused: Bool { snapshot?.isPaused ?? false }
+    var isMirroring: Bool { mode == .mirroring }
+    /// The run has steps (so the rep page is shown).
+    var isStructured: Bool { isMirroring ? mirrorIsStructured : option?.structure != nil }
 
     // MARK: Permission
 
@@ -105,6 +125,14 @@ final class RunWorkoutManager: NSObject {
     }
 
     func togglePause() {
+        if isMirroring {
+            guard phase == .running, snapshot != nil else { return }
+            sendToPhone(.command(isPaused ? .resume : .pause))
+            // Show it straight away; the phone's next frame confirms it.
+            snapshot?.isPaused.toggle()
+            WKInterfaceDevice.current().play(isPaused ? .stop : .start)
+            return
+        }
         guard phase == .running, var engine else { return }
         let now = Date()
         if engine.snapshot().isPaused {
@@ -121,6 +149,10 @@ final class RunWorkoutManager: NSObject {
     }
 
     func skipStep() {
+        if isMirroring {
+            sendToPhone(.command(.skipStep))
+            return
+        }
         guard phase == .running, var engine else { return }
         let events = engine.skipSegment(at: Date())
         self.engine = engine
@@ -130,6 +162,10 @@ final class RunWorkoutManager: NSObject {
 
     /// Stops recording and saves the workout to Apple Health; then the summary shows.
     func end() async {
+        if isMirroring {
+            await endMirroredRun()
+            return
+        }
         guard phase == .running, let engine else { return }
         timer?.invalidate()
         timer = nil
@@ -188,6 +224,13 @@ final class RunWorkoutManager: NSObject {
         snapshot = nil
         summary = nil
         option = nil
+        mode = .standalone
+        isPhoneLinkStale = false
+        notice = nil
+        mirrorIsStructured = false
+        mirrorUnits = nil
+        mirrorRunId = nil
+        lastFrameAt = nil
         startedAt = nil
         finishedAt = nil
         lastMessage = nil
@@ -215,6 +258,11 @@ final class RunWorkoutManager: NSObject {
     }
 
     private func receiveHeartRate(_ bpm: Double, at date: Date) {
+        if isMirroring {
+            guard phase == .running else { return }
+            sendToPhone(.heartRate(bpm: bpm, at: date))
+            return
+        }
         guard phase == .running, var engine else { return }
         engine.addHeartRate(bpm, at: date)
         self.engine = engine
@@ -236,6 +284,146 @@ final class RunWorkoutManager: NSObject {
                 device.play(.success)
             }
             if voiceEnabled { speak(event.announcement) }
+        }
+    }
+
+    // MARK: Mirroring a run from the iPhone
+
+    /// The phone has opened the app for a run it's recording.
+    func startMirroring(configuration: HKWorkoutConfiguration) async {
+        // A run already going on the watch carries on; the phone's run just isn't shown.
+        guard phase == .idle else { return }
+        reset()
+        mode = .mirroring
+        phase = .running
+        option = WatchRunOption(id: UUID(), source: .free, title: "Run on iPhone")
+        let start = Date()
+        startedAt = start
+        lastFrameAt = start
+        let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.mirrorTick() }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        self.timer = timer
+
+        await requestAuthorization()
+        guard isMirroring else { return }
+        do {
+            let session = try HKWorkoutSession(healthStore: healthStore, configuration: configuration)
+            let builder = session.associatedWorkoutBuilder()
+            builder.dataSource = HKLiveWorkoutDataSource(healthStore: healthStore, workoutConfiguration: configuration)
+            session.delegate = self
+            builder.delegate = self
+            self.session = session
+            self.builder = builder
+            session.startActivity(with: start)
+            try await builder.beginCollection(at: start)
+            // The direct link to the phone. If it fails, messages go through WatchConnectivity.
+            session.startMirroringToCompanionDevice { _, _ in }
+        } catch {
+            // Without a workout session there's no live heart rate, but the run still shows.
+        }
+        WKInterfaceDevice.current().play(.start)
+    }
+
+    /// A message from the phone (through either link).
+    func receiveFromPhone(_ data: Data) {
+        guard let message = MirrorMessage.decode(data) else { return }
+        switch message {
+        case .frame(let frame):
+            receive(frame)
+        case .ended(let runId, let saved):
+            if let runId { endedMirrorRuns.insert(runId) }
+            guard isMirroring, runId == nil || runId == mirrorRunId || mirrorRunId == nil else { return }
+            Task { await finishMirroring(notice: saved ? "Run finished on your iPhone." : "Run discarded on your iPhone.") }
+        case .command, .heartRate:
+            break
+        }
+    }
+
+    private func receive(_ frame: MirrorFrame) {
+        guard !endedMirrorRuns.contains(frame.runId) else { return }
+        guard isMirroring else {
+            // The phone is recording and the app is open but wasn't woken for it: join in.
+            guard phase == .idle, frame.isFresh(at: Date()) else { return }
+            let configuration = HKWorkoutConfiguration()
+            configuration.activityType = .running
+            configuration.locationType = .outdoor
+            Task { await startMirroring(configuration: configuration) }
+            return
+        }
+        mirrorRunId = frame.runId
+        lastFrameAt = Date()
+        isPhoneLinkStale = false
+        snapshot = frame.snapshot
+        mirrorIsStructured = frame.isStructured
+        mirrorUnits = frame.units
+        if option?.title != frame.title {
+            option = WatchRunOption(id: frame.runId, source: .free, title: frame.title)
+        }
+        let device = WKInterfaceDevice.current()
+        for alert in frame.alerts {
+            switch alert {
+            case .speedUp: device.play(.directionUp)
+            case .easeOff: device.play(.directionDown)
+            case .newStep: device.play(.notification)
+            case .split: device.play(.click)
+            case .complete: device.play(.success)
+            }
+        }
+    }
+
+    private func mirrorTick() {
+        guard isMirroring, let lastFrameAt else { return }
+        let silence = Date().timeIntervalSince(lastFrameAt)
+        isPhoneLinkStale = silence > 15
+        // The phone has gone quiet for a long time (its app was closed): stop showing the run.
+        if silence > 600 {
+            Task { await finishMirroring(notice: "Lost touch with your iPhone. Check the run there.") }
+        }
+    }
+
+    /// End pressed on the watch: the phone finishes the run and asks how hard it was.
+    private func endMirroredRun() async {
+        guard isMirroring else { return }
+        if isPhoneLinkStale {
+            await finishMirroring(notice: "Stopped showing the run. Your iPhone may still be recording it.")
+            return
+        }
+        sendToPhone(.command(.end))
+        // The phone answers with "ended"; if it doesn't, stop anyway.
+        let runId = mirrorRunId
+        try? await Task.sleep(for: .seconds(8))
+        if isMirroring, mirrorRunId == runId {
+            await finishMirroring(notice: "Stopped showing the run. Finish it on your iPhone.")
+        }
+    }
+
+    /// Stops the watch's side of a mirrored run. The phone saves the run, so the watch's own
+    /// copy of the workout is thrown away (no duplicate in Apple Health).
+    private func finishMirroring(notice: String) async {
+        guard isMirroring else { return }
+        if let mirrorRunId { endedMirrorRuns.insert(mirrorRunId) }
+        timer?.invalidate()
+        timer = nil
+        session?.end()
+        builder?.discardWorkout()
+        reset()
+        self.notice = notice
+        WKInterfaceDevice.current().play(.success)
+    }
+
+    func clearNotice() { notice = nil }
+
+    private func sendToPhone(_ message: MirrorMessage) {
+        let data = message.encoded()
+        guard let session else {
+            WatchStore.shared.sendMessage(data)
+            return
+        }
+        session.sendToRemoteWorkoutSession(data: data) { success, _ in
+            guard !success else { return }
+            Task { @MainActor in WatchStore.shared.sendMessage(data) }
         }
     }
 
@@ -297,6 +485,14 @@ extension RunWorkoutManager: HKWorkoutSessionDelegate, HKLiveWorkoutBuilderDeleg
     nonisolated func workoutSession(_ workoutSession: HKWorkoutSession, didFailWithError error: Error) {
         let message = error.localizedDescription
         Task { @MainActor in self.errorText = message }
+    }
+
+    nonisolated func workoutSession(_ workoutSession: HKWorkoutSession, didReceiveDataFromRemoteWorkoutSession data: [Data]) {
+        Task { @MainActor in data.forEach(self.receiveFromPhone) }
+    }
+
+    nonisolated func workoutSession(_ workoutSession: HKWorkoutSession, didDisconnectFromRemoteDeviceWithError error: Error?) {
+        // Messages carry on through WatchConnectivity.
     }
 
     nonisolated func workoutBuilderDidCollectEvent(_ workoutBuilder: HKLiveWorkoutBuilder) {}

@@ -18,6 +18,8 @@ final class IntegrationSettings {
         heartRateSensorID = defaults.string(forKey: Keys.sensorID).flatMap(UUID.init(uuidString:))
         heartRateSensorName = defaults.string(forKey: Keys.sensorName)
         useWatchHeartRate = defaults.object(forKey: Keys.useWatchHeartRate) as? Bool ?? true
+        mirrorRunsToWatch = defaults.object(forKey: Keys.mirrorRuns) as? Bool ?? true
+        runHeartRateSource = defaults.string(forKey: Keys.runHeartRateSource).flatMap(RunHeartRateSource.init(rawValue:)) ?? .watch
         stravaUploadRuns = defaults.object(forKey: Keys.stravaRuns) as? Bool ?? true
         stravaUploadLifts = defaults.object(forKey: Keys.stravaLifts) as? Bool ?? false
         stravaConnectedAt = defaults.object(forKey: Keys.stravaConnectedAt) as? Date
@@ -36,6 +38,8 @@ final class IntegrationSettings {
         static let sensorID = "integrations.hr.sensorID"
         static let sensorName = "integrations.hr.sensorName"
         static let useWatchHeartRate = "integrations.hr.useWatch"
+        static let mirrorRuns = "integrations.watch.mirrorRuns"
+        static let runHeartRateSource = "integrations.hr.runSource"
         static let stravaRuns = "integrations.strava.uploadRuns"
         static let stravaLifts = "integrations.strava.uploadLifts"
         static let stravaConnectedAt = "integrations.strava.connectedAt"
@@ -56,6 +60,10 @@ final class IntegrationSettings {
     var heartRateSensorName: String? { didSet { defaults.set(heartRateSensorName, forKey: Keys.sensorName) } }
     /// Use heart rate from Apple Watch (through Apple Health) during runs.
     var useWatchHeartRate: Bool { didSet { defaults.set(useWatchHeartRate, forKey: Keys.useWatchHeartRate) } }
+    /// Open the Kinetix watch app and show the run there when a run starts on the phone.
+    var mirrorRunsToWatch: Bool { didSet { defaults.set(mirrorRunsToWatch, forKey: Keys.mirrorRuns) } }
+    /// The last answer to "Heart rate from?" (asked when both a strap and the watch could be used).
+    var runHeartRateSource: RunHeartRateSource { didSet { defaults.set(runHeartRateSource.rawValue, forKey: Keys.runHeartRateSource) } }
 
     var stravaUploadRuns: Bool { didSet { defaults.set(stravaUploadRuns, forKey: Keys.stravaRuns) } }
     var stravaUploadLifts: Bool { didSet { defaults.set(stravaUploadLifts, forKey: Keys.stravaLifts) } }
@@ -90,6 +98,8 @@ final class IntegrationSettings {
         heartRateSensorID = nil
         heartRateSensorName = nil
         useWatchHeartRate = true
+        mirrorRunsToWatch = true
+        runHeartRateSource = .watch
         stravaUploadRuns = true
         stravaUploadLifts = false
         stravaConnectedAt = nil
@@ -99,4 +109,12 @@ final class IntegrationSettings {
         externalWorkouts = []
         uploadFailures = [:]
     }
+}
+
+/// Where heart rate comes from during a run on the phone.
+enum RunHeartRateSource: String {
+    /// Apple Watch (live from the mirrored run, or through Apple Health).
+    case watch
+    /// The paired Bluetooth chest strap.
+    case strap
 }

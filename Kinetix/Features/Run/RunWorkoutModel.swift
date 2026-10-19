@@ -34,6 +34,12 @@ final class RunWorkoutModel {
     private(set) var hasGPSFix: Bool
     private(set) var log: RunLogModel?
     private(set) var finalSummary: RunSummary?
+    /// The run is showing on the Apple Watch.
+    private(set) var isMirroringToWatch = false
+    /// Goes up each time End is pressed on the watch (the run screen then finishes the run).
+    private(set) var watchEndRequests = 0
+    /// Where heart rate comes from during this run (set when it starts).
+    private(set) var heartRateSource: RunHeartRateSource = .watch
 
     /// Quick toggle on the run screen (also respects Settings).
     var paceCuesEnabled: Bool {
@@ -59,6 +65,14 @@ final class RunWorkoutModel {
     @ObservationIgnored private var watchHeartRateQuery: HKQuery?
     private var lockScreen: WorkoutActivityController { .shared }
     @ObservationIgnored private var lastLockScreenKey: String?
+    /// Identifies this run to the watch.
+    @ObservationIgnored private let mirrorRunId = UUID()
+    /// Wrist taps waiting to go out with the next frame.
+    @ObservationIgnored private var pendingAlerts: [MirrorAlert] = []
+    /// When the watch last sent live heart rate (Apple Health's slower readings are ignored meanwhile).
+    @ObservationIgnored private var lastLiveWatchHeartRate: Date?
+
+    private enum HeartRateOrigin { case strap, watchLive, health }
 
     /// The run built on the Record tab, if any.
     let custom: CustomRunWorkout?
@@ -126,6 +140,14 @@ final class RunWorkoutModel {
     /// Pre-filled answer for "How hard was that run?".
     var typicalEffort: Double { custom?.type.typicalEffort ?? planned?.plannedEffort ?? 5 }
 
+    /// Both a chest strap and the watch could give heart rate, so ask which to use.
+    var shouldAskHeartRateSource: Bool {
+        IntegrationSettings.shared.heartRateSensorID != nil && WatchMirrorService.shared.isAvailable
+    }
+
+    /// The paired strap's name, for the question.
+    var strapName: String { IntegrationSettings.shared.heartRateSensorName ?? "Chest strap" }
+
     var needsPermission: Bool {
         !isSimulated && (authorization == .denied || authorization == .restricted)
     }
@@ -142,8 +164,11 @@ final class RunWorkoutModel {
         gps.warmUp()
     }
 
-    func start() {
+    /// Starts the run. `heartRateSource` is the answer to "Heart rate from?" when it was asked.
+    func start(heartRateSource chosen: RunHeartRateSource? = nil) {
         guard phase == .ready else { return }
+        if let chosen { IntegrationSettings.shared.runHeartRateSource = chosen }
+        heartRateSource = chosen ?? (IntegrationSettings.shared.heartRateSensorID != nil ? .strap : .watch)
         realOrigin = .now
         clockOrigin = .now
         let now = clockNow()
@@ -154,6 +179,7 @@ final class RunWorkoutModel {
         gps?.start()
         simulator?.start()
         startHeartRate(from: now)
+        startMirroring()
         ActiveWorkout.shared.togglePause = { [weak self] in self?.togglePause() }
         lockScreen.start(title: title, kind: "run", state: .run(snapshot, units: units, now: .now))
         lastTick = now
@@ -178,11 +204,13 @@ final class RunWorkoutModel {
         }
         snapshot = engine.snapshot()
         updateLockScreen(important: true)
+        publishToWatch()
     }
 
     func skipSegment() {
         handle(engine.skipSegment(at: clockNow()))
         snapshot = engine.snapshot()
+        publishToWatch()
     }
 
     /// Stops tracking and returns the summary for the effort sheet.
@@ -198,6 +226,7 @@ final class RunWorkoutModel {
         let summary = engine.summary()
         finalSummary = summary
         phase = .finished
+        stopMirroring(saved: true)
         return summary
     }
 
@@ -214,6 +243,7 @@ final class RunWorkoutModel {
         stopHeartRate()
         lockScreen.end()
         ActiveWorkout.shared.togglePause = nil
+        stopMirroring(saved: false)
         if let log { RunService.discard(log, in: context) }
     }
 
@@ -233,13 +263,18 @@ final class RunWorkoutModel {
         lockScreen.update(.run(snapshot, units: units, now: .now), important: important || changed)
     }
 
-    /// Heart rate from a Bluetooth strap (preferred: it updates every second) and/or an
-    /// Apple Watch through Apple Health.
+    /// Heart rate from the chosen source: a Bluetooth strap, or the Apple Watch (live from
+    /// the mirrored run, or through Apple Health when the watch is recording a workout).
     private func startHeartRate(from start: Date) {
-        heartRateMonitor.onHeartRate = { [weak self] bpm, _ in self?.receiveHeartRate(bpm, fromStrap: true) }
+        if heartRateSource == .strap {
+            heartRateMonitor.onHeartRate = { [weak self] bpm, _ in self?.receiveHeartRate(bpm, from: .strap) }
+        } else {
+            // The watch was chosen: let the strap go (saves its battery).
+            heartRateMonitor.disconnect()
+        }
         if IntegrationSettings.shared.useWatchHeartRate {
             watchHeartRateQuery = HealthService.shared.startLiveHeartRate(from: Date.now.addingTimeInterval(-60)) { [weak self] bpm, _ in
-                self?.receiveHeartRate(bpm, fromStrap: false)
+                self?.receiveHeartRate(bpm, from: .health)
             }
         }
     }
@@ -251,12 +286,59 @@ final class RunWorkoutModel {
         watchHeartRateQuery = nil
     }
 
-    private func receiveHeartRate(_ bpm: Double, fromStrap: Bool) {
+    private func receiveHeartRate(_ bpm: Double, from origin: HeartRateOrigin) {
         guard phase == .running else { return }
-        // When a strap is connected, ignore the Watch's slower readings.
-        if !fromStrap && heartRateMonitor.isConnected { return }
+        let strapInUse = heartRateSource == .strap && heartRateMonitor.isConnected
+        switch origin {
+        case .strap:
+            guard heartRateSource == .strap else { return }
+        case .watchLive:
+            // A strap that was chosen and is connected wins.
+            guard !strapInUse else { return }
+            lastLiveWatchHeartRate = .now
+        case .health:
+            // Apple Health's readings are slower: only used when nothing better is coming in.
+            guard !strapInUse else { return }
+            if let last = lastLiveWatchHeartRate, Date.now.timeIntervalSince(last) < 15 { return }
+        }
         engine.addHeartRate(bpm, at: clockNow())
         snapshot = engine.snapshot()
+    }
+
+    // MARK: Apple Watch
+
+    private func startMirroring() {
+        let handlers = WatchMirrorService.Handlers(
+            command: { [weak self] command in self?.handleWatch(command) },
+            heartRate: { [weak self] bpm, _ in self?.receiveHeartRate(bpm, from: .watchLive) }
+        )
+        isMirroringToWatch = WatchMirrorService.shared.begin(runId: mirrorRunId, handlers: handlers)
+        publishToWatch()
+    }
+
+    private func stopMirroring(saved: Bool) {
+        guard isMirroringToWatch else { return }
+        isMirroringToWatch = false
+        WatchMirrorService.shared.end(saved: saved)
+    }
+
+    /// Sends the run screen (and any wrist taps) to the watch.
+    private func publishToWatch() {
+        guard isMirroringToWatch, phase == .running else { return }
+        let frame = MirrorFrame(runId: mirrorRunId, title: title, units: units, isStructured: structure != nil,
+                                snapshot: snapshot, alerts: pendingAlerts, sentAt: .now)
+        pendingAlerts = []
+        WatchMirrorService.shared.publish(frame)
+    }
+
+    private func handleWatch(_ command: MirrorCommand) {
+        guard phase == .running else { return }
+        switch command {
+        case .pause: if !snapshot.isPaused { togglePause() }
+        case .resume: if snapshot.isPaused { togglePause() }
+        case .skipStep: skipSegment()
+        case .end: watchEndRequests += 1
+        }
     }
 
     private func configureSources() {
@@ -275,6 +357,8 @@ final class RunWorkoutModel {
         guard phase == .running else { return }
         handle(engine.addLocation(sample))
         snapshot = engine.snapshot()
+        // Something happened (new step, cue, split): tell the watch now rather than on the next tick.
+        if !pendingAlerts.isEmpty { publishToWatch() }
         if !snapshot.isPaused, route.last.map({ $0.latitude != sample.latitude }) ?? true {
             route.append(RoutePoint(latitude: sample.latitude, longitude: sample.longitude, elapsed: snapshot.elapsedSeconds))
         }
@@ -312,6 +396,7 @@ final class RunWorkoutModel {
         handle(engine.tick(at: now))
         snapshot = engine.snapshot()
         updateLockScreen()
+        publishToWatch()
         if now.timeIntervalSince(lastCheckpoint) >= 30, let log {
             lastCheckpoint = now
             RunService.checkpoint(engine.summary(), into: log, in: context)
@@ -325,6 +410,7 @@ final class RunWorkoutModel {
             announcements.append(Announcement(text: event.announcement, isCue: isCue, time: snapshot.elapsedSeconds))
             if announcements.count > 20 { announcements.removeFirst() }
             voice.speak(event.announcement)
+            if isMirroringToWatch { pendingAlerts.append(MirrorAlert(event: event)) }
         }
     }
 }

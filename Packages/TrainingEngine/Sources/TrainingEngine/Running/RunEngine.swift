@@ -24,7 +24,7 @@ public struct SegmentResult: Codable, Equatable, Sendable {
     public var secondsMeasured: Double
 }
 
-public struct PaceCue: Equatable, Sendable {
+public struct PaceCue: Codable, Equatable, Sendable {
     public var direction: PaceRange.Position
     public var pace: Pace
     public var target: PaceRange
@@ -49,7 +49,7 @@ public enum RunEvent: Equatable, Sendable {
 }
 
 /// What the run screen shows right now.
-public struct RunSnapshot: Equatable, Sendable {
+public struct RunSnapshot: Codable, Equatable, Sendable {
     public var elapsedSeconds: Double
     public var distanceMeters: Double
     public var currentPace: Pace?

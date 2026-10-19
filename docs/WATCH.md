@@ -30,6 +30,26 @@ The watch app comes inside the same TestFlight build as the iPhone app.
 You can leave the iPhone at home: the watch uses its own GPS and heart rate. (Cellular isn't
 needed.)
 
+## Starting a run on the iPhone (the watch mirrors it)
+
+With **Settings → Integrations → Apple Watch → Open on Apple Watch when I start a run** on (the
+default), starting a run on the iPhone opens Kinetix on the watch and shows the run there:
+
+- The same pages as a watch run: the current rep (pace against target, distance left) and the
+  whole run (time, distance, average pace), with heart rate.
+- Wrist taps for pace, each new step, splits and the end of the session.
+- **Pause**, **Next step** and **Finish** on the watch control the iPhone's run. Finish ends it on
+  the iPhone, which then asks "How hard was that?". The watch goes back to its list.
+- The iPhone records (GPS, voice cues through your earphones) and saves the run once: to Kinetix,
+  Apple Health and Strava. The watch doesn't save a copy. Keep the iPhone with you.
+- The watch sends its heart rate live. If you also have a chest strap paired, the iPhone asks
+  "Heart rate from?" before the run starts (last answer first).
+- If the watch is locked, off your wrist or out of range, the iPhone carries on as normal. Open
+  Kinetix on the watch during the run and it joins in. "Waiting for iPhone…" means no update for
+  15 seconds.
+
+Starting a run on the watch is unchanged: it records on its own, as if the iPhone is at home.
+
 ## Things to check on a real watch (the simulator can't)
 
 - GPS distance and pace feel right compared with a known route.
@@ -37,6 +57,9 @@ needed.)
 - Voice cues through AirPods.
 - The run keeps recording with your wrist down, and battery use over an hour is reasonable.
 - After a run, it shows up on the iPhone within a minute or two of being together.
+- Starting a run on the iPhone opens the watch app within a few seconds, numbers match the
+  iPhone, Pause/Next step/Finish on the watch work, and only one workout appears in Apple Health.
+- With a strap paired, the "Heart rate from?" question appears and the chosen source is used.
 
 ## If the first TestFlight upload fails
 

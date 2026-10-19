@@ -10,7 +10,7 @@ struct RunLiveView: View {
     @State private var confirmEnd = false
 
     private var format: DisplayFormat { DisplayFormat(units: workout.units) }
-    private var isStructured: Bool { workout.option?.structure != nil }
+    private var isStructured: Bool { workout.isStructured }
 
     var body: some View {
         TabView(selection: $page) {
@@ -23,8 +23,8 @@ struct RunLiveView: View {
             }
         }
         .tabViewStyle(.page)
-        .confirmationDialog("End this run?", isPresented: $confirmEnd) {
-            Button("End run") { Task { await workout.end() } }
+        .confirmationDialog(workout.isMirroring ? "Finish this run?" : "End this run?", isPresented: $confirmEnd) {
+            Button(workout.isMirroring ? "Finish run" : "End run") { Task { await workout.end() } }
             Button("Keep going", role: .cancel) {}
         }
     }
@@ -120,7 +120,9 @@ struct RunLiveView: View {
 
     @ViewBuilder
     private func status(_ snapshot: RunSnapshot?) -> some View {
-        if workout.isPaused {
+        if workout.isPhoneLinkStale {
+            Label("Waiting for iPhone…", systemImage: "iphone.slash").font(.caption2).foregroundStyle(WatchColor.offPace)
+        } else if workout.isPaused {
             Text("Paused").font(.caption).foregroundStyle(WatchColor.offPace)
         } else if snapshot?.gpsAvailable == false {
             Text("Finding GPS…").font(.caption2).foregroundStyle(.secondary)
@@ -140,15 +142,18 @@ struct RunLiveView: View {
                 controlButton("End", symbol: "xmark", tint: .red) { confirmEnd = true }
             }
             HStack(spacing: 8) {
-                if workout.option?.structure != nil {
+                if isStructured {
                     controlButton("Next step", symbol: "forward.end.fill", tint: .teal) {
                         workout.skipStep()
                         page = 1
                     }
                 }
-                controlButton(workout.voiceEnabled ? "Voice on" : "Voice off",
-                              symbol: workout.voiceEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill", tint: .gray) {
-                    workout.voiceEnabled.toggle()
+                if !workout.isMirroring {
+                    // On a mirrored run the iPhone does the talking.
+                    controlButton(workout.voiceEnabled ? "Voice on" : "Voice off",
+                                  symbol: workout.voiceEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill", tint: .gray) {
+                        workout.voiceEnabled.toggle()
+                    }
                 }
             }
         }

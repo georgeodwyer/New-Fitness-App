@@ -66,6 +66,12 @@ final class WatchStore: NSObject {
         WCSession.default.transferFile(file, metadata: ["kind": "runResult"])
     }
 
+    /// A message during a mirrored run, when the direct workout link isn't up.
+    func sendMessage(_ data: Data) {
+        guard WCSession.isSupported(), WCSession.default.activationState == .activated, WCSession.default.isReachable else { return }
+        WCSession.default.sendMessageData(data, replyHandler: nil, errorHandler: nil)
+    }
+
     /// Re-queues anything in the outbox the system isn't already sending (e.g. after a restart).
     fileprivate func resendOutbox() {
         outboxFiles().forEach(transfer)
@@ -89,6 +95,10 @@ extension WatchStore: WCSessionDelegate {
     nonisolated func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
         guard let data = applicationContext["plan"] as? Data else { return }
         Task { @MainActor in self.receive(planData: data) }
+    }
+
+    nonisolated func session(_ session: WCSession, didReceiveMessageData messageData: Data) {
+        Task { @MainActor in RunWorkoutManager.shared.receiveFromPhone(messageData) }
     }
 
     nonisolated func session(_ session: WCSession, didFinish fileTransfer: WCSessionFileTransfer, error: Error?) {

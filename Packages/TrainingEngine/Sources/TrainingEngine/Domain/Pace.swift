@@ -35,7 +35,7 @@ public struct PaceRange: Codable, Equatable, Hashable, Sendable {
         self.slowest = max(fastest, slowest)
     }
 
-    public enum Position: Equatable, Sendable {
+    public enum Position: String, Codable, Equatable, Sendable {
         case tooFast, onTarget, tooSlow
     }
 

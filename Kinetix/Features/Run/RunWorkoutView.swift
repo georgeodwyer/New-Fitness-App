@@ -12,6 +12,7 @@ struct RunWorkoutView: View {
     @State private var showEffort = false
     @State private var showLeave = false
     @State private var saved = false
+    @State private var askHeartRate = false
 
     init(model: RunWorkoutModel, onClose: @escaping () -> Void) {
         _model = State(initialValue: model)
@@ -83,12 +84,27 @@ struct RunWorkoutView: View {
                 }
                 .padding(KXSpacing.screenMargin)
             }
-            Button(model.hasGPSFix ? "Start run" : "Start without GPS lock") { model.start() }
+            Button(model.hasGPSFix ? "Start run" : "Start without GPS lock") {
+                if model.shouldAskHeartRateSource { askHeartRate = true } else { model.start() }
+            }
                 .buttonStyle(.kx(.primary, fullWidth: true))
                 .disabled(model.needsPermission)
                 .padding(KXSpacing.screenMargin)
         }
         .onAppear { model.prepare() }
+        .confirmationDialog("Heart rate from?", isPresented: $askHeartRate, titleVisibility: .visible) {
+            // Last time's answer first.
+            if IntegrationSettings.shared.runHeartRateSource == .strap {
+                Button(model.strapName) { model.start(heartRateSource: .strap) }
+                Button("Apple Watch") { model.start(heartRateSource: .watch) }
+            } else {
+                Button("Apple Watch") { model.start(heartRateSource: .watch) }
+                Button(model.strapName) { model.start(heartRateSource: .strap) }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Your chest strap and Apple Watch can both read heart rate. A strap is usually more accurate.")
+        }
     }
 
     private var gpsStatusCard: some View {
@@ -153,6 +169,14 @@ struct RunWorkoutView: View {
                 .padding(.bottom, KXSpacing.md)
             }
             controls
+        }
+        .onChange(of: model.watchEndRequests) {
+            // End pressed on the watch: finish here, then ask how hard it was.
+            guard model.phase == .running else { return }
+            showFinishConfirm = false
+            showLeave = false
+            _ = model.stop()
+            showEffort = true
         }
         .confirmationDialog("Finish this run?", isPresented: $showFinishConfirm, titleVisibility: .visible) {
             Button("Finish run") {
@@ -277,6 +301,7 @@ struct RunWorkoutView: View {
                 Spacer()
                 if snapshot.isPaused { KXChip(text: "Paused", variant: .warning) }
                 else if !snapshot.gpsAvailable { KXChip(text: "Weak GPS", systemImage: "location.slash", variant: .warning) }
+                else if model.isMirroringToWatch { KXChip(text: "On Apple Watch", systemImage: "applewatch") }
             }
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: KXSpacing.xs) {

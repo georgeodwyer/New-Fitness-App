@@ -27,6 +27,13 @@ struct IntegrationsSection: View {
         }
         .accessibilityIdentifier("settings.heartRate")
         NavigationLink {
+            AppleWatchView()
+        } label: {
+            IntegrationRow(title: "Apple Watch", detail: settings.mirrorRunsToWatch ? "Shows runs you start on your iPhone" : "Runs started on your watch",
+                           symbol: "applewatch", tint: KXColor.ink, connected: settings.mirrorRunsToWatch)
+        }
+        .accessibilityIdentifier("settings.watch")
+        NavigationLink {
             StravaView()
         } label: {
             IntegrationRow(title: "Strava", detail: stravaDetail, symbol: "arrow.up.forward.app", tint: StravaView.brand,
@@ -73,6 +80,28 @@ private struct IntegrationRow: View {
             }
         }
         .accessibilityElement(children: .combine)
+    }
+}
+
+// MARK: - Apple Watch
+
+struct AppleWatchView: View {
+    @State private var settings = IntegrationSettings.shared
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle("Open on Apple Watch when I start a run", isOn: $settings.mirrorRunsToWatch)
+            } footer: {
+                Text("When you start a run on your iPhone, Kinetix opens on your watch and shows it live: the current rep, pace against target, distance left and the whole run. You get wrist taps for pace and each new step, and can pause, skip or finish from the watch. Your iPhone records and saves the run, so keep it with you. Your watch needs to be on your wrist and unlocked.")
+            }
+            Section {
+                Label("To run with just your watch, start the run on the watch instead. It records on its own and sends the run to your iPhone afterwards.",
+                      systemImage: "figure.run")
+                    .font(KXFont.callout)
+            }
+        }
+        .navigationTitle("Apple Watch")
     }
 }
 

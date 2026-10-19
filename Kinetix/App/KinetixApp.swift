@@ -16,7 +16,10 @@ struct KinetixApp: App {
         let appContainer = self.container
         MainActor.assumeIsolated {
             SyncService.shared.configure(container: appContainer)
-            if !LaunchOptions().isUITesting { WatchSyncService.shared.configure(container: appContainer) }
+            if !LaunchOptions().isUITesting {
+                WatchSyncService.shared.configure(container: appContainer)
+                WatchMirrorService.shared.configure()
+            }
         }
         if launch.seedSample {
             MainActor.assumeIsolated {

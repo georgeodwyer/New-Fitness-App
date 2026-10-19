@@ -12,6 +12,12 @@ struct RunListView: View {
     var body: some View {
         NavigationStack {
             List {
+                if let notice = workout.notice {
+                    Section {
+                        Label(notice, systemImage: "iphone").font(.footnote)
+                        Button("OK") { workout.clearNotice() }
+                    }
+                }
                 let today = plan.planned(on: .now, calendar: calendar)
                 if !today.isEmpty {
                     Section("Today") {

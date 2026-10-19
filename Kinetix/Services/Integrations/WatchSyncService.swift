@@ -143,6 +143,11 @@ extension WatchSyncService: WCSessionDelegate {
         }
     }
 
+    /// Messages during a mirrored run, when the direct workout link isn't up.
+    nonisolated func session(_ session: WCSession, didReceiveMessageData messageData: Data) {
+        Task { @MainActor in WatchMirrorService.shared.receive(messageData) }
+    }
+
     nonisolated func session(_ session: WCSession, didReceive file: WCSessionFile) {
         // The file is deleted when this returns: copy it first.
         let copy = FileManager.default.temporaryDirectory.appending(path: "watch-\(UUID().uuidString).json")

@@ -211,6 +211,20 @@ After M13: owner's list of faults.
   run with the result id so repeats are ignored, keeps the Health id so it isn't saved twice).
   HealthService ignores workouts from any Kinetix bundle. docs/WATCH.md. **Next: W2 gym on watch.**
 
+- **W1b ✅ Watch mirrors runs started on the iPhone** (owner: phone records, watch mirrors; watch-started
+  runs stay standalone; setting to turn off; ask "Heart rate from?" when strap + watch). Engine
+  `Watch/WatchMirror.swift`: `MirrorMessage` (frame / ended / command / heartRate), `MirrorFrame`
+  (run id, title, units, `RunSnapshot`, `MirrorAlert` taps); `RunSnapshot`, `PaceCue`,
+  `PaceRange.Position` are now Codable. iPhone `WatchMirrorService`: `workoutSessionMirroringStartHandler`
+  set at launch, `startWatchApp(with:)` on run start, sends via `sendToRemoteWorkoutSession`, falls
+  back to `WCSession.sendMessageData` (WatchSyncService forwards received message data).
+  `RunWorkoutModel`: `start(heartRateSource:)`, publishes a frame each tick and on events,
+  `watchEndRequests` (the view finishes the run), heart rate priority strap/watch-live/Health.
+  Settings: `mirrorRunsToWatch`, `runHeartRateSource`, Integrations → Apple Watch screen. Watch:
+  `WatchAppDelegate.handle(_:)` → `RunWorkoutManager.startMirroring` (mode `.mirroring`: workout
+  session for HR + `startMirroringToCompanionDevice`, no GPS/voice; joins a fresh frame if opened by
+  hand; `discardWorkout()` at the end so Health has one workout).
+
 ## Getting builds to the owner's phone (default)
 
 The owner installs via **TestFlight**. After each milestone or fix that's green on CI, trigger
