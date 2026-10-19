@@ -18,12 +18,16 @@ public struct RunSegment: Codable, Equatable, Hashable, Sendable {
     public var length: SegmentLength
     public var targetPace: PaceRange?
     public var label: String?
+    /// Run by effort: the target pace is a guide only, with no "speed up" or "ease off" cues
+    /// and no time-on-target score.
+    public var paceIsGuide: Bool?
 
-    public init(kind: SegmentKind, length: SegmentLength, targetPace: PaceRange? = nil, label: String? = nil) {
+    public init(kind: SegmentKind, length: SegmentLength, targetPace: PaceRange? = nil, label: String? = nil, paceIsGuide: Bool? = nil) {
         self.kind = kind
         self.length = length
         self.targetPace = targetPace
         self.label = label
+        self.paceIsGuide = paceIsGuide
     }
 }
 

@@ -25,6 +25,20 @@ final class PaceZonesTests: XCTestCase {
         }
     }
 
+    func testRacePaceZonesSitInOrder() {
+        let zones = PaceZones(race: RaceResult(distanceMeters: 5000, timeSeconds: 20 * 60))
+        // 5K pace for a 20:00 5K is 4:00/km.
+        XCTAssertEqual(zones.typicalPace(for: .fiveK).secondsPerKm, 240, accuracy: 1)
+        let order: [PaceZone] = [.easy, .steady, .marathon, .halfMarathon, .threshold, .tenK, .fiveK, .repetition]
+        for (slower, faster) in zip(order, order.dropFirst()) {
+            XCTAssertGreaterThan(zones.typicalPace(for: slower).secondsPerKm, zones.typicalPace(for: faster).secondsPerKm,
+                                 "\(slower) should be slower than \(faster)")
+        }
+        // Steady is 10–20 s/km slower than marathon pace.
+        let gap = zones.typicalPace(for: .steady).secondsPerKm - zones.typicalPace(for: .marathon).secondsPerKm
+        XCTAssertEqual(gap, 15, accuracy: 0.5)
+    }
+
     func testDefaultZonesWhenNoRaceTime() {
         let beginner = PaceZones(profile: TestSupport.profile(running: .beginner, race: nil))
         let advanced = PaceZones(profile: TestSupport.profile(running: .advanced, race: nil))

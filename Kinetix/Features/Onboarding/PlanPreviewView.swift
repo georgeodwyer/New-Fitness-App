@@ -146,6 +146,10 @@ extension PaceZone {
         case .threshold: return "Tempo"
         case .interval: return "Intervals"
         case .repetition: return "Repetition"
+        case .steady: return "Steady"
+        case .halfMarathon: return "Half marathon"
+        case .tenK: return "10K"
+        case .fiveK: return "5K"
         }
     }
 }

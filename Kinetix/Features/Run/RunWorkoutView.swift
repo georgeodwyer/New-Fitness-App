@@ -278,7 +278,8 @@ struct RunWorkoutView: View {
                 }
                 KXProgressBar(value: snapshot.segmentProgress)
                 if let target = segment.targetPace {
-                    Text("Target \(format.paceRange(target))").font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
+                    Text("\(segment.paceIsGuide == true ? "By effort, about" : "Target") \(format.paceRange(target))")
+                        .font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
                 }
                 if let next = snapshot.nextSegment {
                     Text("Next: \(next.label ?? next.kind.displayName) · \(format.segmentLength(next.length))")
@@ -390,7 +391,9 @@ struct RunWorkoutView: View {
         case .onTarget: return "On target"
         case .tooFast: return "Too fast"
         case .tooSlow: return "Too slow"
-        case nil: return model.snapshot.segment?.targetPace == nil ? "No target" : "Measuring…"
+        case nil:
+            if model.snapshot.segment?.paceIsGuide == true { return "By effort" }
+            return model.snapshot.segment?.targetPace == nil ? "No target" : "Measuring…"
         }
     }
 }

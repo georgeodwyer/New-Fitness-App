@@ -290,7 +290,9 @@ public struct RunEngine: Sendable {
             nextSegment: segment == nil || segmentIndex + 1 >= segments.count ? nil : segments[segmentIndex + 1],
             segmentProgress: min(max(progress, 0), 1),
             segmentRemaining: remaining,
-            paceStatus: pace.flatMap { p in segment?.targetPace.map { $0.position(of: p, toleranceSecondsPerKm: config.toleranceSecondsPerKm) } },
+            // An effort-guided step shows its pace as a guide, without on/off target colours.
+            paceStatus: segment?.paceIsGuide == true ? nil
+                : pace.flatMap { p in segment?.targetPace.map { $0.position(of: p, toleranceSecondsPerKm: config.toleranceSecondsPerKm) } },
             timeInTargetSeconds: timeInTarget,
             targetedSeconds: targeted,
             heartRate: currentHeartRate,
@@ -345,7 +347,7 @@ public struct RunEngine: Sendable {
         guard !isPaused else { return [] }
         activeSeconds += dt
 
-        if let target = currentSegment?.targetPace, let kind = currentSegment?.kind,
+        if let target = currentSegment?.targetPace, let kind = currentSegment?.kind, currentSegment?.paceIsGuide != true,
            kind == .work || kind == .steady, gpsFresh, let pace = smoother.pace {
             targeted += dt
             segmentMeasured += dt
@@ -448,6 +450,7 @@ public struct RunEngine: Sendable {
 
     private mutating func evaluateCoach() -> [RunEvent] {
         guard config.paceCuesEnabled, !isPaused, let segment = currentSegment, let target = segment.targetPace,
+              segment.paceIsGuide != true,
               config.cuesDuringWarmUpCoolDown || !segment.kind.isEasyBookend,
               gpsFresh, let pace = coachSmoother.pace
         else {

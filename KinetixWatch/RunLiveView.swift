@@ -50,7 +50,7 @@ struct RunLiveView: View {
                     .tint(segment.kind == .work ? WatchColor.accent : .teal)
                 paceLine(snapshot)
                 if let target = segment.targetPace {
-                    Text("target \(Units.formatPace(target.fastest, units: workout.units))–\(Units.formatPace(target.slowest, units: workout.units))\(Units.paceUnitLabel(workout.units))")
+                    Text("\(segment.paceIsGuide == true ? "effort ~" : "target ")\(Units.formatPace(target.fastest, units: workout.units))–\(Units.formatPace(target.slowest, units: workout.units))\(Units.paceUnitLabel(workout.units))")
                         .font(.caption2).foregroundStyle(.secondary)
                 } else {
                     Text(Units.paceUnitLabel(workout.units)).font(.caption2).foregroundStyle(.secondary)

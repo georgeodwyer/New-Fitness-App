@@ -12,6 +12,24 @@ public enum PaceZone: String, Codable, CaseIterable, Sendable {
     case interval
     /// Short fast repetitions (roughly mile pace).
     case repetition
+    /// Relaxed but purposeful: marathon pace plus 10–20 s/km.
+    case steady
+    /// Predicted half-marathon race pace.
+    case halfMarathon
+    /// Predicted 10K race pace.
+    case tenK
+    /// Predicted 5K race pace.
+    case fiveK
+
+    /// Race-pace zones, worked out from the predicted time for the distance.
+    var raceDistanceMeters: Double? {
+        switch self {
+        case .halfMarathon: return 21_097.5
+        case .tenK: return 10_000
+        case .fiveK: return 5_000
+        default: return nil
+        }
+    }
 }
 
 /// A runner's pace zones derived from a race result (or a default by experience).
@@ -38,12 +56,33 @@ public struct PaceZones: Codable, Equatable, Sendable {
     public init(vdot: Double) {
         self.vdot = vdot
         var ranges: [PaceZone: PaceRange] = [:]
-        for (zone, band) in Self.intensityBands {
-            let slow = Self.pace(forVO2: band.slow * vdot)
-            let fast = Self.pace(forVO2: band.fast * vdot)
-            ranges[zone] = PaceRange(fastest: fast, slowest: slow)
+        for zone in PaceZone.allCases {
+            ranges[zone] = Self.computeRange(zone, vdot: vdot)
         }
         self.ranges = ranges
+    }
+
+    /// A zone's range at a VDOT.
+    static func computeRange(_ zone: PaceZone, vdot: Double) -> PaceRange {
+        if let band = intensityBands[zone] {
+            return PaceRange(fastest: pace(forVO2: band.fast * vdot), slowest: pace(forVO2: band.slow * vdot))
+        }
+        if let distance = zone.raceDistanceMeters {
+            // Race pace, give or take 3 s/km.
+            let zones = PaceZones(vdotOnly: vdot)
+            let perKm = zones.predictedTime(distanceMeters: distance) / (distance / 1000)
+            return PaceRange(fastest: Pace(secondsPerKm: perKm - 3), slowest: Pace(secondsPerKm: perKm + 3))
+        }
+        // Steady: marathon pace plus 10–20 s/km.
+        let marathon = computeRange(.marathon, vdot: vdot)
+        let middle = (marathon.fastest.secondsPerKm + marathon.slowest.secondsPerKm) / 2
+        return PaceRange(fastest: Pace(secondsPerKm: middle + 10), slowest: Pace(secondsPerKm: middle + 20))
+    }
+
+    /// Just the VDOT (for race predictions while the ranges are being worked out).
+    private init(vdotOnly: Double) {
+        self.vdot = vdotOnly
+        self.ranges = [:]
     }
 
     public init(race: RaceResult) {
@@ -61,8 +100,8 @@ public struct PaceZones: Codable, Equatable, Sendable {
     }
 
     public func range(for zone: PaceZone) -> PaceRange {
-        // Every zone is populated in init.
-        ranges[zone] ?? PaceRange(fastest: Pace(secondsPerKm: 360), slowest: Pace(secondsPerKm: 420))
+        // Zones saved before a zone was added are worked out from the VDOT.
+        ranges[zone] ?? Self.computeRange(zone, vdot: vdot)
     }
 
     /// Middle of a zone, used to estimate durations.
