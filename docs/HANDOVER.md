@@ -225,6 +225,21 @@ After M13: owner's list of faults.
   session for HR + `startMirroringToCompanionDevice`, no GPS/voice; joins a fresh frame if opened by
   hand; `discardWorkout()` at the end so Health has one workout).
 
+- **P1 ✅ Coach-written programmes (half marathon first)** (owner: writes week-by-week in the
+  workbook; app scales km and paces; one programme, scaled; fixed length then repeat; no key
+  sessions). `scripts/import_programmes.py` → `Resources/programmes.json` (parts: share / reps /
+  race). Engine `Planning/Programme.swift` (models, `TemplateLibrary.programmes`),
+  `Planning/ProgrammePlanner.swift` (outline: race alignment, % × start volume, max increase vs last
+  3 weeks, recovery week; week: long/race, rep trimming by intensity caps, warm-up/cool-down,
+  weighted share of the rest, fit to run days, race on race day; `nextCycle`). `PlanGenerator`
+  routes goals with a programme; `PlanOutline.programmeGoal`, `WeekTarget.programmeWeek/Cycle`.
+  New zones steady/halfMarathon/tenK/fiveK; `RunSegment.paceIsGuide` (no cues). Profile
+  `weeklyRunMeters`/`longestRecentRunMeters` (onboarding step `currentRunning`). Key sessions
+  removed: `isKey` always false (kept for stored data); Rebalancer uses `movesWhenSkipped`
+  (hard runs + lifts). `PlanService.ensureHorizon` appends the next cycle from the last 4 weeks'
+  running. Tests: `ProgrammePlannerTests` (+ `PREVIEW` lines for the preview page). See
+  docs/PROGRAMMES.md. **Next: the owner writes the other goals' programmes.**
+
 ## Getting builds to the owner's phone (default)
 
 The owner installs via **TestFlight**. After each milestone or fix that's green on CI, trigger
