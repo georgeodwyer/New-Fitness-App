@@ -117,6 +117,8 @@ struct CurrentRunningStep: View {
             }
         }
         .kxCard()
+        .onChange(of: model.weeklyRunMeters) { model.knowsCurrentRunning = true }
+        .onChange(of: model.longestRunMeters) { model.knowsCurrentRunning = true }
         Text("Not sure? Skip and we'll start you at a sensible level for your experience.")
             .font(KXFont.callout)
             .foregroundStyle(KXColor.inkSecondary)

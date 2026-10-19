@@ -16,6 +16,16 @@ struct TrainingProfileView: View {
 
     private var original: AthleteProfile { profileModel.profile }
 
+    /// e.g. "25 km a week · longest 12 km".
+    private var currentRunningText: String {
+        guard model.knowsCurrentRunning else { return "Not given" }
+        guard model.weeklyRunMeters >= 1 else { return "Not running yet" }
+        let unit = Units.distanceUnitLabel(model.units)
+        let weekly = Int(Units.distance(meters: model.weeklyRunMeters, in: model.units).rounded())
+        let longest = Int(Units.distance(meters: model.longestRunMeters, in: model.units).rounded())
+        return "\(weekly) \(unit) a week · longest \(longest) \(unit)"
+    }
+
     private var changes: [String] { model.profile.planAffectingChanges(comparedTo: original) }
 
     var body: some View {
@@ -37,6 +47,7 @@ struct TrainingProfileView: View {
             Section("Running") {
                 row("Experience", value: model.runningExperience?.displayName ?? "–") { RunningExperienceStep(model: model) }
                 row("Recent race time", value: raceText) { RaceTimeStep(model: model) }
+                row("Running right now", value: currentRunningText) { CurrentRunningStep(model: model) }
             }
             Section("Lifting") {
                 row("Experience", value: model.liftingExperience?.displayName ?? "–") { LiftingExperienceStep(model: model) }
