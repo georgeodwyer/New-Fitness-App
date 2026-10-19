@@ -94,6 +94,7 @@ struct OnboardingFlowView: View {
         case .units: UnitsStep(model: model)
         case .runningExperience: RunningExperienceStep(model: model)
         case .raceTime: RaceTimeStep(model: model)
+        case .currentRunning: CurrentRunningStep(model: model)
         case .liftingExperience: LiftingExperienceStep(model: model)
         case .liftEstimates: LiftEstimatesStep(model: model)
         case .goal: GoalStep(model: model)

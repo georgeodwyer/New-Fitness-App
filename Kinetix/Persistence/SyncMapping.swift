@@ -76,6 +76,8 @@ extension UserProfileModel: SyncableModel {
         doubleSessionDays = p.doubleSessionDays
         equipmentRaw = p.equipment.rawValue
         unitsRaw = p.units.rawValue
+        weeklyRunMeters = p.weeklyRunMeters
+        longestRecentRunMeters = p.longestRecentRunMeters
         createdAt = payload.createdAt
     }
 

@@ -6,7 +6,7 @@ import TrainingEngine
 @Observable
 final class OnboardingModel {
     enum Step: Int, CaseIterable {
-        case units, runningExperience, raceTime, liftingExperience, liftEstimates,
+        case units, runningExperience, raceTime, currentRunning, liftingExperience, liftEstimates,
              goal, eventDate, trainingDays, doubleSessions, equipment, finish
     }
 
@@ -41,6 +41,10 @@ final class OnboardingModel {
     var raceHours = 0
     var raceMinutes = 25
     var raceSeconds = 0
+    /// "How much do you run now?" (skipped = not known).
+    var knowsCurrentRunning = true
+    var weeklyRunMeters: Double = 20000
+    var longestRunMeters: Double = 8000
     var liftingExperience: ExperienceLevel?
     var liftEntries: [LiftEntry] = [
         LiftEntry(lift: .squat, weightKg: 60),
@@ -65,6 +69,7 @@ final class OnboardingModel {
         case .units: return true
         case .runningExperience: return runningExperience != nil
         case .raceTime: return !knowsRaceTime || raceTimeSeconds >= 600
+        case .currentRunning: return true
         case .liftingExperience: return liftingExperience != nil
         case .liftEstimates: return true
         case .goal: return goal != nil
@@ -78,7 +83,7 @@ final class OnboardingModel {
 
     /// Steps that can be skipped with a "Skip" button.
     var isOptional: Bool {
-        [.raceTime, .liftEstimates, .eventDate].contains(step)
+        [.raceTime, .currentRunning, .liftEstimates, .eventDate].contains(step)
     }
 
     var raceTimeSeconds: Double {
@@ -99,6 +104,7 @@ final class OnboardingModel {
     func skip() {
         switch step {
         case .raceTime: knowsRaceTime = false
+        case .currentRunning: knowsCurrentRunning = false
         case .liftEstimates:
             for index in liftEntries.indices { liftEntries[index].isKnown = false }
         case .eventDate: hasEvent = false
@@ -121,7 +127,9 @@ final class OnboardingModel {
             trainingDays: Array(trainingDays),
             doubleSessionDays: doubleSessionDays,
             equipment: equipment ?? .fullGym,
-            units: units
+            units: units,
+            weeklyRunMeters: knowsCurrentRunning ? weeklyRunMeters : nil,
+            longestRecentRunMeters: knowsCurrentRunning && weeklyRunMeters > 0 ? longestRunMeters : nil
         )
     }
 
@@ -140,6 +148,9 @@ final class OnboardingModel {
         } else {
             knowsRaceTime = false
         }
+        knowsCurrentRunning = profile.weeklyRunMeters != nil
+        if let weekly = profile.weeklyRunMeters { weeklyRunMeters = weekly }
+        if let longest = profile.longestRecentRunMeters { longestRunMeters = longest }
         liftingExperience = profile.liftingExperience
         for index in liftEntries.indices {
             if let estimate = profile.liftEstimates.first(where: { $0.lift == liftEntries[index].lift }) {

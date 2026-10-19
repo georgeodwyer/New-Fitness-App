@@ -53,6 +53,7 @@ final class ScreenshotTests: XCTestCase {
         next()
         tap("Intermediate"); snap("02-onboarding-running"); next()
         snap("03-onboarding-race-time"); tap("Skip")
+        snap("03b-onboarding-current-running"); next()
         tap("Intermediate"); snap("04-onboarding-lifting"); next()
         snap("05-onboarding-lift-numbers"); tap("Skip")
         tap("Half marathon"); snap("06-onboarding-goal"); next()

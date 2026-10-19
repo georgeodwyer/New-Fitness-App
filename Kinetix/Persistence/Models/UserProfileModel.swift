@@ -21,6 +21,9 @@ final class UserProfileModel: SyncTracked {
     var equipmentRaw: String
     var unitsRaw: String
     var createdAt: Date
+    /// Typical weekly running and longest recent run when they answered (nil = not given).
+    var weeklyRunMeters: Double?
+    var longestRecentRunMeters: Double?
 
     init(profile: AthleteProfile, id: UUID = UUID(), now: Date = .now) {
         self.id = id
@@ -38,6 +41,8 @@ final class UserProfileModel: SyncTracked {
         self.equipmentRaw = profile.equipment.rawValue
         self.unitsRaw = profile.units.rawValue
         self.createdAt = now
+        self.weeklyRunMeters = profile.weeklyRunMeters
+        self.longestRecentRunMeters = profile.longestRecentRunMeters
     }
 
     /// The engine's view of this profile.
@@ -53,7 +58,9 @@ final class UserProfileModel: SyncTracked {
                 trainingDays: StoredJSON.decode([Weekday].self, from: trainingDaysData) ?? [],
                 doubleSessionDays: doubleSessionDays,
                 equipment: Equipment(rawValue: equipmentRaw) ?? .fullGym,
-                units: UnitSystem(rawValue: unitsRaw) ?? .metric
+                units: UnitSystem(rawValue: unitsRaw) ?? .metric,
+                weeklyRunMeters: weeklyRunMeters,
+                longestRecentRunMeters: longestRecentRunMeters
             )
         }
         set {
@@ -67,6 +74,8 @@ final class UserProfileModel: SyncTracked {
             doubleSessionDays = newValue.doubleSessionDays
             equipmentRaw = newValue.equipment.rawValue
             unitsRaw = newValue.units.rawValue
+            weeklyRunMeters = newValue.weeklyRunMeters
+            longestRecentRunMeters = newValue.longestRecentRunMeters
             touch()
         }
     }

@@ -85,6 +85,44 @@ struct RaceTimeStep: View {
     }
 }
 
+struct CurrentRunningStep: View {
+    @Bindable var model: OnboardingModel
+
+    private var unit: String { Units.distanceUnitLabel(model.units) }
+    private var metersPerUnit: Double { model.units == .imperial ? 1609.344 : 1000 }
+
+    /// A distance in whole kilometres or miles, stored in metres.
+    private func distance(_ meters: ReferenceWritableKeyPath<OnboardingModel, Double>) -> Binding<Int> {
+        Binding(get: { Int((model[keyPath: meters] / metersPerUnit).rounded()) },
+                set: { model[keyPath: meters] = Double($0) * metersPerUnit })
+    }
+
+    var body: some View {
+        OnboardingQuestion(plain: "Your running", accented: "right now",
+                           detail: "Optional. Your plan starts from what you already run, so experienced runners don't start too easy and newer runners don't start too hard.")
+        VStack(alignment: .leading, spacing: KXSpacing.md) {
+            KXOverline("In a typical week")
+            Stepper(value: distance(\.weeklyRunMeters), in: 0...200) {
+                Text(model.weeklyRunMeters < 1 ? "Not running yet" : "\(distance(\.weeklyRunMeters).wrappedValue) \(unit)")
+                    .font(KXFont.bodyEmphasis)
+            }
+            .accessibilityIdentifier("onboarding.weeklyRun")
+            if model.weeklyRunMeters >= 1 {
+                Divider()
+                KXOverline("Longest run in the last month")
+                Stepper(value: distance(\.longestRunMeters), in: 1...60) {
+                    Text("\(distance(\.longestRunMeters).wrappedValue) \(unit)").font(KXFont.bodyEmphasis)
+                }
+                .accessibilityIdentifier("onboarding.longestRun")
+            }
+        }
+        .kxCard()
+        Text("Not sure? Skip and we'll start you at a sensible level for your experience.")
+            .font(KXFont.callout)
+            .foregroundStyle(KXColor.inkSecondary)
+    }
+}
+
 struct LiftingExperienceStep: View {
     @Bindable var model: OnboardingModel
 

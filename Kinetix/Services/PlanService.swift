@@ -63,10 +63,18 @@ enum PlanService {
 
     /// Generates further weeks so sessions always exist about two weeks ahead.
     static func ensureHorizon(for plan: TrainingPlanModel, profile: AthleteProfile, in context: ModelContext, now: Date = .now) {
-        guard let outline = plan.outline else { return }
+        guard var outline = plan.outline else { return }
         let calendar = Calendar.kinetix
         let horizon = calendar.date(byAdding: .day, value: horizonDays, to: calendar.startOfDay(for: now)) ?? now
         let generator = generator
+        // A coach's programme repeats: once its last week is within reach, add the next time
+        // through, starting from what they've actually been running.
+        if let last = outline.weeks.last, last.startDate <= horizon,
+           let next = generator.nextCycle(of: outline, profile: profile, recentWeeklyRunMeters: recentWeeklyRunMeters(in: context, now: now)) {
+            outline = next
+            plan.outline = next
+            context.insert(PlanChangeModel(summary: "Your programme starts again after the recovery week, from the running you've been doing.", now: now))
+        }
         let weights = workingWeights(in: context)
 
         while plan.generatedWeekCount < outline.weeks.count,
@@ -96,6 +104,15 @@ enum PlanService {
         let before = plan.generatedWeekCount
         ensureHorizon(for: plan, profile: profileModel.profile, in: context, now: now)
         if plan.generatedWeekCount != before { try? context.save() }
+    }
+
+    /// Average weekly running over the last four weeks (nil if nothing was recorded).
+    static func recentWeeklyRunMeters(in context: ModelContext, now: Date = .now) -> Double? {
+        let start = Calendar.kinetix.date(byAdding: .day, value: -28, to: now) ?? now
+        let runs = ((try? context.fetch(FetchDescriptor<RunLogModel>())) ?? [])
+            .filter { !$0.isSoftDeleted && $0.isFinished && $0.startedAt >= start && $0.startedAt <= now }
+        let total = runs.reduce(0) { $0 + $1.distanceMeters }
+        return total > 0 ? total / 4 : nil
     }
 
     /// Current working weights by progression key.
