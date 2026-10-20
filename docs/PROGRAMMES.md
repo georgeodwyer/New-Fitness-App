@@ -8,7 +8,9 @@ planner until theirs is written.
 ## Writing one
 
 1. **Programmes tab:** length, runs per week (min/max), long-run cap, weekly volume cap,
-   taper weeks, what happens after the last week.
+   race-ready volume per level, taper weeks, what happens after the last week, and
+   **Available to** (which running levels see the goal in onboarding; First 5K is beginners
+   only).
 2. **Run weeks:** one row per week: phase (Base, Build, Peak, Deload, Taper, Race week),
    volume as a % of the runner's starting volume, long run (`auto`, a %, km or `Race`),
    strength emphasis (Normal, Heavy, Light, None) and a note shown to the runner.

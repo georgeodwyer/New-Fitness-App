@@ -74,6 +74,46 @@
    "easyStartShare": 0.6
   }
  },
+ "availability": {
+  "first5k": [
+   "beginner"
+  ],
+  "faster5k": [
+   "beginner",
+   "intermediate",
+   "advanced"
+  ],
+  "faster10k": [
+   "beginner",
+   "intermediate",
+   "advanced"
+  ],
+  "halfMarathon": [
+   "beginner",
+   "intermediate",
+   "advanced"
+  ],
+  "marathon": [
+   "beginner",
+   "intermediate",
+   "advanced"
+  ],
+  "buildStrength": [
+   "beginner",
+   "intermediate",
+   "advanced"
+  ],
+  "buildMuscle": [
+   "beginner",
+   "intermediate",
+   "advanced"
+  ],
+  "balancedHybrid": [
+   "beginner",
+   "intermediate",
+   "advanced"
+  ]
+ },
  "programmes": [
   {
    "goal": "halfMarathon",

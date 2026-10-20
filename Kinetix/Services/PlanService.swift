@@ -163,6 +163,7 @@ extension TrainingGoal {
     var displayName: String {
         switch self {
         case .first5k: return "First 5K"
+        case .faster5k: return "Faster 5K"
         case .faster10k: return "Faster 10K"
         case .halfMarathon: return "Half marathon"
         case .marathon: return "Marathon"

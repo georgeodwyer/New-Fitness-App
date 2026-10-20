@@ -25,7 +25,7 @@ DEFAULT_WORKBOOK = ROOT / "programmes" / "Kinetix Programmes.xlsx"
 OUTPUT = ROOT / "Packages/TrainingEngine/Sources/TrainingEngine/Resources/programmes.json"
 
 GOALS = {
-    "first 5k": "first5k", "faster 10k": "faster10k", "half marathon": "halfMarathon", "marathon": "marathon",
+    "first 5k": "first5k", "faster 5k": "faster5k", "faster 10k": "faster10k", "half marathon": "halfMarathon", "marathon": "marathon",
     "build strength": "buildStrength", "build muscle": "buildMuscle", "balanced hybrid": "balancedHybrid",
 }
 # Workbook zone codes → app zones.
@@ -251,6 +251,14 @@ def rows(ws):
             yield index, dict(zip(header, row))
 
 
+def levels_from(text):
+    """'All levels', 'Beginner only', 'Intermediate and advanced' → the levels named."""
+    t = str(text or "all levels").lower()
+    if "all" in t:
+        return ["beginner", "intermediate", "advanced"]
+    return [level for level in ("beginner", "intermediate", "advanced") if level in t]
+
+
 def number(value, what):
     try:
         return float(value)
@@ -298,12 +306,17 @@ def convert(path):
         if missing:
             fail("Rules", "-", f"missing {', '.join(missing)} for {level}")
 
-    # Programmes (only those with weeks written)
+    # Programmes (only those with weeks written) and which runners see each goal.
     programmes = {}
+    availability = {}
     for row, v in rows(wb["Programmes"]):
         goal = GOALS.get(str(v["Programme"]).strip().lower())
         if not goal:
             continue
+        levels = levels_from(v.get("Available to"))
+        if not levels:
+            fail("Programmes", row, f"'Available to' should name beginner, intermediate and/or advanced, or say all levels")
+        availability[goal] = levels
         try:
             programmes[goal] = {
                 "goal": goal,
@@ -403,7 +416,7 @@ def convert(path):
         p["sessions"].sort(key=lambda s: (s["week"], s["order"]))
         written.append(p)
 
-    return {"version": 1, "rules": rules, "programmes": written}, errors
+    return {"version": 1, "rules": rules, "availability": availability, "programmes": written}, errors
 
 
 def main():

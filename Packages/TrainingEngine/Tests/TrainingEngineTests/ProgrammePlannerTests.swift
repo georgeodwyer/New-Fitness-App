@@ -147,6 +147,22 @@ final class ProgrammePlannerTests: XCTestCase {
         XCTAssertEqual(aligned.weeks[11].programmeWeek, 12)
     }
 
+    func testGoalsOfferedByLevel() {
+        let file = TestSupport.bundledTemplates.programmes
+        XCTAssertTrue(file.isGoal(.first5k, availableTo: .beginner))
+        XCTAssertFalse(file.isGoal(.first5k, availableTo: .intermediate))
+        XCTAssertFalse(file.isGoal(.first5k, availableTo: .advanced))
+        for level in ExperienceLevel.allCases {
+            XCTAssertTrue(file.isGoal(.faster5k, availableTo: level))
+            XCTAssertTrue(file.isGoal(.marathon, availableTo: level))
+        }
+        // Faster 5K has no programme written yet, so it uses the rule-based planner.
+        let runner = TestSupport.profile(running: .intermediate, goal: .faster5k)
+        let outline = generator.makeOutline(for: runner, startingOn: monday)
+        XCTAssertNil(outline.programmeGoal)
+        XCTAssertFalse(generator.generateWeek(0, outline: outline, profile: runner)?.sessions.isEmpty ?? true)
+    }
+
     func testRecentRunningFromHistory() {
         let day: TimeInterval = 86_400
         let kinetix = [RecentRunning.Run(start: monday.addingTimeInterval(-2 * day), meters: 10000),

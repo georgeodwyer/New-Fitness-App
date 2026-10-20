@@ -67,7 +67,7 @@ def dropdown(ws, rng, source, prompt=None):
 # ---------------------------------------------------------------- Lists
 lists = wb.active
 lists.title = "Lists"
-PROGRAMMES = [("First 5K", "first5k"), ("Faster 10K", "faster10k"), ("Half marathon", "halfMarathon"), ("Marathon", "marathon"),
+PROGRAMMES = [("First 5K", "first5k"), ("Faster 5K", "faster5k"), ("Faster 10K", "faster10k"), ("Half marathon", "halfMarathon"), ("Marathon", "marathon"),
               ("Build strength", "buildStrength"), ("Build muscle", "buildMuscle"), ("Balanced hybrid", "balancedHybrid")]
 SESSION_TYPES = ["Easy", "Recovery", "Long", "Tempo", "Intervals", "Progression", "Fartlek", "Hills", "Shakeout", "Race"]
 PHASES = ["Base", "Build", "Peak", "Deload", "Taper", "Race week"]
@@ -237,14 +237,16 @@ prog = wb.create_sheet("Programmes")
 pcols = ["Programme", "Name shown in app", "Length (weeks)", "After the last week", "Runs per week (min)", "Runs per week (max)",
          "Lifts per week (min)", "Lifts per week (max)", "Long-run cap (km)", "Weekly volume cap (km)",
          "Race-ready volume: beginner (km/week)", "Race-ready volume: intermediate (km/week)", "Race-ready volume: advanced (km/week)",
-         "Taper weeks", "Default split", "Description shown in onboarding", "Weeks written", "Sessions written"]
-header(prog, pcols, [18, 22, 10, 18, 10, 10, 10, 10, 10, 10, 12, 12, 12, 9, 20, 60, 10, 10])
+         "Taper weeks", "Default split", "Description shown in onboarding", "Available to", "Weeks written", "Sessions written"]
+header(prog, pcols, [18, 22, 10, 18, 10, 10, 10, 10, 10, 10, 12, 12, 12, 9, 20, 60, 22, 10, 10])
+prog.cell(row=1, column=17).comment = Comment("Which runners see this goal in onboarding, by their running experience.", "Kinetix")
 prog.cell(row=1, column=11).comment = Comment("The weekly volume this race needs at each level. Run weeks' % are a % of this. "
                                               "Runners below it build up to it; runners above it ease down to it.", "Kinetix")
-READY = {"first5k": (20, 30, 45), "faster10k": (25, 40, 55), "halfMarathon": (30, 45, 65), "marathon": (40, 60, 85),
+READY = {"first5k": (15, None, None), "faster5k": (20, 30, 45), "faster10k": (25, 40, 55), "halfMarathon": (30, 45, 65), "marathon": (40, 60, 85),
          "buildStrength": (10, 15, 25), "buildMuscle": (10, 15, 25), "balancedHybrid": (15, 25, 40)}
 defaults = {
     "first5k": (8, "Repeat", 3, 4, 1, 2, 8, 25, 1, "Full body ×2", "Build up to running 5K comfortably, then race it."),
+    "faster5k": (8, "Repeat", 3, 5, 1, 2, 12, 60, 1, "Full body ×2", "Speed, VO2max and threshold work to lower your 5K time."),
     "faster10k": (10, "Repeat", 3, 5, 1, 2, 16, 45, 1, "Full body ×2", "Sharper speed and threshold work to lower your 10K time."),
     "halfMarathon": (12, "Repeat", 3, 5, 1, 2, 22, 70, 2, "Full body ×2", "Aerobic base, threshold and a long run that builds to race distance."),
     "marathon": (16, "Repeat", 4, 6, 1, 2, 32, 100, 3, "Full body ×2", "Volume, long runs and marathon-pace work, with a three-week taper."),
@@ -252,25 +254,38 @@ defaults = {
     "buildMuscle": (8, "Repeat", 1, 3, 3, 5, 10, 25, 1, "Push / Pull / Legs", "Hypertrophy-focused lifting with easy aerobic running."),
     "balancedHybrid": (8, "Repeat", 2, 4, 2, 3, 16, 35, 1, "Full body ×3", "Run and lift in balance: get faster and stronger together."),
 }
+AVAILABLE = {"first5k": "Beginner only"}
+LAST = len(PROGRAMMES) + 1
+# The owner's existing values, by programme name (rows move when a programme is added).
+saved_rows = {}
+if src:
+    sheader = [c.value for c in src["Programmes"][1]]
+    for row in src["Programmes"].iter_rows(min_row=2, values_only=True):
+        if row and row[0]:
+            saved_rows[str(row[0]).strip()] = dict(zip(sheader, row))
 for i, (display, code) in enumerate(PROGRAMMES, start=2):
     length, after, rmin, rmax, lmin, lmax, cap, wcap, taper, split, desc = defaults[code]
-    values = [display, display, length, after, rmin, rmax, lmin, lmax, cap, wcap, *READY[code], taper, split, desc]
-    if src:
+    values = [display, display, length, after, rmin, rmax, lmin, lmax, cap, wcap, *READY[code], taper, split, desc,
+              AVAILABLE.get(code, "All levels")]
+    saved = saved_rows.get(display)
+    if saved:
         # Copy the owner's values by column name, so added columns keep their defaults.
-        sheader = [c.value for c in src["Programmes"][1]]
-        srow = [c.value for c in src["Programmes"][i]]
-        saved = dict(zip(sheader, srow))
         values = [saved[name] if name in saved and saved[name] is not None and name not in ("Weeks written", "Sessions written") else v
                   for name, v in zip(pcols, values)]
+    if code == "first5k":
+        # Beginner only: no race-ready volume for other levels.
+        values[11] = values[12] = None
     put(prog, i, values)
-    prog.cell(row=i, column=17, value=f"=COUNTIF('Run weeks'!$A$2:$A${ROWS + 1},A{i})")
-    prog.cell(row=i, column=18, value=f"=COUNTIF('Run sessions'!$A$2:$A${ROWS + 1},A{i})")
-prepare(prog, 2, 8, input_cols=range(2, 17), calc_cols=(17, 18))
-for i in range(2, 9):
+    prog.cell(row=i, column=18, value=f"=COUNTIF('Run weeks'!$A$2:$A${ROWS + 1},A{i})")
+    prog.cell(row=i, column=19, value=f"=COUNTIF('Run sessions'!$A$2:$A${ROWS + 1},A{i})")
+prepare(prog, 2, LAST, input_cols=range(2, 18), calc_cols=(18, 19))
+for i in range(2, LAST + 1):
     prog.cell(row=i, column=1).font = BOLD
-dropdown(prog, "D2:D8", '"Repeat,Repeat harder,Maintenance,Stop"', "What happens when the last week is done.")
-dropdown(prog, "O2:O8", LIST_REF["Splits"], "The split suggested in onboarding (the user can change it).")
-prog.cell(row=10, column=1, value="Programme names in column A are fixed (they match the onboarding goals). Values shown are the app's current defaults.").font = NOTE
+dropdown(prog, f"D2:D{LAST}", '"Repeat,Repeat harder,Maintenance,Stop"', "What happens when the last week is done.")
+dropdown(prog, f"O2:O{LAST}", LIST_REF["Splits"], "The split suggested in onboarding (the user can change it).")
+dropdown(prog, f"Q2:Q{LAST}", '"All levels,Beginner only,Beginner and intermediate,Intermediate and advanced,Advanced only"',
+         "Which runners see this goal in onboarding.")
+prog.cell(row=LAST + 2, column=1, value="Programme names in column A are fixed (they match the onboarding goals). Values shown are the app's current defaults.").font = NOTE
 
 # ---------------------------------------------------------------- Run weeks
 weeks = wb.create_sheet("Run weeks")
@@ -288,7 +303,9 @@ for i, row in enumerate(week_rows, start=2):
 for i in range(2, ROWS + 2):
     weeks.cell(row=i, column=4).number_format = "0%"
     weeks.cell(row=i, column=8, value=f'=IF(A{i}="","",COUNTIFS(\'Run sessions\'!$A$2:$A${ROWS + 1},A{i},\'Run sessions\'!$B$2:$B${ROWS + 1},B{i}))')
-    weeks.cell(row=i, column=9, value=f'=IF(OR(A{i}="",D{i}=""),"",ROUND(D{i}*INDEX(Programmes!$L$2:$L$8,MATCH(A{i},Programmes!$A$2:$A$8,0)),1))')
+    weeks.cell(row=i, column=9, value=(f'=IF(OR(A{i}="",D{i}=""),"",IFERROR(ROUND(D{i}*IF(INDEX(Programmes!$L$2:$L$9,MATCH(A{i},Programmes!$A$2:$A$9,0))="",'
+                                       f'INDEX(Programmes!$K$2:$K$9,MATCH(A{i},Programmes!$A$2:$A$9,0)),'
+                                       f'INDEX(Programmes!$L$2:$L$9,MATCH(A{i},Programmes!$A$2:$A$9,0))),1),""))'))
     weeks.cell(row=i, column=10, value=(f'=IF(I{i}="","",IF(LOWER(E{i})="auto",ROUND(I{i}*Rules!$C$8,1),'
                                        f'IF(RIGHT(E{i},1)="%",ROUND(I{i}*VALUE(LEFT(E{i},LEN(E{i})-1))/100,1),'
                                        f'IF(RIGHT(LOWER(E{i}),2)="km",VALUE(LEFT(E{i},LEN(E{i})-2)),IF(LOWER(E{i})="race","race",E{i})))))'))

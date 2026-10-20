@@ -12,7 +12,16 @@ public struct ProgrammeFile: Codable, Equatable, Sendable {
     public var rules: [String: ProgrammeRules]
     public var programmes: [Programme]
 
+    /// Which running levels see each goal in onboarding (goals not listed: everyone).
+    public var availability: [String: [String]]? = nil
+
     public static let empty = ProgrammeFile(version: 1, rules: [:], programmes: [])
+
+    /// Whether a runner at this level is offered the goal.
+    public func isGoal(_ goal: TrainingGoal, availableTo level: ExperienceLevel) -> Bool {
+        guard let levels = availability?[goal.rawValue] else { return true }
+        return levels.contains(level.rawValue)
+    }
 
     public func programme(for goal: TrainingGoal) -> Programme? {
         programmes.first { $0.goal == goal && !$0.weeks.isEmpty }
@@ -107,6 +116,7 @@ public struct Programme: Codable, Equatable, Sendable {
     public var raceDistanceMeters: Double? {
         switch goal {
         case .first5k: return 5000
+        case .faster5k: return 5000
         case .faster10k: return 10000
         case .halfMarathon: return 21097.5
         case .marathon: return 42195
@@ -117,7 +127,7 @@ public struct Programme: Codable, Equatable, Sendable {
     /// The pace the race is run at.
     var racePaceZone: PaceZone {
         switch goal {
-        case .first5k: return .fiveK
+        case .first5k, .faster5k: return .fiveK
         case .faster10k: return .tenK
         case .halfMarathon: return .halfMarathon
         default: return .marathon

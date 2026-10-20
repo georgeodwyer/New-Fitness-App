@@ -229,6 +229,7 @@ struct GoalStep: View {
     private let options: [Option] = [
         Option(goal: .balancedHybrid, detail: "Run and lift in equal measure: better at both.", symbol: "figure.mixed.cardio"),
         Option(goal: .first5k, detail: "Build up to running 5K, with strength to stay injury-free.", symbol: "flag"),
+        Option(goal: .faster5k, detail: "Get quicker over 5K.", symbol: "hare"),
         Option(goal: .faster10k, detail: "Get quicker over 10K.", symbol: "stopwatch"),
         Option(goal: .halfMarathon, detail: "Train for 21.1 km.", symbol: "road.lanes"),
         Option(goal: .marathon, detail: "Train for 42.2 km.", symbol: "medal"),
@@ -236,10 +237,17 @@ struct GoalStep: View {
         Option(goal: .buildMuscle, detail: "Add muscle while keeping your engine.", symbol: "figure.strengthtraining.functional")
     ]
 
+    /// The goals for their running experience (set in the programmes workbook), plus their
+    /// current goal so it's never hidden from them.
+    private var visibleOptions: [Option] {
+        let level = model.runningExperience ?? .beginner
+        return options.filter { PlanService.templates.programmes.isGoal($0.goal, availableTo: level) || model.goal == $0.goal }
+    }
+
     var body: some View {
-        OnboardingQuestion(plain: "Your primary", accented: "goal", detail: "Your plan protects the sessions that matter most for this.")
+        OnboardingQuestion(plain: "Your primary", accented: "goal", detail: "Your plan is built around this.")
         VStack(spacing: KXSpacing.md) {
-            ForEach(options) { option in
+            ForEach(visibleOptions) { option in
                 KXOptionCard(title: option.goal.displayName, detail: option.detail, systemImage: option.symbol,
                              isSelected: model.goal == option.goal) {
                     model.goal = option.goal

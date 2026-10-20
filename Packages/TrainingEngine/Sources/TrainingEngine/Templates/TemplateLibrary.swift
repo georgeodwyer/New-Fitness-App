@@ -85,7 +85,7 @@ public struct TemplateLibrary: Sendable {
         case .buildStrength: key = "buildStrength"
         case .buildMuscle: key = "buildMuscle"
         case .balancedHybrid: key = "balancedHybrid"
-        case .first5k, .faster10k, .halfMarathon, .marathon: key = "running"
+        case .first5k, .faster5k, .faster10k, .halfMarathon, .marathon: key = "running"
         }
         return strength.prescriptions[key]
     }

@@ -6,6 +6,7 @@ public enum ExperienceLevel: String, Codable, CaseIterable, Sendable {
 
 public enum TrainingGoal: String, Codable, CaseIterable, Sendable {
     case first5k
+    case faster5k
     case faster10k
     case halfMarathon
     case marathon
@@ -16,7 +17,7 @@ public enum TrainingGoal: String, Codable, CaseIterable, Sendable {
     /// True when the goal is primarily a running goal.
     public var isRunningFocused: Bool {
         switch self {
-        case .first5k, .faster10k, .halfMarathon, .marathon: return true
+        case .first5k, .faster5k, .faster10k, .halfMarathon, .marathon: return true
         case .buildStrength, .buildMuscle, .balancedHybrid: return false
         }
     }

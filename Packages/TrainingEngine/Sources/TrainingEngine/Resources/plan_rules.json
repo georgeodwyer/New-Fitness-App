@@ -2,6 +2,7 @@
   "_comment": "Plan-level rules. Distances in metres. runShare = fraction of weekly sessions that are runs. quality = number of hard runs (tempo/intervals) per week by level and phase. qualityOrder = which hard run type is added first. longRunCapMeters caps the long run by goal.",
   "goals": {
     "first5k":        { "runShare": 0.65, "minLifts": 1, "maxLifts": 2, "maxQuality": 2, "qualityOrder": ["intervals", "tempo"], "taperWeeks": 1, "longRunCapMeters": 8000,  "longRunShare": 0.30 },
+    "faster5k":       { "runShare": 0.65, "minLifts": 1, "maxLifts": 2, "maxQuality": 2, "qualityOrder": ["intervals", "tempo"], "taperWeeks": 1, "longRunCapMeters": 12000, "longRunShare": 0.28 },
     "faster10k":      { "runShare": 0.65, "minLifts": 1, "maxLifts": 2, "maxQuality": 2, "qualityOrder": ["intervals", "tempo"], "taperWeeks": 1, "longRunCapMeters": 16000, "longRunShare": 0.30 },
     "halfMarathon":   { "runShare": 0.70, "minLifts": 1, "maxLifts": 2, "maxQuality": 2, "qualityOrder": ["tempo", "intervals"], "taperWeeks": 2, "longRunCapMeters": 22000, "longRunShare": 0.32 },
     "marathon":       { "runShare": 0.70, "minLifts": 1, "maxLifts": 2, "maxQuality": 2, "qualityOrder": ["tempo", "intervals"], "taperWeeks": 3, "longRunCapMeters": 32000, "longRunShare": 0.33 },
@@ -17,6 +18,7 @@
   "startVolumeMeters": { "beginner": 10000, "intermediate": 22000, "advanced": 38000 },
   "peakVolumeMeters": {
     "first5k":        { "beginner": 18000, "intermediate": 30000, "advanced": 45000 },
+    "faster5k":       { "beginner": 20000, "intermediate": 32000, "advanced": 48000 },
     "faster10k":      { "beginner": 22000, "intermediate": 38000, "advanced": 55000 },
     "halfMarathon":   { "beginner": 30000, "intermediate": 45000, "advanced": 65000 },
     "marathon":       { "beginner": 40000, "intermediate": 60000, "advanced": 85000 },
