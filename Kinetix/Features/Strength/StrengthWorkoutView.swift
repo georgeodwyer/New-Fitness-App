@@ -277,16 +277,20 @@ private struct SetRow: View {
                         value: Units.formatWeight(kg: set.actualWeightKg, units: units),
                         unit: Units.weightUnitLabel(units),
                         label: "Set \(set.setIndex + 1) weight",
+                        allowsDecimal: true,
                         onMinus: { model.update(set, weight: set.actualWeightKg - weightStep) },
-                        onPlus: { model.update(set, weight: set.actualWeightKg + weightStep) }
+                        onPlus: { model.update(set, weight: set.actualWeightKg + weightStep) },
+                        onType: { typed in model.update(set, weight: max(0, units == .metric ? typed : Units.lbToKg(typed))) }
                     )
                 }
                 CompactStepper(
                     value: "\(set.actualReps)",
                     unit: "reps",
                     label: "Set \(set.setIndex + 1) reps",
+                    allowsDecimal: false,
                     onMinus: { model.update(set, reps: set.actualReps - 1) },
-                    onPlus: { model.update(set, reps: set.actualReps + 1) }
+                    onPlus: { model.update(set, reps: set.actualReps + 1) },
+                    onType: { typed in model.update(set, reps: max(0, Int(typed))) }
                 )
                 Button {
                     model.toggleComplete(set)
@@ -309,20 +313,22 @@ private struct SetRow: View {
     }
 }
 
-/// "– 105 kg +" in a compact row.
+/// "– 105 kg +" in a compact row. Tap the number to type it.
 private struct CompactStepper: View {
     let value: String
     let unit: String
     let label: String
+    var allowsDecimal = false
     let onMinus: () -> Void
     let onPlus: () -> Void
+    let onType: (Double) -> Void
 
     var body: some View {
         HStack(spacing: 2) {
             stepButton("minus", action: onMinus)
             VStack(spacing: 0) {
-                Text(value).font(KXFont.bodyEmphasis.monospacedDigit()).foregroundStyle(KXColor.ink)
-                    .lineLimit(1).minimumScaleFactor(0.7)
+                KXEditableNumber(display: value, font: KXFont.bodyEmphasis, allowsDecimal: allowsDecimal,
+                                 accessibilityLabel: label, onCommit: onType)
                 Text(unit).font(.caption2).foregroundStyle(KXColor.inkSecondary)
             }
             .frame(minWidth: 48)

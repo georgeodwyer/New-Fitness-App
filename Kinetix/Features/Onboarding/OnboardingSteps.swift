@@ -104,15 +104,27 @@ struct CurrentRunningStep: View {
         VStack(alignment: .leading, spacing: KXSpacing.md) {
             KXOverline("In a typical week")
             Stepper(value: distance(\.weeklyRunMeters), in: 0...200) {
-                Text(model.weeklyRunMeters < 1 ? "Not running yet" : "\(distance(\.weeklyRunMeters).wrappedValue) \(unit)")
-                    .font(KXFont.bodyEmphasis)
+                HStack(spacing: KXSpacing.xs) {
+                    KXEditableNumber(display: "\(distance(\.weeklyRunMeters).wrappedValue)", allowsDecimal: false,
+                                     accessibilityLabel: "Distance in a typical week") { typed in
+                        distance(\.weeklyRunMeters).wrappedValue = min(max(Int(typed), 0), 200)
+                    }
+                    Text(model.weeklyRunMeters < 1 ? "\(unit) · not running yet" : unit)
+                        .font(KXFont.bodyEmphasis)
+                }
             }
             .accessibilityIdentifier("onboarding.weeklyRun")
             if model.weeklyRunMeters >= 1 {
                 Divider()
                 KXOverline("Longest run in the last month")
                 Stepper(value: distance(\.longestRunMeters), in: 1...60) {
-                    Text("\(distance(\.longestRunMeters).wrappedValue) \(unit)").font(KXFont.bodyEmphasis)
+                    HStack(spacing: KXSpacing.xs) {
+                        KXEditableNumber(display: "\(distance(\.longestRunMeters).wrappedValue)", allowsDecimal: false,
+                                         accessibilityLabel: "Longest run") { typed in
+                            distance(\.longestRunMeters).wrappedValue = min(max(Int(typed), 1), 60)
+                        }
+                        Text(unit).font(KXFont.bodyEmphasis)
+                    }
                 }
                 .accessibilityIdentifier("onboarding.longestRun")
             }

@@ -110,6 +110,12 @@ final class OnboardingModel {
     }
 
     func skip() {
+        clear(step)
+        next()
+    }
+
+    /// Clears an optional answer (Skip in onboarding, "Clear answer" when editing).
+    func clear(_ step: Step) {
         switch step {
         case .raceTime: knowsRaceTime = false
         case .currentRunning: knowsCurrentRunning = false
@@ -118,7 +124,6 @@ final class OnboardingModel {
         case .eventDate: hasEvent = false
         default: break
         }
-        next()
     }
 
     /// The engine profile built from the answers.

@@ -101,6 +101,16 @@ struct GymTemplateEditorView: View {
 
 /// One exercise: sets, rep range and rest.
 private struct ItemEditor: View {
+    /// "Sets: 3" with the number tappable to type.
+    private func typeable(_ title: String, value: Binding<Int>, range: ClosedRange<Int>) -> some View {
+        HStack(spacing: KXSpacing.xs) {
+            Text("\(title):")
+            KXEditableNumber(display: "\(value.wrappedValue)", font: KXFont.body, allowsDecimal: false, accessibilityLabel: title) { typed in
+                value.wrappedValue = min(max(Int(typed), range.lowerBound), range.upperBound)
+            }
+        }
+    }
+
     @Binding var item: GymTemplateItem
 
     private static let restChoices = [30, 45, 60, 75, 90, 120, 150, 180, 240, 300]
@@ -116,15 +126,11 @@ private struct ItemEditor: View {
                 Spacer()
                 Text(item.setsAndReps).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
             }
-            Stepper("Sets: \(item.sets)", value: $item.sets, in: 1...10)
-            Stepper("Reps from: \(item.repsLow)", value: Binding(
-                get: { item.repsLow },
-                set: { item.repsLow = $0; item.repsHigh = max(item.repsHigh, $0) }
-            ), in: 1...50)
-            Stepper("Reps up to: \(item.repsHigh)", value: Binding(
-                get: { item.repsHigh },
-                set: { item.repsHigh = $0; item.repsLow = min(item.repsLow, $0) }
-            ), in: 1...50)
+            let repsLow = Binding(get: { item.repsLow }, set: { item.repsLow = $0; item.repsHigh = max(item.repsHigh, $0) })
+            let repsHigh = Binding(get: { item.repsHigh }, set: { item.repsHigh = $0; item.repsLow = min(item.repsLow, $0) })
+            Stepper(value: $item.sets, in: 1...10) { typeable("Sets", value: $item.sets, range: 1...10) }
+            Stepper(value: repsLow, in: 1...50) { typeable("Reps from", value: repsLow, range: 1...50) }
+            Stepper(value: repsHigh, in: 1...50) { typeable("Reps up to", value: repsHigh, range: 1...50) }
             Picker("Rest", selection: $item.restSeconds) {
                 ForEach(restOptions, id: \.self) { seconds in
                     Text(Units.formatMinutesSeconds(Double(seconds))).tag(seconds)

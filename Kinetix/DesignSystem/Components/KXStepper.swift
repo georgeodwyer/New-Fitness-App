@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The "– 105.0 +" number stepper used for logging weight and reps.
+/// The "– 105.0 +" number stepper used for logging weight and reps. Tap the number to type it.
 struct KXStepper: View {
     let label: String
     @Binding var value: Double
@@ -17,11 +17,11 @@ struct KXStepper: View {
                     value = max(range.lowerBound, value - step)
                 }
                 VStack(spacing: 0) {
-                    Text(format(value))
-                        .font(KXFont.metricSmall)
-                        .foregroundStyle(KXColor.ink)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.6)
+                    KXEditableNumber(display: format(value), font: KXFont.metricSmall,
+                                     allowsDecimal: step.rounded() != step || range.upperBound <= 1,
+                                     accessibilityLabel: label) { typed in
+                        value = min(max(typed, range.lowerBound), range.upperBound)
+                    }
                     if let unit {
                         Text(unit).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
                     }

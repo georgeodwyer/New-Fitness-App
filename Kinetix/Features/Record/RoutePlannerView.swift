@@ -226,8 +226,11 @@ struct RoutePlannerView: View {
                         HStack {
                             Text("Distance")
                             Spacer()
-                            Text("\(loopDistance.formatted(.number.precision(.fractionLength(0...1)))) \(Units.distanceUnitLabel(units))")
-                                .font(KXFont.bodyEmphasis.monospacedDigit())
+                            KXEditableNumber(display: loopDistance.formatted(.number.precision(.fractionLength(0...1))),
+                                             accessibilityLabel: "Loop distance") { typed in
+                                loopDistance = min(max((typed * 2).rounded() / 2, 1), 50)
+                            }
+                            Text(Units.distanceUnitLabel(units)).font(KXFont.bodyEmphasis)
                         }
                     }
                     .accessibilityIdentifier("route.loopDistance")

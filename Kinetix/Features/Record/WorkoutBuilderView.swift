@@ -29,7 +29,15 @@ struct WorkoutBuilderView: View {
                 Section {
                     if block.steps.contains(where: { $0.kind == .work }) || block.repeats > 1 {
                         Stepper(value: repeatsBinding(blockIndex), in: 1...40) {
-                            Label("Repeat \(block.repeats)×", systemImage: "repeat")
+                            HStack(spacing: KXSpacing.xs) {
+                                Image(systemName: "repeat").foregroundStyle(KXColor.accent).accessibilityHidden(true)
+                                Text("Repeat")
+                                KXEditableNumber(display: "\(block.repeats)", font: KXFont.body, allowsDecimal: false,
+                                                 accessibilityLabel: "Repeats") { typed in
+                                    repeatsBinding(blockIndex).wrappedValue = min(max(Int(typed), 1), 40)
+                                }
+                                Text("×")
+                            }
                         }
                         .accessibilityIdentifier("builder.repeats.\(blockIndex)")
                     }

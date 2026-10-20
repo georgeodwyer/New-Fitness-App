@@ -363,7 +363,10 @@ struct EditSessionSheet: View {
                         HStack {
                             Text("Effort")
                             Spacer()
-                            Text("\(Int(effort))/10").font(KXFont.bodyEmphasis.monospacedDigit())
+                            KXEditableNumber(display: "\(Int(effort))", allowsDecimal: false, accessibilityLabel: "Effort") { typed in
+                                effort = min(max(typed, 1), 10)
+                            }
+                            Text("/10").font(KXFont.bodyEmphasis)
                         }
                     }
                 } footer: {

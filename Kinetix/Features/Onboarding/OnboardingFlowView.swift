@@ -88,9 +88,18 @@ struct OnboardingFlowView: View {
         .background(KXColor.background)
     }
 
-    @ViewBuilder
     private var stepContent: some View {
-        switch model.step {
+        OnboardingStepContent(step: model.step, model: model)
+    }
+}
+
+/// The question screen for one onboarding step (also used to edit answers from Settings).
+struct OnboardingStepContent: View {
+    let step: OnboardingModel.Step
+    @Bindable var model: OnboardingModel
+
+    var body: some View {
+        switch step {
         case .units: UnitsStep(model: model)
         case .runningExperience: RunningExperienceStep(model: model)
         case .raceTime: RaceTimeStep(model: model)

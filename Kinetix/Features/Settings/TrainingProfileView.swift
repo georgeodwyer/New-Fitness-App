@@ -2,8 +2,9 @@ import SwiftUI
 import SwiftData
 import TrainingEngine
 
-/// Edit onboarding answers. Each item opens the same question screen as onboarding.
-/// Saving changes that affect the plan offers to regenerate it.
+/// A summary of the onboarding answers. Tapping one opens that question full-screen on the
+/// onboarding screen; "Go through all questions" runs the whole set. Saving changes that
+/// affect the plan offers to rebuild it.
 struct TrainingProfileView: View {
     let profileModel: UserProfileModel
 
@@ -13,6 +14,18 @@ struct TrainingProfileView: View {
     @State private var loaded = false
     @State private var pendingChanges: [String] = []
     @State private var showRegenerate = false
+    @State private var editing: Editing?
+
+    /// Questions being edited.
+    private struct Editing: Identifiable {
+        let id = UUID()
+        let steps: [OnboardingModel.Step]
+    }
+
+    private static let allQuestions: [OnboardingModel.Step] = [
+        .runningExperience, .raceTime, .currentRunning, .goal, .eventDate, .liftingExperience, .liftEstimates,
+        .trainingDays, .doubleSessions, .equipment
+    ]
 
     private var original: AthleteProfile { profileModel.profile }
 
@@ -31,41 +44,49 @@ struct TrainingProfileView: View {
 
     var body: some View {
         List {
-            Section("Goal") {
-                row("Primary goal", value: model.goal?.displayName ?? "–") { GoalStep(model: model) }
-                row("Event date", value: model.hasEvent ? model.eventDate.formatted(.dateTime.day().month().year()) : "None") {
-                    EventDateStep(model: model)
+            Section {
+                Button {
+                    editing = Editing(steps: Self.allQuestions)
+                } label: {
+                    Label("Go through all questions", systemImage: "list.bullet.rectangle.portrait")
+                        .font(KXFont.bodyEmphasis)
                 }
+                .accessibilityIdentifier("profile.allQuestions")
+            } footer: {
+                Text("Or tap an answer below to change just that one.")
+            }
+            Section("Goal") {
+                row("Primary goal", value: model.goal?.displayName ?? "–", step: .goal)
+                row("Event date", value: model.hasEvent ? model.eventDate.formatted(.dateTime.day().month().year()) : "None", step: .eventDate)
             }
             Section("Schedule") {
-                row("Training days", value: Weekday.allCases.filter { model.trainingDays.contains($0) }.map(\.shortName).joined(separator: " ")) {
-                    TrainingDaysStep(model: model)
-                }
-                row("Double sessions", value: model.doubleSessionDays == 0 ? "None" : "\(model.doubleSessionDays) day\(model.doubleSessionDays == 1 ? "" : "s")") {
-                    DoubleSessionsStep(model: model)
-                }
+                row("Training days", value: Weekday.allCases.filter { model.trainingDays.contains($0) }.map(\.shortName).joined(separator: " "),
+                    step: .trainingDays)
+                row("Double sessions", value: model.doubleSessionDays == 0 ? "None" : "\(model.doubleSessionDays) day\(model.doubleSessionDays == 1 ? "" : "s")",
+                    step: .doubleSessions)
             }
             Section("Running") {
-                row("Experience", value: model.runningExperience?.displayName ?? "–") { RunningExperienceStep(model: model) }
-                row("Recent race time", value: raceText) { RaceTimeStep(model: model) }
-                row("Running right now", value: currentRunningText) { CurrentRunningStep(model: model) }
+                row("Experience", value: model.runningExperience?.displayName ?? "–", step: .runningExperience)
+                row("Recent race time", value: raceText, step: .raceTime)
+                row("Running right now", value: currentRunningText, step: .currentRunning)
             }
             Section("Lifting") {
-                row("Experience", value: model.liftingExperience?.displayName ?? "–") { LiftingExperienceStep(model: model) }
-                row("Lift numbers", value: "\(model.liftEntries.filter(\.isKnown).count) entered") { LiftEstimatesStep(model: model) }
-                row("Equipment", value: model.equipment?.displayName ?? "–") { EquipmentStep(model: model) }
+                row("Experience", value: model.liftingExperience?.displayName ?? "–", step: .liftingExperience)
+                row("Lift numbers", value: "\(model.liftEntries.filter(\.isKnown).count) entered", step: .liftEstimates)
+                row("Equipment", value: model.equipment?.displayName ?? "–", step: .equipment)
             }
-            if !changes.isEmpty {
-                Section {
-                    Button {
-                        save()
-                    } label: {
-                        Label("Save changes", systemImage: "checkmark.circle.fill").font(KXFont.bodyEmphasis)
-                    }
-                } footer: {
-                    Text("Changed: \(changes.joined(separator: ", ")).")
-                }
-            }
+        }
+        .fullScreenCover(item: $editing) { session in
+            ProfileQuestionsView(model: model, steps: session.steps, onCancel: {
+                // Throw away unsaved edits.
+                model.load(original)
+                editing = nil
+            }, onSave: {
+                editing = nil
+                guard !changes.isEmpty else { return }
+                // Ask about the plan once the editor has closed (iOS ignores a dialog shown while it's closing).
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { save() }
+            })
         }
         .navigationTitle("Training profile")
         .navigationBarTitleDisplayMode(.inline)
@@ -91,18 +112,20 @@ struct TrainingProfileView: View {
         return "\(model.raceDistance.label) in \(Units.formatMinutesSeconds(model.raceTimeSeconds))"
     }
 
-    private func row<Destination: View>(_ title: String, value: String, @ViewBuilder destination: @escaping () -> Destination) -> some View {
-        NavigationLink {
-            ScrollView {
-                VStack(alignment: .leading, spacing: KXSpacing.xl) { destination() }
-                    .padding(KXSpacing.screenMargin)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .background(KXColor.background.ignoresSafeArea())
-            .navigationBarTitleDisplayMode(.inline)
+    private func row(_ title: String, value: String, step: OnboardingModel.Step) -> some View {
+        Button {
+            editing = Editing(steps: [step])
         } label: {
-            LabeledContent(title, value: value)
+            HStack {
+                LabeledContent(title, value: value)
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(KXColor.inkTertiary)
+                    .accessibilityHidden(true)
+            }
+            .contentShape(Rectangle())
         }
+        .foregroundStyle(KXColor.ink)
     }
 
     private func save() {
