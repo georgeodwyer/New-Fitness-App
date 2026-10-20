@@ -40,6 +40,7 @@
 		3C7556B959F1D015AAC35685 /* HomeWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09F31049BEE6448D25F4EED4 /* HomeWidgets.swift */; };
 		3FA853E7300E79023E932CCF /* RunServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0147DFFEB3CB167E9DF43A4B /* RunServiceTests.swift */; };
 		4100D39BFB207D3BA79C1236 /* StravaService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41DD740D22466B22510031CB /* StravaService.swift */; };
+		465A7A42EEAE1F5D2D2C0DEC /* ProfileQuestionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C35BD4AE3E888CB06C1AD8FA /* ProfileQuestionsView.swift */; };
 		472AAFBD4EF97300B0F82965 /* RunLiveView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA5D6CF5603F5F36C55E51A3 /* RunLiveView.swift */; };
 		4ABFCBB55C182B3A0ED4611A /* KinetixApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71405E462937064340577B61 /* KinetixApp.swift */; };
 		4EF57F21D8A20AD9117AA119 /* KXChip.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8BF6F66B84AE6EFC5020574 /* KXChip.swift */; };
@@ -133,6 +134,7 @@
 		F030C9653CAED7265051687D /* ProgressScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3000B3D5DB9BC4ADD3017915 /* ProgressScreen.swift */; };
 		F2A324D050EF67C1DB246CEA /* ExerciseHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F546C371EF13550E9BC3897E /* ExerciseHistoryView.swift */; };
 		F611A87F94DBFAB54FFA2E62 /* PrivacyPolicyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCED44B92E0BFCB84A0AFC97 /* PrivacyPolicyView.swift */; };
+		F7A63A32C9724AB22A7FCE39 /* KXEditableNumber.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C2E983D74F526A10F2CFA2B /* KXEditableNumber.swift */; };
 		F8FD30FC6BE6998D5DB641B3 /* KXEmptyState.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1664E7DAA11627C79DB8265 /* KXEmptyState.swift */; };
 		FA0E637FA834325958C956CB /* StrengthSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB27DBF74434135E36364597 /* StrengthSummaryView.swift */; };
 		FA8F771A9CCBA11E9BD58893 /* KXOptionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F31D7238D3089FE39D1AF49 /* KXOptionCard.swift */; };
@@ -238,6 +240,7 @@
 		440A4666F40E86B1CABE7D24 /* KinetixWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KinetixWatchApp.swift; sourceTree = "<group>"; };
 		496B3A47CBAC67D049C956DF /* ShareCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareCards.swift; sourceTree = "<group>"; };
 		4999561CDF8222C282BCAEDC /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		4C2E983D74F526A10F2CFA2B /* KXEditableNumber.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXEditableNumber.swift; sourceTree = "<group>"; };
 		4CEFC9DC0DB12F2DAA439DBF /* HealthDashboardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthDashboardTests.swift; sourceTree = "<group>"; };
 		5052A6236109C68A845CCA1A /* IntegrationSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntegrationSettings.swift; sourceTree = "<group>"; };
 		53E2CA92347B3217FE2818A5 /* OnboardingModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingModel.swift; sourceTree = "<group>"; };
@@ -296,6 +299,7 @@
 		BEBF6BA7F003C6E83A36A08F /* LaunchSplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchSplashView.swift; sourceTree = "<group>"; };
 		C1664E7DAA11627C79DB8265 /* KXEmptyState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXEmptyState.swift; sourceTree = "<group>"; };
 		C29BBA81B297D8EE2CF1FF89 /* SyncTracked.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncTracked.swift; sourceTree = "<group>"; };
+		C35BD4AE3E888CB06C1AD8FA /* ProfileQuestionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileQuestionsView.swift; sourceTree = "<group>"; };
 		C45C2DEC18638987AEE83DF7 /* CoachingSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachingSettingsView.swift; sourceTree = "<group>"; };
 		C4708069D9CB0D862B6D3765 /* RunSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunSummaryView.swift; sourceTree = "<group>"; };
 		C49960012FF421B7459C2F62 /* RunService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunService.swift; sourceTree = "<group>"; };
@@ -471,6 +475,7 @@
 				76EC9F0A55E7B2D91BA49545 /* HealthDisclaimerView.swift */,
 				DA9718F435F06430788DECB6 /* IntegrationsViews.swift */,
 				DCED44B92E0BFCB84A0AFC97 /* PrivacyPolicyView.swift */,
+				C35BD4AE3E888CB06C1AD8FA /* ProfileQuestionsView.swift */,
 				802622121BE8CA378EC34BEB /* SettingsView.swift */,
 				F327708828E05100B42EDD57 /* TrainingProfileView.swift */,
 			);
@@ -711,6 +716,7 @@
 				72DC83A5774C0DFA7D49CB52 /* KXButton.swift */,
 				D7E3234A649534340E001365 /* KXCard.swift */,
 				E8BF6F66B84AE6EFC5020574 /* KXChip.swift */,
+				4C2E983D74F526A10F2CFA2B /* KXEditableNumber.swift */,
 				C1664E7DAA11627C79DB8265 /* KXEmptyState.swift */,
 				E29498CEEBE32CAE95B52D85 /* KXHeader.swift */,
 				7DBA1671E84924F9135EF5C2 /* KXMetric.swift */,
@@ -941,6 +947,7 @@
 				EDB481995BF3F7256917D1B9 /* KXCard.swift in Sources */,
 				4EF57F21D8A20AD9117AA119 /* KXChip.swift in Sources */,
 				1369ADE963F649AC955FB2F9 /* KXColor.swift in Sources */,
+				F7A63A32C9724AB22A7FCE39 /* KXEditableNumber.swift in Sources */,
 				F8FD30FC6BE6998D5DB641B3 /* KXEmptyState.swift in Sources */,
 				D06698D33FC2AC066E0A414A /* KXFont.swift in Sources */,
 				0B0FAE936D97D1E2FFDF2B44 /* KXHeader.swift in Sources */,
@@ -967,6 +974,7 @@
 				BFA529069514CFA98ADFAF18 /* PlanService.swift in Sources */,
 				70C07E1CB04C57F050ED4CD7 /* PlanView.swift in Sources */,
 				F611A87F94DBFAB54FFA2E62 /* PrivacyPolicyView.swift in Sources */,
+				465A7A42EEAE1F5D2D2C0DEC /* ProfileQuestionsView.swift in Sources */,
 				F030C9653CAED7265051687D /* ProgressScreen.swift in Sources */,
 				241BA0522DD83EFC4814952E /* RecordView.swift in Sources */,
 				EFF93589CAA9CF6D5AE20771 /* RootView.swift in Sources */,
