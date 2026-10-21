@@ -114,6 +114,9 @@ public struct AthleteProfile: Codable, Equatable, Sendable {
     /// Wants an easy first week after that race, and when they said so.
     public var easyFirstWeek: Bool?
     public var easyFirstWeekRequestedAt: Date?
+    /// Gym sessions a week and the split they chose (nil = let the plan decide, as before).
+    public var liftSessionsPerWeek: Int?
+    public var splitCode: String?
 
     public init(
         runningExperience: ExperienceLevel,
@@ -130,7 +133,9 @@ public struct AthleteProfile: Codable, Equatable, Sendable {
         longestRecentRunMeters: Double? = nil,
         racedRecently: Bool? = nil,
         easyFirstWeek: Bool? = nil,
-        easyFirstWeekRequestedAt: Date? = nil
+        easyFirstWeekRequestedAt: Date? = nil,
+        liftSessionsPerWeek: Int? = nil,
+        splitCode: String? = nil
     ) {
         self.runningExperience = runningExperience
         self.recentRace = recentRace
@@ -147,6 +152,8 @@ public struct AthleteProfile: Codable, Equatable, Sendable {
         self.racedRecently = racedRecently
         self.easyFirstWeek = easyFirstWeek
         self.easyFirstWeekRequestedAt = easyFirstWeekRequestedAt
+        self.liftSessionsPerWeek = liftSessionsPerWeek
+        self.splitCode = splitCode
     }
 }
 
@@ -170,6 +177,7 @@ extension AthleteProfile {
             changes.append("current running")
         }
         if racedRecently != other.racedRecently || easyFirstWeek != other.easyFirstWeek { changes.append("recent race") }
+        if liftSessionsPerWeek != other.liftSessionsPerWeek || splitCode != other.splitCode { changes.append("gym week") }
         return changes
     }
 }

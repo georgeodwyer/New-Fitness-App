@@ -81,6 +81,8 @@ extension UserProfileModel: SyncableModel {
         racedRecently = p.racedRecently
         easyFirstWeek = p.easyFirstWeek
         easyFirstWeekRequestedAt = p.easyFirstWeekRequestedAt
+        liftSessionsPerWeek = p.liftSessionsPerWeek
+        splitCode = p.splitCode
         createdAt = payload.createdAt
     }
 

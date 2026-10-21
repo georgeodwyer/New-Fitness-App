@@ -23,7 +23,7 @@ struct TrainingProfileView: View {
     }
 
     private static let allQuestions: [OnboardingModel.Step] = [
-        .runningExperience, .raceTime, .currentRunning, .goal, .eventDate, .liftingExperience, .liftEstimates,
+        .runningExperience, .raceTime, .currentRunning, .goal, .eventDate, .gymWeek, .liftingExperience, .liftEstimates,
         .trainingDays, .doubleSessions, .equipment
     ]
 
@@ -38,6 +38,14 @@ struct TrainingProfileView: View {
         let longest = Int(Units.distance(meters: model.longestRunMeters, in: model.units).rounded())
         let race = model.racedRecently ? (model.easyFirstWeek ? " · easy first week" : " · raced recently") : ""
         return "\(weekly) \(unit) a week · longest \(longest) \(unit)\(race)"
+    }
+
+    /// e.g. "3 × Push / Pull / Legs".
+    private var gymWeekText: String {
+        guard model.gymWeekChosen else { return "Suggested by Kinetix" }
+        guard model.liftSessionsPerWeek > 0 else { return "None" }
+        let name = model.splitCode.flatMap { PlanService.templates.programmes.strength?.split($0)?.name }
+        return "\(model.liftSessionsPerWeek) a week" + (name.map { " · \($0)" } ?? "")
     }
 
     private var changes: [String] { model.profile.planAffectingChanges(comparedTo: original) }
@@ -64,6 +72,7 @@ struct TrainingProfileView: View {
                     step: .trainingDays)
                 row("Double sessions", value: model.doubleSessionDays == 0 ? "None" : "\(model.doubleSessionDays) day\(model.doubleSessionDays == 1 ? "" : "s")",
                     step: .doubleSessions)
+                row("Gym week", value: gymWeekText, step: .gymWeek)
             }
             Section("Running") {
                 row("Experience", value: model.runningExperience?.displayName ?? "–", step: .runningExperience)

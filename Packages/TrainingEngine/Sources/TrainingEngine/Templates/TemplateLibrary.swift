@@ -79,7 +79,29 @@ public struct TemplateLibrary: Sendable {
         return (strength.splits[String(key)] ?? []).compactMap { strength.sessions[$0] }
     }
 
+    /// Gym sessions for the week: the user's chosen split (its days in order, repeated if they
+    /// lift more often than it has days), or the built-in split for that many sessions.
+    public func liftTemplates(for profile: AthleteProfile, count: Int) -> [StrengthSessionTemplate] {
+        guard count > 0 else { return [] }
+        if let code = profile.splitCode, let days = programmes.strength?.split(code)?.days, !days.isEmpty {
+            return (0..<count).map { days[$0 % days.count] }
+        }
+        return Array(split(liftingDays: count).prefix(count))
+    }
+
+    /// The exercise for a slot: a pattern chosen for the user's equipment, or the coach's
+    /// named exercise (or the closest swap their equipment allows).
+    public func exercise(for slot: ExerciseSlot, equipment: Equipment) -> ExerciseDefinition? {
+        guard let name = slot.exerciseName else { return exercise(pattern: slot.pattern, equipment: equipment) }
+        guard let named = exercises.first(where: { $0.name.caseInsensitiveCompare(name) == .orderedSame }) else { return nil }
+        if equipment.allows(named.requires) { return named }
+        if let swap = exercise(pattern: named.pattern, equipment: equipment) { return swap }
+        let muscle = named.muscleGroup
+        return exercises.first { $0.id != named.id && $0.muscleGroup == muscle && equipment.allows($0.requires) }
+    }
+
     public func prescription(for goal: TrainingGoal) -> GoalPrescription? {
+        if let fromWorkbook = programmes.strength?.byGoal[goal.rawValue] { return fromWorkbook }
         let key: String
         switch goal {
         case .buildStrength: key = "buildStrength"

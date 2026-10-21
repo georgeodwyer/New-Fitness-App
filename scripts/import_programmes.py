@@ -41,6 +41,19 @@ SESSION_TYPES = {
     "intervals": ("intervals", "Intervals"), "fartlek": ("intervals", "Fartlek"), "hills": ("intervals", "Hills"),
     "shakeout": ("easy", "Shakeout"), "race": ("race", "Race day"),
 }
+SPLITS = {
+    "full body ×1": "fullBody1", "full body ×2": "fullBody2", "full body ×3": "fullBody3", "upper / lower": "upperLower",
+    "push / pull / legs": "ppl", "push / pull / legs ×2": "ppl6", "upper / lower / full": "upperLowerFull",
+    "ppl + upper / lower": "pplUpperLower",
+}
+PATTERNS = {
+    "any squat": "squat", "any hinge (deadlift)": "hinge", "any hinge accessory (rdl, bridge)": "hingeAccessory",
+    "any lunge / split squat": "lunge", "any calf raise": "calf", "any horizontal push (bench, press-up)": "horizontalPush",
+    "any vertical push (overhead press)": "verticalPush", "any horizontal pull (row)": "horizontalPull",
+    "any vertical pull (pull-up, pulldown)": "verticalPull", "any arms": "arms", "any core": "core",
+    "any anti-rotation core": "antiRotation",
+}
+EXERCISES = ROOT / "Packages/TrainingEngine/Sources/TrainingEngine/Resources/exercises.json"
 PHASES = {"base": "base", "build": "build", "peak": "peak", "taper": "taper", "race week": "taper", "deload": None}
 EMPHASIS = {"normal": "normal", "heavy": "heavy", "light": "light", "none": "none"}
 AFTER = {"repeat": "repeat", "repeat harder": "repeatHarder", "maintenance": "maintenance", "stop": "stop"}
@@ -266,6 +279,88 @@ def number(value, what):
         raise ParseError(f"{what} should be a number, not '{value}'")
 
 
+def day_focus(name):
+    """Push / Pull / Legs / Upper / Lower days; anything else is full body."""
+    n = name.lower()
+    for word, focus in (("push", "push"), ("pull", "pull"), ("leg", "legs"), ("upper", "upper"), ("lower", "lower")):
+        if word in n:
+            return focus
+    return "fullBody"
+
+
+def optional_int(value, what):
+    if value in (None, ""):
+        return None
+    return int(number(value, what))
+
+
+def strength(wb, fail):
+    """Strength splits, their days, and sets/reps by goal."""
+    names = {e["name"].lower(): e["name"] for e in json.loads(EXERCISES.read_text())["exercises"]}
+    splits = {}
+    for row, v in rows(wb["Strength splits"]):
+        code = SPLITS.get(str(v["Split"]).strip().lower())
+        if not code:
+            fail("Strength splits", row, f"unknown split '{v['Split']}'")
+            continue
+        splits[code] = {"code": code, "name": str(v["Split"]).strip(), "suits": (v.get("Who it suits") or "").strip(),
+                        "shown": str(v.get("Shown in onboarding?") or "Yes").strip().lower() != "no", "days": []}
+    for row, v in rows(wb["Split days"]):
+        code = SPLITS.get(str(v["Split"]).strip().lower())
+        if code not in splits:
+            if v.get("Day name") or v.get("Exercise"):
+                fail("Split days", row, f"unknown split '{v['Split']}'")
+            continue  # a note under the table
+        day_name = str(v.get("Day name") or "").strip()
+        exercise = str(v.get("Exercise") or "").strip()
+        if not day_name or not exercise:
+            fail("Split days", row, "needs a day name and an exercise")
+            continue
+        try:
+            slot = {"role": "main" if str(v.get("Role") or "").strip().lower() == "main" else "accessory"}
+            if exercise.lower() in PATTERNS:
+                slot["pattern"] = PATTERNS[exercise.lower()]
+            elif exercise.lower() in names:
+                slot["pattern"] = "named"
+                slot["exerciseName"] = names[exercise.lower()]
+            else:
+                raise ParseError(f"unknown exercise '{exercise}' (pick one from the drop-down)")
+            for key, column in (("sets", "Sets"), ("repsLow", "Reps (low)"), ("repsHigh", "Reps (high)"), ("restSeconds", "Rest (s)")):
+                value = optional_int(v.get(column), column)
+                if value is not None:
+                    slot[key] = value
+            if v.get("Notes"):
+                slot["note"] = str(v["Notes"]).strip()
+            order = optional_int(v.get("Order"), "Order") or 0
+        except ParseError as e:
+            fail("Split days", row, str(e))
+            continue
+        days = splits[code]["days"]
+        day = next((d for d in days if d["name"] == day_name), None)
+        if day is None:
+            day = {"name": day_name, "focus": day_focus(day_name), "slots": []}
+            days.append(day)
+        day["slots"].append((order, slot))
+    for split in splits.values():
+        for day in split["days"]:
+            day["slots"] = [slot for _, slot in sorted(day["slots"], key=lambda item: item[0])]
+    by_goal = {}
+    for row, v in rows(wb["Strength by goal"]):
+        goal = GOALS.get(str(v["Programme"]).strip().lower())
+        role = str(v.get("Role") or "").strip().lower()
+        if not goal or role not in ("main", "accessory"):
+            continue
+        try:
+            by_goal.setdefault(goal, {})[role] = {
+                "sets": int(number(v.get("Sets"), "Sets")), "repsLow": int(number(v.get("Reps (low)"), "Reps (low)")),
+                "repsHigh": int(number(v.get("Reps (high)"), "Reps (high)")), "restSeconds": int(number(v.get("Rest (s)"), "Rest (s)")),
+            }
+        except ParseError as e:
+            fail("Strength by goal", row, str(e))
+    by_goal = {goal: roles for goal, roles in by_goal.items() if "main" in roles and "accessory" in roles}
+    return {"splits": [s for s in splits.values() if s["days"]], "byGoal": by_goal}
+
+
 def convert(path):
     wb = load_workbook(path, data_only=True)
     errors = []
@@ -309,6 +404,7 @@ def convert(path):
     # Programmes (only those with weeks written) and which runners see each goal.
     programmes = {}
     availability = {}
+    goal_settings = {}
     for row, v in rows(wb["Programmes"]):
         goal = GOALS.get(str(v["Programme"]).strip().lower())
         if not goal:
@@ -317,6 +413,16 @@ def convert(path):
         if not levels:
             fail("Programmes", row, f"'Available to' should name beginner, intermediate and/or advanced, or say all levels")
         availability[goal] = levels
+        try:
+            goal_settings[goal] = {
+                "runsMin": int(number(v.get("Runs per week (min)"), "Runs per week (min)")),
+                "runsMax": int(number(v.get("Runs per week (max)"), "Runs per week (max)")),
+                "liftsMin": int(number(v.get("Lifts per week (min)"), "Lifts per week (min)")),
+                "liftsMax": int(number(v.get("Lifts per week (max)"), "Lifts per week (max)")),
+                "defaultSplit": SPLITS.get(str(v.get("Default split") or "").strip().lower()),
+            }
+        except ParseError as e:
+            fail("Programmes", row, str(e))
         try:
             programmes[goal] = {
                 "goal": goal,
@@ -416,7 +522,8 @@ def convert(path):
         p["sessions"].sort(key=lambda s: (s["week"], s["order"]))
         written.append(p)
 
-    return {"version": 1, "rules": rules, "availability": availability, "programmes": written}, errors
+    return {"version": 1, "rules": rules, "availability": availability, "goals": goal_settings,
+            "strength": strength(wb, fail), "programmes": written}, errors
 
 
 def main():

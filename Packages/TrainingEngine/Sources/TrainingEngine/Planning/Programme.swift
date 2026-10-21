@@ -14,6 +14,12 @@ public struct ProgrammeFile: Codable, Equatable, Sendable {
 
     /// Which running levels see each goal in onboarding (goals not listed: everyone).
     public var availability: [String: [String]]? = nil
+    /// Runs and lifts per week and the suggested split, for every goal.
+    public var goals: [String: GoalSettings]? = nil
+    /// Gym splits and sets/reps by goal, from the workbook.
+    public var strength: WorkbookStrength? = nil
+
+    public func settings(for goal: TrainingGoal) -> GoalSettings? { goals?[goal.rawValue] }
 
     public static let empty = ProgrammeFile(version: 1, rules: [:], programmes: [])
 
@@ -220,4 +226,37 @@ extension TemplateLibrary {
         else { return .empty }
         return file
     }
+}
+
+/// The Programmes tab's per-goal settings.
+public struct GoalSettings: Codable, Equatable, Sendable {
+    public var runsMin: Int
+    public var runsMax: Int
+    public var liftsMin: Int
+    public var liftsMax: Int
+    /// The split suggested in onboarding (a `WorkbookSplit.code`).
+    public var defaultSplit: String?
+}
+
+/// The workbook's gym splits and sets/reps by goal.
+public struct WorkbookStrength: Codable, Equatable, Sendable {
+    public var splits: [WorkbookSplit]
+    public var byGoal: [String: GoalPrescription]
+
+    public func split(_ code: String) -> WorkbookSplit? { splits.first { $0.code == code } }
+
+    /// The splits to offer for a number of gym sessions a week: those with that many days,
+    /// plus Upper / Lower (its first upper and lower days) for two.
+    public func offered(sessions: Int) -> [WorkbookSplit] {
+        splits.filter { $0.shown && ($0.days.count == sessions || ($0.code == "upperLower" && sessions == 2)) }
+    }
+}
+
+public struct WorkbookSplit: Codable, Equatable, Sendable, Identifiable {
+    public var code: String
+    public var name: String
+    public var suits: String
+    public var shown: Bool
+    public var days: [StrengthSessionTemplate]
+    public var id: String { code }
 }

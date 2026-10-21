@@ -108,6 +108,7 @@ struct OnboardingStepContent: View {
         case .liftEstimates: LiftEstimatesStep(model: model)
         case .goal: GoalStep(model: model)
         case .eventDate: EventDateStep(model: model)
+        case .gymWeek: GymWeekStep(model: model)
         case .trainingDays: TrainingDaysStep(model: model)
         case .doubleSessions: DoubleSessionsStep(model: model)
         case .equipment: EquipmentStep(model: model)

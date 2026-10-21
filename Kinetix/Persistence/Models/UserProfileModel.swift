@@ -28,6 +28,9 @@ final class UserProfileModel: SyncTracked {
     var racedRecently: Bool?
     var easyFirstWeek: Bool?
     var easyFirstWeekRequestedAt: Date?
+    /// Gym sessions a week and the split they chose (nil = not chosen; the app decides).
+    var liftSessionsPerWeek: Int?
+    var splitCode: String?
 
     init(profile: AthleteProfile, id: UUID = UUID(), now: Date = .now) {
         self.id = id
@@ -50,6 +53,8 @@ final class UserProfileModel: SyncTracked {
         self.racedRecently = profile.racedRecently
         self.easyFirstWeek = profile.easyFirstWeek
         self.easyFirstWeekRequestedAt = profile.easyFirstWeekRequestedAt
+        self.liftSessionsPerWeek = profile.liftSessionsPerWeek
+        self.splitCode = profile.splitCode
     }
 
     /// The engine's view of this profile.
@@ -70,7 +75,9 @@ final class UserProfileModel: SyncTracked {
                 longestRecentRunMeters: longestRecentRunMeters,
                 racedRecently: racedRecently,
                 easyFirstWeek: easyFirstWeek,
-                easyFirstWeekRequestedAt: easyFirstWeekRequestedAt
+                easyFirstWeekRequestedAt: easyFirstWeekRequestedAt,
+                liftSessionsPerWeek: liftSessionsPerWeek,
+                splitCode: splitCode
             )
         }
         set {
@@ -89,6 +96,8 @@ final class UserProfileModel: SyncTracked {
             racedRecently = newValue.racedRecently
             easyFirstWeek = newValue.easyFirstWeek
             easyFirstWeekRequestedAt = newValue.easyFirstWeekRequestedAt
+            liftSessionsPerWeek = newValue.liftSessionsPerWeek
+            splitCode = newValue.splitCode
             touch()
         }
     }

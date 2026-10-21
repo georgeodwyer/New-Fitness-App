@@ -255,7 +255,7 @@ enum ProgrammePlanner {
         // 4) Days: the usual scheduler, then the race moved to race day.
         let slots = mix.days.count + mix.doubles
         let liftCount = strengthEmphasis == "none" ? 0 : max(0, min(weekCounts.lifts, slots - runs.count))
-        let lifts = templates.split(liftingDays: liftCount)
+        let lifts = templates.liftTemplates(for: profile, count: liftCount)
         let schedule = WeekScheduler.schedule(days: mix.days, doubleDays: mix.doubles, runs: runs.map(\.session.runType), lifts: lifts,
                                               prioritiseLifts: false)
         notes += schedule.notes

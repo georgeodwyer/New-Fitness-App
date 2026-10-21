@@ -27,6 +27,15 @@ enum MixBuilder {
         let slots = days.count + doubles
         let goal = rules.goal(profile.goal)
 
+        // Their own choice of gym sessions; runs fill the other slots (at most one a day).
+        if let chosen = profile.liftSessionsPerWeek {
+            let wanted = min(max(chosen, 0), days.count)
+            var runs = min(max(slots - wanted, 0), days.count)
+            if profile.goal.isRunningFocused { runs = max(runs, min(2, days.count)) }
+            let lifts = min(wanted, max(slots - runs, 0))
+            return (runs, lifts, days, doubles, notes)
+        }
+
         var lifts = Int((Double(slots) * (1 - goal.runShare)).rounded())
         lifts = min(max(lifts, goal.minLifts), goal.maxLifts, days.count, max(slots - 1, 0))
         var runs = min(slots - lifts, days.count)
@@ -68,7 +77,7 @@ enum MixBuilder {
             runs = [.long] + qualityTypes(q) + Array(repeating: .easy, count: counts.runs - 1 - q)
         }
 
-        let lifts = templates.split(liftingDays: counts.lifts)
+        let lifts = templates.liftTemplates(for: profile, count: counts.lifts)
         return WeeklyMix(trainingDays: counts.days, doubleDays: counts.doubles, runs: runs, lifts: lifts, notes: counts.notes)
     }
 }

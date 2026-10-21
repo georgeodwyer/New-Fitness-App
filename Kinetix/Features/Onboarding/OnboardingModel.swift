@@ -7,7 +7,7 @@ import TrainingEngine
 final class OnboardingModel {
     enum Step: Int, CaseIterable {
         case units, runningExperience, raceTime, currentRunning, liftingExperience, liftEstimates,
-             goal, eventDate, trainingDays, doubleSessions, equipment, finish
+             goal, eventDate, gymWeek, trainingDays, doubleSessions, equipment, finish
     }
 
     enum RaceDistance: Double, CaseIterable, Identifiable {
@@ -64,6 +64,11 @@ final class OnboardingModel {
     var hasEvent = false
     var eventDate: Date = Calendar.current.date(byAdding: .weekOfYear, value: 12, to: .now) ?? .now
     var trainingDays: Set<Weekday> = [.monday, .tuesday, .thursday, .saturday]
+    /// Gym sessions a week and the split (set on the gym week screen; until then the plan
+    /// decides, as for profiles made before the question existed).
+    var liftSessionsPerWeek = 2
+    var splitCode: String?
+    var gymWeekChosen = false
     var doubleSessionDays = 0
     var equipment: Equipment?
     /// The health & safety notice must be acknowledged before a plan is built.
@@ -82,6 +87,7 @@ final class OnboardingModel {
         case .liftEstimates: return true
         case .goal: return goal != nil
         case .eventDate: return !hasEvent || eventDate > .now
+        case .gymWeek: return liftSessionsPerWeek == 0 || splitCode != nil
         case .trainingDays: return (2...7).contains(trainingDays.count)
         case .doubleSessions: return true
         case .equipment: return equipment != nil
@@ -145,7 +151,9 @@ final class OnboardingModel {
             longestRecentRunMeters: knowsCurrentRunning && weeklyRunMeters > 0 ? longestRunMeters : nil,
             racedRecently: racedRecently ? true : nil,
             easyFirstWeek: racedRecently ? easyFirstWeek : nil,
-            easyFirstWeekRequestedAt: racedRecently && easyFirstWeek ? (easyFirstWeekRequestedAt ?? Date()) : nil
+            easyFirstWeekRequestedAt: racedRecently && easyFirstWeek ? (easyFirstWeekRequestedAt ?? Date()) : nil,
+            liftSessionsPerWeek: gymWeekChosen ? liftSessionsPerWeek : nil,
+            splitCode: gymWeekChosen && liftSessionsPerWeek > 0 ? splitCode : nil
         )
     }
 
@@ -173,6 +181,9 @@ final class OnboardingModel {
             knowsRaceTime = false
         }
         applyHistoryAutomatically = false
+        gymWeekChosen = profile.liftSessionsPerWeek != nil
+        if let lifts = profile.liftSessionsPerWeek { liftSessionsPerWeek = lifts }
+        splitCode = profile.splitCode
         racedRecently = profile.racedRecently ?? false
         easyFirstWeek = profile.easyFirstWeek ?? true
         easyFirstWeekRequestedAt = profile.easyFirstWeekRequestedAt

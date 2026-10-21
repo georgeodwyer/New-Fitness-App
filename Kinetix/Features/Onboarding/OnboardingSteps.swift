@@ -293,6 +293,96 @@ struct EventDateStep: View {
     }
 }
 
+struct GymWeekStep: View {
+    @Bindable var model: OnboardingModel
+
+    private var strength: WorkbookStrength? { PlanService.templates.programmes.strength }
+    private var suggested: String? { model.goal.flatMap { PlanService.templates.programmes.settings(for: $0)?.defaultSplit } }
+    private var offered: [WorkbookSplit] { strength?.offered(sessions: model.liftSessionsPerWeek) ?? [] }
+
+    var body: some View {
+        OnboardingQuestion(plain: "Your gym", accented: "week",
+                           detail: "How many gym sessions a week, and how you'd like to split them. Your plan puts leg days away from your hardest runs.")
+        KXStepper(label: "Gym sessions per week",
+                  value: Binding(get: { Double(model.liftSessionsPerWeek) }, set: { model.liftSessionsPerWeek = Int($0) }),
+                  step: 1, range: 0...6, format: { String(format: "%.0f", $0) })
+            .frame(maxWidth: .infinity)
+        if model.liftSessionsPerWeek == 0 {
+            Text("No gym sessions: your plan is running only.")
+                .font(KXFont.callout)
+                .foregroundStyle(KXColor.inkSecondary)
+        } else {
+            VStack(spacing: KXSpacing.md) {
+                ForEach(offered) { split in
+                    KXOptionCard(title: split.code == suggested ? "\(split.name) · Suggested" : split.name,
+                                 detail: days(of: split) + (split.suits.isEmpty ? "" : "\n" + split.suits),
+                                 systemImage: "dumbbell",
+                                 isSelected: model.splitCode == split.code) {
+                        model.splitCode = split.code
+                    }
+                }
+            }
+        }
+        // A zero-height view (EmptyView doesn't run onAppear).
+        Color.clear.frame(height: 0)
+            .onAppear {
+                if !model.gymWeekChosen {
+                    // Start from the goal's suggested split.
+                    if let code = suggested, let split = strength?.split(code) {
+                        model.liftSessionsPerWeek = split.days.count
+                        model.splitCode = code
+                    }
+                    model.gymWeekChosen = true
+                }
+                pickSplitIfNeeded()
+            }
+            .onChange(of: model.liftSessionsPerWeek) { pickSplitIfNeeded() }
+    }
+
+    /// e.g. "Push · Pull · Legs" (the days used for this many sessions).
+    private func days(of split: WorkbookSplit) -> String {
+        let count = model.liftSessionsPerWeek
+        return (0..<count).map { split.days[$0 % split.days.count].name }.joined(separator: " · ")
+    }
+
+    /// Keeps a split selected that fits the number of sessions.
+    private func pickSplitIfNeeded() {
+        guard model.liftSessionsPerWeek > 0, !offered.contains(where: { $0.code == model.splitCode }) else { return }
+        model.splitCode = offered.first(where: { $0.code == suggested })?.code ?? offered.first?.code
+    }
+}
+
+/// "That's 7 sessions on 5 days" when runs and gym sessions don't fit the training days.
+struct ScheduleFitWarning: View {
+    let model: OnboardingModel
+
+    var body: some View {
+        if let message {
+            Label(message, systemImage: "exclamationmark.triangle.fill")
+                .font(KXFont.callout)
+                .foregroundStyle(KXColor.ink)
+                .symbolRenderingMode(.multicolor)
+                .kxCard(.accent)
+                .accessibilityIdentifier("onboarding.fitWarning")
+        }
+    }
+
+    private var message: String? {
+        guard model.gymWeekChosen, let goal = model.goal else { return nil }
+        let profile = model.profile
+        let runsWanted = PlanService.templates.programmes.settings(for: goal)?.runsMin ?? (goal.isRunningFocused ? 3 : 1)
+        let liftsWanted = model.liftSessionsPerWeek
+        let counts = PlanService.generator.weeklyMixCounts(for: profile)
+        guard counts.runs < runsWanted || counts.lifts < liftsWanted else { return nil }
+        let days = model.trainingDays.count
+        let doubles = model.doubleSessionDays
+        let place = "\(days) training day\(days == 1 ? "" : "s")" + (doubles > 0 ? " with \(doubles) double\(doubles == 1 ? "" : "s")" : "")
+        return "That's \(runsWanted + liftsWanted) sessions (\(runsWanted) runs, \(liftsWanted) gym) on \(place). "
+            + "Your plan will have \(counts.runs) run\(counts.runs == 1 ? "" : "s") and \(counts.lifts) gym session\(counts.lifts == 1 ? "" : "s"). "
+            + "To fit everything, add a training day, add a double day, or choose fewer gym sessions."
+    }
+}
+
 struct TrainingDaysStep: View {
     @Bindable var model: OnboardingModel
 
@@ -315,6 +405,7 @@ struct TrainingDaysStep: View {
                 .foregroundStyle(model.trainingDays.count < 2 ? KXColor.danger : KXColor.inkSecondary)
         }
         .kxCard()
+        ScheduleFitWarning(model: model)
     }
 
     private var daysCaption: String {
@@ -346,6 +437,7 @@ struct DoubleSessionsStep: View {
                 .foregroundStyle(KXColor.inkSecondary)
         }
         .kxCard()
+        ScheduleFitWarning(model: model)
     }
 }
 

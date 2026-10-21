@@ -46,11 +46,16 @@ enum StrengthBuilder {
         var used = Set<String>()
 
         for slot in session.slots {
-            guard let exercise = templates.exercise(pattern: slot.pattern, equipment: context.profile.equipment),
+            guard let exercise = templates.exercise(for: slot, equipment: context.profile.equipment),
                   !used.contains(exercise.id) else { continue }
             used.insert(exercise.id)
 
-            let scheme = slot.role == .main ? goalPrescription.main : goalPrescription.accessory
+            var scheme = slot.role == .main ? goalPrescription.main : goalPrescription.accessory
+            // The coach's sets/reps/rest for this exercise, where written.
+            if let sets = slot.sets { scheme.sets = sets }
+            if let low = slot.repsLow { scheme.repsLow = low }
+            if let high = slot.repsHigh { scheme.repsHigh = max(high, scheme.repsLow) }
+            if let rest = slot.restSeconds { scheme.restSeconds = rest }
             var sets = scheme.sets
             if context.week.phase == .taper {
                 sets = max(1, Int((Double(sets) * templates.strength.taperSetMultiplier).rounded()))

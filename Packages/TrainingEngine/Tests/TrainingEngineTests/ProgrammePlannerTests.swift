@@ -163,6 +163,30 @@ final class ProgrammePlannerTests: XCTestCase {
         XCTAssertFalse(generator.generateWeek(0, outline: outline, profile: runner)?.sessions.isEmpty ?? true)
     }
 
+    func testChosenGymSplit() {
+        let strength = try! XCTUnwrap(TestSupport.bundledTemplates.programmes.strength)
+        XCTAssertEqual(Set(strength.offered(sessions: 2).map(\.code)), ["fullBody2", "upperLower"])
+        XCTAssertEqual(Set(strength.offered(sessions: 3).map(\.code)), ["fullBody3", "ppl", "upperLowerFull"])
+        XCTAssertEqual(strength.offered(sessions: 6).map(\.code), ["ppl6"])
+
+        var runner = profile(runners[1], days: Weekday.allCases, doubles: 2)
+        runner.liftSessionsPerWeek = 3
+        runner.splitCode = "ppl"
+        let (_, weeks) = plan(runner)
+        let lifts = weeks[0].sessions.filter { $0.kind.discipline == .strength }
+        XCTAssertGreaterThanOrEqual(lifts.count, 2)
+        XCTAssertTrue(lifts.allSatisfy { ["Push", "Pull", "Legs"].contains($0.title) }, "\(lifts.map(\.title))")
+        let pull = try! XCTUnwrap(lifts.first { $0.title == "Pull" })
+        XCTAssertTrue(pull.strength!.exercises.contains { $0.name == "Face Pull" }, "The coach's named exercise is used")
+
+        // Without the kit for a named exercise, the closest swap is used instead.
+        runner.equipment = .bodyweight
+        let (_, bodyweightWeeks) = plan(runner)
+        let bodyweightPull = bodyweightWeeks[0].sessions.first { $0.title == "Pull" }
+        XCTAssertFalse(bodyweightPull?.strength?.exercises.contains { $0.name == "Face Pull" } ?? false)
+        XCTAssertFalse(bodyweightPull?.strength?.exercises.isEmpty ?? true)
+    }
+
     func testRecentRunningFromHistory() {
         let day: TimeInterval = 86_400
         let kinetix = [RecentRunning.Run(start: monday.addingTimeInterval(-2 * day), meters: 10000),

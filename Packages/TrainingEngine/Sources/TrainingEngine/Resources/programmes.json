@@ -114,6 +114,1004 @@
    "advanced"
   ]
  },
+ "goals": {
+  "first5k": {
+   "runsMin": 3,
+   "runsMax": 4,
+   "liftsMin": 1,
+   "liftsMax": 2,
+   "defaultSplit": "fullBody2"
+  },
+  "faster5k": {
+   "runsMin": 3,
+   "runsMax": 5,
+   "liftsMin": 1,
+   "liftsMax": 2,
+   "defaultSplit": "fullBody2"
+  },
+  "faster10k": {
+   "runsMin": 3,
+   "runsMax": 5,
+   "liftsMin": 1,
+   "liftsMax": 2,
+   "defaultSplit": "fullBody2"
+  },
+  "halfMarathon": {
+   "runsMin": 3,
+   "runsMax": 5,
+   "liftsMin": 1,
+   "liftsMax": 2,
+   "defaultSplit": "fullBody2"
+  },
+  "marathon": {
+   "runsMin": 4,
+   "runsMax": 6,
+   "liftsMin": 1,
+   "liftsMax": 2,
+   "defaultSplit": "fullBody2"
+  },
+  "buildStrength": {
+   "runsMin": 1,
+   "runsMax": 3,
+   "liftsMin": 2,
+   "liftsMax": 4,
+   "defaultSplit": "upperLower"
+  },
+  "buildMuscle": {
+   "runsMin": 1,
+   "runsMax": 3,
+   "liftsMin": 3,
+   "liftsMax": 5,
+   "defaultSplit": "ppl"
+  },
+  "balancedHybrid": {
+   "runsMin": 2,
+   "runsMax": 4,
+   "liftsMin": 2,
+   "liftsMax": 3,
+   "defaultSplit": "fullBody3"
+  }
+ },
+ "strength": {
+  "splits": [
+   {
+    "code": "fullBody1",
+    "name": "Full body ×1",
+    "suits": "Very busy weeks or running-focused plans.",
+    "shown": true,
+    "days": [
+     {
+      "name": "Full body",
+      "focus": "fullBody",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "squat"
+       },
+       {
+        "role": "main",
+        "pattern": "horizontalPush"
+       },
+       {
+        "role": "accessory",
+        "pattern": "hingeAccessory"
+       },
+       {
+        "role": "accessory",
+        "pattern": "horizontalPull"
+       },
+       {
+        "role": "accessory",
+        "pattern": "verticalPush"
+       },
+       {
+        "role": "accessory",
+        "pattern": "core"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "code": "fullBody2",
+    "name": "Full body ×2",
+    "suits": "Most runners: two sessions that cover everything.",
+    "shown": true,
+    "days": [
+     {
+      "name": "Full body A",
+      "focus": "fullBody",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "squat"
+       },
+       {
+        "role": "main",
+        "pattern": "horizontalPush"
+       },
+       {
+        "role": "accessory",
+        "pattern": "horizontalPull"
+       },
+       {
+        "role": "accessory",
+        "pattern": "calf"
+       },
+       {
+        "role": "accessory",
+        "pattern": "core"
+       }
+      ]
+     },
+     {
+      "name": "Full body B",
+      "focus": "fullBody",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "hinge"
+       },
+       {
+        "role": "main",
+        "pattern": "verticalPush"
+       },
+       {
+        "role": "accessory",
+        "pattern": "verticalPull"
+       },
+       {
+        "role": "accessory",
+        "pattern": "lunge"
+       },
+       {
+        "role": "accessory",
+        "pattern": "antiRotation"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "code": "fullBody3",
+    "name": "Full body ×3",
+    "suits": "Balanced hybrid, newer lifters.",
+    "shown": true,
+    "days": [
+     {
+      "name": "Full body A",
+      "focus": "fullBody",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "squat"
+       },
+       {
+        "role": "main",
+        "pattern": "horizontalPush"
+       },
+       {
+        "role": "accessory",
+        "pattern": "horizontalPull"
+       },
+       {
+        "role": "accessory",
+        "pattern": "calf"
+       },
+       {
+        "role": "accessory",
+        "pattern": "core"
+       }
+      ]
+     },
+     {
+      "name": "Full body B",
+      "focus": "fullBody",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "hinge"
+       },
+       {
+        "role": "main",
+        "pattern": "verticalPush"
+       },
+       {
+        "role": "accessory",
+        "pattern": "verticalPull"
+       },
+       {
+        "role": "accessory",
+        "pattern": "lunge"
+       },
+       {
+        "role": "accessory",
+        "pattern": "antiRotation"
+       }
+      ]
+     },
+     {
+      "name": "Full body C",
+      "focus": "fullBody",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "lunge"
+       },
+       {
+        "role": "main",
+        "pattern": "verticalPull"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Incline Dumbbell Press"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Barbell Hip Thrust"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Single-Leg Calf Raise"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Side Plank"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "code": "upperLower",
+    "name": "Upper / Lower",
+    "suits": "Strength focus with 4 lifting days.",
+    "shown": true,
+    "days": [
+     {
+      "name": "Upper A",
+      "focus": "upper",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "horizontalPush"
+       },
+       {
+        "role": "main",
+        "pattern": "horizontalPull"
+       },
+       {
+        "role": "accessory",
+        "pattern": "verticalPush"
+       },
+       {
+        "role": "accessory",
+        "pattern": "verticalPull"
+       },
+       {
+        "role": "accessory",
+        "pattern": "arms"
+       }
+      ]
+     },
+     {
+      "name": "Lower A",
+      "focus": "lower",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "squat"
+       },
+       {
+        "role": "accessory",
+        "pattern": "hingeAccessory"
+       },
+       {
+        "role": "accessory",
+        "pattern": "lunge"
+       },
+       {
+        "role": "accessory",
+        "pattern": "calf"
+       },
+       {
+        "role": "accessory",
+        "pattern": "core"
+       }
+      ]
+     },
+     {
+      "name": "Upper B",
+      "focus": "upper",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "verticalPush"
+       },
+       {
+        "role": "main",
+        "pattern": "verticalPull"
+       },
+       {
+        "role": "accessory",
+        "pattern": "horizontalPush"
+       },
+       {
+        "role": "accessory",
+        "pattern": "horizontalPull"
+       },
+       {
+        "role": "accessory",
+        "pattern": "core"
+       }
+      ]
+     },
+     {
+      "name": "Lower B",
+      "focus": "lower",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "hinge"
+       },
+       {
+        "role": "main",
+        "pattern": "lunge"
+       },
+       {
+        "role": "accessory",
+        "pattern": "calf"
+       },
+       {
+        "role": "accessory",
+        "pattern": "antiRotation"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "code": "ppl",
+    "name": "Push / Pull / Legs",
+    "suits": "Muscle focus with 3 lifting days.",
+    "shown": true,
+    "days": [
+     {
+      "name": "Push",
+      "focus": "push",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "horizontalPush"
+       },
+       {
+        "role": "main",
+        "pattern": "verticalPush"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Incline Dumbbell Press"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Dumbbell Lateral Raise"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Triceps Pushdown"
+       }
+      ]
+     },
+     {
+      "name": "Pull",
+      "focus": "pull",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "verticalPull"
+       },
+       {
+        "role": "main",
+        "pattern": "horizontalPull"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Face Pull"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Rear Delt Fly"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Dumbbell Curl"
+       }
+      ]
+     },
+     {
+      "name": "Legs",
+      "focus": "legs",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "squat"
+       },
+       {
+        "role": "accessory",
+        "pattern": "hingeAccessory"
+       },
+       {
+        "role": "accessory",
+        "pattern": "lunge"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Leg Curl"
+       },
+       {
+        "role": "accessory",
+        "pattern": "calf"
+       },
+       {
+        "role": "accessory",
+        "pattern": "core"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "code": "ppl6",
+    "name": "Push / Pull / Legs ×2",
+    "suits": "Experienced lifters, muscle focus, light running.",
+    "shown": true,
+    "days": [
+     {
+      "name": "Push A",
+      "focus": "push",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "horizontalPush"
+       },
+       {
+        "role": "main",
+        "pattern": "verticalPush"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Incline Dumbbell Press"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Dumbbell Lateral Raise"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Triceps Pushdown"
+       }
+      ]
+     },
+     {
+      "name": "Pull A",
+      "focus": "pull",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "verticalPull"
+       },
+       {
+        "role": "main",
+        "pattern": "horizontalPull"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Face Pull"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Rear Delt Fly"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Dumbbell Curl"
+       }
+      ]
+     },
+     {
+      "name": "Legs A",
+      "focus": "legs",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "squat"
+       },
+       {
+        "role": "accessory",
+        "pattern": "hingeAccessory"
+       },
+       {
+        "role": "accessory",
+        "pattern": "lunge"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Leg Curl"
+       },
+       {
+        "role": "accessory",
+        "pattern": "calf"
+       },
+       {
+        "role": "accessory",
+        "pattern": "core"
+       }
+      ]
+     },
+     {
+      "name": "Push B",
+      "focus": "push",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "verticalPush"
+       },
+       {
+        "role": "main",
+        "pattern": "named",
+        "exerciseName": "Incline Barbell Bench Press"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Dips"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Cable Fly"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Overhead Triceps Extension"
+       }
+      ]
+     },
+     {
+      "name": "Pull B",
+      "focus": "pull",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "horizontalPull"
+       },
+       {
+        "role": "main",
+        "pattern": "named",
+        "exerciseName": "Chin-Up"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Seated Cable Row"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Face Pull"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Hammer Curl"
+       }
+      ]
+     },
+     {
+      "name": "Legs B",
+      "focus": "legs",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "named",
+        "exerciseName": "Trap Bar Deadlift"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Bulgarian Split Squat"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Leg Press"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Nordic Hamstring Curl"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Seated Calf Raise"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Hanging Leg Raise"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "code": "upperLowerFull",
+    "name": "Upper / Lower / Full",
+    "suits": "3 days, a bit more volume per muscle than full body.",
+    "shown": true,
+    "days": [
+     {
+      "name": "Upper",
+      "focus": "upper",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "horizontalPush"
+       },
+       {
+        "role": "main",
+        "pattern": "horizontalPull"
+       },
+       {
+        "role": "accessory",
+        "pattern": "verticalPush"
+       },
+       {
+        "role": "accessory",
+        "pattern": "verticalPull"
+       },
+       {
+        "role": "accessory",
+        "pattern": "arms"
+       }
+      ]
+     },
+     {
+      "name": "Lower",
+      "focus": "lower",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "squat"
+       },
+       {
+        "role": "accessory",
+        "pattern": "hingeAccessory"
+       },
+       {
+        "role": "accessory",
+        "pattern": "lunge"
+       },
+       {
+        "role": "accessory",
+        "pattern": "calf"
+       },
+       {
+        "role": "accessory",
+        "pattern": "core"
+       }
+      ]
+     },
+     {
+      "name": "Full body",
+      "focus": "fullBody",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "hinge"
+       },
+       {
+        "role": "main",
+        "pattern": "verticalPush"
+       },
+       {
+        "role": "accessory",
+        "pattern": "verticalPull"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Step-Up"
+       },
+       {
+        "role": "accessory",
+        "pattern": "antiRotation"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "code": "pplUpperLower",
+    "name": "PPL + Upper / Lower",
+    "suits": "5 lifting days, muscle focus.",
+    "shown": true,
+    "days": [
+     {
+      "name": "Push",
+      "focus": "push",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "horizontalPush"
+       },
+       {
+        "role": "main",
+        "pattern": "verticalPush"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Incline Dumbbell Press"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Dumbbell Lateral Raise"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Triceps Pushdown"
+       }
+      ]
+     },
+     {
+      "name": "Pull",
+      "focus": "pull",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "verticalPull"
+       },
+       {
+        "role": "main",
+        "pattern": "horizontalPull"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Face Pull"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Rear Delt Fly"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Dumbbell Curl"
+       }
+      ]
+     },
+     {
+      "name": "Legs",
+      "focus": "legs",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "squat"
+       },
+       {
+        "role": "accessory",
+        "pattern": "hingeAccessory"
+       },
+       {
+        "role": "accessory",
+        "pattern": "lunge"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Leg Curl"
+       },
+       {
+        "role": "accessory",
+        "pattern": "calf"
+       },
+       {
+        "role": "accessory",
+        "pattern": "core"
+       }
+      ]
+     },
+     {
+      "name": "Upper",
+      "focus": "upper",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "verticalPush"
+       },
+       {
+        "role": "main",
+        "pattern": "verticalPull"
+       },
+       {
+        "role": "accessory",
+        "pattern": "horizontalPush"
+       },
+       {
+        "role": "accessory",
+        "pattern": "horizontalPull"
+       },
+       {
+        "role": "accessory",
+        "pattern": "core"
+       }
+      ]
+     },
+     {
+      "name": "Lower",
+      "focus": "lower",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "hinge"
+       },
+       {
+        "role": "main",
+        "pattern": "lunge"
+       },
+       {
+        "role": "accessory",
+        "pattern": "calf"
+       },
+       {
+        "role": "accessory",
+        "pattern": "antiRotation"
+       }
+      ]
+     }
+    ]
+   }
+  ],
+  "byGoal": {
+   "first5k": {
+    "main": {
+     "sets": 3,
+     "repsLow": 5,
+     "repsHigh": 8,
+     "restSeconds": 150
+    },
+    "accessory": {
+     "sets": 2,
+     "repsLow": 8,
+     "repsHigh": 12,
+     "restSeconds": 60
+    }
+   },
+   "faster5k": {
+    "main": {
+     "sets": 3,
+     "repsLow": 5,
+     "repsHigh": 8,
+     "restSeconds": 150
+    },
+    "accessory": {
+     "sets": 2,
+     "repsLow": 8,
+     "repsHigh": 12,
+     "restSeconds": 60
+    }
+   },
+   "faster10k": {
+    "main": {
+     "sets": 3,
+     "repsLow": 5,
+     "repsHigh": 8,
+     "restSeconds": 150
+    },
+    "accessory": {
+     "sets": 2,
+     "repsLow": 8,
+     "repsHigh": 12,
+     "restSeconds": 60
+    }
+   },
+   "halfMarathon": {
+    "main": {
+     "sets": 3,
+     "repsLow": 5,
+     "repsHigh": 8,
+     "restSeconds": 150
+    },
+    "accessory": {
+     "sets": 2,
+     "repsLow": 8,
+     "repsHigh": 12,
+     "restSeconds": 60
+    }
+   },
+   "marathon": {
+    "main": {
+     "sets": 3,
+     "repsLow": 5,
+     "repsHigh": 8,
+     "restSeconds": 150
+    },
+    "accessory": {
+     "sets": 2,
+     "repsLow": 8,
+     "repsHigh": 12,
+     "restSeconds": 60
+    }
+   },
+   "buildStrength": {
+    "main": {
+     "sets": 5,
+     "repsLow": 4,
+     "repsHigh": 6,
+     "restSeconds": 180
+    },
+    "accessory": {
+     "sets": 3,
+     "repsLow": 8,
+     "repsHigh": 10,
+     "restSeconds": 90
+    }
+   },
+   "buildMuscle": {
+    "main": {
+     "sets": 4,
+     "repsLow": 8,
+     "repsHigh": 12,
+     "restSeconds": 120
+    },
+    "accessory": {
+     "sets": 3,
+     "repsLow": 10,
+     "repsHigh": 15,
+     "restSeconds": 75
+    }
+   },
+   "balancedHybrid": {
+    "main": {
+     "sets": 4,
+     "repsLow": 6,
+     "repsHigh": 8,
+     "restSeconds": 150
+    },
+    "accessory": {
+     "sets": 3,
+     "repsLow": 8,
+     "repsHigh": 12,
+     "restSeconds": 75
+    }
+   }
+  }
+ },
  "programmes": [
   {
    "goal": "halfMarathon",

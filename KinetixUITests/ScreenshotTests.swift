@@ -58,6 +58,7 @@ final class ScreenshotTests: XCTestCase {
         snap("05-onboarding-lift-numbers"); tap("Skip")
         tap("Half marathon"); snap("06-onboarding-goal"); next()
         snap("07-onboarding-event"); tap("Skip")
+        snap("07b-onboarding-gym-week"); next()
         snap("08-onboarding-days"); next()
         snap("09-onboarding-doubles"); next()
         tap("Full gym"); snap("10-onboarding-equipment"); next()

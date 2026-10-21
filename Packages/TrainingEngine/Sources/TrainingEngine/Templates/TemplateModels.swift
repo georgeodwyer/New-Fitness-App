@@ -94,8 +94,18 @@ extension Equipment {
 // MARK: - Strength programmes
 
 public struct ExerciseSlot: Codable, Equatable, Sendable {
+    /// A movement pattern (the app picks the exercise for the user's equipment), or "named".
     public var pattern: String
     public var role: SlotRole
+    /// A specific exercise written by the coach (swapped for the closest option if the user's
+    /// equipment can't do it).
+    public var exerciseName: String? = nil
+    /// The coach's sets/reps/rest for this exercise (blank = the goal's defaults for the role).
+    public var sets: Int? = nil
+    public var repsLow: Int? = nil
+    public var repsHigh: Int? = nil
+    public var restSeconds: Int? = nil
+    public var note: String? = nil
 }
 
 public struct StrengthSessionTemplate: Codable, Equatable, Sendable {
