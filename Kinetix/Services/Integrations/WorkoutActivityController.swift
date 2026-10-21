@@ -98,7 +98,7 @@ enum WidgetSnapshotService {
         let integrations = IntegrationSettings.shared
         let data = DashboardService.make(sessions: sessions, runs: all(RunLogModel.self), lifts: all(StrengthLogModel.self),
                                          checkIns: all(RecoveryCheckInModel.self), profile: profile?.profile,
-                                         external: integrations.loadWorkouts, now: now)
+                                         external: integrations.loadWorkouts, health: HealthInputs.current, now: now)
         let calendar = Calendar.kinetix
         let today = sessions.filter { calendar.isDate($0.date, inSameDayAs: now) }
             .sorted { $0.slot == .morning && $1.slot == .evening }
@@ -123,6 +123,10 @@ enum WidgetSnapshotService {
             loadRatio: data.load.combined.ratio,
             loadZone: data.load.combined.status.rawValue,
             loadTitle: data.load.combined.status.title,
+            strain: (data.strain.today.strain * 10).rounded() / 10,
+            strainLow: (data.strain.target.low * 10).rounded() / 10,
+            strainHigh: (data.strain.target.high * 10).rounded() / 10,
+            recovery: data.strain.recovery?.score,
             updatedAt: now
         )
         var previous = WidgetSnapshot.load()

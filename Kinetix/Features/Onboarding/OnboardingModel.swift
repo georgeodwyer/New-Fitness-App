@@ -6,7 +6,7 @@ import TrainingEngine
 @Observable
 final class OnboardingModel {
     enum Step: Int, CaseIterable {
-        case units, runningExperience, raceTime, currentRunning, liftingExperience, liftEstimates,
+        case units, age, runningExperience, raceTime, currentRunning, liftingExperience, liftEstimates,
              goal, eventDate, gymWeek, trainingDays, doubleSessions, equipment, finish
     }
 
@@ -35,6 +35,11 @@ final class OnboardingModel {
     var step: Step = .units
 
     var units: UnitSystem = UnitPreference.stored
+    /// Age sets max heart rate and so the heart-rate zones (skipped = not known).
+    var knowsAge = true
+    var age = 30
+    /// Kept as they were when editing (set in Settings → Heart rate zones).
+    private var heartRateZones: HeartRateZoneSettings?
     var runningExperience: ExperienceLevel?
     var knowsRaceTime = false
     var raceDistance: RaceDistance = .fiveK
@@ -80,6 +85,7 @@ final class OnboardingModel {
     var canContinue: Bool {
         switch step {
         case .units: return true
+        case .age: return !knowsAge || (13...100).contains(age)
         case .runningExperience: return runningExperience != nil
         case .raceTime: return !knowsRaceTime || raceTimeSeconds >= 600
         case .currentRunning: return true
@@ -97,7 +103,7 @@ final class OnboardingModel {
 
     /// Steps that can be skipped with a "Skip" button.
     var isOptional: Bool {
-        [.raceTime, .currentRunning, .liftEstimates, .eventDate].contains(step)
+        [.age, .raceTime, .currentRunning, .liftEstimates, .eventDate].contains(step)
     }
 
     var raceTimeSeconds: Double {
@@ -123,6 +129,7 @@ final class OnboardingModel {
     /// Clears an optional answer (Skip in onboarding, "Clear answer" when editing).
     func clear(_ step: Step) {
         switch step {
+        case .age: knowsAge = false
         case .raceTime: knowsRaceTime = false
         case .currentRunning: knowsCurrentRunning = false
         case .liftEstimates:
@@ -153,7 +160,9 @@ final class OnboardingModel {
             easyFirstWeek: racedRecently ? easyFirstWeek : nil,
             easyFirstWeekRequestedAt: racedRecently && easyFirstWeek ? (easyFirstWeekRequestedAt ?? Date()) : nil,
             liftSessionsPerWeek: gymWeekChosen ? liftSessionsPerWeek : nil,
-            splitCode: gymWeekChosen && liftSessionsPerWeek > 0 ? splitCode : nil
+            splitCode: gymWeekChosen && liftSessionsPerWeek > 0 ? splitCode : nil,
+            birthYear: knowsAge ? Calendar.current.component(.year, from: .now) - age : nil,
+            heartRateZones: heartRateZones
         )
     }
 
@@ -170,6 +179,9 @@ final class OnboardingModel {
         acceptedHealthNotice = true
         units = profile.units
         runningExperience = profile.runningExperience
+        knowsAge = profile.birthYear != nil
+        if let profileAge = profile.age() { age = profileAge }
+        heartRateZones = profile.heartRateZones
         if let race = profile.recentRace {
             knowsRaceTime = true
             raceDistance = RaceDistance.allCases.min { abs($0.rawValue - race.distanceMeters) < abs($1.rawValue - race.distanceMeters) } ?? .fiveK

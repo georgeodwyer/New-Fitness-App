@@ -2,8 +2,8 @@ import SwiftUI
 import SwiftData
 import TrainingEngine
 
-/// Dashboard: today's sessions, recovery check-in, body data from Apple Health, training
-/// load (running, lifting, combined; acute:chronic ratio), this week against plan, the week
+/// Dashboard: today's sessions, recovery check-in, body data from Apple Health, strain (0–21)
+/// against today's target with recovery and legs, daily strain, this week against plan, the week
 /// at a glance, progress towards the goal, recent PRs and estimated race times. Cards can be
 /// reordered and hidden (Edit dashboard); the layout syncs with the account.
 struct HomeView: View {
@@ -31,7 +31,7 @@ struct HomeView: View {
 
     private var data: DashboardData {
         DashboardService.make(sessions: sessions, runs: runs, lifts: lifts, checkIns: checkIns, profile: profile,
-                              external: integrations.loadWorkouts)
+                              external: integrations.loadWorkouts, health: HealthInputs.current)
     }
 
     private var todaysSessions: [PlannedSessionModel] {
@@ -225,9 +225,9 @@ struct HomeView: View {
         case .body:
             BodyCard()
         case .load:
-            LoadHeroCard(report: data.load)
+            StrainCard(report: data.strain)
         case .dailyLoad:
-            DailyLoadChart(daily: data.load.daily)
+            DailyStrainChart(days: data.strain.days, target: data.strain.target)
         case .week:
             WeekProgressCard(data: data, units: units)
         case .weekStrip:

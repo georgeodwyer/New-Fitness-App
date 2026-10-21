@@ -81,6 +81,11 @@ struct WidgetSnapshot: Codable, Equatable {
     /// LoadStatus raw value: building, undertrained, optimal, high.
     var loadZone: String
     var loadTitle: String
+    /// Today's strain (0–21), its target band and recovery % (nil in snapshots from older versions).
+    var strain: Double? = nil
+    var strainLow: Double? = nil
+    var strainHigh: Double? = nil
+    var recovery: Double? = nil
     var updatedAt: Date
 
     static let key = "widget.snapshot"
@@ -101,6 +106,7 @@ struct WidgetSnapshot: Codable, Equatable {
         runDone: "21 km", runPlanned: "32 km", runFraction: 0.66,
         liftDone: "6,200 kg", liftPlanned: "9,000 kg", liftFraction: 0.69,
         loadRatio: 1.08, loadZone: "optimal", loadTitle: "Optimal",
+        strain: 11.4, strainLow: 10.5, strainHigh: 13.5, recovery: 72,
         updatedAt: .now
     )
 }

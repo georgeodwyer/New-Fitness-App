@@ -51,6 +51,7 @@ final class ScreenshotTests: XCTestCase {
         build.tap()
         snap("01-onboarding-units")
         next()
+        snap("01b-onboarding-age"); next()
         tap("Intermediate"); snap("02-onboarding-running"); next()
         snap("03-onboarding-race-time"); tap("Skip")
         snap("03b-onboarding-current-running"); next()

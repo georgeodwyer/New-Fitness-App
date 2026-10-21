@@ -206,7 +206,7 @@ struct WeekWidgetView: View {
     }
 }
 
-// MARK: - Training load
+// MARK: - Strain
 
 struct LoadWidget: Widget {
     var body: some WidgetConfiguration {
@@ -215,8 +215,8 @@ struct LoadWidget: Widget {
                 .containerBackground(KXColor.background, for: .widget)
                 .widgetURL(URL(string: "kinetix://tab/today"))
         }
-        .configurationDisplayName("Training load")
-        .description("Your acute:chronic load ratio and zone.")
+        .configurationDisplayName("Strain")
+        .description("Today's strain against your target, and recovery.")
         .supportedFamilies([.systemSmall, .accessoryCircular, .accessoryRectangular])
     }
 }
@@ -225,57 +225,50 @@ struct LoadWidgetView: View {
     let snapshot: WidgetSnapshot?
     @Environment(\.widgetFamily) private var family
 
-    private var zoneColor: Color {
-        switch snapshot?.loadZone {
-        case "optimal": return KXColor.success
-        case "high": return KXColor.danger
-        case "undertrained": return KXColor.warning
-        default: return KXColor.other
-        }
+    private var strain: Double { snapshot?.strain ?? 0 }
+    private var strainText: String { snapshot?.strain.map { String(format: "%.1f", $0) } ?? "–" }
+    private var targetText: String? {
+        guard let low = snapshot?.strainLow, let high = snapshot?.strainHigh else { return nil }
+        return String(format: "Target %.1f–%.1f", low, high)
     }
-
-    private var zoneSymbol: String {
-        switch snapshot?.loadZone {
-        case "optimal": return "checkmark.circle.fill"
-        case "high": return "exclamationmark.triangle.fill"
-        case "undertrained": return "arrow.down.circle.fill"
-        default: return "hourglass"
-        }
-    }
-
-    private var ratioText: String { snapshot?.loadRatio.map { String(format: "%.2f", $0) } ?? "–" }
+    private var recoveryText: String? { snapshot?.recovery.map { "Recovery \(Int($0))%" } }
 
     var body: some View {
         if let snapshot {
             switch family {
             case .accessoryCircular:
-                Gauge(value: min(snapshot.loadRatio ?? 0, 2), in: 0...2) {
-                    Text("Load")
+                Gauge(value: min(strain, 21), in: 0...21) {
+                    Text("Strain")
                 } currentValueLabel: {
-                    Text(ratioText)
+                    Text(strainText)
                 }
                 .gaugeStyle(.accessoryCircular)
             case .accessoryRectangular:
                 VStack(alignment: .leading, spacing: 1) {
-                    Text("TRAINING LOAD").font(.caption2.weight(.bold))
-                    Text(ratioText).font(.headline.monospacedDigit())
-                    Label(snapshot.loadTitle, systemImage: zoneSymbol).font(.caption)
+                    Text("STRAIN").font(.caption2.weight(.bold))
+                    Text(strainText + " / 21").font(.headline.monospacedDigit())
+                    if let targetText { Text(targetText).font(.caption) }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             default:
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("TRAINING LOAD").font(.caption2.weight(.bold)).tracking(1).foregroundStyle(KXColor.inkSecondary)
-                    Text(ratioText).font(.system(size: 38, weight: .bold, design: .rounded).monospacedDigit())
-                        .foregroundStyle(KXColor.ink)
-                    Label {
-                        Text(snapshot.loadTitle).font(.caption.weight(.semibold)).foregroundStyle(KXColor.ink)
-                    } icon: {
-                        Image(systemName: zoneSymbol).foregroundStyle(zoneColor)
+                    Text("STRAIN").font(.caption2.weight(.bold)).tracking(1).foregroundStyle(KXColor.inkSecondary)
+                    HStack(alignment: .firstTextBaseline, spacing: 2) {
+                        Text(strainText).font(.system(size: 38, weight: .bold, design: .rounded).monospacedDigit())
+                            .foregroundStyle(KXColor.ink)
+                        Text("/21").font(.caption).foregroundStyle(KXColor.inkSecondary)
                     }
-                    Text("Optimal 0.80–1.30").font(.caption2).foregroundStyle(KXColor.inkSecondary)
+                    if let targetText {
+                        Text(targetText).font(.caption.weight(.semibold)).foregroundStyle(KXColor.ink)
+                    }
+                    if let recoveryText {
+                        Text(recoveryText).font(.caption2).foregroundStyle(KXColor.inkSecondary)
+                    }
                     Spacer(minLength: 0)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .widgetAccentable()
+                .opacity(snapshot.strain == nil ? 0.6 : 1)
             }
         } else {
             NoDataView()

@@ -101,6 +101,7 @@ struct OnboardingStepContent: View {
     var body: some View {
         switch step {
         case .units: UnitsStep(model: model)
+        case .age: AgeStep(model: model)
         case .runningExperience: RunningExperienceStep(model: model)
         case .raceTime: RaceTimeStep(model: model)
         case .currentRunning: CurrentRunningStep(model: model)

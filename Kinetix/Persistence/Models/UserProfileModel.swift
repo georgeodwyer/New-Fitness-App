@@ -31,6 +31,9 @@ final class UserProfileModel: SyncTracked {
     /// Gym sessions a week and the split they chose (nil = not chosen; the app decides).
     var liftSessionsPerWeek: Int?
     var splitCode: String?
+    /// Year of birth (from their age) and their own heart-rate zones, when set.
+    var birthYear: Int?
+    var heartRateZonesData: Data?
 
     init(profile: AthleteProfile, id: UUID = UUID(), now: Date = .now) {
         self.id = id
@@ -55,6 +58,8 @@ final class UserProfileModel: SyncTracked {
         self.easyFirstWeekRequestedAt = profile.easyFirstWeekRequestedAt
         self.liftSessionsPerWeek = profile.liftSessionsPerWeek
         self.splitCode = profile.splitCode
+        self.birthYear = profile.birthYear
+        self.heartRateZonesData = profile.heartRateZones.map { StoredJSON.encode($0) }
     }
 
     /// The engine's view of this profile.
@@ -77,7 +82,9 @@ final class UserProfileModel: SyncTracked {
                 easyFirstWeek: easyFirstWeek,
                 easyFirstWeekRequestedAt: easyFirstWeekRequestedAt,
                 liftSessionsPerWeek: liftSessionsPerWeek,
-                splitCode: splitCode
+                splitCode: splitCode,
+                birthYear: birthYear,
+                heartRateZones: StoredJSON.decode(HeartRateZoneSettings.self, from: heartRateZonesData)
             )
         }
         set {
@@ -98,6 +105,8 @@ final class UserProfileModel: SyncTracked {
             easyFirstWeekRequestedAt = newValue.easyFirstWeekRequestedAt
             liftSessionsPerWeek = newValue.liftSessionsPerWeek
             splitCode = newValue.splitCode
+            birthYear = newValue.birthYear
+            heartRateZonesData = newValue.heartRateZones.map { StoredJSON.encode($0) }
             touch()
         }
     }

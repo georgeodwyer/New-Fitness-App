@@ -15,6 +15,26 @@ struct UnitsStep: View {
     }
 }
 
+struct AgeStep: View {
+    @Bindable var model: OnboardingModel
+
+    var body: some View {
+        OnboardingQuestion(plain: "How", accented: "old are you?",
+                           detail: "Your age gives a starting estimate of your max heart rate, which sets your heart-rate zones. Kinetix updates it from your runs, and you can set your own zones in Settings.")
+        VStack(spacing: KXSpacing.md) {
+            KXStepper(label: "Age",
+                      value: Binding(get: { Double(model.age) }, set: { model.age = Int($0); model.knowsAge = true }),
+                      step: 1, range: 13...100, format: { String(format: "%.0f", $0) })
+                .frame(maxWidth: .infinity)
+            Text("Estimated max heart rate: \(Int(HeartRateZones.ageEstimate(age: model.age))) bpm")
+                .font(KXFont.callout)
+                .foregroundStyle(KXColor.inkSecondary)
+        }
+        .kxCard()
+        .onAppear { model.knowsAge = true }
+    }
+}
+
 struct RunningExperienceStep: View {
     @Bindable var model: OnboardingModel
 

@@ -117,6 +117,10 @@ public struct AthleteProfile: Codable, Equatable, Sendable {
     /// Gym sessions a week and the split they chose (nil = let the plan decide, as before).
     public var liftSessionsPerWeek: Int?
     public var splitCode: String?
+    /// Year of birth, from the age they gave (nil = not given). Sets max heart rate.
+    public var birthYear: Int?
+    /// Their own heart-rate zones, when they've edited them.
+    public var heartRateZones: HeartRateZoneSettings?
 
     public init(
         runningExperience: ExperienceLevel,
@@ -135,7 +139,9 @@ public struct AthleteProfile: Codable, Equatable, Sendable {
         easyFirstWeek: Bool? = nil,
         easyFirstWeekRequestedAt: Date? = nil,
         liftSessionsPerWeek: Int? = nil,
-        splitCode: String? = nil
+        splitCode: String? = nil,
+        birthYear: Int? = nil,
+        heartRateZones: HeartRateZoneSettings? = nil
     ) {
         self.runningExperience = runningExperience
         self.recentRace = recentRace
@@ -154,6 +160,13 @@ public struct AthleteProfile: Codable, Equatable, Sendable {
         self.easyFirstWeekRequestedAt = easyFirstWeekRequestedAt
         self.liftSessionsPerWeek = liftSessionsPerWeek
         self.splitCode = splitCode
+        self.birthYear = birthYear
+        self.heartRateZones = heartRateZones
+    }
+
+    /// Age this year (nil when not given).
+    public func age(on date: Date = .now, calendar: Calendar = .current) -> Int? {
+        birthYear.map { calendar.component(.year, from: date) - $0 }
     }
 }
 

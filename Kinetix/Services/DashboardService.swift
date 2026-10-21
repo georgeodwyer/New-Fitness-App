@@ -28,7 +28,9 @@ struct DashboardData {
         }
     }
 
+    /// Kept for plan balancing (acute:chronic); not shown as a number.
     var load: LoadReport
+    var strain: StrainReport
     var week: [WeekDay]
     var plannedRunMeters: Double
     var actualRunMeters: Double
@@ -59,6 +61,7 @@ enum DashboardService {
         checkIns: [RecoveryCheckInModel],
         profile: AthleteProfile?,
         external: [ExternalWorkout] = [],
+        health: HealthInputs = .none,
         now: Date = .now
     ) -> DashboardData {
         let calendar = Calendar.kinetix
@@ -98,16 +101,22 @@ enum DashboardService {
             total + prescription.exercises.reduce(0.0) { $0 + Double($1.sets * $1.repRange.upper) * ($1.weightKg ?? 0) }
         }
         let weekLifts = lifts.filter { $0.isFinished && !$0.isSoftDeleted && $0.startedAt >= monday && $0.startedAt < nextMonday }
+        let todaysCheckIn = checkIns.first { calendar.isDate($0.date, inSameDayAs: today) && !$0.isSoftDeleted }
+        let strain = StrainService.report(
+            sessions: sessions, runs: runs, lifts: lifts,
+            checkIn: todaysCheckIn?.engineValue(restingHeartRate: health.restingHeartRate, hrv: health.hrv),
+            profile: profile, external: external, health: health, now: now)
 
         return DashboardData(
             load: LoadModel.report(entries: loadEntries(runs: runs, lifts: lifts, external: external), today: now, calendar: calendar),
+            strain: strain,
             week: week,
             plannedRunMeters: plannedRun,
             actualRunMeters: weekRuns.reduce(0) { $0 + $1.distanceMeters },
             plannedLiftVolumeKg: plannedVolume,
             actualLiftVolumeKg: weekLifts.reduce(0) { $0 + $1.volumeKg },
             adherence: adherence,
-            todaysCheckIn: checkIns.first { calendar.isDate($0.date, inSameDayAs: today) && !$0.isSoftDeleted }
+            todaysCheckIn: todaysCheckIn
         )
     }
 }

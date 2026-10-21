@@ -72,6 +72,20 @@ public enum ExternalWorkouts {
         return kept.sorted { $0.start < $1.start }
     }
 
+    /// Workouts from other apps of 5 minutes or more that don't overlap a session Kinetix
+    /// recorded (by at least half the shorter one).
+    public static func notRecorded(_ workouts: [ExternalWorkout], excluding recorded: [DateInterval]) -> [ExternalWorkout] {
+        workouts.filter { workout in
+            guard workout.durationSeconds >= 5 * 60 else { return false }
+            let interval = DateInterval(start: workout.start, end: max(workout.start, workout.end))
+            return !recorded.contains { other in
+                guard let overlap = interval.intersection(with: other) else { return false }
+                let shorter = min(interval.duration, other.duration)
+                return shorter > 0 && overlap.duration / shorter >= 0.5
+            }
+        }
+    }
+
     /// Load entries for workouts from other apps, leaving out any that overlap a session
     /// Kinetix already recorded (e.g. a run tracked on both the Watch and the iPhone), so
     /// the same training isn't counted twice.

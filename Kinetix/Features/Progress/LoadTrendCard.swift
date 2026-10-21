@@ -2,7 +2,8 @@ import SwiftUI
 import Charts
 import TrainingEngine
 
-/// Acute:chronic ratio over the last 8 weeks against the undertrained / optimal / high zones.
+/// The last 7 days against an average week of the last 4 (as a % of usual), over 8 weeks,
+/// against the lighter / normal / big-jump bands.
 struct LoadTrendCard: View {
     let report: LoadReport
     @State private var selected: Date?
@@ -14,7 +15,7 @@ struct LoadTrendCard: View {
     }
 
     private var points: [Point] {
-        report.ratioTrend.compactMap { entry in entry.ratio.map { Point(date: entry.date, ratio: min($0, 2.2)) } }
+        report.ratioTrend.compactMap { entry in entry.ratio.map { Point(date: entry.date, ratio: min($0, 2.2) * 100) } }
     }
 
     private var selectedPoint: Point? {
@@ -34,24 +35,24 @@ struct LoadTrendCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: KXSpacing.md) {
-            KXSectionHeader("Load ratio trend", subtitle: "Acute : chronic, last 8 weeks")
+            KXSectionHeader("Week vs your usual", subtitle: "Last 7 days as a % of an average week, over 8 weeks")
             if points.count < 2 {
-                Text("Your ratio appears after about two weeks of training. Keep logging sessions.")
+                Text("This appears after about two weeks of training. Keep logging sessions.")
                     .font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
             } else {
                 Chart {
                     ForEach(points) { point in
-                        LineMark(x: .value("Date", point.date), y: .value("Ratio", point.ratio))
+                        LineMark(x: .value("Date", point.date), y: .value("Percent", point.ratio))
                             .foregroundStyle(KXColor.ink)
                             .lineStyle(StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
                             .interpolationMethod(.monotone)
                     }
                     if let last = points.last {
-                        PointMark(x: .value("Date", last.date), y: .value("Ratio", last.ratio))
+                        PointMark(x: .value("Date", last.date), y: .value("Percent", last.ratio))
                             .foregroundStyle(KXColor.ink)
                             .symbolSize(60)
                             .annotation(position: .top, alignment: .trailing) {
-                                Text(String(format: "%.2f", last.ratio)).font(.caption.weight(.semibold)).foregroundStyle(KXColor.ink)
+                                Text("\(Int(last.ratio.rounded()))%").font(.caption.weight(.semibold)).foregroundStyle(KXColor.ink)
                             }
                     }
                     if let point = selectedPoint {
@@ -60,7 +61,7 @@ struct LoadTrendCard: View {
                             .annotation(position: .top, overflowResolution: .init(x: .fit(to: .chart), y: .disabled)) {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(point.date.formatted(.dateTime.day().month())).font(.caption2.weight(.semibold))
-                                    Text(String(format: "Ratio %.2f · %@", point.ratio, LoadStatus.from(ratio: point.ratio).title)).font(.caption2)
+                                    Text("\(Int(point.ratio.rounded()))% of usual").font(.caption2)
                                 }
                                 .foregroundStyle(KXColor.ink)
                                 .padding(KXSpacing.sm)
@@ -69,7 +70,7 @@ struct LoadTrendCard: View {
                             }
                     }
                 }
-                .chartYScale(domain: 0...2.2)
+                .chartYScale(domain: 0...220)
                 .chartBackground { proxy in
                     // Zone bands (recessive washes) behind the line.
                     GeometryReader { geo in
@@ -77,15 +78,15 @@ struct LoadTrendCard: View {
                             let plot = geo[plotAnchor]
                             let y = { (value: Double) in plot.minY + (proxy.position(forY: value) ?? 0) }
                             ZStack(alignment: .topLeading) {
-                                band(top: y(2.2), bottom: y(1.3), plot: plot, color: KXColor.danger.opacity(0.1), label: "High")
-                                band(top: y(1.3), bottom: y(0.8), plot: plot, color: KXColor.success.opacity(0.14), label: "Optimal")
-                                band(top: y(0.8), bottom: y(0), plot: plot, color: KXColor.warning.opacity(0.14), label: "Under")
+                                band(top: y(220), bottom: y(130), plot: plot, color: KXColor.danger.opacity(0.1), label: "Big jump")
+                                band(top: y(130), bottom: y(80), plot: plot, color: KXColor.success.opacity(0.14), label: "Normal")
+                                band(top: y(80), bottom: y(0), plot: plot, color: KXColor.warning.opacity(0.14), label: "Lighter")
                             }
                         }
                     }
                 }
                 .chartYAxis {
-                    AxisMarks(position: .leading, values: [0, 0.8, 1.3, 2.0]) { _ in
+                    AxisMarks(position: .leading, values: [0, 80, 130, 200]) { _ in
                         AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5)).foregroundStyle(KXColor.border)
                         AxisValueLabel().foregroundStyle(KXColor.inkSecondary)
                     }
@@ -97,7 +98,7 @@ struct LoadTrendCard: View {
                 }
                 .chartXSelection(value: $selected)
                 .frame(height: 180)
-                .accessibilityLabel("Load ratio over the last 8 weeks; latest \(String(format: "%.2f", points.last?.ratio ?? 0))")
+                .accessibilityLabel("This week against your usual over the last 8 weeks; latest \(Int(points.last?.ratio ?? 0)) percent")
             }
         }
         .kxCard()

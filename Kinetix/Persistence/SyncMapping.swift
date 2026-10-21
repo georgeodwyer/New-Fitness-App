@@ -83,6 +83,8 @@ extension UserProfileModel: SyncableModel {
         easyFirstWeekRequestedAt = p.easyFirstWeekRequestedAt
         liftSessionsPerWeek = p.liftSessionsPerWeek
         splitCode = p.splitCode
+        birthYear = p.birthYear
+        heartRateZonesData = p.heartRateZones.map { StoredJSON.encode($0) }
         createdAt = payload.createdAt
     }
 

@@ -23,7 +23,7 @@ struct TrainingProfileView: View {
     }
 
     private static let allQuestions: [OnboardingModel.Step] = [
-        .runningExperience, .raceTime, .currentRunning, .goal, .eventDate, .gymWeek, .liftingExperience, .liftEstimates,
+        .age, .runningExperience, .raceTime, .currentRunning, .goal, .eventDate, .gymWeek, .liftingExperience, .liftEstimates,
         .trainingDays, .doubleSessions, .equipment
     ]
 
@@ -74,6 +74,19 @@ struct TrainingProfileView: View {
                     step: .doubleSessions)
                 row("Gym week", value: gymWeekText, step: .gymWeek)
             }
+            Section {
+                row("Age", value: model.knowsAge ? "\(model.age)" : "Not given", step: .age)
+                NavigationLink {
+                    HeartRateZonesView(profileModel: profileModel)
+                } label: {
+                    LabeledContent("Heart rate zones", value: profileModel.profile.heartRateZones?.isCustom == true ? "Your own" : "Automatic")
+                }
+                .accessibilityIdentifier("profile.heartRateZones")
+            } header: {
+                Text("Heart rate")
+            } footer: {
+                Text("Your age gives a first estimate of your max heart rate; your runs update it.")
+            }
             Section("Running") {
                 row("Experience", value: model.runningExperience?.displayName ?? "–", step: .runningExperience)
                 row("Recent race time", value: raceText, step: .raceTime)
@@ -92,9 +105,12 @@ struct TrainingProfileView: View {
                 editing = nil
             }, onSave: {
                 editing = nil
-                guard !changes.isEmpty else { return }
+                let planChanges = changes
+                save()
+                guard !planChanges.isEmpty else { return }
+                pendingChanges = planChanges
                 // Ask about the plan once the editor has closed (iOS ignores a dialog shown while it's closing).
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { save() }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { showRegenerate = true }
             })
         }
         .navigationTitle("Training profile")
@@ -137,12 +153,14 @@ struct TrainingProfileView: View {
         .foregroundStyle(KXColor.ink)
     }
 
+    /// Saves every answer (age and other answers that don't change the plan too).
     private func save() {
-        pendingChanges = changes
         var updated = model.profile
         updated.units = original.units // units are changed on the Settings screen
+        updated.heartRateZones = original.heartRateZones // edited on the Heart rate zones screen
+        guard updated != original else { return }
         profileModel.profile = updated
         try? context.save()
-        showRegenerate = true
+        SyncService.shared.requestSync()
     }
 }

@@ -3,7 +3,7 @@ import SwiftData
 import TrainingEngine
 
 /// Progress, split four ways: Running (totals, weekly distance, best efforts, every run),
-/// Strength (weekly volume, lifts, every session), Overall (combined training load) and
+/// Strength (weekly volume, lifts, every session), Overall (daily strain and this week against usual) and
 /// Health (body data from Apple Health over 7 or 30 days).
 struct ProgressScreen: View {
     enum Section: String, CaseIterable, Identifiable {
@@ -50,10 +50,11 @@ struct ProgressScreen: View {
             entries: DashboardService.loadEntries(runs: runs, lifts: workouts,
                                                   external: integrations.loadWorkouts),
             today: .now, calendar: .kinetix)
+        let strain = StrainService.report(sessions: [], runs: runs, lifts: workouts, checkIn: nil, profile: profiles.first?.profile,
+                                          external: integrations.loadWorkouts, health: HealthInputs.current)
         return VStack(alignment: .leading, spacing: KXSpacing.xl) {
-            LoadHeroCard(report: report)
+            DailyStrainChart(days: strain.days)
             LoadTrendCard(report: report)
-            DailyLoadChart(daily: report.daily)
         }
     }
 }
