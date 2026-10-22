@@ -29,8 +29,9 @@ jump; it's shown as "This week vs your usual" (a %) rather than as a number like
 
 ## Recovery (0–100)
 
-HRV against their usual (35%), resting heart rate against usual (25%), hours asleep (20%) and
-the morning check-in (20%). Missing parts are left out and the rest re-weighted. Below 34 is
+HRV against their usual (45%), resting heart rate against usual (25%), hours asleep (20%) and
+Your score (10%), so the score leans on HRV and the check-in only nudges it. Missing parts
+are left out and the rest re-weighted. Below 34 is
 low, 67 and over is high.
 
 ### Waiting for last night

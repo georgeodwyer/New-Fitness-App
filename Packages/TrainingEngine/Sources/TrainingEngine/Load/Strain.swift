@@ -238,7 +238,7 @@ public struct RecoveryScore: Equatable, Sendable {
 
     public var band: Band { score < 34 ? .low : score < 67 ? .medium : .high }
 
-    static let weights = (hrv: 0.35, restingHeartRate: 0.25, sleep: 0.2, checkIn: 0.2)
+    static let weights = (hrv: 0.45, restingHeartRate: 0.25, sleep: 0.2, checkIn: 0.1)
 
     public static func make(hrv: HRVSignal?, restingHeartRate: RestingHeartRateSignal?, sleepHours: Double?,
                             checkIn: RecoveryCheckIn?) -> RecoveryScore? {
