@@ -71,7 +71,7 @@ final class BalanceServiceTests: XCTestCase {
     func testPoorRecoveryTriggersIncludeCheckInAndRestingHeartRate() {
         let checkIn = RecoveryCheckIn(sleep: 2, soreness: 4, energy: 2, restingHeartRateElevated: true)
         let triggers = BalanceService.recoveryTriggers(checkIn, restingHeartRate: RestingHeartRateSignal(today: 60, baseline: 51))
-        XCTAssertEqual(triggers.map(\.label), ["Readiness", "Sleep", "Soreness", "Energy", "Resting HR"])
+        XCTAssertEqual(triggers.map(\.label), ["Your score", "Sleep", "Soreness", "Energy", "Resting HR"])
         XCTAssertEqual(triggers.last?.value, "+9 bpm")
         XCTAssertTrue(BalanceService.recoveryTriggers(RecoveryCheckIn(sleep: 5, soreness: 1, energy: 5), restingHeartRate: nil).isEmpty)
     }
