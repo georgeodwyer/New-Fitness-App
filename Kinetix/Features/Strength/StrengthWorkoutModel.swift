@@ -70,6 +70,7 @@ final class StrengthWorkoutModel {
 
     /// Call when leaving the workout (finished, discarded or closed).
     func endLockScreen() {
+        NotificationService.cancelRest()
         restTask?.cancel()
         restTask = nil
         restEndsAt = nil
@@ -192,13 +193,15 @@ final class StrengthWorkoutModel {
 
     func skipRest() {
         restTask?.cancel()
+        NotificationService.cancelRest()
         restEndsAt = nil
         updateLockScreen()
     }
 
     private func scheduleRestEnd() {
         restTask?.cancel()
-        guard let end = restEndsAt else { return }
+        guard let end = restEndsAt else { NotificationService.cancelRest(); return }
+        NotificationService.scheduleRestEnd(at: end, next: nextSetText)
         restTask = Task { [weak self] in
             let delay = end.timeIntervalSinceNow
             if delay > 0 { try? await Task.sleep(for: .seconds(delay)) }

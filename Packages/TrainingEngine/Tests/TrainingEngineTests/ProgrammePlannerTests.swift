@@ -192,7 +192,7 @@ final class ProgrammePlannerTests: XCTestCase {
         XCTAssertEqual(hyrox.weeks.count, 12)
         XCTAssertEqual(hyrox.raceDistanceMeters, 8000)
         let compromised = hyrox.sessions.filter { $0.name == "Compromised run" }
-        XCTAssertEqual(compromised.count, 12)
+        XCTAssertEqual(compromised.count, 11, "One a week, except race week")
         XCTAssertTrue(compromised.allSatisfy { $0.parts.first?.recovery?.label == "Station work" })
         XCTAssertTrue(compromised.allSatisfy { $0.parts.first?.recovery?.effort == true }, "No pace warnings during station work")
         XCTAssertEqual(TestSupport.bundledTemplates.programmes.settings(for: .hyrox)?.defaultSplit, "hyroxHybrid3")

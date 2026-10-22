@@ -134,6 +134,8 @@ struct PlanPreviewView: View {
         HealthNotice.accepted = true
         UnitPreference.stored = profile.units
         PlanService.createPlan(for: profile, in: context)
+        // A good moment to ask: they've just got a plan to be reminded about.
+        Task { await NotificationService.requestPermissionIfNeeded() }
     }
 }
 

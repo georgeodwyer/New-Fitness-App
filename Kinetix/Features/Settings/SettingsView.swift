@@ -90,6 +90,8 @@ struct SettingsView: View {
                     .listRowBackground(Color.clear)
                 }
 
+                NotificationsSection()
+
                 Section {
                     IntegrationsSection()
                 } header: {

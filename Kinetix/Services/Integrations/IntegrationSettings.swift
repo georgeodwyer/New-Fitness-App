@@ -93,6 +93,7 @@ final class IntegrationSettings {
 
     /// Forget everything (used when deleting all data).
     func reset() {
+        HealthDataConsent.withdraw()
         healthEnabled = false
         healthConnectedAt = nil
         heartRateSensorID = nil

@@ -84,6 +84,7 @@ struct RootView: View {
             } else if phase == .background {
                 WidgetSnapshotService.update(in: context)
                 WatchSyncService.shared.sendPlan()
+                Task { await NotificationService.scheduleMornings(in: context) }
             }
         }
     }

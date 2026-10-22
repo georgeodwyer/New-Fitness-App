@@ -113,6 +113,7 @@ struct AppleHealthView: View {
     @State private var health = HealthService.shared
     @State private var working = false
     @State private var errorText: String?
+    @State private var showHealthConsent = false
 
     var body: some View {
         List {
@@ -127,7 +128,7 @@ struct AppleHealthView: View {
             } else if !settings.healthEnabled {
                 Section {
                     Button {
-                        Task { await connect() }
+                        if HealthDataConsent.hasAgreed { Task { await connect() } } else { showHealthConsent = true }
                     } label: {
                         Label(working ? "Connecting…" : "Connect Apple Health", systemImage: "heart.text.square")
                     }
@@ -180,6 +181,7 @@ struct AppleHealthView: View {
                         settings.healthEnabled = false
                         settings.healthConnectedAt = nil
                         settings.externalWorkouts = []
+                        HealthDataConsent.withdraw()
                     } label: {
                         Label("Stop using Apple Health", systemImage: "xmark.circle")
                     }
@@ -192,6 +194,12 @@ struct AppleHealthView: View {
         .navigationBarTitleDisplayMode(.inline)
         .tint(KXColor.accent)
         .task { await health.refresh(force: true) }
+        .sheet(isPresented: $showHealthConsent) {
+            HealthConsentView(onAgree: {
+                showHealthConsent = false
+                Task { await connect() }
+            }, onDecline: { showHealthConsent = false })
+        }
         .alert("Couldn't connect", isPresented: Binding(get: { errorText != nil }, set: { if !$0 { errorText = nil } })) {
             Button("OK", role: .cancel) {}
         } message: {

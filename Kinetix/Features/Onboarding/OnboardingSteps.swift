@@ -509,6 +509,7 @@ struct FinishStep: View {
     @State private var integrations = IntegrationSettings.shared
     @State private var showAccount = false
     @State private var showHealthNotice = false
+    @State private var showHealthConsent = false
 
     var body: some View {
         OnboardingQuestion(plain: "Almost", accented: "there", detail: "Two optional extras, and one thing to read, before we build your plan:")
@@ -535,13 +536,21 @@ struct FinishStep: View {
                         : "Optional: save your runs and lifts to Health, see Apple Watch heart rate during runs, and let resting heart rate and other workouts balance your load. You choose exactly what to share."
                 )
                 if health.isAvailable && !integrations.healthEnabled {
-                    Button("Connect Apple Health") { Task { await connectHealth() } }
+                    Button("Connect Apple Health") {
+                        if HealthDataConsent.hasAgreed { Task { await connectHealth() } } else { showHealthConsent = true }
+                    }
                         .buttonStyle(.kx(.secondary, fullWidth: true))
                 }
             }
             healthNotice
         }
         .sheet(isPresented: $showAccount) { AuthView(mode: .create) }
+        .sheet(isPresented: $showHealthConsent) {
+            HealthConsentView(onAgree: {
+                showHealthConsent = false
+                Task { await connectHealth() }
+            }, onDecline: { showHealthConsent = false })
+        }
         .sheet(isPresented: $showHealthNotice) {
             NavigationStack {
                 HealthDisclaimerView()
