@@ -67,6 +67,8 @@ public enum ChangeCause: String, Codable, Sendable, CaseIterable {
     case poorRecovery
     /// The recovery score was low (or the athlete took the lighter version on a fair day).
     case lowRecovery
+    /// The athlete moved a session to another day.
+    case moved
     case other
 }
 
@@ -423,5 +425,43 @@ public enum Rebalancer {
             lighterVersion(of: session, recovery: recovery, context: context)
                 .map { Adjustment(session: $0.replacement, explanation: $0.explanation, cause: .lowRecovery) }
         }
+    }
+
+    // MARK: - Move
+
+    /// The result of moving a session: the change, and a heads-up when the new day breaks a
+    /// spacing rule (it's still allowed: it's their week).
+    public struct Move: Equatable, Sendable {
+        public var adjustment: Adjustment
+        public var warning: String?
+    }
+
+    /// Moves a session to another day at the same time of day. nil when that day already has
+    /// two sessions.
+    public static func move(_ id: UUID, to day: Date, week: [WeekSession], context: Context) -> Move? {
+        guard var session = week.first(where: { $0.id == id }) else { return nil }
+        let calendar = context.calendar
+        let target = calendar.startOfDay(for: day)
+        guard !calendar.isDate(session.date, inSameDayAs: target) else { return nil }
+        let others = week.filter { $0.id != id && $0.status == .planned && calendar.isDate($0.date, inSameDayAs: target) }
+        guard others.count < 2 else { return nil }
+        let timeOfDay = session.date.timeIntervalSince(calendar.startOfDay(for: session.date))
+        session.date = target.addingTimeInterval(timeOfDay)
+        // Morning and evening: if the slot is taken, take the other one.
+        if others.contains(where: { $0.slot == session.slot }) {
+            session.slot = session.slot == .morning ? .evening : .morning
+        }
+        let dayName = calendar.weekday(of: target).fullName
+        // No changeReason: a session the athlete moved can still be eased later on.
+        let reason = "You moved your \(session.title.lowercased()) to \(dayName)."
+        var after = week.filter { $0.id != id }
+        after.append(session)
+        var warning: String?
+        if others.contains(where: \.isRun) && session.isRun {
+            warning = "That day already has a run, so you'll have two runs on \(dayName)."
+        } else if !isValid(after, calendar: calendar) {
+            warning = "Heads up: this puts hard sessions close together (or a leg day before a hard run). Fine now and then; keep the easy days easy around it."
+        }
+        return Move(adjustment: Adjustment(session: session, explanation: reason, cause: .moved), warning: warning)
     }
 }

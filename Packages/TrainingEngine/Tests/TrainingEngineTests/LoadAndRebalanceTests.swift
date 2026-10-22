@@ -135,6 +135,33 @@ final class RebalancerTests: XCTestCase {
         XCTAssertEqual(Rebalancer.lighterVersion(of: week[5], recovery: low, context: context(today: 6))?.replacement.durationMinutes, 54)
     }
 
+    func testMoveToAnotherDay() throws {
+        let week = week()
+        // Thursday's easy run to Friday (a free day): fine, no warning.
+        let easy = try XCTUnwrap(Rebalancer.move(week[3].id, to: date(4), week: week, context: context(today: 0)))
+        XCTAssertTrue(calendar.isDate(easy.adjustment.session.date, inSameDayAs: date(4)))
+        XCTAssertNil(easy.warning)
+        XCTAssertEqual(easy.adjustment.cause, .moved)
+        XCTAssertEqual(easy.adjustment.explanation, "You moved your easy run to Friday.")
+        XCTAssertNil(easy.adjustment.session.changeReason, "A moved session can still be eased later")
+
+        // Monday's intervals to Saturday, the day before the long run: allowed, with a heads-up.
+        let hard = try XCTUnwrap(Rebalancer.move(week[0].id, to: date(5), week: week, context: context(today: 0)))
+        XCTAssertNotNil(hard.warning)
+        XCTAssertEqual(hard.adjustment.session.slot, .evening, "Saturday morning is taken, so it goes in the evening")
+
+        // An easy run onto a day that already has a run: two runs that day.
+        let twoRuns = try XCTUnwrap(Rebalancer.move(week[1].id, to: date(6), week: week, context: context(today: 0)))
+        XCTAssertTrue(twoRuns.warning?.contains("two runs") ?? false)
+
+        // Same day, or a full day: not offered.
+        XCTAssertNil(Rebalancer.move(week[1].id, to: date(1), week: week, context: context(today: 0)))
+        var full = week
+        full.append(session(4, .strength(.upper), slot: .morning))
+        full.append(session(4, .run(.easy), slot: .evening))
+        XCTAssertNil(Rebalancer.move(week[3].id, to: date(4), week: full, context: context(today: 0)))
+    }
+
     func testBaseWeekIsValid() {
         XCTAssertTrue(Rebalancer.isValid(week(), calendar: calendar))
     }

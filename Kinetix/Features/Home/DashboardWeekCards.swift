@@ -321,7 +321,7 @@ struct SessionActionsSheet: View {
                 VStack(alignment: .leading, spacing: KXSpacing.xs) {
                     KXOverline("Session", color: KXColor.accent)
                     Text(session.title).font(KXFont.title).foregroundStyle(KXColor.ink)
-                    Text("Not feeling it? Swap for something lighter, or skip. The rest of your week rebalances.")
+                    Text("Not feeling it, or the day doesn't work? Swap for something lighter, move it, or skip. You can undo any change in \"What changed and why\".")
                         .font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
                 }
                 KXOverline("Swap for")
@@ -345,6 +345,39 @@ struct SessionActionsSheet: View {
                         .kxCard(padding: KXSpacing.md)
                     }
                     .buttonStyle(.plain)
+                }
+                let moves = BalanceService.moveOptions(for: session, profile: profile, in: context)
+                if !moves.isEmpty {
+                    KXOverline("Move to another day")
+                    ForEach(moves) { option in
+                        Button {
+                            onDone(BalanceService.move(session, to: option.day, profile: profile, in: context))
+                        } label: {
+                            HStack(alignment: .top, spacing: KXSpacing.md) {
+                                Image(systemName: "calendar")
+                                    .foregroundStyle(KXColor.accent)
+                                    .frame(width: 40, height: 40)
+                                    .background(KXColor.accentSoft, in: Circle())
+                                    .accessibilityHidden(true)
+                                VStack(alignment: .leading, spacing: KXSpacing.xxs) {
+                                    Text(Calendar.kinetix.isDateInToday(option.day) ? "Today"
+                                         : option.day.formatted(.dateTime.weekday(.wide).day().month()))
+                                        .font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink)
+                                    if let warning = option.warning {
+                                        Label(warning, systemImage: "exclamationmark.triangle.fill")
+                                            .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+                                            .symbolRenderingMode(.multicolor)
+                                            .fixedSize(horizontal: false, vertical: true)
+                                    }
+                                }
+                                Spacer()
+                                Image(systemName: "chevron.right").font(.caption).foregroundStyle(KXColor.inkTertiary)
+                            }
+                            .kxCard(padding: KXSpacing.md)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("session.moveDay")
+                    }
                 }
                 Button(role: .destructive) {
                     onDone(BalanceService.skip(session, profile: profile, in: context))

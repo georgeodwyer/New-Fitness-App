@@ -76,6 +76,70 @@ enum BalanceService {
         return explanations
     }
 
+    // MARK: - Move and undo
+
+    /// Planned sessions from a few days before to a week after a date (for moving a session).
+    private static func sessions(around date: Date, in context: ModelContext) -> [PlannedSessionModel] {
+        let calendar = Calendar.kinetix
+        let from = calendar.date(byAdding: .day, value: -3, to: calendar.startOfDay(for: date)) ?? date
+        let to = calendar.date(byAdding: .day, value: 10, to: calendar.startOfDay(for: date)) ?? date
+        let descriptor = FetchDescriptor<PlannedSessionModel>(predicate: #Predicate { $0.date >= from && $0.date < to })
+        return ((try? context.fetch(descriptor)) ?? []).filter { !$0.isSoftDeleted && $0.plan?.isActive != false }
+    }
+
+    /// Days a session can move to: today onwards for the next week, not its own day, and not a
+    /// day that already has two sessions. Each with a heads-up when it breaks a spacing rule.
+    struct MoveOption: Identifiable {
+        let day: Date
+        let warning: String?
+        var id: Date { day }
+    }
+
+    static func moveOptions(for session: PlannedSessionModel, profile: AthleteProfile, in modelContext: ModelContext,
+                            now: Date = .now) -> [MoveOption] {
+        let calendar = Calendar.kinetix
+        let today = calendar.startOfDay(for: now)
+        let around = sessions(around: session.date < today ? today : session.date, in: modelContext)
+        var week = around.map(\.weekSession)
+        if !week.contains(where: { $0.id == session.id }) { week.append(session.weekSession) }
+        return (0..<7).compactMap { offset -> MoveOption? in
+            guard let day = calendar.date(byAdding: .day, value: offset, to: today) else { return nil }
+            return Rebalancer.move(session.id, to: day, week: week, context: context(profile: profile, now: now))
+                .map { MoveOption(day: day, warning: $0.warning) }
+        }
+    }
+
+    @discardableResult
+    static func move(_ session: PlannedSessionModel, to day: Date, profile: AthleteProfile, in modelContext: ModelContext,
+                     now: Date = .now) -> [String] {
+        let around = sessions(around: session.date, in: modelContext) + sessions(around: day, in: modelContext)
+        let unique = Dictionary(around.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first }).map(\.value)
+        guard let result = Rebalancer.move(session.id, to: day, week: unique.map(\.weekSession),
+                                           context: context(profile: profile, now: now)) else { return [] }
+        let trigger = ChangeTrigger(label: "You moved", value: session.title,
+                                    detail: "to " + day.formatted(.dateTime.weekday(.wide).day().month()), symbol: "calendar")
+        return apply([result.adjustment], to: [session], profile: profile, triggers: [trigger], in: modelContext, now: now)
+    }
+
+    /// A change can be undone while its session is still ahead (today or later) and not done.
+    static func canUndo(_ change: PlanChangeModel, session: PlannedSessionModel?, now: Date = .now) -> Bool {
+        guard change.undoneAt == nil, change.restorePoint != nil, let session, session.status != .completed else { return false }
+        let today = Calendar.kinetix.startOfDay(for: now)
+        return session.date >= today && (change.restorePoint?.date ?? .distantPast) >= today
+    }
+
+    /// Puts the session back exactly as it was before the change.
+    static func undo(_ change: PlanChangeModel, session: PlannedSessionModel, in modelContext: ModelContext, now: Date = .now) {
+        guard let restore = change.restorePoint else { return }
+        restore.restore(session)
+        change.undoneAt = now
+        change.touch(now: now)
+        let note = PlanChangeModel(summary: "Put back your \(session.title.lowercased()) as it was.", sessionId: session.id, now: now)
+        modelContext.insert(note)
+        try? modelContext.save()
+        SyncService.shared.requestSync()
+    }
+
     /// The lighter version of today's session, offered when recovery is fair.
     static func lighterOption(for session: PlannedSessionModel, profile: AthleteProfile, recovery: RecoveryScore?,
                               now: Date = .now) -> SwapOption? {
@@ -98,12 +162,14 @@ enum BalanceService {
         for adjustment in adjustments {
             guard let model = models.first(where: { $0.id == adjustment.session.id }) else { continue }
             let before = SessionSnapshot(model.weekSession, zones: zones)
+            let restore = SessionRestorePoint(model)
             model.update(from: adjustment.session, zones: zones)
             let change = PlanChangeModel(summary: adjustment.explanation, sessionId: model.id, now: now)
             change.causeRaw = adjustment.cause.rawValue
             change.beforeData = StoredJSON.encode(before)
             change.afterData = StoredJSON.encode(SessionSnapshot(model.weekSession, zones: zones))
             change.triggersData = StoredJSON.encode(triggers)
+            change.restoreData = StoredJSON.encode(restore)
             modelContext.insert(change)
             explanations.append(adjustment.explanation)
         }

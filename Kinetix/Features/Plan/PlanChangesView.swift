@@ -53,6 +53,13 @@ struct PlanChangeCard: View {
     let change: PlanChangeModel
     let units: UnitSystem
 
+    @Environment(\.modelContext) private var context
+
+    private var session: PlannedSessionModel? {
+        guard let id = change.sessionId else { return nil }
+        return try? context.fetch(FetchDescriptor<PlannedSessionModel>(predicate: #Predicate { $0.id == id })).first
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: KXSpacing.md) {
             HStack {
@@ -80,6 +87,19 @@ struct PlanChangeCard: View {
                     KXOverline("What triggered it")
                     ForEach(change.triggers) { trigger in triggerRow(trigger) }
                 }
+            }
+
+            if change.undoneAt != nil {
+                Label("Undone: the session is back as it was", systemImage: "arrow.uturn.backward")
+                    .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+            } else if let session, BalanceService.canUndo(change, session: session) {
+                Button {
+                    BalanceService.undo(change, session: session, in: context)
+                } label: {
+                    Label("Undo this change", systemImage: "arrow.uturn.backward")
+                }
+                .buttonStyle(.kx(.outlined))
+                .accessibilityIdentifier("planChange.undo")
             }
         }
         .kxCard()
@@ -157,6 +177,7 @@ extension ChangeCause {
         case .highLoad: return "Training load spike"
         case .poorRecovery: return "Your score"
         case .lowRecovery: return "Recovery"
+        case .moved: return "You moved a session"
         case .other: return "Plan update"
         }
     }
@@ -168,6 +189,7 @@ extension ChangeCause {
         case .highLoad: return "exclamationmark.triangle.fill"
         case .poorRecovery: return "bed.double"
         case .lowRecovery: return "battery.25percent"
+        case .moved: return "calendar"
         case .other: return "info.circle"
         }
     }
@@ -175,7 +197,7 @@ extension ChangeCause {
     var chipVariant: KXChip.Variant {
         switch self {
         case .highLoad, .poorRecovery, .lowRecovery: return .warning
-        case .swapped: return .secondary
+        case .swapped, .moved: return .secondary
         case .skipped, .other: return .outlined
         }
     }

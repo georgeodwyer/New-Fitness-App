@@ -224,11 +224,14 @@ extension PlanChangeModel: SyncableModel {
         var beforeData: Data?
         var afterData: Data?
         var triggersData: Data?
+        var restoreData: Data?
+        var undoneAt: Date?
     }
     static var syncType: String { "planChange" }
     var syncPayload: Payload {
         Payload(createdAt: createdAt, sessionId: sessionId, summary: summary, causeRaw: causeRaw,
-                beforeData: beforeData, afterData: afterData, triggersData: triggersData)
+                beforeData: beforeData, afterData: afterData, triggersData: triggersData,
+                restoreData: restoreData, undoneAt: undoneAt)
     }
     func applySync(_ p: Payload, context: ModelContext) {
         createdAt = p.createdAt
@@ -238,6 +241,8 @@ extension PlanChangeModel: SyncableModel {
         beforeData = p.beforeData
         afterData = p.afterData
         triggersData = p.triggersData
+        restoreData = p.restoreData
+        undoneAt = p.undoneAt
     }
     static func makeForSync(id: UUID) -> PlanChangeModel { PlanChangeModel(summary: "", id: id) }
 }

@@ -171,6 +171,10 @@ final class PlanChangeModel: SyncTracked {
     var afterData: Data?
     /// Encoded `[ChangeTrigger]`: the numbers behind the change.
     var triggersData: Data?
+    /// Encoded `SessionRestorePoint`: the session exactly as it was, so the change can be undone.
+    var restoreData: Data?
+    /// When the change was undone (nil = still in place).
+    var undoneAt: Date?
 
     init(summary: String, sessionId: UUID? = nil, id: UUID = UUID(), now: Date = .now) {
         self.id = id
@@ -188,6 +192,60 @@ extension PlanChangeModel {
     var before: SessionSnapshot? { StoredJSON.decode(SessionSnapshot.self, from: beforeData) }
     var after: SessionSnapshot? { StoredJSON.decode(SessionSnapshot.self, from: afterData) }
     var triggers: [ChangeTrigger] { StoredJSON.decode([ChangeTrigger].self, from: triggersData) ?? [] }
+    var restorePoint: SessionRestorePoint? { StoredJSON.decode(SessionRestorePoint.self, from: restoreData) }
+}
+
+/// A planned session's stored fields, saved before a change so it can be put back exactly.
+struct SessionRestorePoint: Codable, Equatable {
+    var date: Date
+    var slotRaw: String
+    var kindData: Data
+    var isKey: Bool
+    var statusRaw: String
+    var title: String
+    var summary: String
+    var plannedDurationMinutes: Double
+    var plannedEffort: Double
+    var runStructureData: Data?
+    var strengthPrescriptionData: Data?
+    var estimatedDistanceMeters: Double?
+    var changeReason: String?
+    var originalKindData: Data?
+
+    init(_ session: PlannedSessionModel) {
+        date = session.date
+        slotRaw = session.slotRaw
+        kindData = session.kindData
+        isKey = session.isKey
+        statusRaw = session.statusRaw
+        title = session.title
+        summary = session.summary
+        plannedDurationMinutes = session.plannedDurationMinutes
+        plannedEffort = session.plannedEffort
+        runStructureData = session.runStructureData
+        strengthPrescriptionData = session.strengthPrescriptionData
+        estimatedDistanceMeters = session.estimatedDistanceMeters
+        changeReason = session.changeReason
+        originalKindData = session.originalKindData
+    }
+
+    func restore(_ session: PlannedSessionModel) {
+        session.date = date
+        session.slotRaw = slotRaw
+        session.kindData = kindData
+        session.isKey = isKey
+        session.statusRaw = statusRaw
+        session.title = title
+        session.summary = summary
+        session.plannedDurationMinutes = plannedDurationMinutes
+        session.plannedEffort = plannedEffort
+        session.runStructureData = runStructureData
+        session.strengthPrescriptionData = strengthPrescriptionData
+        session.estimatedDistanceMeters = estimatedDistanceMeters
+        session.changeReason = changeReason
+        session.originalKindData = originalKindData
+        session.touch()
+    }
 }
 
 extension TrainingPlanModel {
