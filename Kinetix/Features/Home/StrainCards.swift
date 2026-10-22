@@ -11,6 +11,7 @@ struct StrainCard: View {
     var isWaitingForLastNight = false
 
     @ScaledMetric(relativeTo: .largeTitle) private var ringSize: CGFloat = 132
+    @State private var showRecovery = false
 
     private var strain: Double { report.today.strain }
     private var target: StrainTarget { report.target }
@@ -36,6 +37,12 @@ struct StrainCard: View {
         }
         .kxCard()
         .accessibilityIdentifier("dashboard.exertion")
+        .sheet(isPresented: $showRecovery) {
+            if let recovery = report.recovery {
+                RecoveryBreakdownView(recovery: recovery)
+                    .presentationDetents([.medium, .large])
+            }
+        }
     }
 
     private var statusText: String {
@@ -56,9 +63,17 @@ struct StrainCard: View {
                         .font(KXFont.captionEmphasis)
                         .foregroundStyle(color(recovery.band))
                 }
-                Text(recovery.parts.map(\.name).joined(separator: " · "))
-                    .font(.caption2)
-                    .foregroundStyle(KXColor.inkTertiary)
+                Button {
+                    showRecovery = true
+                } label: {
+                    HStack(spacing: 2) {
+                        Text("What's behind it")
+                        Image(systemName: "chevron.right").font(.caption2.weight(.semibold))
+                    }
+                    .font(KXFont.captionEmphasis)
+                    .foregroundStyle(KXColor.accent)
+                }
+                .accessibilityIdentifier("dashboard.recoveryBreakdown")
             } else {
                 Text(waitingText)
                     .font(KXFont.caption)
@@ -66,7 +81,7 @@ struct StrainCard: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .contain)
     }
 
     private var waitingText: String {
@@ -214,6 +229,90 @@ struct WeekVsUsualBar: View {
         if ratio > normal.upperBound { return "A big jump on your usual week. Upcoming sessions are eased to keep you healthy." }
         if ratio < normal.lowerBound { return "Lighter than usual: fine for a recovery week." }
         return "Green is a normal week (\(Int(normal.lowerBound * 100))–\(Int(normal.upperBound * 100))% of your usual)."
+    }
+}
+
+/// What makes up today's recovery: each reading, its score, its share and the points it adds.
+struct RecoveryBreakdownView: View {
+    let recovery: RecoveryScore
+    @Environment(\.dismiss) private var dismiss
+
+    private var sorted: [RecoveryScore.Part] { recovery.parts.sorted { $0.share > $1.share } }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: KXSpacing.lg) {
+                    HStack(alignment: .firstTextBaseline, spacing: KXSpacing.sm) {
+                        Text("\(Int(recovery.score))%").font(KXFont.display).foregroundStyle(KXColor.ink)
+                        Text(recovery.band.title).font(KXFont.headline).foregroundStyle(KXColor.inkSecondary)
+                    }
+                    contributionBar
+                    ForEach(sorted, id: \.name) { part in
+                        row(part)
+                    }
+                    Text("Each reading scores 0–100, where 50 is a normal day for you. The total is the readings weighted HRV 45%, resting heart rate 25%, sleep 20% and your score 10%; a missing reading is left out and the others share its weight. \"Your usual\" is the middle of your last 30 days.")
+                        .font(KXFont.caption)
+                        .foregroundStyle(KXColor.inkTertiary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(KXSpacing.screenMargin)
+            }
+            .background(KXColor.background.ignoresSafeArea())
+            .navigationTitle("Recovery")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+        }
+        .tint(KXColor.accent)
+    }
+
+    /// The total as segments, one per reading, sized by the points each adds.
+    private var contributionBar: some View {
+        GeometryReader { geo in
+            HStack(spacing: 2) {
+                ForEach(sorted, id: \.name) { part in
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(color(for: part.name))
+                        .frame(width: max(0, geo.size.width * part.points / 100 - 2))
+                }
+                Spacer(minLength: 0)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(KXColor.border, in: RoundedRectangle(cornerRadius: 3))
+        }
+        .frame(height: 12)
+        .accessibilityHidden(true)
+    }
+
+    private func row(_ part: RecoveryScore.Part) -> some View {
+        HStack(alignment: .top, spacing: KXSpacing.md) {
+            Circle().fill(color(for: part.name)).frame(width: 10, height: 10).padding(.top, 5)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(part.name).font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink)
+                Text(part.detail).font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
+                Text(part.rule).font(KXFont.caption).foregroundStyle(KXColor.inkTertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer()
+            VStack(alignment: .trailing, spacing: 2) {
+                Text("\(Int(part.score.rounded()))/100").font(KXFont.bodyEmphasis.monospacedDigit()).foregroundStyle(KXColor.ink)
+                Text("+\(Int(part.points.rounded())) pts · \(Int((part.share * 100).rounded()))%")
+                    .font(KXFont.caption.monospacedDigit()).foregroundStyle(KXColor.inkSecondary)
+            }
+        }
+        .padding(KXSpacing.md)
+        .background(KXColor.surface, in: RoundedRectangle(cornerRadius: KXRadius.md, style: .continuous))
+        .accessibilityElement(children: .combine)
+    }
+
+    private func color(for name: String) -> Color {
+        switch name {
+        case "HRV": return KXColor.accent
+        case "Resting HR": return KXColor.danger
+        case "Sleep": return KXColor.teal
+        default: return KXColor.warning
+        }
     }
 }
 

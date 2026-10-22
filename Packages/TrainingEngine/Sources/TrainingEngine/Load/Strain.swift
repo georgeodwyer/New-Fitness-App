@@ -218,8 +218,16 @@ public struct DayStrain: Equatable, Sendable, Identifiable {
 public struct RecoveryScore: Equatable, Sendable {
     public struct Part: Equatable, Sendable {
         public var name: String
+        /// This reading on its own, 0–100.
         public var score: Double
+        /// The reading, e.g. "61 ms · 4% below your usual".
         public var detail: String
+        /// How the score is worked out, in a sentence.
+        public var rule: String = ""
+        /// Its share of today's recovery (weights rescaled to the readings available).
+        public var share: Double = 0
+        /// Points it adds to the total.
+        public var points: Double { score * share }
     }
 
     public enum Band: String, Equatable, Sendable {
@@ -246,25 +254,34 @@ public struct RecoveryScore: Equatable, Sendable {
         func clamp(_ value: Double) -> Double { min(max(value, 0), 100) }
         if let hrv {
             // ±20% from usual spans the whole range.
-            parts.append((Part(name: "HRV", score: clamp(50 + hrv.change * 250), detail: hrv.description), weights.hrv))
+            parts.append((Part(name: "HRV", score: clamp(50 + hrv.change * 250), detail: hrv.description,
+                               rule: "Your usual scores 50; each 1% above or below moves it 2.5 points."), weights.hrv))
         }
         if let restingHeartRate {
             parts.append((Part(name: "Resting HR", score: clamp(50 - restingHeartRate.difference * 7),
-                               detail: restingHeartRate.description), weights.restingHeartRate))
+                               detail: restingHeartRate.description,
+                               rule: "Your usual scores 50; each beat lower adds 7 points, each beat higher takes 7 off."),
+                          weights.restingHeartRate))
         }
         if let sleepHours, sleepHours > 0 {
             parts.append((Part(name: "Sleep", score: clamp((sleepHours - 4) / 4 * 100),
-                               detail: HealthMetric.sleep.format(sleepHours) + " asleep"), weights.sleep))
+                               detail: HealthMetric.sleep.format(sleepHours) + " asleep",
+                               rule: "4 hours or less scores 0, 6 hours 50, 8 hours or more 100."), weights.sleep))
         }
         if let checkIn {
             parts.append((Part(name: "Your score", score: clamp(checkIn.readiness * 100),
-                               detail: "Sleep \(checkIn.sleep)/5 · soreness \(checkIn.soreness)/5 · energy \(checkIn.energy)/5"),
+                               detail: "Sleep \(checkIn.sleep)/5 · soreness \(checkIn.soreness)/5 · energy \(checkIn.energy)/5",
+                               rule: "Your sleep, soreness and energy ratings combined; all 3s score 50."),
                           weights.checkIn))
         }
         guard !parts.isEmpty else { return nil }
         let totalWeight = parts.reduce(0) { $0 + $1.1 }
         let score = parts.reduce(0) { $0 + $1.0.score * $1.1 } / totalWeight
-        return RecoveryScore(score: score.rounded(), parts: parts.map { $0.0 })
+        return RecoveryScore(score: score.rounded(), parts: parts.map { part, weight in
+            var part = part
+            part.share = weight / totalWeight
+            return part
+        })
     }
 }
 

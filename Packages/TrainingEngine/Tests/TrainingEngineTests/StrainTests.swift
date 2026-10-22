@@ -80,6 +80,13 @@ final class StrainTests: XCTestCase {
         let checkInOnly = RecoveryScore.make(hrv: nil, restingHeartRate: nil, sleepHours: nil, checkIn: RecoveryCheckIn(sleep: 3, soreness: 3, energy: 3))
         XCTAssertEqual(checkInOnly?.score, 50)
         XCTAssertEqual(checkInOnly?.parts.count, 1)
+        XCTAssertEqual(checkInOnly?.parts.first?.share ?? 0, 1, accuracy: 0.001)
+        // The parts' points add up to the score, and shares to 100%.
+        if let good {
+            XCTAssertEqual(good.parts.reduce(0) { $0 + $1.points }, good.score, accuracy: 0.5)
+            XCTAssertEqual(good.parts.reduce(0) { $0 + $1.share }, 1, accuracy: 0.001)
+            XCTAssertEqual(good.parts.first { $0.name == "HRV" }?.share ?? 0, 0.45 / 0.9, accuracy: 0.001)
+        }
     }
 
     func testTargetFollowsPlanAndRecovery() {
