@@ -32,8 +32,9 @@ jump; it's shown as "This week vs your usual" (a %) rather than as a number like
 HRV (45%), resting heart rate (25%), sleep (20%) and Your score (10%), so the score leans on
 HRV and the check-in only nudges it. Each reading scores 0–100, with a normal day for them at 50:
 
-- **HRV:** the last 3 nights' average against their usual (median of the last 30 days);
-  ±30% spans 0–100 (about 1.7 points per 1%). Averaging stops one odd night swinging it.
+- **HRV:** last night against their usual (median of the last 30 days); ±30% spans 0–100
+  (about 1.7 points per 1%). Last night alone, not an average, so a dip after drinks,
+  illness or a big effort shows in full.
 - **Resting heart rate:** this morning against usual; 5 points per beat.
 - **Sleep:** last night against their need (their usual night, kept between 7 and 9 hours);
   12.5 points per 30 minutes. Until there are 5 nights: 4 h = 0, 6 h = 50, 8 h = 100.

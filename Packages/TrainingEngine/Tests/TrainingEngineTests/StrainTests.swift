@@ -106,6 +106,13 @@ final class StrainTests: XCTestCase {
         XCTAssertEqual(smoothed.change, -0.1, accuracy: 0.001)
         XCTAssertEqual(score(hrv: smoothed), 44)
         XCTAssertTrue(smoothed.recentDescription.hasPrefix("3-night average 58 ms"))
+        // Last night alone (what the app uses): a 20% dip, e.g. after drinks, shows in full.
+        let afterDrinks = try XCTUnwrap(HRVSignal.assess(today: 48, history: Array(repeating: 60, count: 10)))
+        XCTAssertEqual(afterDrinks.recentNights, 1)
+        XCTAssertEqual(score(hrv: afterDrinks), 17)
+        let part = try XCTUnwrap(RecoveryScore.make(hrv: afterDrinks, restingHeartRate: nil, sleepHours: nil, checkIn: nil)?.parts.first)
+        XCTAssertTrue(part.detail.hasPrefix("Last night 48 ms"))
+        XCTAssertTrue(part.rule.hasPrefix("Last night against your usual"))
         // ±30% spans the range.
         XCTAssertEqual(score(hrv: HRVSignal(today: 42, baseline: 60)), 0)
         XCTAssertEqual(score(hrv: HRVSignal(today: 78, baseline: 60)), 100)

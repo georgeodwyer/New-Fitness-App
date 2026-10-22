@@ -304,9 +304,11 @@ public struct RecoveryScore: Equatable, Sendable {
             parts.append((Part(name: name, score: shown(vsUsual: value), vsUsual: value, detail: detail, rule: rule), weight))
         }
         if let hrv {
-            // The last 3 nights' average; ±30% from usual spans the whole range.
+            // Last night (or a recent average, when one is given); ±30% from usual spans the whole range.
             add("HRV", vsUsual: 50 + hrv.recentChange * 500 / 3, detail: hrv.recentDescription,
-                rule: "Your last 3 nights against your usual: your usual shows as 72, 15% above about 87, 15% below about 50.",
+                rule: hrv.recentNights > 1
+                    ? "Your last \(hrv.recentNights) nights against your usual: your usual shows as 72, 15% above about 87, 15% below about 50."
+                    : "Last night against your usual: your usual shows as 72, 15% above about 87, 15% below about 50.",
                 weight: weights.hrv)
         }
         if let restingHeartRate {
