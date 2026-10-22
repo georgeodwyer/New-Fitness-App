@@ -106,7 +106,8 @@ struct HomeView: View {
         let changed = BalanceService.autoAdjust(profile: profile, status: data.load.combined.status,
                                                 checkIn: data.todaysCheckIn?.engineValue(restingHeartRate: inputs.restingHeartRate, hrv: inputs.hrv),
                                                 in: context, ratio: data.load.combined.ratio,
-                                                restingHeartRate: inputs.restingHeartRate, hrv: inputs.hrv, dataKey: inputs.planCheckKey)
+                                                restingHeartRate: inputs.restingHeartRate, hrv: inputs.hrv,
+                                                recovery: data.strain.recovery, dataKey: inputs.planCheckKey)
         if let first = changed.first { banner = first }
     }
 
@@ -171,7 +172,7 @@ struct HomeView: View {
         .kxCard(.accent)
     }
 
-    private var todaySection: some View {
+    private func todaySection(recovery: RecoveryScore?) -> some View {
         VStack(alignment: .leading, spacing: KXSpacing.md) {
             KXSectionHeader("Today's sessions",
                             subtitle: todaysSessions.isEmpty ? nil : "\(todaysSessions.count) session\(todaysSessions.count == 1 ? "" : "s") planned")
@@ -204,6 +205,15 @@ struct HomeView: View {
                                 router.start(ActiveSession(id: session.id, kind: session.kind, title: session.title))
                             }
                         )
+                        if let profile, let recovery,
+                           let lighter = BalanceService.lighterOption(for: session, profile: profile, recovery: recovery) {
+                            LighterVersionOffer(recovery: recovery, option: lighter) {
+                                let changed = BalanceService.takeLighter(session, option: lighter, recovery: recovery,
+                                                                         profile: profile, in: context)
+                                banner = changed.first
+                            }
+                            .padding(.top, KXSpacing.sm)
+                        }
                         if session.status == .planned {
                             Button {
                                 actionSession = session
@@ -236,7 +246,7 @@ struct HomeView: View {
     private func dashboardCard(_ card: DashboardCard, data: DashboardData) -> some View {
         switch card {
         case .today:
-            if profile != nil { todaySection }
+            if profile != nil { todaySection(recovery: data.strain.recovery) }
         case .checkIn:
             CheckInCard(existing: data.todaysCheckIn, restingHeartRate: restingHeartRate, hrv: hrv,
                         sleepHours: inputs.sleepHours) { checkIn in
@@ -296,6 +306,7 @@ struct HomeView: View {
         if let profile {
             let changed = BalanceService.autoAdjust(profile: profile, status: status, checkIn: checkIn, in: context, force: true,
                                                     ratio: ratio, restingHeartRate: restingHeartRate, hrv: hrv,
+                                                    recovery: StrainService.recovery(health: inputs, checkIn: checkIn),
                                                     dataKey: inputs.planCheckKey)
             if let first = changed.first { banner = first }
         }
@@ -333,5 +344,37 @@ struct PlanUpdatesSheet: View {
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
         }
         .tint(KXColor.accent)
+    }
+}
+
+/// On a fair recovery day: "Recovery 61 · Fair. Take the lighter version?" with one tap to switch.
+struct LighterVersionOffer: View {
+    let recovery: RecoveryScore
+    let option: SwapOption
+    let onTake: () -> Void
+
+    var body: some View {
+        HStack(alignment: .center, spacing: KXSpacing.md) {
+            Image(systemName: "battery.50percent")
+                .foregroundStyle(KXColor.warning)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Recovery \(Int(recovery.score)) \u{00B7} \(recovery.band.title)")
+                    .font(KXFont.captionEmphasis)
+                    .foregroundStyle(KXColor.ink)
+                Text(option.detail)
+                    .font(KXFont.caption)
+                    .foregroundStyle(KXColor.inkSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: KXSpacing.sm)
+            Button("Go lighter", action: onTake)
+                .buttonStyle(.kx(.secondary))
+                .accessibilityIdentifier("today.goLighter")
+        }
+        .padding(KXSpacing.md)
+        .background(KXColor.surfaceTint, in: RoundedRectangle(cornerRadius: KXRadius.md, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityHint("Swaps today's session for the lighter version")
     }
 }

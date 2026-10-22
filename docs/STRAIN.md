@@ -56,6 +56,17 @@ under 50 Low, 50–69 Fair, 70–84 Good, 85+ Great. Decisions use the vs-usual 
 display scale changes nothing: below 34 eases today's exertion target by 30%, 67 and over
 raises it by 10%.
 
+### How recovery changes the plan
+
+- **Low (under 50):** today's hard sessions are eased automatically: a tempo or interval run
+  becomes an easy run (up to 45 minutes), a long run becomes an easy run of 60% of its length,
+  and a gym session keeps its weights with one set fewer per exercise. "What changed and why"
+  shows the recovery score and each reading behind it.
+- **Fair (50–69):** today's session card offers "Go lighter" (the same lighter version), one tap.
+- **Good or Great (70+):** the plan is left alone.
+- Easy runs, sessions on other days and sessions already changed aren't touched. A poor check-in
+  or a load spike still eases the next hard session as before.
+
 ### Waiting for last night
 
 Health readings are only used once Health has been read today. If they normally record sleep

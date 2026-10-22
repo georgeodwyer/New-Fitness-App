@@ -120,14 +120,18 @@ enum StrainService {
             .reduce(0) { $0 + StrainTarget.plannedLoad(minutes: $1.plannedDurationMinutes, effort: $1.plannedEffort) }
     }
 
+    /// Today's recovery score. None until last night's data is in (a partial one would mislead).
+    static func recovery(health: HealthInputs, checkIn: RecoveryCheckIn?) -> RecoveryScore? {
+        guard !health.isWaitingForLastNight else { return nil }
+        return RecoveryScore.make(hrv: health.hrv, restingHeartRate: health.restingHeartRate, sleepHours: health.sleepHours,
+                                  usualSleepHours: health.usualSleepHours, checkIn: checkIn)
+    }
+
     static func report(sessions: [PlannedSessionModel], runs: [RunLogModel], lifts: [StrengthLogModel],
                        checkIn: RecoveryCheckIn?, profile: AthleteProfile?, external: [ExternalWorkout],
                        health: HealthInputs, now: Date = .now) -> StrainReport {
         let zones = zones(profile: profile, runs: runs, now: now)
-        // No recovery score until last night's data is in (a partial one would mislead).
-        let recovery = health.isWaitingForLastNight ? nil
-            : RecoveryScore.make(hrv: health.hrv, restingHeartRate: health.restingHeartRate,
-                                 sleepHours: health.sleepHours, usualSleepHours: health.usualSleepHours, checkIn: checkIn)
+        let recovery = recovery(health: health, checkIn: checkIn)
         return StrainReport.make(
             activities: activities(runs: runs, lifts: lifts, external: external, sessions: sessions, zones: zones),
             steps: health.steps,

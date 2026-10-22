@@ -90,6 +90,51 @@ final class RebalancerTests: XCTestCase {
          session(3, .run(.easy)), session(5, .strength(.upper)), session(6, .run(.long), key: true, minutes: 90)]
     }
 
+    func testLowRecoveryEasesTodaysHardSessions() {
+        var week = week()
+        let squat = ExercisePrescription(exerciseId: "squat", name: "Squat", role: .main, sets: 4, repRange: RepRange(5, 6),
+                                         weightKg: 80, restSeconds: 150)
+        let plank = ExercisePrescription(exerciseId: "plank", name: "Plank", role: .accessory, sets: 1, repRange: RepRange(1, 1),
+                                         weightKg: nil, restSeconds: 60)
+        let lift = WeekSession(id: UUID(), date: date(0), slot: .evening, kind: .strength(.lower), isKey: false, title: "Lower",
+                               durationMinutes: 50, effort: 7, strength: StrengthPrescription(exercises: [squat, plank]))
+        week.append(lift)
+
+        let low = RecoveryScore(score: 42, parts: [])
+        XCTAssertEqual(Rebalancer.RecoveryTaper(low), .ease)
+        let eased = Rebalancer.taperForRecovery(week: week, recovery: low, context: context(today: 0))
+        XCTAssertEqual(eased.count, 2, "Only today's intervals and lift")
+        XCTAssertTrue(eased.allSatisfy { $0.cause == .lowRecovery })
+        let run = eased.first { $0.session.id == week[0].id }
+        XCTAssertEqual(run?.session.kind, .run(.easy))
+        XCTAssertLessThanOrEqual(run?.session.durationMinutes ?? 99, 45)
+        XCTAssertTrue(run?.explanation.contains("your recovery is low today (42)") ?? false)
+        let gym = eased.first { $0.session.id == lift.id }
+        XCTAssertEqual(gym?.session.strength?.exercises.map(\.sets), [3, 1], "One set fewer each, never below one")
+        XCTAssertEqual(gym?.session.strength?.exercises.first?.weightKg, 80, "Same weights")
+        XCTAssertTrue(gym?.session.title.hasSuffix("(lighter)") ?? false)
+
+        // Fair: nothing changes by itself, but a lighter version is offered.
+        let fair = RecoveryScore(score: 60, parts: [])
+        XCTAssertEqual(Rebalancer.RecoveryTaper(fair), .offer)
+        XCTAssertTrue(Rebalancer.taperForRecovery(week: week, recovery: fair, context: context(today: 0)).isEmpty)
+        let offer = Rebalancer.lighterVersion(of: week[0], recovery: fair, context: context(today: 0))
+        XCTAssertEqual(offer?.replacement.kind, .run(.easy))
+        XCTAssertTrue(offer?.explanation.contains("fair today (60)") ?? false)
+
+        // Good recovery, easy runs, other days and already-changed sessions are left alone.
+        XCTAssertEqual(Rebalancer.RecoveryTaper(RecoveryScore(score: 80, parts: [])), .none)
+        XCTAssertTrue(Rebalancer.taperForRecovery(week: week, recovery: RecoveryScore(score: 80, parts: []), context: context(today: 0)).isEmpty)
+        XCTAssertNil(Rebalancer.lighterVersion(of: week[1], recovery: low, context: context(today: 1)), "Easy run")
+        XCTAssertNil(Rebalancer.lighterVersion(of: week[0], recovery: low, context: context(today: 1)), "Not today")
+        var changed = week[0]
+        changed.changeReason = "Already eased"
+        XCTAssertNil(Rebalancer.lighterVersion(of: changed, recovery: low, context: context(today: 0)))
+
+        // A long run is shortened to an easy run of 60% of its length.
+        XCTAssertEqual(Rebalancer.lighterVersion(of: week[5], recovery: low, context: context(today: 6))?.replacement.durationMinutes, 54)
+    }
+
     func testBaseWeekIsValid() {
         XCTAssertTrue(Rebalancer.isValid(week(), calendar: calendar))
     }

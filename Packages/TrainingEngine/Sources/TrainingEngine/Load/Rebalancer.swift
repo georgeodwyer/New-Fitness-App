@@ -65,6 +65,8 @@ public enum ChangeCause: String, Codable, Sendable, CaseIterable {
     case highLoad
     /// The check-in (and body signals like resting HR) showed poor recovery.
     case poorRecovery
+    /// The recovery score was low (or the athlete took the lighter version on a fair day).
+    case lowRecovery
     case other
 }
 
@@ -349,5 +351,77 @@ public enum Rebalancer {
             }
         }
         return adjustments
+    }
+
+    // MARK: - Recovery taper
+
+    /// How today's recovery score changes today's sessions: Low eases hard sessions
+    /// automatically, Fair offers a lighter version, Good or Great leaves the plan alone.
+    public enum RecoveryTaper: Equatable, Sendable {
+        case none, offer, ease
+
+        public init(_ recovery: RecoveryScore?) {
+            switch recovery?.band {
+            case .low?: self = .ease
+            case .fair?: self = .offer
+            default: self = .none
+            }
+        }
+    }
+
+    /// Whether a session gets a lighter version on a low or fair recovery day: today's hard
+    /// runs (tempo, intervals, long) and gym sessions that haven't been changed yet.
+    public static func canTaper(_ session: WeekSession, context: Context) -> Bool {
+        guard session.status == .planned, session.changeReason == nil,
+              context.calendar.isDate(session.date, inSameDayAs: context.today) else { return false }
+        return session.isHardRun || (session.kind.discipline == .strength && session.strength != nil)
+    }
+
+    /// The lighter version of a session for a low or fair recovery day: a hard run becomes an
+    /// easy run (a long run shortened), a gym session keeps its weights with one set fewer
+    /// per exercise.
+    public static func lighterVersion(of session: WeekSession, recovery: RecoveryScore, context: Context) -> SwapOption? {
+        guard canTaper(session, context: context) else { return nil }
+        let name = session.title.lowercased()
+        let score = Int(recovery.score)
+        let level = recovery.band == .low ? "low" : "fair"
+        let rules = BalanceRules.current.rebalancing
+        if case .run(let type) = session.kind {
+            let minutes = max(rules.minimumEasyRunMinutes, session.durationMinutes)
+            let easyMinutes = type == .long ? (minutes * rules.easedLongRunFactor).rounded() : min(minutes, rules.easedRunMaxMinutes)
+            var option = easyRun(minutes: easyMinutes, from: session, context: context,
+                                 explanation: "Eased your \(name) to an easy \(Int(easyMinutes))-minute run because your recovery is \(level) today (\(score)).")
+            option.id = "lighter"
+            option.title = "Lighter version"
+            return option
+        }
+        guard let strength = session.strength else { return nil }
+        var lighter = session
+        lighter.strength = StrengthPrescription(exercises: strength.exercises.map { exercise in
+            var copy = exercise
+            copy.sets = max(1, exercise.sets - 1)
+            return copy
+        })
+        let removed = strength.exercises.filter { $0.sets > 1 }.count
+        let fullSets = max(1, strength.exercises.reduce(0) { $0 + $1.sets })
+        let share = Double(fullSets - removed) / Double(fullSets)
+        lighter.durationMinutes = max(rules.minimumEasyRunMinutes, (session.durationMinutes * share / 5).rounded() * 5)
+        lighter.effort = max(3, session.effort - 1)
+        lighter.title = session.title + " (lighter)"
+        lighter.summary = "Same exercises and weights, one set fewer each"
+        lighter.status = .swapped
+        let reason = "Took a set off each exercise in your \(name) because your recovery is \(level) today (\(score))."
+        lighter.changeReason = reason
+        return SwapOption(id: "lighter", title: "Lighter version", detail: lighter.summary, systemImage: "dumbbell",
+                          replacement: lighter, explanation: reason)
+    }
+
+    /// On a low recovery day, today's hard runs and gym sessions become their lighter versions.
+    public static func taperForRecovery(week: [WeekSession], recovery: RecoveryScore?, context: Context) -> [Adjustment] {
+        guard let recovery, RecoveryTaper(recovery) == .ease else { return [] }
+        return week.compactMap { session in
+            lighterVersion(of: session, recovery: recovery, context: context)
+                .map { Adjustment(session: $0.replacement, explanation: $0.explanation, cause: .lowRecovery) }
+        }
     }
 }

@@ -156,6 +156,7 @@ extension ChangeCause {
         case .swapped: return "You swapped a session"
         case .highLoad: return "Training load spike"
         case .poorRecovery: return "Your score"
+        case .lowRecovery: return "Recovery"
         case .other: return "Plan update"
         }
     }
@@ -166,13 +167,14 @@ extension ChangeCause {
         case .swapped: return "arrow.left.arrow.right"
         case .highLoad: return "exclamationmark.triangle.fill"
         case .poorRecovery: return "bed.double"
+        case .lowRecovery: return "battery.25percent"
         case .other: return "info.circle"
         }
     }
 
     var chipVariant: KXChip.Variant {
         switch self {
-        case .highLoad, .poorRecovery: return .warning
+        case .highLoad, .poorRecovery, .lowRecovery: return .warning
         case .swapped: return .secondary
         case .skipped, .other: return .outlined
         }

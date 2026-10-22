@@ -54,7 +54,7 @@ enum BalanceService {
     static func autoAdjust(profile: AthleteProfile, status: LoadStatus, checkIn: RecoveryCheckIn?, in modelContext: ModelContext,
                            now: Date = .now, force: Bool = false, ratio: Double? = nil,
                            restingHeartRate: RestingHeartRateSignal? = nil, hrv: HRVSignal? = nil,
-                           dataKey: String = "") -> [String] {
+                           recovery: RecoveryScore? = nil, dataKey: String = "") -> [String] {
         let calendar = Calendar.kinetix
         // Once a day for each state of the data (so it runs again when last night's data arrives).
         let dayKey = ISO8601DateFormatter().string(from: calendar.startOfDay(for: now)) + "|" + dataKey
@@ -64,7 +64,31 @@ enum BalanceService {
         let adjustments = Rebalancer.adjustForLoad(week: models.map(\.weekSession), status: status, checkIn: checkIn,
                                                    context: context(profile: profile, now: now))
         let triggers = loadTriggers(status: status, ratio: ratio) + recoveryTriggers(checkIn, restingHeartRate: restingHeartRate, hrv: hrv)
-        return apply(adjustments, to: models, profile: profile, triggers: triggers, in: modelContext, now: now)
+        var explanations = apply(adjustments, to: models, profile: profile, triggers: triggers, in: modelContext, now: now)
+        // A low recovery score eases today's hard sessions that weren't already changed above.
+        let changed = Set(adjustments.map(\.session.id))
+        let remaining = models.map(\.weekSession).filter { !changed.contains($0.id) }
+        let tapers = Rebalancer.taperForRecovery(week: remaining, recovery: recovery, context: context(profile: profile, now: now))
+        if let recovery, !tapers.isEmpty {
+            explanations += apply(tapers, to: models, profile: profile, triggers: recoveryScoreTriggers(recovery),
+                                  in: modelContext, now: now)
+        }
+        return explanations
+    }
+
+    /// The lighter version of today's session, offered when recovery is fair.
+    static func lighterOption(for session: PlannedSessionModel, profile: AthleteProfile, recovery: RecoveryScore?,
+                              now: Date = .now) -> SwapOption? {
+        guard let recovery, Rebalancer.RecoveryTaper(recovery) == .offer else { return nil }
+        return Rebalancer.lighterVersion(of: session.weekSession, recovery: recovery, context: context(profile: profile, now: now))
+    }
+
+    /// Takes the lighter version on a fair recovery day (recorded with the recovery readings).
+    @discardableResult
+    static func takeLighter(_ session: PlannedSessionModel, option: SwapOption, recovery: RecoveryScore, profile: AthleteProfile,
+                            in modelContext: ModelContext, now: Date = .now) -> [String] {
+        apply([Adjustment(session: option.replacement, explanation: option.explanation, cause: .lowRecovery)], to: [session],
+              profile: profile, triggers: recoveryScoreTriggers(recovery), in: modelContext, now: now)
     }
 
     private static func apply(_ adjustments: [Adjustment], to models: [PlannedSessionModel], profile: AthleteProfile,
@@ -90,6 +114,24 @@ enum BalanceService {
 }
 
 extension BalanceService {
+    /// The recovery score and its readings behind a recovery taper.
+    static func recoveryScoreTriggers(_ recovery: RecoveryScore) -> [ChangeTrigger] {
+        [ChangeTrigger(label: "Recovery", value: "\(Int(recovery.score)) · \(recovery.band.title)",
+                       detail: "under 50 eases hard sessions; 50–69 offers a lighter version", symbol: "battery.50percent")]
+            + recovery.parts.map { part in
+                ChangeTrigger(label: part.name, value: "\(Int(part.score.rounded()))", detail: part.detail, symbol: symbol(for: part.name))
+            }
+    }
+
+    private static func symbol(for reading: String) -> String {
+        switch reading {
+        case "HRV": return "waveform.path.ecg"
+        case "Resting HR": return "heart"
+        case "Sleep": return "moon.zzz"
+        default: return "person.crop.circle.badge.checkmark"
+        }
+    }
+
     /// The load numbers behind a high-load change.
     static func loadTriggers(status: LoadStatus, ratio: Double?) -> [ChangeTrigger] {
         guard status == .high else { return [] }
