@@ -53,7 +53,7 @@ Those 0–100 figures are "vs usual" (50 = a normal day). They're shown on a fri
 (straight lines between). The total is the weighted average of the shown readings. Labels:
 under 50 Low, 50–69 Fair, 70–84 Good, 85+ Great. Decisions use the vs-usual total, so the
 display scale changes nothing: below 34 eases today's exertion target by 30%, 67 and over
-raises it by 10%. Below 34 is
+raises it by 10%.
 
 ### Waiting for last night
 
