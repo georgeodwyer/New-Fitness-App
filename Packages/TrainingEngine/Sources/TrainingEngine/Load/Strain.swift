@@ -213,13 +213,18 @@ public struct DayStrain: Equatable, Sendable, Identifiable {
 
 // MARK: - Recovery
 
-/// 0–100 from last night's HRV and resting heart rate against their usual, sleep, and the
-/// morning check-in. Missing parts are left out and the rest re-weighted.
+/// 0–100 from HRV and resting heart rate against their usual, sleep against their need, and
+/// their score (morning check-in). Each reading is first measured against usual ("vs usual":
+/// 50 = a normal day, 0 = far worse, 100 = far better), then shown on a friendlier scale where
+/// a normal day is about 72, better than usual about 87 and far better 90+. The plan and the
+/// exertion target use the vs-usual figure, so the display scale doesn't change any decisions.
 public struct RecoveryScore: Equatable, Sendable {
     public struct Part: Equatable, Sendable {
         public var name: String
-        /// This reading on its own, 0–100.
+        /// This reading as shown, 0–100 (a normal day ≈ 72).
         public var score: Double
+        /// This reading against usual, 0–100 (a normal day = 50).
+        public var vsUsual: Double
         /// The reading, e.g. "61 ms · 4% below your usual".
         public var detail: String
         /// How the score is worked out, in a sentence.
@@ -231,22 +236,59 @@ public struct RecoveryScore: Equatable, Sendable {
     }
 
     public enum Band: String, Equatable, Sendable {
-        case low, medium, high
+        case low, fair, good, great
         public var title: String {
             switch self {
             case .low: return "Low"
-            case .medium: return "Moderate"
-            case .high: return "High"
+            case .fair: return "Fair"
+            case .good: return "Good"
+            case .great: return "Great"
             }
         }
     }
 
+    /// How recovery moves today's exertion target.
+    public enum TargetEffect: Equatable, Sendable { case lower, normal, higher }
+
+    /// As shown, 0–100.
     public var score: Double
     public var parts: [Part]
+    /// The readings against usual, 0–100 (50 = normal): what decisions use.
+    public var vsUsual: Double
 
-    public var band: Band { score < 34 ? .low : score < 67 ? .medium : .high }
+    public init(score: Double, parts: [Part], vsUsual: Double? = nil) {
+        self.score = score
+        self.parts = parts
+        self.vsUsual = vsUsual ?? Self.vsUsual(fromShown: score)
+    }
+
+    public var band: Band { score < 50 ? .low : score < 70 ? .fair : score < 85 ? .good : .great }
+
+    /// Clearly below usual eases the target; clearly above allows a bit more.
+    public var targetEffect: TargetEffect { vsUsual < 34 ? .lower : vsUsual >= 67 ? .higher : .normal }
 
     static let weights = (hrv: 0.45, restingHeartRate: 0.25, sleep: 0.2, checkIn: 0.1)
+
+    /// The display scale: vs usual → shown. Far worse 20, worse 50, normal 72, better 87, far better 98.
+    static let scale: [(vsUsual: Double, shown: Double)] = [(0, 20), (25, 50), (50, 72), (75, 87), (100, 98)]
+
+    public static func shown(vsUsual: Double) -> Double {
+        let value = min(max(vsUsual, 0), 100)
+        for (low, high) in zip(scale, scale.dropFirst()) where value <= high.vsUsual {
+            let t = (value - low.vsUsual) / (high.vsUsual - low.vsUsual)
+            return low.shown + t * (high.shown - low.shown)
+        }
+        return scale.last?.shown ?? value
+    }
+
+    static func vsUsual(fromShown shown: Double) -> Double {
+        let value = min(max(shown, scale.first?.shown ?? 0), scale.last?.shown ?? 100)
+        for (low, high) in zip(scale, scale.dropFirst()) where value <= high.shown {
+            let t = (value - low.shown) / (high.shown - low.shown)
+            return low.vsUsual + t * (high.vsUsual - low.vsUsual)
+        }
+        return 100
+    }
 
     /// Sleep is scored against their need: their usual sleep, kept between 7 and 9 hours.
     public static func sleepNeed(usual: Double?) -> Double? {
@@ -257,48 +299,48 @@ public struct RecoveryScore: Equatable, Sendable {
     public static func make(hrv: HRVSignal?, restingHeartRate: RestingHeartRateSignal?, sleepHours: Double?,
                             usualSleepHours: Double? = nil, checkIn: RecoveryCheckIn?) -> RecoveryScore? {
         var parts: [(Part, Double)] = []
-        func clamp(_ value: Double) -> Double { min(max(value, 0), 100) }
+        func add(_ name: String, vsUsual raw: Double, detail: String, rule: String, weight: Double) {
+            let value = min(max(raw, 0), 100)
+            parts.append((Part(name: name, score: shown(vsUsual: value), vsUsual: value, detail: detail, rule: rule), weight))
+        }
         if let hrv {
             // The last 3 nights' average; ±30% from usual spans the whole range.
-            parts.append((Part(name: "HRV", score: clamp(50 + hrv.recentChange * 500 / 3), detail: hrv.recentDescription,
-                               rule: "Your last 3 nights against your usual. Usual scores 50; each 1% above or below moves it about 1.7 points."),
-                          weights.hrv))
+            add("HRV", vsUsual: 50 + hrv.recentChange * 500 / 3, detail: hrv.recentDescription,
+                rule: "Your last 3 nights against your usual: your usual shows as 72, 15% above about 87, 15% below about 50.",
+                weight: weights.hrv)
         }
         if let restingHeartRate {
-            parts.append((Part(name: "Resting HR", score: clamp(50 - restingHeartRate.difference * 5),
-                               detail: restingHeartRate.description,
-                               rule: "Your usual scores 50; each beat lower adds 5 points, each beat higher takes 5 off."),
-                          weights.restingHeartRate))
+            add("Resting HR", vsUsual: 50 - restingHeartRate.difference * 5, detail: restingHeartRate.description,
+                rule: "This morning against your usual: your usual shows as 72, 5 beats lower about 87, 5 beats higher about 50.",
+                weight: weights.restingHeartRate)
         }
         if let sleepHours, sleepHours > 0 {
             if let need = sleepNeed(usual: usualSleepHours), let usual = usualSleepHours {
                 let aim = usual == need ? "your usual \(HealthMetric.sleep.format(need))"
                     : "\(HealthMetric.sleep.format(need)) (your usual is \(HealthMetric.sleep.format(usual)))"
-                parts.append((Part(name: "Sleep", score: clamp(50 + (sleepHours - need) * 25),
-                                   detail: HealthMetric.sleep.format(sleepHours) + " asleep · aim " + aim,
-                                   rule: "Your sleep need (your usual, kept between 7 and 9 hours) scores 50; each 30 minutes more or less moves it 12.5 points."),
-                              weights.sleep))
+                add("Sleep", vsUsual: 50 + (sleepHours - need) * 25, detail: HealthMetric.sleep.format(sleepHours) + " asleep · aim " + aim,
+                    rule: "Against your sleep need (your usual, kept between 7 and 9 hours): your need shows as 72, an hour more about 87, an hour less about 50.",
+                    weight: weights.sleep)
             } else {
-                parts.append((Part(name: "Sleep", score: clamp((sleepHours - 4) / 4 * 100),
-                                   detail: HealthMetric.sleep.format(sleepHours) + " asleep",
-                                   rule: "Until Kinetix knows your usual sleep: 4 hours or less scores 0, 6 hours 50, 8 hours or more 100."),
-                              weights.sleep))
+                add("Sleep", vsUsual: (sleepHours - 4) / 4 * 100, detail: HealthMetric.sleep.format(sleepHours) + " asleep",
+                    rule: "Until Kinetix knows your usual sleep: 6 hours shows as 72, 7 hours about 87, 5 hours about 50.",
+                    weight: weights.sleep)
             }
         }
         if let checkIn {
-            parts.append((Part(name: "Your score", score: clamp(checkIn.readiness * 100),
-                               detail: "Sleep \(checkIn.sleep)/5 · soreness \(checkIn.soreness)/5 · energy \(checkIn.energy)/5",
-                               rule: "Your sleep, soreness and energy ratings combined; all 3s score 50."),
-                          weights.checkIn))
+            add("Your score", vsUsual: checkIn.readiness * 100,
+                detail: "Sleep \(checkIn.sleep)/5 · soreness \(checkIn.soreness)/5 · energy \(checkIn.energy)/5",
+                rule: "Your sleep, soreness and energy ratings: all 3s show as 72.", weight: weights.checkIn)
         }
         guard !parts.isEmpty else { return nil }
         let totalWeight = parts.reduce(0) { $0 + $1.1 }
-        let score = parts.reduce(0) { $0 + $1.0.score * $1.1 } / totalWeight
-        return RecoveryScore(score: score.rounded(), parts: parts.map { part, weight in
+        let shownTotal = parts.reduce(0) { $0 + $1.0.score * $1.1 } / totalWeight
+        let vsUsualTotal = parts.reduce(0) { $0 + $1.0.vsUsual * $1.1 } / totalWeight
+        return RecoveryScore(score: shownTotal.rounded(), parts: parts.map { part, weight in
             var part = part
             part.share = weight / totalWeight
             return part
-        })
+        }, vsUsual: vsUsualTotal)
     }
 }
 
@@ -329,14 +371,14 @@ public struct StrainTarget: Equatable, Sendable {
         } else {
             reason = "Your usual day over the last four weeks."
         }
-        switch recovery?.band {
-        case .high?:
+        switch recovery?.targetEffect {
+        case .higher?:
             load *= 1.1
-            reason += " Your recovery is high, so there's room for a bit more."
-        case .low?:
+            reason += " Your recovery is well above usual, so there's room for a bit more."
+        case .lower?:
             load *= 0.7
             reason += " Your recovery is low, so aim lower today."
-        case .medium?, nil:
+        case .normal?, nil:
             break
         }
         let middle = Strain.strain(load: load)

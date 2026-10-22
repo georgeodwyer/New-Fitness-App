@@ -145,8 +145,8 @@ struct StrainCard: View {
     private func color(_ band: RecoveryScore.Band) -> Color {
         switch band {
         case .low: return KXColor.danger
-        case .medium: return KXColor.warning
-        case .high: return KXColor.success
+        case .fair: return KXColor.warning
+        case .good, .great: return KXColor.success
         }
     }
 
@@ -251,7 +251,7 @@ struct RecoveryBreakdownView: View {
                     ForEach(sorted, id: \.name) { part in
                         row(part)
                     }
-                    Text("Each reading scores 0–100, where 50 is a normal day for you. The total is the readings weighted HRV 45%, resting heart rate 25%, sleep 20% and your score 10%; a missing reading is left out and the others share its weight. \"Your usual\" is the middle of your last 30 days.")
+                    Text("Each reading is compared with your usual and scored 0–100: a normal day for you is about 72, better than usual 85+, and 90+ means clearly better on that reading. The total is the readings weighted HRV 45%, resting heart rate 25%, sleep 20% and your score 10%; a missing reading is left out and the others share its weight. \"Your usual\" is the middle of your last 30 days.")
                         .font(KXFont.caption)
                         .foregroundStyle(KXColor.inkTertiary)
                         .fixedSize(horizontal: false, vertical: true)

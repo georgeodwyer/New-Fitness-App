@@ -40,8 +40,20 @@ HRV and the check-in only nudges it. Each reading scores 0–100, with a normal 
 - **Your score:** sleep, soreness and energy ratings; all 3s = 50.
 
 Missing parts are left out and the rest re-weighted. Tap "What's behind it" on the card for
-each reading, its score and the points it adds. Below 34 is
-low, 67 and over is high.
+each reading, its score and the points it adds.
+
+### Display scale
+
+Those 0–100 figures are "vs usual" (50 = a normal day). They're shown on a friendlier scale:
+
+| vs usual | 0 | 25 | 50 | 75 | 100 |
+|---|---|---|---|---|---|
+| Shown | 20 | 50 | 72 | 87 | 98 |
+
+(straight lines between). The total is the weighted average of the shown readings. Labels:
+under 50 Low, 50–69 Fair, 70–84 Good, 85+ Great. Decisions use the vs-usual total, so the
+display scale changes nothing: below 34 eases today's exertion target by 30%, 67 and over
+raises it by 10%. Below 34 is
 
 ### Waiting for last night
 

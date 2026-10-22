@@ -72,13 +72,18 @@ final class StrainTests: XCTestCase {
         XCTAssertNil(RecoveryScore.make(hrv: nil, restingHeartRate: nil, sleepHours: nil, checkIn: nil))
         let good = RecoveryScore.make(hrv: HRVSignal(today: 66, baseline: 60), restingHeartRate: RestingHeartRateSignal(today: 50, baseline: 52),
                                       sleepHours: 8.2, checkIn: nil)
-        XCTAssertEqual(good?.band, .high)
+        XCTAssertEqual(good?.band, .good)
+        XCTAssertEqual(good?.score, 84)
+        XCTAssertEqual(good?.targetEffect, .higher)
         let poor = RecoveryScore.make(hrv: HRVSignal(today: 45, baseline: 60), restingHeartRate: RestingHeartRateSignal(today: 60, baseline: 52),
                                       sleepHours: 5, checkIn: RecoveryCheckIn(sleep: 2, soreness: 4, energy: 2))
         XCTAssertEqual(poor?.band, .low)
+        XCTAssertEqual(poor?.targetEffect, .lower)
         // Check-in alone still gives a score.
         let checkInOnly = RecoveryScore.make(hrv: nil, restingHeartRate: nil, sleepHours: nil, checkIn: RecoveryCheckIn(sleep: 3, soreness: 3, energy: 3))
-        XCTAssertEqual(checkInOnly?.score, 50)
+        XCTAssertEqual(checkInOnly?.score, 72, "A normal day shows as 72")
+        XCTAssertEqual(checkInOnly?.vsUsual, 50)
+        XCTAssertEqual(checkInOnly?.targetEffect, .normal)
         XCTAssertEqual(checkInOnly?.parts.count, 1)
         XCTAssertEqual(checkInOnly?.parts.first?.share ?? 0, 1, accuracy: 0.001)
         // The parts' points add up to the score, and shares to 100%.
@@ -91,7 +96,8 @@ final class StrainTests: XCTestCase {
 
     func testRecoveryScoringRules() throws {
         func score(hrv: HRVSignal? = nil, rhr: RestingHeartRateSignal? = nil, sleep: Double? = nil, usual: Double? = nil) -> Double? {
-            RecoveryScore.make(hrv: hrv, restingHeartRate: rhr, sleepHours: sleep, usualSleepHours: usual, checkIn: nil)?.score
+            RecoveryScore.make(hrv: hrv, restingHeartRate: rhr, sleepHours: sleep, usualSleepHours: usual, checkIn: nil)?
+                .parts.first?.vsUsual.rounded()
         }
         // HRV: last night 10% low, but the 3-night average only 3% low, so a small dip.
         let smoothed = try XCTUnwrap(HRVSignal.assess(today: 54, history: Array(repeating: 60, count: 10), recent: [60, 60]))
@@ -113,6 +119,20 @@ final class StrainTests: XCTestCase {
         XCTAssertEqual(RecoveryScore.sleepNeed(usual: 10), 9)
         // Before there's a usual: the fixed scale.
         XCTAssertEqual(score(sleep: 6), 50)
+    }
+
+    func testDisplayScale() {
+        XCTAssertEqual(RecoveryScore.shown(vsUsual: 0), 20)
+        XCTAssertEqual(RecoveryScore.shown(vsUsual: 25), 50)
+        XCTAssertEqual(RecoveryScore.shown(vsUsual: 50), 72)
+        XCTAssertEqual(RecoveryScore.shown(vsUsual: 75), 87)
+        XCTAssertEqual(RecoveryScore.shown(vsUsual: 100), 98)
+        XCTAssertEqual(RecoveryScore.shown(vsUsual: 62.5), 79.5, accuracy: 0.001)
+        XCTAssertEqual(RecoveryScore.vsUsual(fromShown: 72), 50, accuracy: 0.001)
+        XCTAssertEqual(RecoveryScore(score: 30, parts: []).band, .low)
+        XCTAssertEqual(RecoveryScore(score: 60, parts: []).band, .fair)
+        XCTAssertEqual(RecoveryScore(score: 75, parts: []).band, .good)
+        XCTAssertEqual(RecoveryScore(score: 90, parts: []).band, .great)
     }
 
     func testTargetFollowsPlanAndRecovery() {
