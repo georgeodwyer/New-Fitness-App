@@ -65,6 +65,9 @@ struct TrainingProfileView: View {
             }
             Section("Goal") {
                 row("Primary goal", value: model.goal?.displayName ?? "–", step: .goal)
+                if model.goal == .hyrox {
+                    row("Hyrox division", value: model.hyroxDivision?.displayName ?? "Not set", step: .goal)
+                }
                 row("Event date", value: model.hasEvent ? model.eventDate.formatted(.dateTime.day().month().year()) : "None", step: .eventDate)
             }
             Section("Schedule") {

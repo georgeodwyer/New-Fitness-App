@@ -126,6 +126,8 @@ public struct Programme: Codable, Equatable, Sendable {
         case .faster10k: return 10000
         case .halfMarathon: return 21097.5
         case .marathon: return 42195
+        // The running in a Hyrox race: 8 × 1 km.
+        case .hyrox: return 8000
         default: return nil
         }
     }
@@ -135,7 +137,7 @@ public struct Programme: Codable, Equatable, Sendable {
         switch goal {
         case .first5k, .faster5k: return .fiveK
         case .faster10k: return .tenK
-        case .halfMarathon: return .halfMarathon
+        case .halfMarathon, .hyrox: return .halfMarathon
         default: return .marathon
         }
     }

@@ -78,3 +78,30 @@ their runs and gym sessions don't fit their training days and doubles, they're t
 plan keeps the runs the goal needs first. A named exercise their equipment can't do is swapped
 for one with the same movement pattern.
 
+
+## Hyrox
+
+- **Goal:** Hyrox (all levels), with a division asked in onboarding (Open or Pro, women's or
+  men's). The division sets station weights in gym sessions; change it in Settings → Training
+  profile.
+- **Running:** the Hyrox programme (12 weeks, a draft to edit). "Compromised" sessions are runs
+  with station work between the reps: write them like any reps, with `station` in the recovery,
+  e.g. `6 x 1 km @ HM, 2 min station between`. The station break has no pace target. The race is
+  the 8 km of running, at half-marathon pace.
+- **Stations:** SkiErg, Sled Push, Sled Pull, Burpee Broad Jumps, Rowing, Farmers Carry, Sandbag
+  Lunges and Wall Balls are in the exercise list ("Any Hyrox station" picks one the user's
+  equipment allows). For the distance stations, reps are metres. Starting weights are the race
+  weights for the division (please check them against the current Hyrox rulebook):
+
+  | Station | Open women | Open men | Pro women | Pro men |
+  | --- | --- | --- | --- | --- |
+  | Sled push (incl. sled) | 102 kg | 152 kg | 152 kg | 202 kg |
+  | Sled pull (incl. sled) | 78 kg | 103 kg | 103 kg | 153 kg |
+  | Farmers carry (per hand) | 16 kg | 24 kg | 24 kg | 32 kg |
+  | Sandbag lunges | 10 kg | 20 kg | 20 kg | 30 kg |
+  | Wall ball | 4 kg | 6 kg | 6 kg | 9 kg |
+
+- **Gym splits:** "Hyrox: stations ×2" (Stations A, Stations B) and "Hyrox: strength + stations"
+  (Strength A, Stations, Strength B, suggested for the goal).
+- Rebuilding the workbook keeps the coach's own split days, "who it suits" text and sets/reps;
+  the Hyrox drafts are only added when the copy doesn't have them yet.

@@ -13,12 +13,28 @@ public enum TrainingGoal: String, Codable, CaseIterable, Sendable {
     case buildStrength
     case buildMuscle
     case balancedHybrid
+    /// A Hyrox race: 8 × 1 km runs, each followed by a station.
+    case hyrox
 
     /// True when the goal is primarily a running goal.
     public var isRunningFocused: Bool {
         switch self {
-        case .first5k, .faster5k, .faster10k, .halfMarathon, .marathon: return true
+        case .first5k, .faster5k, .faster10k, .halfMarathon, .marathon, .hyrox: return true
         case .buildStrength, .buildMuscle, .balancedHybrid: return false
+        }
+    }
+}
+
+/// The Hyrox race category, which sets the station weights in gym sessions.
+public enum HyroxDivision: String, Codable, CaseIterable, Sendable {
+    case openWomen = "open-women", openMen = "open-men", proWomen = "pro-women", proMen = "pro-men"
+
+    public var displayName: String {
+        switch self {
+        case .openWomen: return "Open \u{00B7} Women"
+        case .openMen: return "Open \u{00B7} Men"
+        case .proWomen: return "Pro \u{00B7} Women"
+        case .proMen: return "Pro \u{00B7} Men"
         }
     }
 }
@@ -121,6 +137,8 @@ public struct AthleteProfile: Codable, Equatable, Sendable {
     public var birthYear: Int?
     /// Their own heart-rate zones, when they've edited them.
     public var heartRateZones: HeartRateZoneSettings?
+    /// Hyrox race category (Hyrox goal only).
+    public var hyroxDivision: HyroxDivision?
 
     public init(
         runningExperience: ExperienceLevel,
@@ -141,7 +159,8 @@ public struct AthleteProfile: Codable, Equatable, Sendable {
         liftSessionsPerWeek: Int? = nil,
         splitCode: String? = nil,
         birthYear: Int? = nil,
-        heartRateZones: HeartRateZoneSettings? = nil
+        heartRateZones: HeartRateZoneSettings? = nil,
+        hyroxDivision: HyroxDivision? = nil
     ) {
         self.runningExperience = runningExperience
         self.recentRace = recentRace
@@ -162,6 +181,7 @@ public struct AthleteProfile: Codable, Equatable, Sendable {
         self.splitCode = splitCode
         self.birthYear = birthYear
         self.heartRateZones = heartRateZones
+        self.hyroxDivision = hyroxDivision
     }
 
     /// Age this year (nil when not given).
@@ -191,6 +211,7 @@ extension AthleteProfile {
         }
         if racedRecently != other.racedRecently || easyFirstWeek != other.easyFirstWeek { changes.append("recent race") }
         if liftSessionsPerWeek != other.liftSessionsPerWeek || splitCode != other.splitCode { changes.append("gym week") }
+        if hyroxDivision != other.hyroxDivision { changes.append("Hyrox division") }
         return changes
     }
 }

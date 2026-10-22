@@ -34,6 +34,8 @@ final class UserProfileModel: SyncTracked {
     /// Year of birth (from their age) and their own heart-rate zones, when set.
     var birthYear: Int?
     var heartRateZonesData: Data?
+    /// Hyrox race category (Hyrox goal only).
+    var hyroxDivisionRaw: String?
 
     init(profile: AthleteProfile, id: UUID = UUID(), now: Date = .now) {
         self.id = id
@@ -60,6 +62,7 @@ final class UserProfileModel: SyncTracked {
         self.splitCode = profile.splitCode
         self.birthYear = profile.birthYear
         self.heartRateZonesData = profile.heartRateZones.map { StoredJSON.encode($0) }
+        self.hyroxDivisionRaw = profile.hyroxDivision?.rawValue
     }
 
     /// The engine's view of this profile.
@@ -84,7 +87,8 @@ final class UserProfileModel: SyncTracked {
                 liftSessionsPerWeek: liftSessionsPerWeek,
                 splitCode: splitCode,
                 birthYear: birthYear,
-                heartRateZones: StoredJSON.decode(HeartRateZoneSettings.self, from: heartRateZonesData)
+                heartRateZones: StoredJSON.decode(HeartRateZoneSettings.self, from: heartRateZonesData),
+                hyroxDivision: hyroxDivisionRaw.flatMap(HyroxDivision.init(rawValue:))
             )
         }
         set {
@@ -107,6 +111,7 @@ final class UserProfileModel: SyncTracked {
             splitCode = newValue.splitCode
             birthYear = newValue.birthYear
             heartRateZonesData = newValue.heartRateZones.map { StoredJSON.encode($0) }
+            hyroxDivisionRaw = newValue.hyroxDivision?.rawValue
             touch()
         }
     }

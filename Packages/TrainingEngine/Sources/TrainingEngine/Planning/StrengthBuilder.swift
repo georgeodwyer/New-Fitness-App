@@ -66,7 +66,10 @@ enum StrengthBuilder {
             let reps: RepRange
             let weight: Double?
             if exercise.loading == .bodyweight {
-                reps = RepRange(templates.strength.bodyweightReps.repsLow, templates.strength.bodyweightReps.repsHigh)
+                // The coach's reps (or metres, for stations) where written, else the bodyweight default.
+                reps = slot.repsLow != nil || slot.repsHigh != nil
+                    ? RepRange(scheme.repsLow, scheme.repsHigh)
+                    : RepRange(templates.strength.bodyweightReps.repsLow, templates.strength.bodyweightReps.repsHigh)
                 weight = nil
             } else {
                 reps = RepRange(scheme.repsLow, scheme.repsHigh)
@@ -98,6 +101,10 @@ enum StrengthBuilder {
             // Accessory use of a main lift is lighter.
             let scaled = role == .accessory ? target * 0.8 : target
             return StrengthMath.roundDown(scaled, loading: exercise.loading)
+        }
+        // Hyrox stations start at the race weight for their division.
+        if let division = profile.hyroxDivision, let race = exercise.defaultWeightKg?["hyrox-" + division.rawValue] {
+            return race
         }
         guard let base = exercise.defaultWeight(for: profile.liftingExperience) else { return nil }
         let scaled = role == .accessory && exercise.mainLift != nil ? base * 0.8 : base

@@ -66,6 +66,8 @@ final class OnboardingModel {
         LiftEntry(lift: .overheadPress, weightKg: 30)
     ]
     var goal: TrainingGoal?
+    /// Hyrox race category, asked when the goal is Hyrox.
+    var hyroxDivision: HyroxDivision?
     var hasEvent = false
     var eventDate: Date = Calendar.current.date(byAdding: .weekOfYear, value: 12, to: .now) ?? .now
     var trainingDays: Set<Weekday> = [.monday, .tuesday, .thursday, .saturday]
@@ -91,7 +93,7 @@ final class OnboardingModel {
         case .currentRunning: return true
         case .liftingExperience: return liftingExperience != nil
         case .liftEstimates: return true
-        case .goal: return goal != nil
+        case .goal: return goal != nil && (goal != .hyrox || hyroxDivision != nil)
         case .eventDate: return !hasEvent || eventDate > .now
         case .gymWeek: return liftSessionsPerWeek == 0 || splitCode != nil
         case .trainingDays: return (2...7).contains(trainingDays.count)
@@ -162,7 +164,8 @@ final class OnboardingModel {
             liftSessionsPerWeek: gymWeekChosen ? liftSessionsPerWeek : nil,
             splitCode: gymWeekChosen && liftSessionsPerWeek > 0 ? splitCode : nil,
             birthYear: knowsAge ? Calendar.current.component(.year, from: .now) - age : nil,
-            heartRateZones: heartRateZones
+            heartRateZones: heartRateZones,
+            hyroxDivision: goal == .hyrox ? hyroxDivision : nil
         )
     }
 
@@ -213,6 +216,7 @@ final class OnboardingModel {
             }
         }
         goal = profile.goal
+        hyroxDivision = profile.hyroxDivision
         hasEvent = profile.eventDate != nil
         if let event = profile.eventDate { eventDate = event }
         trainingDays = Set(profile.trainingDays)

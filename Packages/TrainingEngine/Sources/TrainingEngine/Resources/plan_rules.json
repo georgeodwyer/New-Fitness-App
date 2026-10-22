@@ -8,7 +8,8 @@
     "marathon":       { "runShare": 0.70, "minLifts": 1, "maxLifts": 2, "maxQuality": 2, "qualityOrder": ["tempo", "intervals"], "taperWeeks": 3, "longRunCapMeters": 32000, "longRunShare": 0.33 },
     "buildStrength":  { "runShare": 0.35, "minLifts": 2, "maxLifts": 4, "maxQuality": 1, "qualityOrder": ["tempo", "intervals"], "taperWeeks": 1, "longRunCapMeters": 10000, "longRunShare": 0.35 },
     "buildMuscle":    { "runShare": 0.30, "minLifts": 2, "maxLifts": 4, "maxQuality": 1, "qualityOrder": ["tempo", "intervals"], "taperWeeks": 1, "longRunCapMeters": 10000, "longRunShare": 0.35 },
-    "balancedHybrid": { "runShare": 0.55, "minLifts": 2, "maxLifts": 3, "maxQuality": 2, "qualityOrder": ["tempo", "intervals"], "taperWeeks": 1, "longRunCapMeters": 16000, "longRunShare": 0.30 }
+    "balancedHybrid": { "runShare": 0.55, "minLifts": 2, "maxLifts": 3, "maxQuality": 2, "qualityOrder": ["tempo", "intervals"], "taperWeeks": 1, "longRunCapMeters": 16000, "longRunShare": 0.30 },
+    "hyrox": { "runShare": 0.6, "minLifts": 2, "maxLifts": 3, "maxQuality": 2, "qualityOrder": ["intervals", "tempo"], "taperWeeks": 1, "longRunCapMeters": 16000, "longRunShare": 0.28 }
   },
   "quality": {
     "beginner":     { "base": 0, "build": 1, "peak": 1, "taper": 1 },
@@ -24,7 +25,8 @@
     "marathon":       { "beginner": 40000, "intermediate": 60000, "advanced": 85000 },
     "buildStrength":  { "beginner": 10000, "intermediate": 18000, "advanced": 25000 },
     "buildMuscle":    { "beginner": 8000,  "intermediate": 15000, "advanced": 22000 },
-    "balancedHybrid": { "beginner": 18000, "intermediate": 30000, "advanced": 45000 }
+    "balancedHybrid": { "beginner": 18000, "intermediate": 30000, "advanced": 45000 },
+    "hyrox": { "beginner": 20000, "intermediate": 30000, "advanced": 45000 }
   },
   "maxRunMeters": { "beginner": 8000, "intermediate": 13000, "advanced": 18000 },
   "minRunMeters": 3000,

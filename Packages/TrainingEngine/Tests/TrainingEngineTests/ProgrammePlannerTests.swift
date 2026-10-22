@@ -165,8 +165,8 @@ final class ProgrammePlannerTests: XCTestCase {
 
     func testChosenGymSplit() {
         let strength = try! XCTUnwrap(TestSupport.bundledTemplates.programmes.strength)
-        XCTAssertEqual(Set(strength.offered(sessions: 2).map(\.code)), ["fullBody2", "upperLower"])
-        XCTAssertEqual(Set(strength.offered(sessions: 3).map(\.code)), ["fullBody3", "ppl", "upperLowerFull"])
+        XCTAssertEqual(Set(strength.offered(sessions: 2).map(\.code)), ["fullBody2", "upperLower", "hyroxStations2"])
+        XCTAssertEqual(Set(strength.offered(sessions: 3).map(\.code)), ["fullBody3", "ppl", "upperLowerFull", "hyroxHybrid3"])
         XCTAssertEqual(strength.offered(sessions: 6).map(\.code), ["ppl6"])
 
         var runner = profile(runners[1], days: Weekday.allCases, doubles: 2)
@@ -185,6 +185,39 @@ final class ProgrammePlannerTests: XCTestCase {
         let bodyweightPull = bodyweightWeeks[0].sessions.first { $0.title == "Pull" }
         XCTAssertFalse(bodyweightPull?.strength?.exercises.contains { $0.name == "Face Pull" } ?? false)
         XCTAssertFalse(bodyweightPull?.strength?.exercises.isEmpty ?? true)
+    }
+
+    func testHyroxPlan() throws {
+        let hyrox = try XCTUnwrap(TestSupport.bundledTemplates.programmes.programme(for: .hyrox))
+        XCTAssertEqual(hyrox.weeks.count, 12)
+        XCTAssertEqual(hyrox.raceDistanceMeters, 8000)
+        let compromised = hyrox.sessions.filter { $0.name == "Compromised run" }
+        XCTAssertEqual(compromised.count, 12)
+        XCTAssertTrue(compromised.allSatisfy { $0.parts.first?.recovery?.label == "Station work" })
+        XCTAssertTrue(compromised.allSatisfy { $0.parts.first?.recovery?.effort == true }, "No pace warnings during station work")
+        XCTAssertEqual(TestSupport.bundledTemplates.programmes.settings(for: .hyrox)?.defaultSplit, "hyroxHybrid3")
+
+        var runner = profile(runners[1], days: [.monday, .tuesday, .wednesday, .thursday, .saturday, .sunday], doubles: 1)
+        runner.goal = .hyrox
+        runner.hyroxDivision = .proMen
+        runner.liftSessionsPerWeek = 3
+        runner.splitCode = "hyroxHybrid3"
+        let (_, weeks) = plan(runner)
+        XCTAssertTrue(weeks.prefix(2).flatMap(runs).contains { $0.title == "Compromised run" })
+        let stations = try XCTUnwrap(weeks.prefix(3).flatMap(\.sessions).first { $0.title == "Stations" })
+        let sled = try XCTUnwrap(stations.strength?.exercises.first { $0.exerciseId == "sled-push" })
+        XCTAssertEqual(sled.weightKg, 202, "Pro men's race weight")
+        XCTAssertEqual(sled.repRange, RepRange(25, 25), "Reps are metres")
+        let ski = try XCTUnwrap(stations.strength?.exercises.first { $0.exerciseId == "skierg" })
+        XCTAssertEqual(ski.repRange.lower, 250, "Bodyweight stations keep the coach's metres")
+        XCTAssertNil(ski.weightKg)
+
+        // Open women: lighter race weights.
+        runner.hyroxDivision = .openWomen
+        let (_, openWeeks) = plan(runner)
+        let openSled = openWeeks.prefix(3).flatMap(\.sessions).first { $0.title == "Stations" }?
+            .strength?.exercises.first { $0.exerciseId == "sled-push" }
+        XCTAssertEqual(openSled?.weightKg, 102)
     }
 
     func testRecentRunningFromHistory() {

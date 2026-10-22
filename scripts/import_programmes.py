@@ -26,7 +26,7 @@ OUTPUT = ROOT / "Packages/TrainingEngine/Sources/TrainingEngine/Resources/progra
 
 GOALS = {
     "first 5k": "first5k", "faster 5k": "faster5k", "faster 10k": "faster10k", "half marathon": "halfMarathon", "marathon": "marathon",
-    "build strength": "buildStrength", "build muscle": "buildMuscle", "balanced hybrid": "balancedHybrid",
+    "build strength": "buildStrength", "build muscle": "buildMuscle", "balanced hybrid": "balancedHybrid", "hyrox": "hyrox",
 }
 # Workbook zone codes → app zones.
 ZONES = {
@@ -40,18 +40,21 @@ SESSION_TYPES = {
     "long": ("long", "Long run"), "tempo": ("tempo", "Tempo run"), "progression": ("tempo", "Progression run"),
     "intervals": ("intervals", "Intervals"), "fartlek": ("intervals", "Fartlek"), "hills": ("intervals", "Hills"),
     "shakeout": ("easy", "Shakeout"), "race": ("race", "Race day"),
+    # Hyrox: runs with station work between the reps (e.g. '6 x 1 km @ HM, 2 min station between').
+    "compromised": ("intervals", "Compromised run"),
 }
 SPLITS = {
     "full body ×1": "fullBody1", "full body ×2": "fullBody2", "full body ×3": "fullBody3", "upper / lower": "upperLower",
     "push / pull / legs": "ppl", "push / pull / legs ×2": "ppl6", "upper / lower / full": "upperLowerFull",
     "ppl + upper / lower": "pplUpperLower",
+    "hyrox: stations ×2": "hyroxStations2", "hyrox: strength + stations": "hyroxHybrid3",
 }
 PATTERNS = {
     "any squat": "squat", "any hinge (deadlift)": "hinge", "any hinge accessory (rdl, bridge)": "hingeAccessory",
     "any lunge / split squat": "lunge", "any calf raise": "calf", "any horizontal push (bench, press-up)": "horizontalPush",
     "any vertical push (overhead press)": "verticalPush", "any horizontal pull (row)": "horizontalPull",
     "any vertical pull (pull-up, pulldown)": "verticalPull", "any arms": "arms", "any core": "core",
-    "any anti-rotation core": "antiRotation",
+    "any anti-rotation core": "antiRotation", "any hyrox station": "station",
 }
 EXERCISES = ROOT / "Packages/TrainingEngine/Sources/TrainingEngine/Resources/exercises.json"
 PHASES = {"base": "base", "build": "build", "peak": "peak", "taper": "taper", "race week": "taper", "deload": None}
@@ -131,6 +134,10 @@ def recovery_step(tail, work):
     if not m:
         raise ParseError(f"can't read the recovery '{tail}'")
     rec = dict(length(m.group(1), m.group(2)))
+    if re.search(r"\bstations?\b", tail, re.I):
+        # Station work between reps (Hyrox): no pace, just the clock.
+        rec.update(zone="easy", effort=True, recovery=True, label="Station work")
+        return rec
     walk = re.search(r"\bwalk\b", tail, re.I)
     rec.update(zone="easy", effort=False, recovery=True, label="Walk" if walk else "Recovery jog")
     return rec

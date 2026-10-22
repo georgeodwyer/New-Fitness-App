@@ -106,7 +106,7 @@ public struct TemplateLibrary: Sendable {
         switch goal {
         case .buildStrength: key = "buildStrength"
         case .buildMuscle: key = "buildMuscle"
-        case .balancedHybrid: key = "balancedHybrid"
+        case .balancedHybrid, .hyrox: key = "balancedHybrid"
         case .first5k, .faster5k, .faster10k, .halfMarathon, .marathon: key = "running"
         }
         return strength.prescriptions[key]

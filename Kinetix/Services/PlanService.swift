@@ -169,6 +169,7 @@ extension TrainingGoal {
         case .buildStrength: return "Build strength"
         case .buildMuscle: return "Build muscle"
         case .balancedHybrid: return "Balanced hybrid fitness"
+        case .hyrox: return "Hyrox"
         }
     }
 }

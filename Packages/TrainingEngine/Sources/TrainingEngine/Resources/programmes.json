@@ -112,6 +112,11 @@
    "beginner",
    "intermediate",
    "advanced"
+  ],
+  "hyrox": [
+   "beginner",
+   "intermediate",
+   "advanced"
   ]
  },
  "goals": {
@@ -170,6 +175,13 @@
    "liftsMin": 2,
    "liftsMax": 3,
    "defaultSplit": "fullBody3"
+  },
+  "hyrox": {
+   "runsMin": 3,
+   "runsMax": 5,
+   "liftsMin": 2,
+   "liftsMax": 3,
+   "defaultSplit": "hyroxHybrid3"
   }
  },
  "strength": {
@@ -995,6 +1007,258 @@
       ]
      }
     ]
+   },
+   {
+    "code": "hyroxStations2",
+    "name": "Hyrox: stations ×2",
+    "suits": "Hyrox: two station sessions covering all eight stations.",
+    "shown": true,
+    "days": [
+     {
+      "name": "Stations A",
+      "focus": "fullBody",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "named",
+        "exerciseName": "SkiErg (metres)",
+        "sets": 4,
+        "repsLow": 250,
+        "repsHigh": 250,
+        "restSeconds": 60,
+        "note": "Reps are metres."
+       },
+       {
+        "role": "main",
+        "pattern": "named",
+        "exerciseName": "Sled Push (metres)",
+        "sets": 4,
+        "repsLow": 25,
+        "repsHigh": 25,
+        "restSeconds": 90,
+        "note": "Reps are metres. Starts at your division's race weight."
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Burpee Broad Jumps (metres)",
+        "sets": 3,
+        "repsLow": 20,
+        "repsHigh": 20,
+        "restSeconds": 60,
+        "note": "Reps are metres."
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Wall Balls",
+        "sets": 4,
+        "repsLow": 15,
+        "repsHigh": 20,
+        "restSeconds": 60
+       },
+       {
+        "role": "accessory",
+        "pattern": "core"
+       }
+      ]
+     },
+     {
+      "name": "Stations B",
+      "focus": "fullBody",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "named",
+        "exerciseName": "Rowing (metres)",
+        "sets": 4,
+        "repsLow": 250,
+        "repsHigh": 250,
+        "restSeconds": 60,
+        "note": "Reps are metres."
+       },
+       {
+        "role": "main",
+        "pattern": "named",
+        "exerciseName": "Sled Pull (metres)",
+        "sets": 4,
+        "repsLow": 25,
+        "repsHigh": 25,
+        "restSeconds": 90,
+        "note": "Reps are metres. Starts at your division's race weight."
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Farmers Carry (metres)",
+        "sets": 4,
+        "repsLow": 50,
+        "repsHigh": 50,
+        "restSeconds": 60,
+        "note": "Reps are metres. Weight is per hand."
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Sandbag Lunges (metres)",
+        "sets": 3,
+        "repsLow": 25,
+        "repsHigh": 25,
+        "restSeconds": 60,
+        "note": "Reps are metres."
+       },
+       {
+        "role": "accessory",
+        "pattern": "antiRotation"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "code": "hyroxHybrid3",
+    "name": "Hyrox: strength + stations",
+    "suits": "Hyrox: two strength days and one station day.",
+    "shown": true,
+    "days": [
+     {
+      "name": "Strength A",
+      "focus": "fullBody",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "squat"
+       },
+       {
+        "role": "main",
+        "pattern": "horizontalPush"
+       },
+       {
+        "role": "accessory",
+        "pattern": "horizontalPull"
+       },
+       {
+        "role": "accessory",
+        "pattern": "calf"
+       },
+       {
+        "role": "accessory",
+        "pattern": "core"
+       }
+      ]
+     },
+     {
+      "name": "Stations",
+      "focus": "fullBody",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "named",
+        "exerciseName": "SkiErg (metres)",
+        "sets": 3,
+        "repsLow": 250,
+        "repsHigh": 250,
+        "restSeconds": 45,
+        "note": "Reps are metres."
+       },
+       {
+        "role": "main",
+        "pattern": "named",
+        "exerciseName": "Sled Push (metres)",
+        "sets": 3,
+        "repsLow": 25,
+        "repsHigh": 25,
+        "restSeconds": 75,
+        "note": "Reps are metres."
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Sled Pull (metres)",
+        "sets": 3,
+        "repsLow": 25,
+        "repsHigh": 25,
+        "restSeconds": 75,
+        "note": "Reps are metres."
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Burpee Broad Jumps (metres)",
+        "sets": 3,
+        "repsLow": 20,
+        "repsHigh": 20,
+        "restSeconds": 45,
+        "note": "Reps are metres."
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Rowing (metres)",
+        "sets": 3,
+        "repsLow": 250,
+        "repsHigh": 250,
+        "restSeconds": 45,
+        "note": "Reps are metres."
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Farmers Carry (metres)",
+        "sets": 3,
+        "repsLow": 50,
+        "repsHigh": 50,
+        "restSeconds": 45,
+        "note": "Reps are metres. Weight is per hand."
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Sandbag Lunges (metres)",
+        "sets": 3,
+        "repsLow": 25,
+        "repsHigh": 25,
+        "restSeconds": 45,
+        "note": "Reps are metres."
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Wall Balls",
+        "sets": 3,
+        "repsLow": 20,
+        "repsHigh": 20,
+        "restSeconds": 45
+       }
+      ]
+     },
+     {
+      "name": "Strength B",
+      "focus": "fullBody",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "hinge"
+       },
+       {
+        "role": "main",
+        "pattern": "verticalPull"
+       },
+       {
+        "role": "accessory",
+        "pattern": "lunge"
+       },
+       {
+        "role": "accessory",
+        "pattern": "verticalPush"
+       },
+       {
+        "role": "accessory",
+        "pattern": "antiRotation"
+       }
+      ]
+     }
+    ]
    }
   ],
   "byGoal": {
@@ -1108,6 +1372,20 @@
      "repsLow": 8,
      "repsHigh": 12,
      "restSeconds": 75
+    }
+   },
+   "hyrox": {
+    "main": {
+     "sets": 3,
+     "repsLow": 5,
+     "repsHigh": 8,
+     "restSeconds": 120
+    },
+    "accessory": {
+     "sets": 3,
+     "repsLow": 10,
+     "repsHigh": 15,
+     "restSeconds": 60
     }
    }
   }
@@ -2470,6 +2748,1254 @@
      ],
      "text": "HALF MARATHON – race at goal HM pace",
      "note": null
+    }
+   ]
+  },
+  {
+   "goal": "hyrox",
+   "name": "Hyrox",
+   "description": "Running, strength and station work for your Hyrox race, with compromised runs and a race simulation.",
+   "lengthWeeks": 12,
+   "afterLastWeek": "repeat",
+   "runsPerWeekMin": 3,
+   "runsPerWeekMax": 5,
+   "longRunCapMeters": 16000.0,
+   "weeklyCapMeters": 55000.0,
+   "taperWeeks": 1,
+   "raceReadyMeters": {
+    "beginner": 20000.0,
+    "intermediate": 30000.0,
+    "advanced": 45000.0
+   },
+   "weeks": [
+    {
+     "week": 1,
+     "phase": "base",
+     "isDeload": false,
+     "isRaceWeek": false,
+     "volume": 0.85,
+     "longRun": {
+      "kind": "auto"
+     },
+     "strength": "normal",
+     "note": "Settle in: compromised runs start short, everything else easy."
+    },
+    {
+     "week": 2,
+     "phase": "base",
+     "isDeload": false,
+     "isRaceWeek": false,
+     "volume": 0.9,
+     "longRun": {
+      "kind": "auto"
+     },
+     "strength": "normal",
+     "note": null
+    },
+    {
+     "week": 3,
+     "phase": "base",
+     "isDeload": false,
+     "isRaceWeek": false,
+     "volume": 0.95,
+     "longRun": {
+      "kind": "auto"
+     },
+     "strength": "heavy",
+     "note": null
+    },
+    {
+     "week": 4,
+     "phase": "base",
+     "isDeload": true,
+     "isRaceWeek": false,
+     "volume": 0.8,
+     "longRun": {
+      "kind": "auto"
+     },
+     "strength": "light",
+     "note": "Lighter week: let the work sink in."
+    },
+    {
+     "week": 5,
+     "phase": "build",
+     "isDeload": false,
+     "isRaceWeek": false,
+     "volume": 1.0,
+     "longRun": {
+      "kind": "auto"
+     },
+     "strength": "normal",
+     "note": "Station weights move towards race weight."
+    },
+    {
+     "week": 6,
+     "phase": "build",
+     "isDeload": false,
+     "isRaceWeek": false,
+     "volume": 1.05,
+     "longRun": {
+      "kind": "auto"
+     },
+     "strength": "heavy",
+     "note": null
+    },
+    {
+     "week": 7,
+     "phase": "build",
+     "isDeload": false,
+     "isRaceWeek": false,
+     "volume": 1.1,
+     "longRun": {
+      "kind": "auto"
+     },
+     "strength": "normal",
+     "note": "First full 8 km of compromised running."
+    },
+    {
+     "week": 8,
+     "phase": "build",
+     "isDeload": true,
+     "isRaceWeek": false,
+     "volume": 0.9,
+     "longRun": {
+      "kind": "auto"
+     },
+     "strength": "light",
+     "note": "Lighter week before the race block."
+    },
+    {
+     "week": 9,
+     "phase": "peak",
+     "isDeload": false,
+     "isRaceWeek": false,
+     "volume": 1.1,
+     "longRun": {
+      "kind": "auto"
+     },
+     "strength": "normal",
+     "note": "Race simulation: run it like race day, all eight stations."
+    },
+    {
+     "week": 10,
+     "phase": "peak",
+     "isDeload": false,
+     "isRaceWeek": false,
+     "volume": 1.1,
+     "longRun": {
+      "kind": "auto"
+     },
+     "strength": "normal",
+     "note": "Biggest week."
+    },
+    {
+     "week": 11,
+     "phase": "taper",
+     "isDeload": false,
+     "isRaceWeek": false,
+     "volume": 0.8,
+     "longRun": {
+      "kind": "auto"
+     },
+     "strength": "light",
+     "note": "Freshen up: shorter, sharper sessions."
+    },
+    {
+     "week": 12,
+     "phase": "taper",
+     "isDeload": false,
+     "isRaceWeek": true,
+     "volume": 0.5,
+     "longRun": {
+      "kind": "race"
+     },
+     "strength": "none",
+     "note": "Race day! Pace the first kilometre."
+    }
+   ],
+   "sessions": [
+    {
+     "week": 1,
+     "order": 1,
+     "name": "Intervals",
+     "type": "intervals",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 5,
+       "steps": [
+        {
+         "meters": 1000.0,
+         "zone": "threshold",
+         "effort": false
+        }
+       ],
+       "recovery": {
+        "seconds": 90.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Recovery jog"
+       }
+      }
+     ],
+     "text": "5 x 1 km @ T, 90 s jog between",
+     "note": null
+    },
+    {
+     "week": 1,
+     "order": 2,
+     "name": "Compromised run",
+     "type": "intervals",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 4,
+       "steps": [
+        {
+         "meters": 1000.0,
+         "zone": "halfMarathon",
+         "effort": true
+        }
+       ],
+       "recovery": {
+        "seconds": 120.0,
+        "zone": "easy",
+        "effort": true,
+        "recovery": true,
+        "label": "Station work"
+       }
+      }
+     ],
+     "text": "4 x 1 km @ HM effort, 2 min station between",
+     "note": "Between reps: one station from your list (e.g. 20 wall balls, 250 m row, 25 m sled push), at your division's weight."
+    },
+    {
+     "week": 1,
+     "order": 3,
+     "name": "Easy run",
+     "type": "easy",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "E continuous run",
+     "note": null
+    },
+    {
+     "week": 1,
+     "order": 4,
+     "name": "Long run",
+     "type": "long",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "Long run, conversational throughout",
+     "note": null
+    },
+    {
+     "week": 2,
+     "order": 1,
+     "name": "Tempo run",
+     "type": "tempo",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 3,
+       "steps": [
+        {
+         "seconds": 480.0,
+         "zone": "threshold",
+         "effort": false
+        }
+       ],
+       "recovery": {
+        "seconds": 120.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Recovery jog"
+       }
+      }
+     ],
+     "text": "3 x 8 min @ T, 2 min jog between",
+     "note": null
+    },
+    {
+     "week": 2,
+     "order": 2,
+     "name": "Compromised run",
+     "type": "intervals",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 5,
+       "steps": [
+        {
+         "meters": 1000.0,
+         "zone": "halfMarathon",
+         "effort": true
+        }
+       ],
+       "recovery": {
+        "seconds": 120.0,
+        "zone": "easy",
+        "effort": true,
+        "recovery": true,
+        "label": "Station work"
+       }
+      }
+     ],
+     "text": "5 x 1 km @ HM effort, 2 min station between",
+     "note": "Between reps: one station from your list (e.g. 20 wall balls, 250 m row, 25 m sled push), at your division's weight."
+    },
+    {
+     "week": 2,
+     "order": 3,
+     "name": "Easy run",
+     "type": "easy",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "E continuous run",
+     "note": null
+    },
+    {
+     "week": 2,
+     "order": 4,
+     "name": "Long run",
+     "type": "long",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "Long run, conversational throughout",
+     "note": null
+    },
+    {
+     "week": 3,
+     "order": 1,
+     "name": "Intervals",
+     "type": "intervals",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 6,
+       "steps": [
+        {
+         "meters": 1000.0,
+         "zone": "threshold",
+         "effort": false
+        }
+       ],
+       "recovery": {
+        "seconds": 90.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Recovery jog"
+       }
+      }
+     ],
+     "text": "6 x 1 km @ T, 90 s jog between",
+     "note": null
+    },
+    {
+     "week": 3,
+     "order": 2,
+     "name": "Compromised run",
+     "type": "intervals",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 6,
+       "steps": [
+        {
+         "meters": 1000.0,
+         "zone": "halfMarathon",
+         "effort": true
+        }
+       ],
+       "recovery": {
+        "seconds": 120.0,
+        "zone": "easy",
+        "effort": true,
+        "recovery": true,
+        "label": "Station work"
+       }
+      }
+     ],
+     "text": "6 x 1 km @ HM effort, 2 min station between",
+     "note": "Between reps: one station from your list (e.g. 20 wall balls, 250 m row, 25 m sled push), at your division's weight."
+    },
+    {
+     "week": 3,
+     "order": 3,
+     "name": "Easy run",
+     "type": "easy",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "E continuous run",
+     "note": null
+    },
+    {
+     "week": 3,
+     "order": 4,
+     "name": "Long run",
+     "type": "long",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "Long run, conversational throughout",
+     "note": null
+    },
+    {
+     "week": 4,
+     "order": 1,
+     "name": "Fartlek",
+     "type": "intervals",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 8,
+       "steps": [
+        {
+         "seconds": 60.0,
+         "zone": "interval",
+         "effort": false
+        },
+        {
+         "seconds": 60.0,
+         "zone": "easy",
+         "effort": false,
+         "recovery": true
+        }
+       ],
+       "recovery": null
+      }
+     ],
+     "text": "8 x (1 min @ I / 1 min E)",
+     "note": null
+    },
+    {
+     "week": 4,
+     "order": 2,
+     "name": "Compromised run",
+     "type": "intervals",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 4,
+       "steps": [
+        {
+         "meters": 1000.0,
+         "zone": "halfMarathon",
+         "effort": true
+        }
+       ],
+       "recovery": {
+        "seconds": 120.0,
+        "zone": "easy",
+        "effort": true,
+        "recovery": true,
+        "label": "Station work"
+       }
+      }
+     ],
+     "text": "4 x 1 km @ HM effort, 2 min station between",
+     "note": "Between reps: one station from your list (e.g. 20 wall balls, 250 m row, 25 m sled push), at your division's weight."
+    },
+    {
+     "week": 4,
+     "order": 3,
+     "name": "Long run",
+     "type": "long",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "Long run, conversational throughout",
+     "note": null
+    },
+    {
+     "week": 5,
+     "order": 1,
+     "name": "Tempo run",
+     "type": "tempo",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 1,
+       "steps": [
+        {
+         "seconds": 1200.0,
+         "zone": "threshold",
+         "effort": false
+        }
+       ],
+       "recovery": null
+      }
+     ],
+     "text": "20 min continuous @ T",
+     "note": null
+    },
+    {
+     "week": 5,
+     "order": 2,
+     "name": "Compromised run",
+     "type": "intervals",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 6,
+       "steps": [
+        {
+         "meters": 1000.0,
+         "zone": "halfMarathon",
+         "effort": false
+        }
+       ],
+       "recovery": {
+        "seconds": 120.0,
+        "zone": "easy",
+        "effort": true,
+        "recovery": true,
+        "label": "Station work"
+       }
+      }
+     ],
+     "text": "6 x 1 km @ HM, 2 min station between",
+     "note": "Between reps: one station from your list (e.g. 20 wall balls, 250 m row, 25 m sled push), at your division's weight."
+    },
+    {
+     "week": 5,
+     "order": 3,
+     "name": "Easy run",
+     "type": "easy",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "E continuous run",
+     "note": null
+    },
+    {
+     "week": 5,
+     "order": 4,
+     "name": "Long run",
+     "type": "long",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "Long run, conversational throughout",
+     "note": null
+    },
+    {
+     "week": 6,
+     "order": 1,
+     "name": "Intervals",
+     "type": "intervals",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 5,
+       "steps": [
+        {
+         "meters": 1000.0,
+         "zone": "interval",
+         "effort": false
+        }
+       ],
+       "recovery": {
+        "seconds": 120.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Recovery jog"
+       }
+      }
+     ],
+     "text": "5 x 1 km @ I, 2 min jog between",
+     "note": null
+    },
+    {
+     "week": 6,
+     "order": 2,
+     "name": "Compromised run",
+     "type": "intervals",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 7,
+       "steps": [
+        {
+         "meters": 1000.0,
+         "zone": "halfMarathon",
+         "effort": false
+        }
+       ],
+       "recovery": {
+        "seconds": 120.0,
+        "zone": "easy",
+        "effort": true,
+        "recovery": true,
+        "label": "Station work"
+       }
+      }
+     ],
+     "text": "7 x 1 km @ HM, 2 min station between",
+     "note": "Between reps: one station from your list (e.g. 20 wall balls, 250 m row, 25 m sled push), at your division's weight."
+    },
+    {
+     "week": 6,
+     "order": 3,
+     "name": "Easy run",
+     "type": "easy",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "E continuous run",
+     "note": null
+    },
+    {
+     "week": 6,
+     "order": 4,
+     "name": "Long run",
+     "type": "long",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "Long run, conversational throughout",
+     "note": null
+    },
+    {
+     "week": 7,
+     "order": 1,
+     "name": "Tempo run",
+     "type": "tempo",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 2,
+       "steps": [
+        {
+         "seconds": 720.0,
+         "zone": "threshold",
+         "effort": false
+        }
+       ],
+       "recovery": {
+        "seconds": 120.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Recovery jog"
+       }
+      }
+     ],
+     "text": "2 x 12 min @ T, 2 min jog between",
+     "note": null
+    },
+    {
+     "week": 7,
+     "order": 2,
+     "name": "Compromised run",
+     "type": "intervals",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 8,
+       "steps": [
+        {
+         "meters": 1000.0,
+         "zone": "halfMarathon",
+         "effort": false
+        }
+       ],
+       "recovery": {
+        "seconds": 120.0,
+        "zone": "easy",
+        "effort": true,
+        "recovery": true,
+        "label": "Station work"
+       }
+      }
+     ],
+     "text": "8 x 1 km @ HM, 2 min station between",
+     "note": "Between reps: one station from your list (e.g. 20 wall balls, 250 m row, 25 m sled push), at your division's weight."
+    },
+    {
+     "week": 7,
+     "order": 3,
+     "name": "Easy run",
+     "type": "easy",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "E continuous run",
+     "note": null
+    },
+    {
+     "week": 7,
+     "order": 4,
+     "name": "Long run",
+     "type": "long",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "Long run, conversational throughout",
+     "note": null
+    },
+    {
+     "week": 8,
+     "order": 1,
+     "name": "Fartlek",
+     "type": "intervals",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 6,
+       "steps": [
+        {
+         "seconds": 120.0,
+         "zone": "threshold",
+         "effort": true
+        },
+        {
+         "seconds": 60.0,
+         "zone": "easy",
+         "effort": false,
+         "recovery": true
+        }
+       ],
+       "recovery": null
+      }
+     ],
+     "text": "6 x (2 min @ T effort / 1 min E)",
+     "note": null
+    },
+    {
+     "week": 8,
+     "order": 2,
+     "name": "Compromised run",
+     "type": "intervals",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 4,
+       "steps": [
+        {
+         "meters": 1000.0,
+         "zone": "halfMarathon",
+         "effort": false
+        }
+       ],
+       "recovery": {
+        "seconds": 120.0,
+        "zone": "easy",
+        "effort": true,
+        "recovery": true,
+        "label": "Station work"
+       }
+      }
+     ],
+     "text": "4 x 1 km @ HM, 2 min station between",
+     "note": "Between reps: one station from your list (e.g. 20 wall balls, 250 m row, 25 m sled push), at your division's weight."
+    },
+    {
+     "week": 8,
+     "order": 3,
+     "name": "Long run",
+     "type": "long",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "Long run, conversational throughout",
+     "note": null
+    },
+    {
+     "week": 9,
+     "order": 1,
+     "name": "Tempo run",
+     "type": "tempo",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 1,
+       "steps": [
+        {
+         "seconds": 1500.0,
+         "zone": "threshold",
+         "effort": false
+        }
+       ],
+       "recovery": null
+      }
+     ],
+     "text": "25 min continuous @ T",
+     "note": null
+    },
+    {
+     "week": 9,
+     "order": 2,
+     "name": "Compromised run",
+     "type": "intervals",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 8,
+       "steps": [
+        {
+         "meters": 1000.0,
+         "zone": "halfMarathon",
+         "effort": false
+        }
+       ],
+       "recovery": {
+        "seconds": 180.0,
+        "zone": "easy",
+        "effort": true,
+        "recovery": true,
+        "label": "Station work"
+       }
+      }
+     ],
+     "text": "8 x 1 km @ HM, 3 min station between",
+     "note": "Race simulation: the eight stations in race order (SkiErg, sled push, sled pull, burpee broad jumps, row, farmers carry, sandbag lunges, wall balls), one after each km."
+    },
+    {
+     "week": 9,
+     "order": 3,
+     "name": "Easy run",
+     "type": "easy",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "E continuous run",
+     "note": null
+    },
+    {
+     "week": 9,
+     "order": 4,
+     "name": "Long run",
+     "type": "long",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "Long run, conversational throughout",
+     "note": null
+    },
+    {
+     "week": 10,
+     "order": 1,
+     "name": "Intervals",
+     "type": "intervals",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 6,
+       "steps": [
+        {
+         "meters": 800.0,
+         "zone": "interval",
+         "effort": false
+        }
+       ],
+       "recovery": {
+        "seconds": 90.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Recovery jog"
+       }
+      }
+     ],
+     "text": "6 x 800 m @ I, 90 s jog between",
+     "note": null
+    },
+    {
+     "week": 10,
+     "order": 2,
+     "name": "Compromised run",
+     "type": "intervals",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 8,
+       "steps": [
+        {
+         "meters": 1000.0,
+         "zone": "halfMarathon",
+         "effort": false
+        }
+       ],
+       "recovery": {
+        "seconds": 120.0,
+        "zone": "easy",
+        "effort": true,
+        "recovery": true,
+        "label": "Station work"
+       }
+      }
+     ],
+     "text": "8 x 1 km @ HM, 2 min station between",
+     "note": "Between reps: one station from your list (e.g. 20 wall balls, 250 m row, 25 m sled push), at your division's weight."
+    },
+    {
+     "week": 10,
+     "order": 3,
+     "name": "Easy run",
+     "type": "easy",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "E continuous run",
+     "note": null
+    },
+    {
+     "week": 10,
+     "order": 4,
+     "name": "Long run",
+     "type": "long",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "Long run, conversational throughout",
+     "note": null
+    },
+    {
+     "week": 11,
+     "order": 1,
+     "name": "Tempo run",
+     "type": "tempo",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 3,
+       "steps": [
+        {
+         "seconds": 300.0,
+         "zone": "threshold",
+         "effort": false
+        }
+       ],
+       "recovery": {
+        "seconds": 120.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Recovery jog"
+       }
+      }
+     ],
+     "text": "3 x 5 min @ T, 2 min jog between",
+     "note": null
+    },
+    {
+     "week": 11,
+     "order": 2,
+     "name": "Compromised run",
+     "type": "intervals",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 4,
+       "steps": [
+        {
+         "meters": 1000.0,
+         "zone": "halfMarathon",
+         "effort": false
+        }
+       ],
+       "recovery": {
+        "seconds": 120.0,
+        "zone": "easy",
+        "effort": true,
+        "recovery": true,
+        "label": "Station work"
+       }
+      }
+     ],
+     "text": "4 x 1 km @ HM, 2 min station between",
+     "note": "Between reps: one station from your list (e.g. 20 wall balls, 250 m row, 25 m sled push), at your division's weight."
+    },
+    {
+     "week": 11,
+     "order": 3,
+     "name": "Easy run",
+     "type": "easy",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "E continuous run",
+     "note": null
+    },
+    {
+     "week": 12,
+     "order": 1,
+     "name": "Easy run",
+     "type": "easy",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "E continuous run",
+     "note": null
+    },
+    {
+     "week": 12,
+     "order": 2,
+     "name": "Shakeout",
+     "type": "easy",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      },
+      {
+       "kind": "reps",
+       "repeats": 4,
+       "steps": [
+        {
+         "seconds": 20.0,
+         "zone": "repetition",
+         "effort": true,
+         "label": "Stride"
+        }
+       ],
+       "recovery": {
+        "seconds": 60,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Easy jog"
+       }
+      }
+     ],
+     "text": "4 km E + 4 x 20 s strides",
+     "note": null
+    },
+    {
+     "week": 12,
+     "order": 3,
+     "name": "Race day",
+     "type": "race",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "race"
+      }
+     ],
+     "text": null,
+     "note": "8 x 1 km with a station after each. Start the first km controlled; the stations decide your race."
     }
    ]
   }

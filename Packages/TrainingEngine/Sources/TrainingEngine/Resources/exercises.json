@@ -133,6 +133,19 @@
       "defaultWeightKg": { "beginner": 8, "intermediate": 14, "advanced": 20 } },
     { "id": "burpee", "name": "Burpee", "pattern": "library", "muscle": "fullBody", "libraryOnly": true, "requires": "bodyweight", "loading": "bodyweight", "region": "lower" },
     { "id": "power-clean", "name": "Power Clean", "pattern": "library", "muscle": "fullBody", "libraryOnly": true, "requires": "homeGym", "loading": "barbell", "region": "lower",
-      "defaultWeightKg": { "beginner": 30, "intermediate": 55, "advanced": 80 } }
+      "defaultWeightKg": { "beginner": 30, "intermediate": 55, "advanced": 80 } },
+    { "id": "skierg", "name": "SkiErg (metres)", "pattern": "station", "requires": "fullGym", "loading": "bodyweight", "region": "upper", "muscle": "fullBody" },
+    { "id": "sled-push", "name": "Sled Push (metres)", "pattern": "station", "requires": "fullGym", "loading": "machine", "region": "lower", "muscle": "legs",
+      "defaultWeightKg": { "beginner": 60, "intermediate": 100, "advanced": 140, "hyrox-open-women": 102, "hyrox-open-men": 152, "hyrox-pro-women": 152, "hyrox-pro-men": 202 } },
+    { "id": "sled-pull", "name": "Sled Pull (metres)", "pattern": "station", "requires": "fullGym", "loading": "machine", "region": "upper", "muscle": "back",
+      "defaultWeightKg": { "beginner": 40, "intermediate": 70, "advanced": 100, "hyrox-open-women": 78, "hyrox-open-men": 103, "hyrox-pro-women": 103, "hyrox-pro-men": 153 } },
+    { "id": "burpee-broad-jump", "name": "Burpee Broad Jumps (metres)", "pattern": "station", "requires": "bodyweight", "loading": "bodyweight", "region": "lower", "muscle": "fullBody" },
+    { "id": "rowing", "name": "Rowing (metres)", "pattern": "station", "requires": "fullGym", "loading": "bodyweight", "region": "upper", "muscle": "fullBody" },
+    { "id": "hyrox-farmers-carry", "name": "Farmers Carry (metres)", "pattern": "station", "requires": "dumbbellsOnly", "loading": "dumbbell", "region": "upper", "muscle": "fullBody",
+      "defaultWeightKg": { "beginner": 12, "intermediate": 20, "advanced": 28, "hyrox-open-women": 16, "hyrox-open-men": 24, "hyrox-pro-women": 24, "hyrox-pro-men": 32 } },
+    { "id": "sandbag-lunge", "name": "Sandbag Lunges (metres)", "pattern": "station", "requires": "dumbbellsOnly", "loading": "dumbbell", "region": "lower", "muscle": "legs",
+      "defaultWeightKg": { "beginner": 8, "intermediate": 15, "advanced": 20, "hyrox-open-women": 10, "hyrox-open-men": 20, "hyrox-pro-women": 20, "hyrox-pro-men": 30 } },
+    { "id": "wall-ball", "name": "Wall Balls", "pattern": "station", "requires": "homeGym", "loading": "dumbbell", "region": "lower", "muscle": "legs",
+      "defaultWeightKg": { "beginner": 4, "intermediate": 6, "advanced": 8, "hyrox-open-women": 4, "hyrox-open-men": 6, "hyrox-pro-women": 6, "hyrox-pro-men": 9 } }
   ]
 }

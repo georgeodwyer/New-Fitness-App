@@ -265,6 +265,7 @@ struct GoalStep: View {
         Option(goal: .faster10k, detail: "Get quicker over 10K.", symbol: "stopwatch"),
         Option(goal: .halfMarathon, detail: "Train for 21.1 km.", symbol: "road.lanes"),
         Option(goal: .marathon, detail: "Train for 42.2 km.", symbol: "medal"),
+        Option(goal: .hyrox, detail: "Running, strength and station work for a Hyrox race.", symbol: "figure.cross.training"),
         Option(goal: .buildStrength, detail: "Lift heavier, with running for fitness.", symbol: "scalemass"),
         Option(goal: .buildMuscle, detail: "Add muscle while keeping your engine.", symbol: "figure.strengthtraining.functional")
     ]
@@ -284,8 +285,30 @@ struct GoalStep: View {
                              isSelected: model.goal == option.goal) {
                     model.goal = option.goal
                 }
+                if option.goal == .hyrox && model.goal == .hyrox {
+                    hyroxDivision
+                }
             }
         }
+    }
+
+    /// Open or Pro, women's or men's: sets the station weights in gym sessions.
+    private var hyroxDivision: some View {
+        VStack(alignment: .leading, spacing: KXSpacing.sm) {
+            Text("Your Hyrox division").font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink)
+            Text("Sets the station weights in your gym sessions (sled, carries, sandbag, wall ball).")
+                .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: KXSpacing.sm), GridItem(.flexible())], spacing: KXSpacing.sm) {
+                ForEach(HyroxDivision.allCases, id: \.self) { division in
+                    KXSelectableChip(text: division.displayName, isSelected: model.hyroxDivision == division) {
+                        model.hyroxDivision = division
+                    }
+                    .accessibilityIdentifier("onboarding.hyrox.\(division.rawValue)")
+                }
+            }
+        }
+        .kxCard(.tinted)
     }
 }
 

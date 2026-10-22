@@ -68,8 +68,9 @@ def dropdown(ws, rng, source, prompt=None):
 lists = wb.active
 lists.title = "Lists"
 PROGRAMMES = [("First 5K", "first5k"), ("Faster 5K", "faster5k"), ("Faster 10K", "faster10k"), ("Half marathon", "halfMarathon"), ("Marathon", "marathon"),
-              ("Build strength", "buildStrength"), ("Build muscle", "buildMuscle"), ("Balanced hybrid", "balancedHybrid")]
-SESSION_TYPES = ["Easy", "Recovery", "Long", "Tempo", "Intervals", "Progression", "Fartlek", "Hills", "Shakeout", "Race"]
+              ("Build strength", "buildStrength"), ("Build muscle", "buildMuscle"), ("Balanced hybrid", "balancedHybrid"),
+              ("Hyrox", "hyrox")]
+SESSION_TYPES = ["Easy", "Recovery", "Long", "Tempo", "Intervals", "Progression", "Fartlek", "Hills", "Shakeout", "Compromised", "Race"]
 PHASES = ["Base", "Build", "Peak", "Deload", "Taper", "Race week"]
 ZONES = [("E", "Easy", "Conversational. Easy runs, long runs, warm-ups, cool-downs, jog recoveries.", "VDOT easy range", "3–4"),
          ("STEADY", "Steady", "Between easy and marathon pace: relaxed but purposeful. Steady finishes and progressions.", "Marathon pace + 10–20 s/km", "4–5"),
@@ -82,12 +83,13 @@ ZONES = [("E", "Easy", "Conversational. Easy runs, long runs, warm-ups, cool-dow
          ("R", "Repetition", "Mile race effort. Short fast reps with full recovery.", "VDOT repetition pace", "9")]
 SPLITS = [("Full body ×1", "fullBody1", 1), ("Full body ×2", "fullBody2", 2), ("Full body ×3", "fullBody3", 3),
           ("Upper / Lower", "upperLower", 4), ("Push / Pull / Legs", "ppl", 3), ("Push / Pull / Legs ×2", "ppl6", 6),
-          ("Upper / Lower / Full", "upperLowerFull", 3), ("PPL + Upper / Lower", "pplUpperLower", 5)]
+          ("Upper / Lower / Full", "upperLowerFull", 3), ("PPL + Upper / Lower", "pplUpperLower", 5),
+          ("Hyrox: stations ×2", "hyroxStations2", 2), ("Hyrox: strength + stations", "hyroxHybrid3", 3)]
 PATTERNS = [("Any squat", "squat"), ("Any hinge (deadlift)", "hinge"), ("Any hinge accessory (RDL, bridge)", "hingeAccessory"),
             ("Any lunge / split squat", "lunge"), ("Any calf raise", "calf"), ("Any horizontal push (bench, press-up)", "horizontalPush"),
             ("Any vertical push (overhead press)", "verticalPush"), ("Any horizontal pull (row)", "horizontalPull"),
             ("Any vertical pull (pull-up, pulldown)", "verticalPull"), ("Any arms", "arms"), ("Any core", "core"),
-            ("Any anti-rotation core", "antiRotation")]
+            ("Any anti-rotation core", "antiRotation"), ("Any Hyrox station", "station")]
 EMPHASIS = ["Normal", "Heavy", "Light", "None"]
 ROLES = ["Main", "Accessory"]
 YESNO = ["Yes", "No"]
@@ -243,7 +245,7 @@ prog.cell(row=1, column=17).comment = Comment("Which runners see this goal in on
 prog.cell(row=1, column=11).comment = Comment("The weekly volume this race needs at each level. Run weeks' % are a % of this. "
                                               "Runners below it build up to it; runners above it ease down to it.", "Kinetix")
 READY = {"first5k": (15, None, None), "faster5k": (20, 30, 45), "faster10k": (25, 40, 55), "halfMarathon": (30, 45, 65), "marathon": (40, 60, 85),
-         "buildStrength": (10, 15, 25), "buildMuscle": (10, 15, 25), "balancedHybrid": (15, 25, 40)}
+         "buildStrength": (10, 15, 25), "buildMuscle": (10, 15, 25), "balancedHybrid": (15, 25, 40), "hyrox": (20, 30, 45)}
 defaults = {
     "first5k": (8, "Repeat", 3, 4, 1, 2, 8, 25, 1, "Full body ×2", "Build up to running 5K comfortably, then race it."),
     "faster5k": (8, "Repeat", 3, 5, 1, 2, 12, 60, 1, "Full body ×2", "Speed, VO2max and threshold work to lower your 5K time."),
@@ -253,6 +255,8 @@ defaults = {
     "buildStrength": (8, "Repeat", 1, 3, 2, 4, 10, 25, 1, "Upper / Lower", "Heavy compound lifts with enough running to keep your engine."),
     "buildMuscle": (8, "Repeat", 1, 3, 3, 5, 10, 25, 1, "Push / Pull / Legs", "Hypertrophy-focused lifting with easy aerobic running."),
     "balancedHybrid": (8, "Repeat", 2, 4, 2, 3, 16, 35, 1, "Full body ×3", "Run and lift in balance: get faster and stronger together."),
+    "hyrox": (12, "Repeat", 3, 5, 2, 3, 16, 55, 1, "Hyrox: strength + stations",
+              "Running, strength and station work for your Hyrox race, with compromised runs and a race simulation."),
 }
 AVAILABLE = {"first5k": "Beginner only"}
 LAST = len(PROGRAMMES) + 1
@@ -298,14 +302,31 @@ weeks.cell(row=1, column=5).comment = Comment("'auto' (Rules share of the week),
 weeks.cell(row=1, column=9).comment = Comment("An intermediate runner already at race-ready volume (Programmes tab).", "Kinetix")
 prepare(weeks, 2, ROWS + 1, input_cols=range(1, 8), calc_cols=range(8, 11))
 week_rows = [r[:7] for r in src["Run weeks"].iter_rows(min_row=2, values_only=True) if r[0]] if src else []
+# Claude's Hyrox draft, for the coach to edit (only added if the copy has no Hyrox weeks yet).
+HYROX_WEEKS = [
+    (1, "Base", 0.85, "auto", "Normal", "Settle in: compromised runs start short, everything else easy."),
+    (2, "Base", 0.9, "auto", "Normal", None),
+    (3, "Base", 0.95, "auto", "Heavy", None),
+    (4, "Deload", 0.8, "auto", "Light", "Lighter week: let the work sink in."),
+    (5, "Build", 1.0, "auto", "Normal", "Station weights move towards race weight."),
+    (6, "Build", 1.05, "auto", "Heavy", None),
+    (7, "Build", 1.1, "auto", "Normal", "First full 8 km of compromised running."),
+    (8, "Deload", 0.9, "auto", "Light", "Lighter week before the race block."),
+    (9, "Peak", 1.1, "auto", "Normal", "Race simulation: run it like race day, all eight stations."),
+    (10, "Peak", 1.1, "auto", "Normal", "Biggest week."),
+    (11, "Taper", 0.8, "auto", "Light", "Freshen up: shorter, sharper sessions."),
+    (12, "Race week", 0.5, "Race", "None", "Race day! Pace the first kilometre."),
+]
+if not any(str(r[0]).strip().lower() == "hyrox" for r in week_rows):
+    week_rows += [("Hyrox", *w) for w in HYROX_WEEKS]
 for i, row in enumerate(week_rows, start=2):
     put(weeks, i, list(row))
 for i in range(2, ROWS + 2):
     weeks.cell(row=i, column=4).number_format = "0%"
     weeks.cell(row=i, column=8, value=f'=IF(A{i}="","",COUNTIFS(\'Run sessions\'!$A$2:$A${ROWS + 1},A{i},\'Run sessions\'!$B$2:$B${ROWS + 1},B{i}))')
-    weeks.cell(row=i, column=9, value=(f'=IF(OR(A{i}="",D{i}=""),"",IFERROR(ROUND(D{i}*IF(INDEX(Programmes!$L$2:$L$9,MATCH(A{i},Programmes!$A$2:$A$9,0))="",'
-                                       f'INDEX(Programmes!$K$2:$K$9,MATCH(A{i},Programmes!$A$2:$A$9,0)),'
-                                       f'INDEX(Programmes!$L$2:$L$9,MATCH(A{i},Programmes!$A$2:$A$9,0))),1),""))'))
+    weeks.cell(row=i, column=9, value=(f'=IF(OR(A{i}="",D{i}=""),"",IFERROR(ROUND(D{i}*IF(INDEX(Programmes!$L$2:$L${LAST},MATCH(A{i},Programmes!$A$2:$A${LAST},0))="",'
+                                       f'INDEX(Programmes!$K$2:$K${LAST},MATCH(A{i},Programmes!$A$2:$A${LAST},0)),'
+                                       f'INDEX(Programmes!$L$2:$L${LAST},MATCH(A{i},Programmes!$A$2:$A${LAST},0))),1),""))'))
     weeks.cell(row=i, column=10, value=(f'=IF(I{i}="","",IF(LOWER(E{i})="auto",ROUND(I{i}*Rules!$C$8,1),'
                                        f'IF(RIGHT(E{i},1)="%",ROUND(I{i}*VALUE(LEFT(E{i},LEN(E{i})-1))/100,1),'
                                        f'IF(RIGHT(LOWER(E{i}),2)="km",VALUE(LEFT(E{i},LEN(E{i})-2)),IF(LOWER(E{i})="race","race",E{i})))))'))
@@ -334,6 +355,38 @@ if src:
             del r[4]
         r[3] = TYPE_NAMES.get(str(r[3]).strip().lower(), r[3])
         session_rows.append(r)
+STATION_NOTE = "Between reps: one station from your list (e.g. 20 wall balls, 250 m row, 25 m sled push), at your division's weight."
+HYROX_SESSIONS = {
+    1: [("Intervals", "5 x 1 km @ T, 90 s jog between", None), ("Compromised", "4 x 1 km @ HM effort, 2 min station between", STATION_NOTE),
+        ("Easy", "E continuous run", None), ("Long", "Long run, conversational throughout", None)],
+    2: [("Tempo", "3 x 8 min @ T, 2 min jog between", None), ("Compromised", "5 x 1 km @ HM effort, 2 min station between", STATION_NOTE),
+        ("Easy", "E continuous run", None), ("Long", "Long run, conversational throughout", None)],
+    3: [("Intervals", "6 x 1 km @ T, 90 s jog between", None), ("Compromised", "6 x 1 km @ HM effort, 2 min station between", STATION_NOTE),
+        ("Easy", "E continuous run", None), ("Long", "Long run, conversational throughout", None)],
+    4: [("Fartlek", "8 x (1 min @ I / 1 min E)", None), ("Compromised", "4 x 1 km @ HM effort, 2 min station between", STATION_NOTE),
+        ("Long", "Long run, conversational throughout", None)],
+    5: [("Tempo", "20 min continuous @ T", None), ("Compromised", "6 x 1 km @ HM, 2 min station between", STATION_NOTE),
+        ("Easy", "E continuous run", None), ("Long", "Long run, conversational throughout", None)],
+    6: [("Intervals", "5 x 1 km @ I, 2 min jog between", None), ("Compromised", "7 x 1 km @ HM, 2 min station between", STATION_NOTE),
+        ("Easy", "E continuous run", None), ("Long", "Long run, conversational throughout", None)],
+    7: [("Tempo", "2 x 12 min @ T, 2 min jog between", None), ("Compromised", "8 x 1 km @ HM, 2 min station between", STATION_NOTE),
+        ("Easy", "E continuous run", None), ("Long", "Long run, conversational throughout", None)],
+    8: [("Fartlek", "6 x (2 min @ T effort / 1 min E)", None), ("Compromised", "4 x 1 km @ HM, 2 min station between", STATION_NOTE),
+        ("Long", "Long run, conversational throughout", None)],
+    9: [("Tempo", "25 min continuous @ T", None),
+        ("Compromised", "8 x 1 km @ HM, 3 min station between", "Race simulation: the eight stations in race order (SkiErg, sled push, sled pull, burpee broad jumps, row, farmers carry, sandbag lunges, wall balls), one after each km."),
+        ("Easy", "E continuous run", None), ("Long", "Long run, conversational throughout", None)],
+    10: [("Intervals", "6 x 800 m @ I, 90 s jog between", None), ("Compromised", "8 x 1 km @ HM, 2 min station between", STATION_NOTE),
+         ("Easy", "E continuous run", None), ("Long", "Long run, conversational throughout", None)],
+    11: [("Tempo", "3 x 5 min @ T, 2 min jog between", None), ("Compromised", "4 x 1 km @ HM, 2 min station between", STATION_NOTE),
+         ("Easy", "E continuous run", None)],
+    12: [("Easy", "E continuous run", None), ("Shakeout", "4 km E + 4 x 20 s strides", None),
+         ("Race", None, "8 x 1 km with a station after each. Start the first km controlled; the stations decide your race.")],
+}
+if not any(str(r[0]).strip().lower() == "hyrox" for r in session_rows):
+    for week, items in HYROX_SESSIONS.items():
+        for order, (kind, text, note) in enumerate(items, start=1):
+            session_rows.append(["Hyrox", week, order, kind, "auto", text, note])
 for i, row in enumerate(session_rows, start=2):
     put(sess, i, row)
 dropdown(sess, f"A2:A{ROWS + 1}", LIST_REF["Programmes"])
@@ -353,14 +406,26 @@ header(sp, ["Split", "Days per week", "Day names (in order)", "Who it suits", "S
 split_days = {
     "fullBody1": "Full body", "fullBody2": "Full body A, Full body B", "fullBody3": "Full body A, Full body B, Full body C",
     "upperLower": "Upper A, Lower A, Upper B, Lower B", "ppl": "Push, Pull, Legs", "ppl6": "Push A, Pull A, Legs A, Push B, Pull B, Legs B",
-    "upperLowerFull": "Upper, Lower, Full body", "pplUpperLower": "Push, Pull, Legs, Upper, Lower"}
+    "upperLowerFull": "Upper, Lower, Full body", "pplUpperLower": "Push, Pull, Legs, Upper, Lower",
+    "hyroxStations2": "Stations A, Stations B", "hyroxHybrid3": "Strength A, Stations, Strength B"}
 suits = {
     "fullBody1": "Very busy weeks or running-focused plans.", "fullBody2": "Most runners: two sessions that cover everything.",
     "fullBody3": "Balanced hybrid, newer lifters.", "upperLower": "Strength focus with 4 lifting days.",
     "ppl": "Muscle focus with 3 lifting days.", "ppl6": "Experienced lifters, muscle focus, light running.",
-    "upperLowerFull": "3 days, a bit more volume per muscle than full body.", "pplUpperLower": "5 lifting days, muscle focus."}
+    "upperLowerFull": "3 days, a bit more volume per muscle than full body.", "pplUpperLower": "5 lifting days, muscle focus.",
+    "hyroxStations2": "Hyrox: two station sessions covering all eight stations.",
+    "hyroxHybrid3": "Hyrox: two strength days and one station day."}
+saved_splits = {}
+if src and "Strength splits" in src.sheetnames:
+    for row in src["Strength splits"].iter_rows(min_row=2, values_only=True):
+        if row and row[0]:
+            saved_splits[str(row[0]).strip()] = row
 for i, (display, code, days) in enumerate(SPLITS, start=2):
-    put(sp, i, [display, days, split_days[code], suits[code], "Yes"])
+    values = [display, days, split_days[code], suits[code], "Yes"]
+    if display in saved_splits:
+        old = saved_splits[display]
+        values = [display] + [old[c] if c < len(old) and old[c] is not None else values[c] for c in range(1, 5)]
+    put(sp, i, values)
     sp.cell(row=i, column=6, value=f"=SUMPRODUCT(('Split days'!$A$2:$A${ROWS + 1}=A{i})/COUNTIFS('Split days'!$A$2:$A${ROWS + 1},'Split days'!$A$2:$A${ROWS + 1}&\"\",'Split days'!$B$2:$B${ROWS + 1},'Split days'!$B$2:$B${ROWS + 1}&\"\"))")
 prepare(sp, 2, len(SPLITS) + 1, input_cols=range(2, 6), calc_cols=(6,))
 dropdown(sp, f"E2:E{len(SPLITS) + 1}", LIST_REF["Yes / No"])
@@ -375,8 +440,37 @@ sd.cell(row=1, column=4).comment = Comment("'Any squat' etc. lets the app pick f
 sd.cell(row=1, column=6).comment = Comment("Leave Sets/Reps/Rest blank to use 'Strength by goal' for the Role.", "Kinetix")
 prepare(sd, 2, ROWS + 1, input_cols=range(1, 11))
 current = {'Full body ×1': [('Full body', [('Any squat', 'Main'), ('Any horizontal push (bench, press-up)', 'Main'), ('Any hinge accessory (RDL, bridge)', 'Accessory'), ('Any horizontal pull (row)', 'Accessory'), ('Any vertical push (overhead press)', 'Accessory'), ('Any core', 'Accessory')])], 'Full body ×2': [('Full body A', [('Any squat', 'Main'), ('Any horizontal push (bench, press-up)', 'Main'), ('Any horizontal pull (row)', 'Accessory'), ('Any calf raise', 'Accessory'), ('Any core', 'Accessory')]), ('Full body B', [('Any hinge (deadlift)', 'Main'), ('Any vertical push (overhead press)', 'Main'), ('Any vertical pull (pull-up, pulldown)', 'Accessory'), ('Any lunge / split squat', 'Accessory'), ('Any anti-rotation core', 'Accessory')])], 'Full body ×3': [('Full body A', [('Any squat', 'Main'), ('Any horizontal push (bench, press-up)', 'Main'), ('Any horizontal pull (row)', 'Accessory'), ('Any calf raise', 'Accessory'), ('Any core', 'Accessory')]), ('Full body B', [('Any hinge (deadlift)', 'Main'), ('Any vertical push (overhead press)', 'Main'), ('Any vertical pull (pull-up, pulldown)', 'Accessory'), ('Any lunge / split squat', 'Accessory'), ('Any anti-rotation core', 'Accessory')]), ('Full body C', [('Any lunge / split squat', 'Main'), ('Any vertical pull (pull-up, pulldown)', 'Main'), ('Incline Dumbbell Press', 'Accessory'), ('Barbell Hip Thrust', 'Accessory'), ('Single-Leg Calf Raise', 'Accessory'), ('Side Plank', 'Accessory')])], 'Upper / Lower': [('Upper A', [('Any horizontal push (bench, press-up)', 'Main'), ('Any horizontal pull (row)', 'Main'), ('Any vertical push (overhead press)', 'Accessory'), ('Any vertical pull (pull-up, pulldown)', 'Accessory'), ('Any arms', 'Accessory')]), ('Lower A', [('Any squat', 'Main'), ('Any hinge accessory (RDL, bridge)', 'Accessory'), ('Any lunge / split squat', 'Accessory'), ('Any calf raise', 'Accessory'), ('Any core', 'Accessory')]), ('Upper B', [('Any vertical push (overhead press)', 'Main'), ('Any vertical pull (pull-up, pulldown)', 'Main'), ('Any horizontal push (bench, press-up)', 'Accessory'), ('Any horizontal pull (row)', 'Accessory'), ('Any core', 'Accessory')]), ('Lower B', [('Any hinge (deadlift)', 'Main'), ('Any lunge / split squat', 'Main'), ('Any calf raise', 'Accessory'), ('Any anti-rotation core', 'Accessory')])], 'Push / Pull / Legs': [('Push', [('Any horizontal push (bench, press-up)', 'Main'), ('Any vertical push (overhead press)', 'Main'), ('Incline Dumbbell Press', 'Accessory'), ('Dumbbell Lateral Raise', 'Accessory'), ('Triceps Pushdown', 'Accessory')]), ('Pull', [('Any vertical pull (pull-up, pulldown)', 'Main'), ('Any horizontal pull (row)', 'Main'), ('Face Pull', 'Accessory'), ('Rear Delt Fly', 'Accessory'), ('Dumbbell Curl', 'Accessory')]), ('Legs', [('Any squat', 'Main'), ('Any hinge accessory (RDL, bridge)', 'Accessory'), ('Any lunge / split squat', 'Accessory'), ('Leg Curl', 'Accessory'), ('Any calf raise', 'Accessory'), ('Any core', 'Accessory')])], 'Push / Pull / Legs ×2': [('Push A', [('Any horizontal push (bench, press-up)', 'Main'), ('Any vertical push (overhead press)', 'Main'), ('Incline Dumbbell Press', 'Accessory'), ('Dumbbell Lateral Raise', 'Accessory'), ('Triceps Pushdown', 'Accessory')]), ('Pull A', [('Any vertical pull (pull-up, pulldown)', 'Main'), ('Any horizontal pull (row)', 'Main'), ('Face Pull', 'Accessory'), ('Rear Delt Fly', 'Accessory'), ('Dumbbell Curl', 'Accessory')]), ('Legs A', [('Any squat', 'Main'), ('Any hinge accessory (RDL, bridge)', 'Accessory'), ('Any lunge / split squat', 'Accessory'), ('Leg Curl', 'Accessory'), ('Any calf raise', 'Accessory'), ('Any core', 'Accessory')]), ('Push B', [('Any vertical push (overhead press)', 'Main'), ('Incline Barbell Bench Press', 'Main'), ('Dips', 'Accessory'), ('Cable Fly', 'Accessory'), ('Overhead Triceps Extension', 'Accessory')]), ('Pull B', [('Any horizontal pull (row)', 'Main'), ('Chin-Up', 'Main'), ('Seated Cable Row', 'Accessory'), ('Face Pull', 'Accessory'), ('Hammer Curl', 'Accessory')]), ('Legs B', [('Trap Bar Deadlift', 'Main'), ('Bulgarian Split Squat', 'Accessory'), ('Leg Press', 'Accessory'), ('Nordic Hamstring Curl', 'Accessory'), ('Seated Calf Raise', 'Accessory'), ('Hanging Leg Raise', 'Accessory')])], 'Upper / Lower / Full': [('Upper', [('Any horizontal push (bench, press-up)', 'Main'), ('Any horizontal pull (row)', 'Main'), ('Any vertical push (overhead press)', 'Accessory'), ('Any vertical pull (pull-up, pulldown)', 'Accessory'), ('Any arms', 'Accessory')]), ('Lower', [('Any squat', 'Main'), ('Any hinge accessory (RDL, bridge)', 'Accessory'), ('Any lunge / split squat', 'Accessory'), ('Any calf raise', 'Accessory'), ('Any core', 'Accessory')]), ('Full body', [('Any hinge (deadlift)', 'Main'), ('Any vertical push (overhead press)', 'Main'), ('Any vertical pull (pull-up, pulldown)', 'Accessory'), ('Step-Up', 'Accessory'), ('Any anti-rotation core', 'Accessory')])], 'PPL + Upper / Lower': [('Push', [('Any horizontal push (bench, press-up)', 'Main'), ('Any vertical push (overhead press)', 'Main'), ('Incline Dumbbell Press', 'Accessory'), ('Dumbbell Lateral Raise', 'Accessory'), ('Triceps Pushdown', 'Accessory')]), ('Pull', [('Any vertical pull (pull-up, pulldown)', 'Main'), ('Any horizontal pull (row)', 'Main'), ('Face Pull', 'Accessory'), ('Rear Delt Fly', 'Accessory'), ('Dumbbell Curl', 'Accessory')]), ('Legs', [('Any squat', 'Main'), ('Any hinge accessory (RDL, bridge)', 'Accessory'), ('Any lunge / split squat', 'Accessory'), ('Leg Curl', 'Accessory'), ('Any calf raise', 'Accessory'), ('Any core', 'Accessory')]), ('Upper', [('Any vertical push (overhead press)', 'Main'), ('Any vertical pull (pull-up, pulldown)', 'Main'), ('Any horizontal push (bench, press-up)', 'Accessory'), ('Any horizontal pull (row)', 'Accessory'), ('Any core', 'Accessory')]), ('Lower', [('Any hinge (deadlift)', 'Main'), ('Any lunge / split squat', 'Main'), ('Any calf raise', 'Accessory'), ('Any anti-rotation core', 'Accessory')])]}  # Claude's draft for every split, for the coach to edit
+M = "Reps are metres."
+current.update({
+    "Hyrox: stations ×2": [
+        ("Stations A", [("SkiErg (metres)", "Main", 4, 250, 250, 60, M), ("Sled Push (metres)", "Main", 4, 25, 25, 90, M + " Starts at your division's race weight."),
+                        ("Burpee Broad Jumps (metres)", "Accessory", 3, 20, 20, 60, M), ("Wall Balls", "Accessory", 4, 15, 20, 60, None),
+                        ("Any core", "Accessory", None, None, None, None, None)]),
+        ("Stations B", [("Rowing (metres)", "Main", 4, 250, 250, 60, M), ("Sled Pull (metres)", "Main", 4, 25, 25, 90, M + " Starts at your division's race weight."),
+                        ("Farmers Carry (metres)", "Accessory", 4, 50, 50, 60, M + " Weight is per hand."),
+                        ("Sandbag Lunges (metres)", "Accessory", 3, 25, 25, 60, M), ("Any anti-rotation core", "Accessory", None, None, None, None, None)])],
+    "Hyrox: strength + stations": [
+        ("Strength A", [("Any squat", "Main"), ("Any horizontal push (bench, press-up)", "Main"), ("Any horizontal pull (row)", "Accessory"),
+                        ("Any calf raise", "Accessory"), ("Any core", "Accessory")]),
+        ("Stations", [("SkiErg (metres)", "Main", 3, 250, 250, 45, M), ("Sled Push (metres)", "Main", 3, 25, 25, 75, M),
+                      ("Sled Pull (metres)", "Accessory", 3, 25, 25, 75, M), ("Burpee Broad Jumps (metres)", "Accessory", 3, 20, 20, 45, M),
+                      ("Rowing (metres)", "Accessory", 3, 250, 250, 45, M), ("Farmers Carry (metres)", "Accessory", 3, 50, 50, 45, M + " Weight is per hand."),
+                      ("Sandbag Lunges (metres)", "Accessory", 3, 25, 25, 45, M), ("Wall Balls", "Accessory", 3, 20, 20, 45, None)]),
+        ("Strength B", [("Any hinge (deadlift)", "Main"), ("Any vertical pull (pull-up, pulldown)", "Main"), ("Any lunge / split squat", "Accessory"),
+                        ("Any vertical push (overhead press)", "Accessory"), ("Any anti-rotation core", "Accessory")])],
+})
 r = 2
+owner_days = []
+if src and "Split days" in src.sheetnames:
+    owner_days = [list(row[:10]) for row in src["Split days"].iter_rows(min_row=2, values_only=True)
+                  if row and row[0] and (row[1] or row[3])]
+owner_splits = {str(row[0]).strip() for row in owner_days}
+for row in owner_days:
+    put(sd, r, row)
+    r += 1
 for split, days in current.items():
+    if split in owner_splits:
+        continue
     for day, items in days:
         for order, item in enumerate(items, start=1):
             ex, role = item[0], item[1]
@@ -394,11 +488,21 @@ sg = wb.create_sheet("Strength by goal")
 header(sg, ["Programme", "Role", "Sets", "Reps (low)", "Reps (high)", "Rest (s)", "Notes"], [18, 11, 7, 9, 9, 9, 50])
 presc = {"buildStrength": [(5, 4, 6, 180), (3, 8, 10, 90)], "buildMuscle": [(4, 8, 12, 120), (3, 10, 15, 75)],
          "balancedHybrid": [(4, 6, 8, 150), (3, 8, 12, 75)], "running": [(3, 5, 8, 150), (2, 8, 12, 60)]}
+presc["hyrox"] = [(3, 5, 8, 120), (3, 10, 15, 60)]
+saved_presc = {}
+if src and "Strength by goal" in src.sheetnames:
+    for row in src["Strength by goal"].iter_rows(min_row=2, values_only=True):
+        if row and row[0] and row[1]:
+            saved_presc[(str(row[0]).strip(), str(row[1]).strip())] = list(row[2:7])
 r = 2
 for display, code in PROGRAMMES:
     key = code if code in presc else "running"
     for role, values in zip(ROLES, presc[key]):
-        put(sg, r, [display, role] + list(values)); r += 1
+        values = list(values) + [None]
+        old = saved_presc.get((display, role))
+        if old:
+            values = [o if o is not None else v for o, v in zip(old + [None] * 5, values)]
+        put(sg, r, [display, role] + values); r += 1
 prepare(sg, 2, r - 1, input_cols=range(3, 8))
 sg.cell(row=r + 1, column=1, value="Current app defaults. Running goals share the 'running' prescription today; set each one as you like.").font = NOTE
 sg.cell(row=r + 2, column=1, value="Weights progress automatically (double progression): add reps up to the top of the range, then add weight.").font = NOTE
