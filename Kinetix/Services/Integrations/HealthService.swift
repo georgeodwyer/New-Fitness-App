@@ -239,6 +239,12 @@ final class HealthService {
         return last.value
     }
 
+    /// Their typical night: the median of the last 30 nights before last night (nil under 5 nights).
+    var usualSleepHours: Double? {
+        let nights = (metricDays[.sleep] ?? []).filter { !Calendar.kinetix.isDateInToday($0.date) }.suffix(30).map(\.value)
+        return nights.count >= 5 ? HealthTrend.median(Array(nights)) : nil
+    }
+
     /// The latest value of each metric against usual, for metrics with data.
     var trends: [HealthTrend] {
         HealthMetric.allCases.compactMap { metric in
@@ -301,12 +307,17 @@ final class HealthService {
         return SleepNights.days(records, calendar: calendar)
     }
 
-    /// Today's HRV against the previous days' readings.
+    /// Today's HRV against the previous days' readings, with the two nights before averaged in
+    /// for the recovery score.
     static func hrvSignal(from days: [HealthDay], now: Date) -> HRVSignal? {
         let calendar = Calendar.kinetix
         guard let latest = days.last, calendar.isDate(latest.date, inSameDayAs: now) else { return nil }
-        let history = days.dropLast().filter { now.timeIntervalSince($0.date) <= 31 * 86_400 }.map(\.value)
-        return HRVSignal.assess(today: latest.value, history: history)
+        let earlier = days.dropLast()
+        let history = earlier.filter { now.timeIntervalSince($0.date) <= 31 * 86_400 }.map(\.value)
+        let today = calendar.startOfDay(for: now)
+        let twoDaysAgo = calendar.date(byAdding: .day, value: -2, to: today) ?? today
+        let recent = earlier.filter { $0.date >= twoDaysAgo }.map(\.value)
+        return HRVSignal.assess(today: latest.value, history: history, recent: recent)
     }
 
     /// Workouts from the last 28 days recorded by other apps. nil if Health couldn't be read.

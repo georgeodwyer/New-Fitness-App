@@ -89,6 +89,32 @@ final class StrainTests: XCTestCase {
         }
     }
 
+    func testRecoveryScoringRules() throws {
+        func score(hrv: HRVSignal? = nil, rhr: RestingHeartRateSignal? = nil, sleep: Double? = nil, usual: Double? = nil) -> Double? {
+            RecoveryScore.make(hrv: hrv, restingHeartRate: rhr, sleepHours: sleep, usualSleepHours: usual, checkIn: nil)?.score
+        }
+        // HRV: last night 10% low, but the 3-night average only 3% low, so a small dip.
+        let smoothed = try XCTUnwrap(HRVSignal.assess(today: 54, history: Array(repeating: 60, count: 10), recent: [60, 60]))
+        XCTAssertEqual(smoothed.recentNights, 3)
+        XCTAssertEqual(smoothed.recentAverage, 58, accuracy: 0.001)
+        XCTAssertEqual(smoothed.change, -0.1, accuracy: 0.001)
+        XCTAssertEqual(score(hrv: smoothed), 44)
+        XCTAssertTrue(smoothed.recentDescription.hasPrefix("3-night average 58 ms"))
+        // ±30% spans the range.
+        XCTAssertEqual(score(hrv: HRVSignal(today: 42, baseline: 60)), 0)
+        XCTAssertEqual(score(hrv: HRVSignal(today: 78, baseline: 60)), 100)
+        // Resting heart rate: 5 points a beat.
+        XCTAssertEqual(score(rhr: RestingHeartRateSignal(today: 54, baseline: 52)), 40)
+        // Sleep against their need (usual, kept to 7–9 h).
+        XCTAssertEqual(score(sleep: 7.5, usual: 7.5), 50)
+        XCTAssertEqual(score(sleep: 8.5, usual: 7.5), 75)
+        XCTAssertEqual(score(sleep: 6, usual: 7.5), 13)
+        XCTAssertEqual(score(sleep: 7, usual: 6), 50, "A short usual still aims for 7 hours")
+        XCTAssertEqual(RecoveryScore.sleepNeed(usual: 10), 9)
+        // Before there's a usual: the fixed scale.
+        XCTAssertEqual(score(sleep: 6), 50)
+    }
+
     func testTargetFollowsPlanAndRecovery() {
         let hardDay = StrainTarget.make(plannedLoad: 240, everydayLoad: 25, usualDailyLoad: 100, recovery: nil)
         let restDay = StrainTarget.make(plannedLoad: 0, everydayLoad: 25, usualDailyLoad: 100, recovery: nil)

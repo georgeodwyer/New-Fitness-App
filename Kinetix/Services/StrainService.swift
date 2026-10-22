@@ -7,6 +7,8 @@ struct HealthInputs {
     var hrv: HRVSignal?
     var restingHeartRate: RestingHeartRateSignal?
     var sleepHours: Double?
+    /// Their typical night, which sleep is scored against.
+    var usualSleepHours: Double?
     var steps: [HealthDay] = []
     /// Last night's data isn't in yet: no recovery score, and Health can't ease the plan.
     var isWaitingForLastNight = false
@@ -23,7 +25,7 @@ struct HealthInputs {
                                 isWaitingForLastNight: true)
         }
         return HealthInputs(hrv: health.hrv, restingHeartRate: health.restingHeartRate, sleepHours: health.lastNightSleepHours,
-                            steps: steps)
+                            usualSleepHours: health.usualSleepHours, steps: steps)
     }
 
     /// Identifies what the plan check has seen today, so it runs again once more data arrives.
@@ -125,7 +127,7 @@ enum StrainService {
         // No recovery score until last night's data is in (a partial one would mislead).
         let recovery = health.isWaitingForLastNight ? nil
             : RecoveryScore.make(hrv: health.hrv, restingHeartRate: health.restingHeartRate,
-                                 sleepHours: health.sleepHours, checkIn: checkIn)
+                                 sleepHours: health.sleepHours, usualSleepHours: health.usualSleepHours, checkIn: checkIn)
         return StrainReport.make(
             activities: activities(runs: runs, lifts: lifts, external: external, sessions: sessions, zones: zones),
             steps: health.steps,

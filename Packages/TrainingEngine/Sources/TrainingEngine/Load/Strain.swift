@@ -248,25 +248,42 @@ public struct RecoveryScore: Equatable, Sendable {
 
     static let weights = (hrv: 0.45, restingHeartRate: 0.25, sleep: 0.2, checkIn: 0.1)
 
+    /// Sleep is scored against their need: their usual sleep, kept between 7 and 9 hours.
+    public static func sleepNeed(usual: Double?) -> Double? {
+        usual.map { min(max($0, 7), 9) }
+    }
+
+    /// - Parameter usualSleepHours: their typical night (median of recent nights); nil = not enough nights yet.
     public static func make(hrv: HRVSignal?, restingHeartRate: RestingHeartRateSignal?, sleepHours: Double?,
-                            checkIn: RecoveryCheckIn?) -> RecoveryScore? {
+                            usualSleepHours: Double? = nil, checkIn: RecoveryCheckIn?) -> RecoveryScore? {
         var parts: [(Part, Double)] = []
         func clamp(_ value: Double) -> Double { min(max(value, 0), 100) }
         if let hrv {
-            // ±20% from usual spans the whole range.
-            parts.append((Part(name: "HRV", score: clamp(50 + hrv.change * 250), detail: hrv.description,
-                               rule: "Your usual scores 50; each 1% above or below moves it 2.5 points."), weights.hrv))
+            // The last 3 nights' average; ±30% from usual spans the whole range.
+            parts.append((Part(name: "HRV", score: clamp(50 + hrv.recentChange * 500 / 3), detail: hrv.recentDescription,
+                               rule: "Your last 3 nights against your usual. Usual scores 50; each 1% above or below moves it about 1.7 points."),
+                          weights.hrv))
         }
         if let restingHeartRate {
-            parts.append((Part(name: "Resting HR", score: clamp(50 - restingHeartRate.difference * 7),
+            parts.append((Part(name: "Resting HR", score: clamp(50 - restingHeartRate.difference * 5),
                                detail: restingHeartRate.description,
-                               rule: "Your usual scores 50; each beat lower adds 7 points, each beat higher takes 7 off."),
+                               rule: "Your usual scores 50; each beat lower adds 5 points, each beat higher takes 5 off."),
                           weights.restingHeartRate))
         }
         if let sleepHours, sleepHours > 0 {
-            parts.append((Part(name: "Sleep", score: clamp((sleepHours - 4) / 4 * 100),
-                               detail: HealthMetric.sleep.format(sleepHours) + " asleep",
-                               rule: "4 hours or less scores 0, 6 hours 50, 8 hours or more 100."), weights.sleep))
+            if let need = sleepNeed(usual: usualSleepHours), let usual = usualSleepHours {
+                let aim = usual == need ? "your usual \(HealthMetric.sleep.format(need))"
+                    : "\(HealthMetric.sleep.format(need)) (your usual is \(HealthMetric.sleep.format(usual)))"
+                parts.append((Part(name: "Sleep", score: clamp(50 + (sleepHours - need) * 25),
+                                   detail: HealthMetric.sleep.format(sleepHours) + " asleep · aim " + aim,
+                                   rule: "Your sleep need (your usual, kept between 7 and 9 hours) scores 50; each 30 minutes more or less moves it 12.5 points."),
+                              weights.sleep))
+            } else {
+                parts.append((Part(name: "Sleep", score: clamp((sleepHours - 4) / 4 * 100),
+                                   detail: HealthMetric.sleep.format(sleepHours) + " asleep",
+                                   rule: "Until Kinetix knows your usual sleep: 4 hours or less scores 0, 6 hours 50, 8 hours or more 100."),
+                              weights.sleep))
+            }
         }
         if let checkIn {
             parts.append((Part(name: "Your score", score: clamp(checkIn.readiness * 100),

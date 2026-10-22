@@ -171,7 +171,7 @@ public struct HealthTrend: Equatable, Sendable {
         return HealthTrend(metric: metric, latest: latest, usual: usual, average7: average(lastDays: 7), average30: average(lastDays: 30))
     }
 
-    static func median(_ values: [Double]) -> Double {
+    public static func median(_ values: [Double]) -> Double {
         let sorted = values.sorted()
         let middle = sorted.count / 2
         return sorted.count % 2 == 0 ? (sorted[middle - 1] + sorted[middle]) / 2 : sorted[middle]
@@ -195,23 +195,44 @@ public struct HRVSignal: Equatable, Sendable {
     public var today: Double
     /// Median of the previous readings.
     public var baseline: Double
+    /// Average of the last few nights including last night (smooths one-night swings), and how
+    /// many nights it covers. With one night it's just last night.
+    public var recentAverage: Double
+    public var recentNights: Int
 
-    public init(today: Double, baseline: Double) {
+    public init(today: Double, baseline: Double, recentAverage: Double? = nil, recentNights: Int = 1) {
         self.today = today
         self.baseline = baseline
+        self.recentAverage = recentAverage ?? today
+        self.recentNights = recentAverage == nil ? 1 : max(1, recentNights)
     }
 
-    /// Change against usual as a fraction (-0.2 = 20% lower).
+    /// Last night against usual as a fraction (-0.2 = 20% lower).
     public var change: Double { baseline > 0 ? (today - baseline) / baseline : 0 }
+
+    /// The recent average against usual (used for the recovery score).
+    public var recentChange: Double { baseline > 0 ? (recentAverage - baseline) / baseline : 0 }
+
+    /// "3-night average 58 ms · 6% below your usual 62 ms"
+    public var recentDescription: String {
+        let percent = Int((abs(recentChange) * 100).rounded())
+        let comparison = percent == 0 ? "same as your usual" : "\(percent)% \(recentChange > 0 ? "above" : "below") your usual"
+        let label = recentNights > 1 ? "\(recentNights)-night average " : "Last night "
+        return label + "\(Int(recentAverage.rounded())) ms · \(comparison) \(Int(baseline.rounded())) ms"
+    }
 
     /// At least `BalanceRules.recovery.hrvSuppressedPercent` below usual.
     public var isSuppressed: Bool { change <= -BalanceRules.current.recovery.hrvSuppressedPercent / 100 }
 
     /// `history` is the previous days' readings (most recent ~4 weeks), not including today.
-    public static func assess(today: Double, history: [Double]) -> HRVSignal? {
+    /// `recent` is the nights just before last night to average with it (e.g. the two before).
+    public static func assess(today: Double, history: [Double], recent: [Double] = []) -> HRVSignal? {
         let usable = history.filter { $0 > 5 && $0 < 300 }
         guard usable.count >= BalanceRules.current.recovery.hrvMinimumReadings, today > 5, today < 300 else { return nil }
-        return HRVSignal(today: today, baseline: HealthTrend.median(usable))
+        let nights = [today] + recent.filter { $0 > 5 && $0 < 300 }
+        return HRVSignal(today: today, baseline: HealthTrend.median(usable),
+                         recentAverage: nights.count > 1 ? nights.reduce(0, +) / Double(nights.count) : nil,
+                         recentNights: nights.count)
     }
 
     /// "48 ms · 18% below your usual"

@@ -29,9 +29,18 @@ jump; it's shown as "This week vs your usual" (a %) rather than as a number like
 
 ## Recovery (0–100)
 
-HRV against their usual (45%), resting heart rate against usual (25%), hours asleep (20%) and
-Your score (10%), so the score leans on HRV and the check-in only nudges it. Missing parts
-are left out and the rest re-weighted. Below 34 is
+HRV (45%), resting heart rate (25%), sleep (20%) and Your score (10%), so the score leans on
+HRV and the check-in only nudges it. Each reading scores 0–100, with a normal day for them at 50:
+
+- **HRV:** the last 3 nights' average against their usual (median of the last 30 days);
+  ±30% spans 0–100 (about 1.7 points per 1%). Averaging stops one odd night swinging it.
+- **Resting heart rate:** this morning against usual; 5 points per beat.
+- **Sleep:** last night against their need (their usual night, kept between 7 and 9 hours);
+  12.5 points per 30 minutes. Until there are 5 nights: 4 h = 0, 6 h = 50, 8 h = 100.
+- **Your score:** sleep, soreness and energy ratings; all 3s = 50.
+
+Missing parts are left out and the rest re-weighted. Tap "What's behind it" on the card for
+each reading, its score and the points it adds. Below 34 is
 low, 67 and over is high.
 
 ### Waiting for last night
