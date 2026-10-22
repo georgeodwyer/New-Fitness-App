@@ -68,7 +68,8 @@ struct SessionContainerView: View {
     }
 
     private func startRun() {
-        let speed = DeveloperSettings.launchSimulationSpeed ?? (simulateGPS ? simulationSpeed : nil)
+        // The simulated-GPS switch only counts in test builds (it may linger from a TestFlight install).
+        let speed = DeveloperSettings.launchSimulationSpeed ?? (simulateGPS && BuildChannel.isTesting ? simulationSpeed : nil)
         router.runModel = RunWorkoutModel(
             planned: plannedSession(),
             custom: session.custom,

@@ -144,6 +144,8 @@ struct SettingsView: View {
                     .padding(.top, KXSpacing.lg)
                 }
 
+                // Testing tools: Xcode and TestFlight builds only, never the App Store.
+                if BuildChannel.isTesting {
                 Section {
                     Toggle("Simulated GPS for runs", isOn: $simulateGPS)
                     if simulateGPS {
@@ -158,6 +160,7 @@ struct SettingsView: View {
                     Text("Testing")
                 } footer: {
                     Text("Runs use a virtual runner looping Hyde Park instead of your GPS, including some off-pace moments so you can hear the coaching. Useful indoors.")
+                }
                 }
 
                 #if DEBUG

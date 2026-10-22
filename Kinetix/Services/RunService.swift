@@ -54,6 +54,34 @@ enum RunService {
         ActivityExportService.runFinished(log, in: context)
     }
 
+    /// A run that was recording when Kinetix stopped (closed by iOS, out of battery or a crash):
+    /// unfinished, at least a minute long, and not checkpointed in the last two minutes.
+    static func interrupted(in context: ModelContext, excluding activeLogId: UUID? = nil, now: Date = .now) -> RunLogModel? {
+        let descriptor = FetchDescriptor<RunLogModel>(predicate: #Predicate { !$0.isFinished && $0.deletedAt == nil })
+        return ((try? context.fetch(descriptor)) ?? [])
+            .filter { $0.id != activeLogId && $0.durationSeconds >= 60 && now.timeIntervalSince($0.updatedAt) > 120 }
+            .max { $0.startedAt < $1.startedAt }
+    }
+
+    /// Saves an interrupted run as it was at its last checkpoint, with the session's usual
+    /// effort (it can be changed afterwards on the run).
+    static func saveInterrupted(_ log: RunLogModel, in context: ModelContext) {
+        let plannedId = log.plannedSessionId
+        let planned = plannedId.flatMap { id in
+            try? context.fetch(FetchDescriptor<PlannedSessionModel>(predicate: #Predicate { $0.id == id })).first
+        }
+        let effort = planned?.plannedEffort ?? log.recordType?.typicalEffort ?? 5
+        log.effort = effort
+        log.load = SessionLoad.srpe(durationSeconds: log.durationSeconds, effort: effort)
+        log.isFinished = true
+        log.finishedAt = log.startedAt.addingTimeInterval(log.durationSeconds)
+        log.touch()
+        planned?.status = .completed
+        try? context.save()
+        SyncService.shared.requestSync()
+        ActivityExportService.runFinished(log, in: context)
+    }
+
     static func discard(_ log: RunLogModel, in context: ModelContext) {
         context.delete(log)
         try? context.save()

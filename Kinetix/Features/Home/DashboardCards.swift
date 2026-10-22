@@ -34,16 +34,18 @@ struct CheckInCard: View {
         VStack(alignment: .leading, spacing: KXSpacing.md) {
             if let existing, !editing {
                 let checkIn = existing.engineValue(restingHeartRate: restingHeartRate, hrv: hrv)
-                let readiness = checkIn.readiness
-                HStack(spacing: KXSpacing.lg) {
-                    KXRingGauge(value: readiness, label: "\(Int((readiness * 100).rounded()))%", caption: "today",
-                                tint: checkIn.isPoor ? KXColor.warning : KXColor.success, lineWidth: 8)
-                        .frame(width: 84, height: 84)
+                HStack(alignment: .top, spacing: KXSpacing.lg) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 34))
+                        .foregroundStyle(KXColor.accent)
+                        .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: KXSpacing.xs) {
                         KXSectionHeader("Your score")
+                        Text("Sleep \(checkIn.sleep)/5 \u{00B7} soreness \(checkIn.soreness)/5 \u{00B7} energy \(checkIn.energy)/5")
+                            .font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink)
                         Text(checkIn.isPoor
-                             ? "You're not fully recovered, so today's plan has been eased where it can be."
-                             : "Recovered and ready. Train as planned.")
+                             ? "Logged and counted in your recovery. You're feeling run down, so today's plan has been eased where it can be."
+                             : "Logged and counted in your recovery.")
                             .font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
                             .fixedSize(horizontal: false, vertical: true)
                         if let restingHeartRate { restingHeartRateLine(restingHeartRate) }
@@ -88,7 +90,7 @@ struct CheckInCard: View {
             Text("HRV \(signal.description)")
         } icon: {
             Image(systemName: signal.isSuppressed ? "exclamationmark.triangle.fill" : "waveform.path.ecg")
-                .foregroundStyle(signal.isSuppressed ? KXColor.warning : KXColor.danger)
+                .foregroundStyle(signal.isSuppressed ? KXColor.warning : KXColor.inkSecondary)
         }
         .font(KXFont.caption)
         .foregroundStyle(KXColor.ink)
@@ -100,7 +102,7 @@ struct CheckInCard: View {
             Text("Resting HR \(signal.description)")
         } icon: {
             Image(systemName: signal.isElevated ? "exclamationmark.triangle.fill" : "heart.fill")
-                .foregroundStyle(signal.isElevated ? KXColor.warning : KXColor.danger)
+                .foregroundStyle(signal.isElevated ? KXColor.warning : KXColor.inkSecondary)
         }
         .font(KXFont.caption)
         .foregroundStyle(KXColor.ink)

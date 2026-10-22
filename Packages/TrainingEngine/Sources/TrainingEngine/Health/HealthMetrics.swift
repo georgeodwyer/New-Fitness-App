@@ -358,7 +358,11 @@ public struct DashboardLayout: Codable, Equatable, Sendable {
         self.hidden = hidden.map(\.rawValue).sorted()
     }
 
-    public static let `default` = DashboardLayout()
+    /// What a new dashboard shows: today's sessions, your score, exertion and recovery, and the
+    /// week strip. The rest can be switched on in Edit dashboard.
+    public static let defaultHidden: Set<DashboardCard> = [.body, .dailyLoad, .week, .goal, .records]
+
+    public static let `default` = DashboardLayout(hidden: defaultHidden)
 
     /// Every known card once, in the saved order; cards the saved layout didn't know about go
     /// where they sit in the default order.

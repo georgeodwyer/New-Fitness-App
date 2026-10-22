@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import TrainingEngine
 
 /// The main tab bar, straight away: a plan is optional (it's built from the Plan tab), so
 /// Record, Progress and Settings work from the first launch. A short animated splash covers
@@ -10,6 +11,9 @@ struct RootView: View {
     @State private var showSplash = true
     @Environment(\.modelContext) private var context
     @Environment(\.scenePhase) private var scenePhase
+    /// A run that was recording when Kinetix stopped, offered to save or discard.
+    @State private var interruptedRun: RunLogModel?
+    @State private var showStoreRecovered = Persistence.recoveredFromBrokenStore
 
     var body: some View {
         ZStack {
@@ -30,6 +34,24 @@ struct RootView: View {
         }
         .environment(router)
         .tint(KXColor.accent)
+        .alert("Kinetix started fresh", isPresented: $showStoreRecovered) {
+            Button("OK") { Persistence.recoveredFromBrokenStore = false }
+        } message: {
+            Text("This update couldn't read the data saved on this iPhone, so it was kept aside and Kinetix started fresh. If you have an account, sign in to bring your training back.")
+        }
+        .alert("Save your unfinished run?", isPresented: Binding(get: { interruptedRun != nil }, set: { if !$0 { interruptedRun = nil } }),
+               presenting: interruptedRun) { log in
+            Button("Save run") {
+                RunService.saveInterrupted(log, in: context)
+                interruptedRun = nil
+            }
+            Button("Discard", role: .destructive) {
+                RunService.discard(log, in: context)
+                interruptedRun = nil
+            }
+        } message: { log in
+            Text(interruptedText(log))
+        }
         // Links from widgets and the lock screen: kinetix://tab/<today|plan|record|progress|settings>.
         .onOpenURL { url in
             guard url.scheme == "kinetix", url.host != "localhost" else { return }
@@ -46,6 +68,9 @@ struct RootView: View {
         .onChange(of: scenePhase, initial: true) { _, phase in
             // Keep detailed sessions generated about two weeks ahead.
             if phase == .active {
+                if router.activeSession == nil, interruptedRun == nil {
+                    interruptedRun = RunService.interrupted(in: context, excluding: router.runModel?.log?.id)
+                }
                 PlanService.refresh(in: context)
                 SyncService.shared.requestSync(after: 0.5)
                 let units = profiles.first?.units ?? UnitPreference.stored
@@ -61,6 +86,16 @@ struct RootView: View {
                 WatchSyncService.shared.sendPlan()
             }
         }
+    }
+}
+
+extension RootView {
+    /// "Your run from 07:12 (5.20 km, 31:04) stopped before it was saved. Save it as it was?"
+    func interruptedText(_ log: RunLogModel) -> String {
+        let units = profiles.first?.units ?? UnitPreference.stored
+        let when = log.startedAt.formatted(.dateTime.weekday(.wide).hour().minute())
+        let distance = DisplayFormat(units: units).distance(log.distanceMeters, decimals: 2)
+        return "Your run from \(when) (\(distance), \(Units.formatMinutesSeconds(log.durationSeconds))) stopped before it was saved. Save it as it was at that point?"
     }
 }
 

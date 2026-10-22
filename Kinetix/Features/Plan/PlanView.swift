@@ -115,6 +115,22 @@ struct PlanView: View {
                         .foregroundStyle(KXColor.inkSecondary)
                 }
             }
+            // The coach's note for the week.
+            let notes = plans.first?.notes(forWeek: week.index) ?? []
+            if !notes.isEmpty {
+                HStack(alignment: .top, spacing: KXSpacing.sm) {
+                    Image(systemName: "quote.opening")
+                        .font(.caption)
+                        .foregroundStyle(KXColor.accent)
+                        .accessibilityHidden(true)
+                    Text(notes.joined(separator: " "))
+                        .font(KXFont.callout)
+                        .foregroundStyle(KXColor.inkSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Coach's note: \(notes.joined(separator: " "))")
+            }
             ForEach(week.days) { day in
                 VStack(alignment: .leading, spacing: KXSpacing.xs) {
                     KXOverline(day.day.formatted(.dateTime.weekday(.wide).day().month()))

@@ -64,7 +64,7 @@ final class BalanceServiceTests: XCTestCase {
         BalanceService.autoAdjust(profile: SampleData.profile, status: .high, checkIn: nil, in: context, now: monday, force: true, ratio: 1.42)
         let changes = try context.fetch(FetchDescriptor<PlanChangeModel>()).filter { $0.cause == .highLoad }
         XCTAssertFalse(changes.isEmpty)
-        XCTAssertEqual(changes.first?.triggers.first?.value, "1.42")
+        XCTAssertEqual(changes.first?.triggers.first?.value, "142% of your usual")
         XCTAssertNotNil(changes.first?.before)
     }
 

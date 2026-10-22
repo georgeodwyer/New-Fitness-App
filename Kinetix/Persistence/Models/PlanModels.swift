@@ -21,6 +21,8 @@ final class TrainingPlanModel: SyncTracked {
     var isActive: Bool
     /// Number of outline weeks whose detailed sessions have been generated.
     var generatedWeekCount: Int = 0
+    /// The coach's notes for each week ("Biggest week.", "Lighter week…"), by week index.
+    var weekNotesData: Data?
 
     @Relationship(deleteRule: .cascade, inverse: \PlannedSessionModel.plan)
     var sessions: [PlannedSessionModel] = []
@@ -186,4 +188,17 @@ extension PlanChangeModel {
     var before: SessionSnapshot? { StoredJSON.decode(SessionSnapshot.self, from: beforeData) }
     var after: SessionSnapshot? { StoredJSON.decode(SessionSnapshot.self, from: afterData) }
     var triggers: [ChangeTrigger] { StoredJSON.decode([ChangeTrigger].self, from: triggersData) ?? [] }
+}
+
+extension TrainingPlanModel {
+    /// Notes for a week (index from the start of the plan).
+    func notes(forWeek index: Int) -> [String] {
+        (StoredJSON.decode([String: [String]].self, from: weekNotesData) ?? [:])[String(index)] ?? []
+    }
+
+    func setNotes(_ notes: [String], forWeek index: Int) {
+        var all = StoredJSON.decode([String: [String]].self, from: weekNotesData) ?? [:]
+        all[String(index)] = notes.isEmpty ? nil : notes
+        weekNotesData = all.isEmpty ? nil : StoredJSON.encode(all)
+    }
 }

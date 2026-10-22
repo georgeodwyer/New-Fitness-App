@@ -51,7 +51,7 @@ struct HomeView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: KXSpacing.xl) {
-                    KXScreenHeader(title: "Dashboard", onNotifications: { showUpdates = true })
+                    KXScreenHeader(title: "Today", onNotifications: { showUpdates = true })
                     greeting
                     if let banner { changeBanner(banner) }
                     if profile == nil { planPrompt }

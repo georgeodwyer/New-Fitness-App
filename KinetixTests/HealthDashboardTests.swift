@@ -41,6 +41,7 @@ final class HealthDashboardTests: XCTestCase {
 
         var layout = DashboardLayout.default
         layout.setHidden(.records, true)
+        layout.setHidden(.body, false)
         layout.move(fromOffsets: IndexSet(integer: DashboardCard.defaultOrder.firstIndex(of: .body)!), toOffset: 0)
         settings.dashboardLayout = layout
         try context.save()

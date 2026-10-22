@@ -136,8 +136,8 @@ extension BalanceService {
     static func loadTriggers(status: LoadStatus, ratio: Double?) -> [ChangeTrigger] {
         guard status == .high else { return [] }
         let range = LoadStatus.optimalRange
-        return [ChangeTrigger(label: "Load ratio", value: ratio.map { String(format: "%.2f", $0) } ?? "High",
-                              detail: String(format: "optimal %.2f–%.2f", range.lowerBound, range.upperBound),
+        return [ChangeTrigger(label: "This week", value: ratio.map { "\(Int(($0 * 100).rounded()))% of your usual" } ?? "Well above usual",
+                              detail: "a normal week is \(Int(range.lowerBound * 100))–\(Int(range.upperBound * 100))%",
                               symbol: "chart.line.uptrend.xyaxis")]
     }
 

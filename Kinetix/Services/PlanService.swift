@@ -87,9 +87,8 @@ enum PlanService {
                     session.plan = plan
                     registerExercises(generated.strength, in: context, existing: weights)
                 }
-                for note in week.notes {
-                    context.insert(PlanChangeModel(summary: note, now: now))
-                }
+                // The coach's notes show on the week in the Plan tab (not in the change log).
+                plan.setNotes(week.notes, forWeek: index)
             }
             plan.generatedWeekCount += 1
             plan.touch(now: now)

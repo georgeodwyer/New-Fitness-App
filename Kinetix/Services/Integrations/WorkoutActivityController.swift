@@ -129,9 +129,12 @@ enum WidgetSnapshotService {
             recovery: data.strain.recovery?.score,
             updatedAt: now
         )
-        var previous = WidgetSnapshot.load()
+        let saved = WidgetSnapshot.load()
+        var previous = saved
         previous?.updatedAt = now
-        guard snapshot != previous else { return }
+        // Save when something changed, or on a new day (widgets ignore a snapshot from an earlier day).
+        let savedToday = saved.map { Calendar.current.isDate($0.updatedAt, inSameDayAs: now) } ?? false
+        guard snapshot != previous || !savedToday else { return }
         snapshot.save()
         WidgetCenter.shared.reloadAllTimelines()
     }

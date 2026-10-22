@@ -56,12 +56,15 @@ struct StrainCard: View {
             KXOverline("Recovery")
             if let recovery = report.recovery {
                 HStack(alignment: .firstTextBaseline, spacing: KXSpacing.xs) {
-                    Text("\(Int(recovery.score))%")
+                    Text("\(Int(recovery.score))")
                         .font(KXFont.metricSmall)
                         .foregroundStyle(KXColor.ink)
+                    // The colour is on a dot; the word stays in dark text so it's always readable.
+                    Circle().fill(color(recovery.band)).frame(width: 8, height: 8)
+                        .accessibilityHidden(true)
                     Text(recovery.band.title)
                         .font(KXFont.captionEmphasis)
-                        .foregroundStyle(color(recovery.band))
+                        .foregroundStyle(KXColor.ink)
                 }
                 Button {
                     showRecovery = true
@@ -103,7 +106,7 @@ struct StrainCard: View {
         switch report.legs.status {
         case .fresh: return .optimal
         case .ok: return .neutral
-        case .tired: return .high
+        case .tired: return .low
         }
     }
 
@@ -244,7 +247,7 @@ struct RecoveryBreakdownView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: KXSpacing.lg) {
                     HStack(alignment: .firstTextBaseline, spacing: KXSpacing.sm) {
-                        Text("\(Int(recovery.score))%").font(KXFont.display).foregroundStyle(KXColor.ink)
+                        Text("\(Int(recovery.score))").font(KXFont.display).foregroundStyle(KXColor.ink)
                         Text(recovery.band.title).font(KXFont.headline).foregroundStyle(KXColor.inkSecondary)
                     }
                     contributionBar
@@ -309,7 +312,7 @@ struct RecoveryBreakdownView: View {
     private func color(for name: String) -> Color {
         switch name {
         case "HRV": return KXColor.accent
-        case "Resting HR": return KXColor.danger
+        case "Resting HR": return KXColor.lift
         case "Sleep": return KXColor.teal
         default: return KXColor.warning
         }

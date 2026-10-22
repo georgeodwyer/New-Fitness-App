@@ -5,7 +5,18 @@ import WidgetKit
 
 struct SnapshotEntry: TimelineEntry {
     let date: Date
+    /// nil when there's nothing saved yet, or when what's saved is from an earlier day.
     let snapshot: WidgetSnapshot?
+}
+
+extension WidgetSnapshot {
+    /// Saved today: an older snapshot would show yesterday's sessions and exertion.
+    func isCurrent(at date: Date = .now) -> Bool { Calendar.current.isDate(updatedAt, inSameDayAs: date) }
+
+    /// What the widgets show: today's snapshot only.
+    static func current(at date: Date = .now) -> WidgetSnapshot? {
+        load().flatMap { $0.isCurrent(at: date) ? $0 : nil }
+    }
 }
 
 /// Reads what the app last saved. The app refreshes it (and reloads widgets) whenever it
@@ -16,11 +27,11 @@ struct SnapshotProvider: TimelineProvider {
     }
 
     func getSnapshot(in context: Context, completion: @escaping (SnapshotEntry) -> Void) {
-        completion(SnapshotEntry(date: .now, snapshot: context.isPreview ? .placeholder : WidgetSnapshot.load() ?? .placeholder))
+        completion(SnapshotEntry(date: .now, snapshot: context.isPreview ? .placeholder : WidgetSnapshot.current() ?? .placeholder))
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<SnapshotEntry>) -> Void) {
-        let entry = SnapshotEntry(date: .now, snapshot: WidgetSnapshot.load())
+        let entry = SnapshotEntry(date: .now, snapshot: WidgetSnapshot.current())
         // Also refresh just after midnight so "today" moves on.
         let midnight = Calendar.current.startOfDay(for: .now).addingTimeInterval(24 * 3600 + 60)
         let next = min(Date.now.addingTimeInterval(30 * 60), midnight)
@@ -37,10 +48,14 @@ private func disciplineColor(_ discipline: String) -> Color {
 }
 
 private struct NoDataView: View {
+    /// Something was saved before today (vs never).
+    private var hasOlderData: Bool { WidgetSnapshot.load() != nil }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Image(systemName: "bolt.circle.fill").font(.title2).foregroundStyle(KXColor.accent)
-            Text("Open Kinetix to get started").font(.caption).foregroundStyle(KXColor.inkSecondary)
+            Text(hasOlderData ? "Open Kinetix to update today" : "Open Kinetix to get started")
+                .font(.caption).foregroundStyle(KXColor.inkSecondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
@@ -231,7 +246,7 @@ struct LoadWidgetView: View {
         guard let low = snapshot?.strainLow, let high = snapshot?.strainHigh else { return nil }
         return String(format: "Target %.1f–%.1f", low, high)
     }
-    private var recoveryText: String? { snapshot?.recovery.map { "Recovery \(Int($0))%" } }
+    private var recoveryText: String? { snapshot?.recovery.map { "Recovery \(Int($0))" } }
 
     var body: some View {
         if let snapshot {
