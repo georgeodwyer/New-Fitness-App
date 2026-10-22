@@ -316,7 +316,7 @@ public enum Rebalancer {
         let upcoming = week
             .filter { $0.status == .planned && $0.changeReason == nil && $0.date >= today }
             .sorted { $0.date < $1.date }
-        let why = status == .high ? "your training load has spiked" : "your check-in shows you're not fully recovered"
+        let why = status == .high ? "your training load has spiked" : "your score shows you're not fully recovered"
         let cause: ChangeCause = status == .high ? .highLoad : .poorRecovery
         var adjustments: [Adjustment] = []
 

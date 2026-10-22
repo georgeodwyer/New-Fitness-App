@@ -7,6 +7,8 @@ import TrainingEngine
 struct RunWorkoutView: View {
     @State private var model: RunWorkoutModel
     let onClose: () -> Void
+    /// Closes the trainer down to the bar above the tabs; the run keeps going.
+    var onMinimise: (() -> Void)? = nil
 
     @State private var showFinishConfirm = false
     @State private var showEffort = false
@@ -14,9 +16,10 @@ struct RunWorkoutView: View {
     @State private var saved = false
     @State private var askHeartRate = false
 
-    init(model: RunWorkoutModel, onClose: @escaping () -> Void) {
+    init(model: RunWorkoutModel, onClose: @escaping () -> Void, onMinimise: (() -> Void)? = nil) {
         _model = State(initialValue: model)
         self.onClose = onClose
+        self.onMinimise = onMinimise
     }
 
     private var format: DisplayFormat { DisplayFormat(units: model.units) }
@@ -170,9 +173,10 @@ struct RunWorkoutView: View {
             }
             controls
         }
-        .onChange(of: model.watchEndRequests) {
-            // End pressed on the watch: finish here, then ask how hard it was.
-            guard model.phase == .running else { return }
+        .onChange(of: model.watchEndRequests, initial: true) {
+            // End pressed on the watch (perhaps while minimised): finish here, then ask how hard it was.
+            guard model.phase == .running, model.watchEndRequests > model.handledWatchEndRequests else { return }
+            model.handledWatchEndRequests = model.watchEndRequests
             showFinishConfirm = false
             showLeave = false
             _ = model.stop()
@@ -258,6 +262,10 @@ struct RunWorkoutView: View {
             }
             Spacer()
             trailing
+            if model.phase == .running, let onMinimise {
+                KXIconButton(systemImage: "chevron.down", accessibilityLabel: "Minimise", size: 36, action: onMinimise)
+                    .accessibilityIdentifier("run.minimise")
+            }
         }
         .padding(.horizontal, KXSpacing.screenMargin)
         .padding(.vertical, KXSpacing.sm)

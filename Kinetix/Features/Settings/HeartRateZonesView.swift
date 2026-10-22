@@ -77,7 +77,7 @@ struct HeartRateZonesView: View {
             } header: {
                 Text(custom ? "Your zones" : "Your zones (automatic)")
             } footer: {
-                Text("Strain counts each minute by its zone: zone 1 counts 1, zone 5 counts 5. Without heart rate, minutes × effort is used instead.")
+                Text("Exertion counts each minute by its zone: zone 1 counts 1, zone 5 counts 5. Without heart rate, minutes × effort is used instead.")
             }
         }
         .navigationTitle("Heart rate zones")

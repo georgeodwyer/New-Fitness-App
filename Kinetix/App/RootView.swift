@@ -71,23 +71,29 @@ struct MainTabView: View {
         @Bindable var router = router
         TabView(selection: $router.selectedTab) {
             HomeView()
+                .safeAreaInset(edge: .bottom) { MiniWorkoutBar() }
                 .tabItem { Label("Today", systemImage: "house") }
                 .tag(AppRouter.Tab.today)
             PlanView()
+                .safeAreaInset(edge: .bottom) { MiniWorkoutBar() }
                 .tabItem { Label("Plan", systemImage: "calendar") }
                 .tag(AppRouter.Tab.plan)
             RecordView()
+                .safeAreaInset(edge: .bottom) { MiniWorkoutBar() }
                 .tabItem { Label("Record", systemImage: "record.circle") }
                 .tag(AppRouter.Tab.record)
             ProgressScreen()
+                .safeAreaInset(edge: .bottom) { MiniWorkoutBar() }
                 .tabItem { Label("Progress", systemImage: "chart.bar") }
                 .tag(AppRouter.Tab.progress)
             SettingsView()
+                .safeAreaInset(edge: .bottom) { MiniWorkoutBar() }
                 .tabItem { Label("Settings", systemImage: "gearshape") }
                 .tag(AppRouter.Tab.settings)
         }
-        .fullScreenCover(item: $router.activeSession) { session in
+        .fullScreenCover(item: $router.presentedSession) { session in
             SessionContainerView(session: session)
+                .environment(router)
         }
     }
 }

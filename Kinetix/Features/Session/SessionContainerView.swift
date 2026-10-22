@@ -6,13 +6,13 @@ import TrainingEngine
 struct SessionContainerView: View {
     let session: ActiveSession
     @Environment(\.modelContext) private var context
-    @Environment(\.dismiss) private var dismiss
+    @Environment(AppRouter.self) private var router
     @Query(filter: #Predicate<UserProfileModel> { $0.deletedAt == nil }) private var profiles: [UserProfileModel]
     @Query(filter: #Predicate<CoachingSettingsModel> { $0.deletedAt == nil }) private var coachingSettings: [CoachingSettingsModel]
     @AppStorage(DeveloperSettings.simulateGPSKey) private var simulateGPS = false
     @AppStorage(DeveloperSettings.simulationSpeedKey) private var simulationSpeed = 10.0
-    @State private var strengthModel: StrengthWorkoutModel?
-    @State private var runModel: RunWorkoutModel?
+    private var strengthModel: StrengthWorkoutModel? { router.strengthModel }
+    private var runModel: RunWorkoutModel? { router.runModel }
 
     private var units: UnitSystem { profiles.first?.units ?? UnitPreference.stored }
 
@@ -21,13 +21,13 @@ struct SessionContainerView: View {
             switch session.kind {
             case .strength:
                 if let strengthModel {
-                    StrengthWorkoutView(model: strengthModel, units: units) { dismiss() }
+                    StrengthWorkoutView(model: strengthModel, units: units) { close() } onMinimise: { router.minimise() }
                 } else {
                     ProgressView().onAppear(perform: startStrength)
                 }
             case .run:
                 if let runModel {
-                    RunWorkoutView(model: runModel) { dismiss() }
+                    RunWorkoutView(model: runModel) { close() } onMinimise: { router.minimise() }
                 } else {
                     ProgressView().onAppear(perform: startRun)
                 }
@@ -35,14 +35,15 @@ struct SessionContainerView: View {
                 SessionPlaceholderView(session: session)
             }
         }
-        // Whatever way the workout screen closes, the lock-screen view goes with it,
-        // and the widgets pick up the finished session.
+        // Whatever way the session ends, the lock-screen view goes with it, and the widgets
+        // pick up the finished session. (Minimising keeps both going.)
         .onDisappear {
-            strengthModel?.endLockScreen()
-            WorkoutActivityController.shared.end()
+            guard router.activeSession == nil else { return }
             WidgetSnapshotService.update(in: context)
         }
     }
+
+    private func close() { router.endSession() }
 
     private func plannedSession() -> PlannedSessionModel? {
         guard let id = session.custom == nil ? session.id : session.linkedPlannedId else { return nil }
@@ -52,23 +53,23 @@ struct SessionContainerView: View {
     private func startStrength() {
         if let logId = session.strengthLogId {
             guard let log = try? context.fetch(FetchDescriptor<StrengthLogModel>(predicate: #Predicate { $0.id == logId })).first else {
-                dismiss(); return
+                close(); return
             }
             let plannedId = log.plannedSessionId
             let planned = plannedId.flatMap { id in
                 try? context.fetch(FetchDescriptor<PlannedSessionModel>(predicate: #Predicate { $0.id == id })).first
             }
-            strengthModel = StrengthWorkoutModel(log: log, planned: planned, context: context, units: units)
+            router.strengthModel = StrengthWorkoutModel(log: log, planned: planned, context: context, units: units)
             return
         }
-        guard let planned = plannedSession() else { dismiss(); return }
+        guard let planned = plannedSession() else { close(); return }
         let log = StrengthService.startOrResume(planned, in: context)
-        strengthModel = StrengthWorkoutModel(log: log, planned: planned, context: context, units: units)
+        router.strengthModel = StrengthWorkoutModel(log: log, planned: planned, context: context, units: units)
     }
 
     private func startRun() {
         let speed = DeveloperSettings.launchSimulationSpeed ?? (simulateGPS ? simulationSpeed : nil)
-        runModel = RunWorkoutModel(
+        router.runModel = RunWorkoutModel(
             planned: plannedSession(),
             custom: session.custom,
             route: session.route,

@@ -257,7 +257,7 @@ public struct RecoveryScore: Equatable, Sendable {
                                detail: HealthMetric.sleep.format(sleepHours) + " asleep"), weights.sleep))
         }
         if let checkIn {
-            parts.append((Part(name: "Check-in", score: clamp(checkIn.readiness * 100),
+            parts.append((Part(name: "Your score", score: clamp(checkIn.readiness * 100),
                                detail: "Sleep \(checkIn.sleep)/5 · soreness \(checkIn.soreness)/5 · energy \(checkIn.energy)/5"),
                           weights.checkIn))
         }
@@ -298,10 +298,10 @@ public struct StrainTarget: Equatable, Sendable {
         switch recovery?.band {
         case .high?:
             load *= 1.1
-            reason += " Recovery is high, so there's room for a bit more."
+            reason += " Your battery is high, so there's room for a bit more."
         case .low?:
             load *= 0.7
-            reason += " Recovery is low, so aim lower today."
+            reason += " Your battery is low, so aim lower today."
         case .medium?, nil:
             break
         }

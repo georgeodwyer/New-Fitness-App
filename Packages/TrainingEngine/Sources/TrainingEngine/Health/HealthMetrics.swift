@@ -246,10 +246,10 @@ public enum DashboardCard: String, Codable, CaseIterable, Sendable {
     public var displayName: String {
         switch self {
         case .today: return "Today's sessions"
-        case .checkIn: return "Morning check-in"
+        case .checkIn: return "Your score"
         case .body: return "Body (Apple Health)"
-        case .load: return "Strain and recovery"
-        case .dailyLoad: return "Daily strain chart"
+        case .load: return "Exertion and battery"
+        case .dailyLoad: return "Daily exertion chart"
         case .week: return "This week vs plan"
         case .weekStrip: return "Week at a glance"
         case .goal: return "Goal progress"

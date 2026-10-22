@@ -93,7 +93,7 @@ struct GymSetupView: View {
             }
             Spacer()
             Button("Resume") {
-                router.activeSession = ActiveSession(id: log.id, kind: .strength(.fullBody), title: log.title, strengthLogId: log.id)
+                router.start(ActiveSession(id: log.id, kind: .strength(.fullBody), title: log.title, strengthLogId: log.id))
             }
             .buttonStyle(.kx(.primary))
             .accessibilityIdentifier("gym.resume")
@@ -180,7 +180,7 @@ private struct GymStartFlow: ViewModifier {
                     Button("No, it's an extra session") { start(linking: nil) }
                     Button("Do the planned \(planned.title.lowercased()) instead") {
                         request = nil
-                        router.activeSession = ActiveSession(id: planned.id, kind: planned.kind, title: planned.title)
+                        router.start(ActiveSession(id: planned.id, kind: planned.kind, title: planned.title))
                     }
                 }
             } message: {
@@ -208,6 +208,6 @@ private struct GymStartFlow: ViewModifier {
         }
         let log = GymService.start(title: request.title, items: request.items, linkedPlanned: planned, in: context)
         self.request = nil
-        router.activeSession = ActiveSession(id: log.id, kind: .strength(.fullBody), title: log.title, strengthLogId: log.id)
+        router.start(ActiveSession(id: log.id, kind: .strength(.fullBody), title: log.title, strengthLogId: log.id))
     }
 }

@@ -29,9 +29,12 @@ struct HomeView: View {
     private var profile: AthleteProfile? { profiles.first?.profile }
     private var units: UnitSystem { profile?.units ?? UnitPreference.stored }
 
+    /// Today's Health readings (none until last night's data is in).
+    private var inputs: HealthInputs { HealthInputs.current }
+
     private var data: DashboardData {
         DashboardService.make(sessions: sessions, runs: runs, lifts: lifts, checkIns: checkIns, profile: profile,
-                              external: integrations.loadWorkouts, health: HealthInputs.current)
+                              external: integrations.loadWorkouts, health: inputs)
     }
 
     private var todaysSessions: [PlannedSessionModel] {
@@ -67,6 +70,7 @@ struct HomeView: View {
                 }
                 .padding(KXSpacing.screenMargin)
             }
+            .refreshable { await refreshEverything() }
             .background(KXColor.background.ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
         }
@@ -87,12 +91,32 @@ struct HomeView: View {
                 .presentationDetents([.medium, .large])
         }
         .onAppear {
-            guard let profile else { return }
-            let changed = BalanceService.autoAdjust(profile: profile, status: data.load.combined.status,
-                                                    checkIn: data.todaysCheckIn?.engineValue(restingHeartRate: restingHeartRate, hrv: hrv), in: context,
-                                                    ratio: data.load.combined.ratio, restingHeartRate: restingHeartRate, hrv: hrv)
-            if let first = changed.first { banner = first }
+            // With Health connected, wait until it's been read today (the refresh below runs it).
+            if !health.isConnected || health.isFreshToday { checkPlan() }
         }
+        .onChange(of: health.lastRefresh) { checkPlan() }
+    }
+
+    /// Eases the coming days when load is high or your score is low. Runs once per day for
+    /// each state of the Health data, so it looks again once last night's data arrives.
+    private func checkPlan() {
+        guard let profile else { return }
+        let inputs = inputs
+        let data = data
+        let changed = BalanceService.autoAdjust(profile: profile, status: data.load.combined.status,
+                                                checkIn: data.todaysCheckIn?.engineValue(restingHeartRate: inputs.restingHeartRate, hrv: inputs.hrv),
+                                                in: context, ratio: data.load.combined.ratio,
+                                                restingHeartRate: inputs.restingHeartRate, hrv: inputs.hrv, dataKey: inputs.planCheckKey)
+        if let first = changed.first { banner = first }
+    }
+
+    /// Pull to refresh: re-reads Apple Health and Strava, syncs, then checks the plan again.
+    private func refreshEverything() async {
+        await health.refresh(force: true)
+        await StravaService.shared.importRecent(in: context, force: true)
+        await SyncService.shared.sync(context: context)
+        WidgetSnapshotService.update(in: context)
+        checkPlan()
     }
 
     private var greeting: some View {
@@ -177,7 +201,7 @@ struct HomeView: View {
                             kind: session.kind,
                             status: session.status,
                             onStart: session.kind.discipline == .crossTraining || session.kind.discipline == .mobility ? nil : {
-                                router.activeSession = ActiveSession(id: session.id, kind: session.kind, title: session.title)
+                                router.start(ActiveSession(id: session.id, kind: session.kind, title: session.title))
                             }
                         )
                         if session.status == .planned {
@@ -204,13 +228,9 @@ struct HomeView: View {
         return text
     }
 
-    private var restingHeartRate: RestingHeartRateSignal? {
-        health.isConnected ? health.restingHeartRate : nil
-    }
+    private var restingHeartRate: RestingHeartRateSignal? { inputs.restingHeartRate }
 
-    private var hrv: HRVSignal? {
-        health.isConnected ? health.hrv : nil
-    }
+    private var hrv: HRVSignal? { inputs.hrv }
 
     @ViewBuilder
     private func dashboardCard(_ card: DashboardCard, data: DashboardData) -> some View {
@@ -219,13 +239,13 @@ struct HomeView: View {
             if profile != nil { todaySection }
         case .checkIn:
             CheckInCard(existing: data.todaysCheckIn, restingHeartRate: restingHeartRate, hrv: hrv,
-                        sleepHours: health.isConnected ? health.lastNightSleepHours : nil) { checkIn in
+                        sleepHours: inputs.sleepHours) { checkIn in
                 saveCheckIn(checkIn, status: data.load.combined.status, ratio: data.load.combined.ratio)
             }
         case .body:
             BodyCard()
         case .load:
-            StrainCard(report: data.strain)
+            StrainCard(report: data.strain, isWaitingForLastNight: inputs.isWaitingForLastNight)
         case .dailyLoad:
             DailyStrainChart(days: data.strain.days, target: data.strain.target)
         case .week:
@@ -275,7 +295,8 @@ struct HomeView: View {
         try? context.save()
         if let profile {
             let changed = BalanceService.autoAdjust(profile: profile, status: status, checkIn: checkIn, in: context, force: true,
-                                                    ratio: ratio, restingHeartRate: restingHeartRate, hrv: hrv)
+                                                    ratio: ratio, restingHeartRate: restingHeartRate, hrv: hrv,
+                                                    dataKey: inputs.planCheckKey)
             if let first = changed.first { banner = first }
         }
     }

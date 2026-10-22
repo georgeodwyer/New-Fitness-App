@@ -6,7 +6,7 @@ import TrainingEngine
 /// with the reason and the numbers that triggered it, newest first, grouped by day.
 struct PlanChangesView: View {
     let changes: [PlanChangeModel]
-    var emptyMessage = "When Kinetix moves, eases or swaps a session (after a skip, a training-load spike or a poor check-in) you'll see exactly what changed and why here."
+    var emptyMessage = "When Kinetix moves, eases or swaps a session (after a skip, a training-load spike or a low score) you'll see exactly what changed and why here."
 
     @Query(filter: #Predicate<UserProfileModel> { $0.deletedAt == nil }) private var profiles: [UserProfileModel]
     private var units: UnitSystem { profiles.first?.units ?? UnitPreference.stored }
@@ -155,7 +155,7 @@ extension ChangeCause {
         case .skipped: return "You skipped a session"
         case .swapped: return "You swapped a session"
         case .highLoad: return "Training load spike"
-        case .poorRecovery: return "Recovery"
+        case .poorRecovery: return "Your score"
         case .other: return "Plan update"
         }
     }

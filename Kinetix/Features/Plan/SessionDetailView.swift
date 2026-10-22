@@ -71,7 +71,7 @@ struct SessionDetailView: View {
             if session.status == .planned || session.status == .swapped,
                session.kind.discipline == .run || session.kind.discipline == .strength {
                 Button("Start session") {
-                    router.activeSession = ActiveSession(id: session.id, kind: session.kind, title: session.title)
+                    router.start(ActiveSession(id: session.id, kind: session.kind, title: session.title))
                 }
                 .buttonStyle(.kx(.primary, fullWidth: true))
                 .padding(KXSpacing.screenMargin)

@@ -38,6 +38,8 @@ final class RunWorkoutModel {
     private(set) var isMirroringToWatch = false
     /// Goes up each time End is pressed on the watch (the run screen then finishes the run).
     private(set) var watchEndRequests = 0
+    /// End requests the screen has acted on (one can arrive while the trainer is minimised).
+    @ObservationIgnored var handledWatchEndRequests = 0
     /// Where heart rate comes from during this run (set when it starts).
     private(set) var heartRateSource: RunHeartRateSource = .watch
 

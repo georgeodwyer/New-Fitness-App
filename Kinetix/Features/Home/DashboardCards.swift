@@ -36,11 +36,11 @@ struct CheckInCard: View {
                 let checkIn = existing.engineValue(restingHeartRate: restingHeartRate, hrv: hrv)
                 let readiness = checkIn.readiness
                 HStack(spacing: KXSpacing.lg) {
-                    KXRingGauge(value: readiness, label: "\(Int((readiness * 100).rounded()))%", caption: "ready",
+                    KXRingGauge(value: readiness, label: "\(Int((readiness * 100).rounded()))%", caption: "today",
                                 tint: checkIn.isPoor ? KXColor.warning : KXColor.success, lineWidth: 8)
                         .frame(width: 84, height: 84)
                     VStack(alignment: .leading, spacing: KXSpacing.xs) {
-                        KXSectionHeader("Today's check-in")
+                        KXSectionHeader("Your score")
                         Text(checkIn.isPoor
                              ? "You're not fully recovered, so today's plan has been eased where it can be."
                              : "Recovered and ready. Train as planned.")
@@ -58,7 +58,7 @@ struct CheckInCard: View {
                     }
                 }
             } else {
-                KXSectionHeader("How are you today?", subtitle: "Optional · helps balance your training")
+                KXSectionHeader("Your score", subtitle: "How are you today? Optional · helps balance your training")
                 if let restingHeartRate { restingHeartRateLine(restingHeartRate) }
                 if let hrv { hrvLine(hrv) }
                 ratingRow("Sleep", value: sleepBinding, low: "Poor", high: "Great", symbol: "moon.zzz")
@@ -71,7 +71,7 @@ struct CheckInCard: View {
                 }
                 ratingRow("Soreness", value: $soreness, low: "None", high: "Very", symbol: "bandage")
                 ratingRow("Energy", value: $energy, low: "Drained", high: "Buzzing", symbol: "bolt")
-                Button("Save check-in") {
+                Button("Save my score") {
                     onSave(RecoveryCheckIn(sleep: sleep, soreness: soreness, energy: energy))
                     editing = false
                 }

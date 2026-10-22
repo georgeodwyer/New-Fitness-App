@@ -7,6 +7,8 @@ import TrainingEngine
 /// Today's strain (0–21) against its target band, recovery, legs and this week vs usual.
 struct StrainCard: View {
     let report: StrainReport
+    /// Last night's Health data isn't in yet, so there's no battery.
+    var isWaitingForLastNight = false
 
     @ScaledMetric(relativeTo: .largeTitle) private var ringSize: CGFloat = 132
 
@@ -15,7 +17,7 @@ struct StrainCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: KXSpacing.lg) {
-            KXSectionHeader("Strain", subtitle: "Today's target \(format(target.low))–\(format(target.high)) of 21")
+            KXSectionHeader("Exertion", subtitle: "Today's target \(format(target.low))–\(format(target.high)) of 21")
             HStack(alignment: .center, spacing: KXSpacing.lg) {
                 StrainRing(strain: strain, target: target)
                     .frame(width: ringSize, height: ringSize)
@@ -33,7 +35,7 @@ struct StrainCard: View {
             WeekVsUsualBar(ratio: report.weekVsUsual)
         }
         .kxCard()
-        .accessibilityIdentifier("dashboard.strain")
+        .accessibilityIdentifier("dashboard.exertion")
     }
 
     private var statusText: String {
@@ -44,7 +46,7 @@ struct StrainCard: View {
 
     private var recovery: some View {
         VStack(alignment: .leading, spacing: KXSpacing.xxs) {
-            KXOverline("Recovery")
+            KXOverline("Battery")
             if let recovery = report.recovery {
                 HStack(alignment: .firstTextBaseline, spacing: KXSpacing.xs) {
                     Text("\(Int(recovery.score))%")
@@ -58,13 +60,19 @@ struct StrainCard: View {
                     .font(.caption2)
                     .foregroundStyle(KXColor.inkTertiary)
             } else {
-                Text("Do the morning check-in or connect Apple Health to see it.")
+                Text(waitingText)
                     .font(KXFont.caption)
                     .foregroundStyle(KXColor.inkSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
         .accessibilityElement(children: .combine)
+    }
+
+    private var waitingText: String {
+        isWaitingForLastNight
+            ? "Waiting for last night's sleep from Apple Health. Pull down to refresh."
+            : "Add your score, or connect Apple Health, to see it."
     }
 
     private var legs: some View {
@@ -103,7 +111,7 @@ struct StrainCard: View {
                         .foregroundStyle(KXColor.inkSecondary)
                 }
             }
-            Text("Strain isn't additive: each point takes more than the last, so the day's total is less than the sum.")
+            Text("Exertion isn't additive: each point takes more than the last, so the day's total is less than the sum.")
                 .font(.caption2)
                 .foregroundStyle(KXColor.inkTertiary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -158,7 +166,7 @@ struct StrainRing: View {
             }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Strain \(String(format: "%.1f", strain)) of 21")
+        .accessibilityLabel("Exertion \(String(format: "%.1f", strain)) of 21")
         .accessibilityValue("Target \(String(format: "%.1f", target.low)) to \(String(format: "%.1f", target.high))")
     }
 }
@@ -229,7 +237,7 @@ struct DailyStrainChart: View {
     var body: some View {
         VStack(alignment: .leading, spacing: KXSpacing.md) {
             HStack(alignment: .firstTextBaseline) {
-                KXSectionHeader("Daily strain", subtitle: isWeek ? "Last 7 days" : "Last 30 days")
+                KXSectionHeader("Daily exertion", subtitle: isWeek ? "Last 7 days" : "Last 30 days")
                 Spacer()
                 Picker("Period", selection: $range) {
                     Text("Week").tag(7)
@@ -241,7 +249,7 @@ struct DailyStrainChart: View {
             }
             Chart {
                 ForEach(shown) { day in
-                    BarMark(x: .value("Day", day.date, unit: .day), y: .value("Strain", day.strain), width: .fixed(isWeek ? 22 : 7))
+                    BarMark(x: .value("Day", day.date, unit: .day), y: .value("Exertion", day.strain), width: .fixed(isWeek ? 22 : 7))
                         .foregroundStyle(Calendar.kinetix.isDateInToday(day.date) ? KXColor.accent : KXColor.ink.opacity(0.7))
                         .cornerRadius(3)
                 }
@@ -275,7 +283,7 @@ struct DailyStrainChart: View {
             }
             .chartXSelection(value: $selected)
             .frame(height: 190)
-            .accessibilityLabel("Daily strain, last \(range) days")
+            .accessibilityLabel("Daily exertion, last \(range) days")
             Text(target == nil ? "Touch and drag across the chart to see each day." : "The dashed lines are today's target. Touch and drag to see each day.")
                 .font(.caption2).foregroundStyle(KXColor.inkTertiary)
         }
@@ -285,7 +293,7 @@ struct DailyStrainChart: View {
     private func tooltip(_ day: DayStrain) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(day.date.formatted(.dateTime.weekday(.abbreviated).day().month())).font(.caption2.weight(.semibold))
-            Text("Strain \(String(format: "%.1f", day.strain))").font(.caption2.weight(.semibold))
+            Text("Exertion \(String(format: "%.1f", day.strain))").font(.caption2.weight(.semibold))
             ForEach(day.activities.prefix(4)) { activity in
                 Text(activity.name).font(.caption2)
             }

@@ -35,7 +35,9 @@ final class HealthService {
     /// True when Kinetix hasn't yet asked for some of the Health data it can show
     /// (e.g. after an update added new types).
     private(set) var needsPermission = false
+    /// When Health was last read in full (set once the readings are in).
     private(set) var lastRefresh: Date?
+    @ObservationIgnored private var isRefreshing = false
 
     var isAvailable: Bool { store != nil || isSample }
 
@@ -175,9 +177,14 @@ final class HealthService {
 
     /// Re-reads resting heart rate and other apps' workouts (at most every 15 minutes unless forced).
     func refresh(settings: IntegrationSettings = .shared, force: Bool = false, now: Date = .now) async {
-        guard store != nil, settings.healthEnabled, !isSample else { return }
+        guard store != nil, settings.healthEnabled, !isSample, !isRefreshing else { return }
         if !force, let lastRefresh, now.timeIntervalSince(lastRefresh) < 15 * 60 { return }
-        lastRefresh = now
+        isRefreshing = true
+        defer {
+            isRefreshing = false
+            // Set last, so anything watching it sees the new readings.
+            lastRefresh = now
+        }
         restingHeartRate = await readRestingHeartRate(now: now)
         metricDays = await readMetricDays(now: now)
         hrv = Self.hrvSignal(from: metricDays[.hrv] ?? [], now: now)
@@ -205,6 +212,25 @@ final class HealthService {
         guard let todayValue = byDay[today] else { return nil }
         let history = byDay.filter { $0.key < today }.map(\.value)
         return RestingHeartRateSignal.assess(today: todayValue, history: history)
+    }
+
+    /// Health has been read since midnight (readings from an earlier day aren't used for today).
+    var isFreshToday: Bool {
+        isSample || store == nil || lastRefresh.map { Calendar.kinetix.isDateInToday($0) } ?? false
+    }
+
+    /// They normally record sleep: a night in Health in the week before today.
+    var tracksSleep: Bool {
+        let calendar = Calendar.kinetix
+        guard let weekAgo = calendar.date(byAdding: .day, value: -7, to: calendar.startOfDay(for: .now)) else { return false }
+        return (metricDays[.sleep] ?? []).contains { $0.date >= weekAgo && !calendar.isDateInToday($0.date) }
+    }
+
+    /// Last night's data isn't in yet: Health hasn't been read today, or they track sleep and
+    /// last night's sleep hasn't arrived (wearables can take a while to sync in the morning).
+    var isWaitingForLastNight: Bool {
+        guard isConnected, !isSample else { return false }
+        return !isFreshToday || (tracksSleep && lastNightSleepHours == nil)
     }
 
     /// Hours asleep last night, when Health has it.

@@ -2,19 +2,34 @@ import Foundation
 import TrainingEngine
 
 /// What Apple Health adds to strain and recovery (all empty when it isn't connected).
+/// Only readings from today are passed on, and none until last night's sleep has arrived.
 struct HealthInputs {
     var hrv: HRVSignal?
     var restingHeartRate: RestingHeartRateSignal?
     var sleepHours: Double?
     var steps: [HealthDay] = []
+    /// Last night's data isn't in yet: no battery, and Health can't ease the plan.
+    var isWaitingForLastNight = false
 
     static let none = HealthInputs()
 
     @MainActor static var current: HealthInputs {
         let health = HealthService.shared
         guard health.isConnected else { return .none }
+        // Steps from earlier days are fine for the chart; today's readings only once they're in.
+        let steps = health.metricDays[.steps] ?? []
+        if health.isWaitingForLastNight {
+            return HealthInputs(steps: health.isFreshToday ? steps : steps.filter { !Calendar.kinetix.isDateInToday($0.date) },
+                                isWaitingForLastNight: true)
+        }
         return HealthInputs(hrv: health.hrv, restingHeartRate: health.restingHeartRate, sleepHours: health.lastNightSleepHours,
-                            steps: health.metricDays[.steps] ?? [])
+                            steps: steps)
+    }
+
+    /// Identifies what the plan check has seen today, so it runs again once more data arrives.
+    var planCheckKey: String {
+        if isWaitingForLastNight { return "waiting" }
+        return hrv != nil || restingHeartRate != nil || sleepHours != nil ? "body" : "none"
     }
 }
 
@@ -107,8 +122,10 @@ enum StrainService {
                        checkIn: RecoveryCheckIn?, profile: AthleteProfile?, external: [ExternalWorkout],
                        health: HealthInputs, now: Date = .now) -> StrainReport {
         let zones = zones(profile: profile, runs: runs, now: now)
-        let recovery = RecoveryScore.make(hrv: health.hrv, restingHeartRate: health.restingHeartRate,
-                                          sleepHours: health.sleepHours, checkIn: checkIn)
+        // No battery until last night's data is in (a partial one would mislead).
+        let recovery = health.isWaitingForLastNight ? nil
+            : RecoveryScore.make(hrv: health.hrv, restingHeartRate: health.restingHeartRate,
+                                 sleepHours: health.sleepHours, checkIn: checkIn)
         return StrainReport.make(
             activities: activities(runs: runs, lifts: lifts, external: external, sessions: sessions, zones: zones),
             steps: health.steps,

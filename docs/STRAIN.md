@@ -1,4 +1,8 @@
-# Strain, recovery and heart-rate zones
+# Exertion, battery and heart-rate zones
+
+In the app, strain is called **Exertion**, recovery is called **Battery** and the morning
+check-in is called **Your score**. The code still uses `Strain`, `RecoveryScore` and
+`RecoveryCheckIn`.
 
 The dashboard's strain card replaces the old load ratio. The ratio (last 7 days against an
 average week of the last 4) is still worked out and still eases upcoming sessions after a big
@@ -28,6 +32,14 @@ jump; it's shown as "This week vs your usual" (a %) rather than as a number like
 HRV against their usual (35%), resting heart rate against usual (25%), hours asleep (20%) and
 the morning check-in (20%). Missing parts are left out and the rest re-weighted. Below 34 is
 low, 67 and over is high.
+
+### Waiting for last night
+
+Health readings are only used once Health has been read today. If they normally record sleep
+(a night in the last week), there's no battery until last night's sleep has arrived: the card
+says "Waiting for last night's sleep", and Health readings can't ease the plan. Their own
+score still can. The plan check runs once per day for each state of the data ("waiting",
+"body" or "none"), so it runs again when the sleep arrives. Pull down on Today to refresh.
 
 ## Today's target
 

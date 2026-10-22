@@ -7,6 +7,8 @@ struct StrengthWorkoutView: View {
     @State private var model: StrengthWorkoutModel
     let units: UnitSystem
     let onClose: () -> Void
+    /// Closes the trainer down to the bar above the tabs; the workout keeps going.
+    var onMinimise: (() -> Void)? = nil
 
     @Environment(\.modelContext) private var context
     @State private var showFinish = false
@@ -16,10 +18,11 @@ struct StrengthWorkoutView: View {
     /// Set just before a discarded workout is deleted, so nothing reads it afterwards.
     @State private var discarded = false
 
-    init(model: StrengthWorkoutModel, units: UnitSystem, onClose: @escaping () -> Void) {
+    init(model: StrengthWorkoutModel, units: UnitSystem, onClose: @escaping () -> Void, onMinimise: (() -> Void)? = nil) {
         _model = State(initialValue: model)
         self.units = units
         self.onClose = onClose
+        self.onMinimise = onMinimise
     }
 
     var body: some View {
@@ -146,6 +149,10 @@ struct StrengthWorkoutView: View {
                 Text("\(model.completedSets)/\(model.totalSets) sets").font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
             }
             .accessibilityElement(children: .combine)
+            if let onMinimise {
+                KXIconButton(systemImage: "chevron.down", accessibilityLabel: "Minimise", size: 36, action: onMinimise)
+                    .accessibilityIdentifier("gym.minimise")
+            }
         }
         .padding(.horizontal, KXSpacing.screenMargin)
         .padding(.vertical, KXSpacing.sm)

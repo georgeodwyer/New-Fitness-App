@@ -53,9 +53,11 @@ enum BalanceService {
     @discardableResult
     static func autoAdjust(profile: AthleteProfile, status: LoadStatus, checkIn: RecoveryCheckIn?, in modelContext: ModelContext,
                            now: Date = .now, force: Bool = false, ratio: Double? = nil,
-                           restingHeartRate: RestingHeartRateSignal? = nil, hrv: HRVSignal? = nil) -> [String] {
+                           restingHeartRate: RestingHeartRateSignal? = nil, hrv: HRVSignal? = nil,
+                           dataKey: String = "") -> [String] {
         let calendar = Calendar.kinetix
-        let dayKey = ISO8601DateFormatter().string(from: calendar.startOfDay(for: now))
+        // Once a day for each state of the data (so it runs again when last night's data arrives).
+        let dayKey = ISO8601DateFormatter().string(from: calendar.startOfDay(for: now)) + "|" + dataKey
         if !force, UserDefaults.standard.string(forKey: lastAutoAdjustKey) == dayKey { return [] }
         UserDefaults.standard.set(dayKey, forKey: lastAutoAdjustKey)
         let models = week(containing: now, in: modelContext)
@@ -103,7 +105,7 @@ extension BalanceService {
         guard let checkIn, checkIn.isPoor else { return [] }
         let rules = BalanceRules.current.recovery
         var triggers = [
-            ChangeTrigger(label: "Readiness", value: "\(Int((checkIn.readiness * 100).rounded()))%",
+            ChangeTrigger(label: "Your score", value: "\(Int((checkIn.readiness * 100).rounded()))%",
                           detail: "below \(Int(rules.poorReadinessBelow * 100))% counts as poor", symbol: "gauge.with.dots.needle.33percent"),
             ChangeTrigger(label: "Sleep", value: "\(checkIn.sleep)/5", symbol: "moon.zzz"),
             ChangeTrigger(label: "Soreness", value: "\(checkIn.soreness)/5", symbol: "bandage"),

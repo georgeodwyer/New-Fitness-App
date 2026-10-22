@@ -210,12 +210,12 @@ struct HealthMetricDetailView: View {
                     Text(metric.explanation).font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                     if metric == .hrv || metric == .restingHeartRate {
-                        Label("Kinetix eases your plan when this is well off your usual and your morning check-in isn't great either.",
+                        Label("Kinetix eases your plan when this is well off your usual and your score isn't great either.",
                               systemImage: "arrow.triangle.branch")
                             .font(KXFont.caption).foregroundStyle(KXColor.ink)
                     }
                     if metric == .sleep {
-                        Label("Last night's sleep suggests your sleep score in the morning check-in.", systemImage: "sun.horizon")
+                        Label("Last night's sleep suggests the sleep rating in your score.", systemImage: "sun.horizon")
                             .font(KXFont.caption).foregroundStyle(KXColor.ink)
                     }
                     Text("General information, not medical advice. If a number worries you, talk to a doctor.")

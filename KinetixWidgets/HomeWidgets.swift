@@ -215,8 +215,8 @@ struct LoadWidget: Widget {
                 .containerBackground(KXColor.background, for: .widget)
                 .widgetURL(URL(string: "kinetix://tab/today"))
         }
-        .configurationDisplayName("Strain")
-        .description("Today's strain against your target, and recovery.")
+        .configurationDisplayName("Exertion")
+        .description("Today's exertion against your target, and your battery.")
         .supportedFamilies([.systemSmall, .accessoryCircular, .accessoryRectangular])
     }
 }
@@ -231,28 +231,28 @@ struct LoadWidgetView: View {
         guard let low = snapshot?.strainLow, let high = snapshot?.strainHigh else { return nil }
         return String(format: "Target %.1f–%.1f", low, high)
     }
-    private var recoveryText: String? { snapshot?.recovery.map { "Recovery \(Int($0))%" } }
+    private var recoveryText: String? { snapshot?.recovery.map { "Battery \(Int($0))%" } }
 
     var body: some View {
         if let snapshot {
             switch family {
             case .accessoryCircular:
                 Gauge(value: min(strain, 21), in: 0...21) {
-                    Text("Strain")
+                    Text("Exertion")
                 } currentValueLabel: {
                     Text(strainText)
                 }
                 .gaugeStyle(.accessoryCircular)
             case .accessoryRectangular:
                 VStack(alignment: .leading, spacing: 1) {
-                    Text("STRAIN").font(.caption2.weight(.bold))
+                    Text("EXERTION").font(.caption2.weight(.bold))
                     Text(strainText + " / 21").font(.headline.monospacedDigit())
                     if let targetText { Text(targetText).font(.caption) }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             default:
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("STRAIN").font(.caption2.weight(.bold)).tracking(1).foregroundStyle(KXColor.inkSecondary)
+                    Text("EXERTION").font(.caption2.weight(.bold)).tracking(1).foregroundStyle(KXColor.inkSecondary)
                     HStack(alignment: .firstTextBaseline, spacing: 2) {
                         Text(strainText).font(.system(size: 38, weight: .bold, design: .rounded).monospacedDigit())
                             .foregroundStyle(KXColor.ink)
