@@ -248,7 +248,7 @@ public enum DashboardCard: String, Codable, CaseIterable, Sendable {
         case .today: return "Today's sessions"
         case .checkIn: return "Your score"
         case .body: return "Body (Apple Health)"
-        case .load: return "Exertion and battery"
+        case .load: return "Exertion and recovery"
         case .dailyLoad: return "Daily exertion chart"
         case .week: return "This week vs plan"
         case .weekStrip: return "Week at a glance"

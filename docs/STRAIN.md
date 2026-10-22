@@ -1,6 +1,6 @@
-# Exertion, battery and heart-rate zones
+# Exertion, recovery and heart-rate zones
 
-In the app, strain is called **Exertion**, recovery is called **Battery** and the morning
+In the app, strain is called **Exertion** and the morning
 check-in is called **Your score**. The code still uses `Strain`, `RecoveryScore` and
 `RecoveryCheckIn`.
 
@@ -36,7 +36,7 @@ low, 67 and over is high.
 ### Waiting for last night
 
 Health readings are only used once Health has been read today. If they normally record sleep
-(a night in the last week), there's no battery until last night's sleep has arrived: the card
+(a night in the last week), there's no recovery score until last night's sleep has arrived: the card
 says "Waiting for last night's sleep", and Health readings can't ease the plan. Their own
 score still can. The plan check runs once per day for each state of the data ("waiting",
 "body" or "none"), so it runs again when the sleep arrives. Pull down on Today to refresh.

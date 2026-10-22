@@ -216,7 +216,7 @@ struct LoadWidget: Widget {
                 .widgetURL(URL(string: "kinetix://tab/today"))
         }
         .configurationDisplayName("Exertion")
-        .description("Today's exertion against your target, and your battery.")
+        .description("Today's exertion against your target, and your recovery.")
         .supportedFamilies([.systemSmall, .accessoryCircular, .accessoryRectangular])
     }
 }
@@ -231,7 +231,7 @@ struct LoadWidgetView: View {
         guard let low = snapshot?.strainLow, let high = snapshot?.strainHigh else { return nil }
         return String(format: "Target %.1f–%.1f", low, high)
     }
-    private var recoveryText: String? { snapshot?.recovery.map { "Battery \(Int($0))%" } }
+    private var recoveryText: String? { snapshot?.recovery.map { "Recovery \(Int($0))%" } }
 
     var body: some View {
         if let snapshot {

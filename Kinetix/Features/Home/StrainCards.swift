@@ -7,7 +7,7 @@ import TrainingEngine
 /// Today's strain (0–21) against its target band, recovery, legs and this week vs usual.
 struct StrainCard: View {
     let report: StrainReport
-    /// Last night's Health data isn't in yet, so there's no battery.
+    /// Last night's Health data isn't in yet, so there's no recovery score.
     var isWaitingForLastNight = false
 
     @ScaledMetric(relativeTo: .largeTitle) private var ringSize: CGFloat = 132
@@ -46,7 +46,7 @@ struct StrainCard: View {
 
     private var recovery: some View {
         VStack(alignment: .leading, spacing: KXSpacing.xxs) {
-            KXOverline("Battery")
+            KXOverline("Recovery")
             if let recovery = report.recovery {
                 HStack(alignment: .firstTextBaseline, spacing: KXSpacing.xs) {
                     Text("\(Int(recovery.score))%")

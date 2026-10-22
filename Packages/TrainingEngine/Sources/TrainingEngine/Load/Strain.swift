@@ -298,10 +298,10 @@ public struct StrainTarget: Equatable, Sendable {
         switch recovery?.band {
         case .high?:
             load *= 1.1
-            reason += " Your battery is high, so there's room for a bit more."
+            reason += " Your recovery is high, so there's room for a bit more."
         case .low?:
             load *= 0.7
-            reason += " Your battery is low, so aim lower today."
+            reason += " Your recovery is low, so aim lower today."
         case .medium?, nil:
             break
         }

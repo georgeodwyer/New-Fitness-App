@@ -8,7 +8,7 @@ struct HealthInputs {
     var restingHeartRate: RestingHeartRateSignal?
     var sleepHours: Double?
     var steps: [HealthDay] = []
-    /// Last night's data isn't in yet: no battery, and Health can't ease the plan.
+    /// Last night's data isn't in yet: no recovery score, and Health can't ease the plan.
     var isWaitingForLastNight = false
 
     static let none = HealthInputs()
@@ -122,7 +122,7 @@ enum StrainService {
                        checkIn: RecoveryCheckIn?, profile: AthleteProfile?, external: [ExternalWorkout],
                        health: HealthInputs, now: Date = .now) -> StrainReport {
         let zones = zones(profile: profile, runs: runs, now: now)
-        // No battery until last night's data is in (a partial one would mislead).
+        // No recovery score until last night's data is in (a partial one would mislead).
         let recovery = health.isWaitingForLastNight ? nil
             : RecoveryScore.make(hrv: health.hrv, restingHeartRate: health.restingHeartRate,
                                  sleepHours: health.sleepHours, checkIn: checkIn)

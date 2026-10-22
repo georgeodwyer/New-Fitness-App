@@ -93,7 +93,7 @@ final class StrainTests: XCTestCase {
         let pushed = StrainTarget.make(plannedLoad: 240, everydayLoad: 25, usualDailyLoad: 100, recovery: highRecovery)
         XCTAssertLessThan(eased.middle, hardDay.middle)
         XCTAssertGreaterThan(pushed.middle, hardDay.middle)
-        XCTAssertTrue(eased.reason.contains("battery is low"))
+        XCTAssertTrue(eased.reason.contains("recovery is low"))
     }
 
     func testLegsAfterLegDayAndLongRun() {
