@@ -222,6 +222,60 @@ public struct HRVSignal: Equatable, Sendable {
     }
 }
 
+/// One "asleep" record from Apple Health (a sleep stage, or plain "asleep").
+public struct SleepSample: Equatable, Sendable {
+    /// The app or device that recorded it.
+    public var source: String
+    public var start: Date
+    public var end: Date
+
+    public init(source: String, start: Date, end: Date) {
+        self.source = source
+        self.start = start
+        self.end = max(start, end)
+    }
+}
+
+/// Hours asleep per night.
+public enum SleepNights {
+    /// A night runs from 6 pm to 6 pm and counts on the day you woke up, so sleep before
+    /// midnight belongs to the same night as sleep after it. Overlapping records from one
+    /// source are merged (no double counting); when several sources recorded the night
+    /// (say an Apple Watch and a Whoop), the longest is used. Nights under 30 minutes are dropped.
+    public static func days(_ samples: [SleepSample], calendar: Calendar) -> [HealthDay] {
+        var bySourceNight: [String: [Date: [SleepSample]]] = [:]
+        for sample in samples where sample.end > sample.start {
+            let night = calendar.startOfDay(for: sample.end.addingTimeInterval(6 * 3600))
+            bySourceNight[sample.source, default: [:]][night, default: []].append(sample)
+        }
+        var best: [Date: Double] = [:]
+        for nights in bySourceNight.values {
+            for (night, records) in nights {
+                let hours = mergedSeconds(records) / 3600
+                best[night] = max(best[night] ?? 0, hours)
+            }
+        }
+        return best.filter { $0.value >= 0.5 }.map { HealthDay(date: $0.key, value: $0.value) }.sorted { $0.date < $1.date }
+    }
+
+    /// Total time covered by the records, counting overlaps once.
+    static func mergedSeconds(_ records: [SleepSample]) -> Double {
+        let sorted = records.sorted { $0.start < $1.start }
+        var total = 0.0
+        var current: (start: Date, end: Date)?
+        for record in sorted {
+            if let open = current, record.start <= open.end {
+                current = (open.start, max(open.end, record.end))
+            } else {
+                if let open = current { total += open.end.timeIntervalSince(open.start) }
+                current = (record.start, record.end)
+            }
+        }
+        if let open = current { total += open.end.timeIntervalSince(open.start) }
+        return total
+    }
+}
+
 /// Suggests a 1–5 check-in sleep score from hours asleep.
 public enum SleepScore {
     public static func score(hours: Double) -> Int {

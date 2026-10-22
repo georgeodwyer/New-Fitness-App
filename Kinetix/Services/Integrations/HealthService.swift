@@ -283,8 +283,8 @@ final class HealthService {
         }
     }
 
-    /// Hours asleep per night, counted on the day you woke up. When several apps or devices
-    /// record the same night (say an Apple Watch and a Whoop), the longest is used.
+    /// Hours asleep per night (6 pm to 6 pm), counted on the day you woke up, including sleep
+    /// before midnight. When several apps or devices record the same night, the longest is used.
     private func readSleepDays(now: Date) async -> [HealthDay] {
         guard let store else { return [] }
         let calendar = Calendar.kinetix
@@ -295,17 +295,10 @@ final class HealthService {
         )
         guard let samples = try? await descriptor.result(for: store) else { return [] }
         let asleep = HKCategoryValueSleepAnalysis.allAsleepValues.map(\.rawValue)
-        var bySource: [String: [Date: Double]] = [:]
-        for sample in samples where asleep.contains(sample.value) {
-            let source = sample.sourceRevision.source.bundleIdentifier
-            let day = calendar.startOfDay(for: sample.endDate)
-            bySource[source, default: [:]][day, default: 0] += sample.endDate.timeIntervalSince(sample.startDate) / 3600
+        let records = samples.filter { asleep.contains($0.value) }.map {
+            SleepSample(source: $0.sourceRevision.source.bundleIdentifier, start: $0.startDate, end: $0.endDate)
         }
-        var best: [Date: Double] = [:]
-        for nights in bySource.values {
-            for (day, hours) in nights { best[day] = max(best[day] ?? 0, hours) }
-        }
-        return best.filter { $0.value >= 0.5 }.map { HealthDay(date: $0.key, value: $0.value) }.sorted { $0.date < $1.date }
+        return SleepNights.days(records, calendar: calendar)
     }
 
     /// Today's HRV against the previous days' readings.

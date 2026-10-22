@@ -105,4 +105,50 @@ final class HealthMetricsTests: XCTestCase {
         XCTAssertEqual(saved.cards.count, DashboardCard.allCases.count)
         XCTAssertFalse(saved.cards.map(\.rawValue).contains("futureCard"))
     }
+
+    func testSleepBeforeMidnightCountsForTheSameNight() {
+        var calendar = Calendar(identifier: .iso8601)
+        calendar.timeZone = TimeZone(identifier: "Europe/London")!
+        let wakeDay = calendar.date(from: DateComponents(year: 2026, month: 10, day: 22))!
+        func at(_ hour: Double, dayOffset: Int = 0) -> Date {
+            calendar.date(byAdding: .day, value: dayOffset, to: wakeDay)!.addingTimeInterval(hour * 3600)
+        }
+        // Apple Watch stages every 20 minutes from 21:55 to 05:54 (about 2 hours before midnight).
+        let watch = "com.apple.health.watch"
+        var samples: [SleepSample] = []
+        var time = at(21 + 55.0 / 60, dayOffset: -1)
+        let end = at(5 + 54.0 / 60)
+        while time < end {
+            let next = min(time.addingTimeInterval(20 * 60), end)
+            samples.append(SleepSample(source: watch, start: time, end: next))
+            time = next
+        }
+        let days = SleepNights.days(samples, calendar: calendar)
+        XCTAssertEqual(days.count, 1)
+        XCTAssertEqual(days.first?.date, wakeDay)
+        XCTAssertEqual(days.first?.value ?? 0, 7 + 59.0 / 60, accuracy: 0.01)
+    }
+
+    func testSleepOverlapsCountOnceAndLongestSourceWins() {
+        var calendar = Calendar(identifier: .iso8601)
+        calendar.timeZone = TimeZone(identifier: "UTC")!
+        let day = calendar.date(from: DateComponents(year: 2026, month: 10, day: 22))!
+        let night = day.addingTimeInterval(-2 * 3600) // 22:00 the evening before
+        let samples = [
+            // One app writes both "asleep" and stages over the same hours.
+            SleepSample(source: "a", start: night, end: night.addingTimeInterval(6 * 3600)),
+            SleepSample(source: "a", start: night.addingTimeInterval(3600), end: night.addingTimeInterval(4 * 3600)),
+            // Another app recorded 6.5 hours.
+            SleepSample(source: "b", start: night, end: night.addingTimeInterval(6.5 * 3600)),
+            // An afternoon nap the next day counts towards that day too (same night window).
+            SleepSample(source: "b", start: day.addingTimeInterval(14 * 3600), end: day.addingTimeInterval(14.4 * 3600))
+        ]
+        let days = SleepNights.days(samples, calendar: calendar)
+        XCTAssertEqual(days.count, 1)
+        XCTAssertEqual(days.first?.date, day)
+        XCTAssertEqual(days.first?.value ?? 0, 6.9, accuracy: 0.01)
+        // An evening nap after 6 pm belongs to the next night.
+        let evening = SleepSample(source: "a", start: day.addingTimeInterval(19 * 3600), end: day.addingTimeInterval(20 * 3600))
+        XCTAssertEqual(SleepNights.days([evening], calendar: calendar).first?.date, calendar.date(byAdding: .day, value: 1, to: day))
+    }
 }
