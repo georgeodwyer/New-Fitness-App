@@ -64,6 +64,7 @@
 		7069554845EABC54FCA85309 /* SyncTracked.swift in Sources */ = {isa = PBXBuildFile; fileRef = C29BBA81B297D8EE2CF1FF89 /* SyncTracked.swift */; };
 		70A9566473D1E63FDF6E9305 /* TrainingEngine in Frameworks */ = {isa = PBXBuildFile; productRef = 047896C2DD13857BB0AC3280 /* TrainingEngine */; };
 		70C07E1CB04C57F050ED4CD7 /* PlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D4219D257608DB539A51D9 /* PlanView.swift */; };
+		710CCF18EBB24C181F4C7002 /* MiniWorkoutBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = C407A14AC9EAA41D7E97C485 /* MiniWorkoutBar.swift */; };
 		714C4CF6CA2F0650A2C6E22A /* HealthViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7D04D4055C041D71F46AC5F /* HealthViews.swift */; };
 		72BB11CDF6863C2C39FDA03F /* WorkoutActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C470E8546A565DBFCC3CB74 /* WorkoutActivity.swift */; };
 		75556304FD12FA065E0F81F2 /* RunWorkoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12C1324B1AC05AA177D5BF93 /* RunWorkoutView.swift */; };
@@ -306,6 +307,7 @@
 		C1664E7DAA11627C79DB8265 /* KXEmptyState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXEmptyState.swift; sourceTree = "<group>"; };
 		C29BBA81B297D8EE2CF1FF89 /* SyncTracked.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncTracked.swift; sourceTree = "<group>"; };
 		C35BD4AE3E888CB06C1AD8FA /* ProfileQuestionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileQuestionsView.swift; sourceTree = "<group>"; };
+		C407A14AC9EAA41D7E97C485 /* MiniWorkoutBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniWorkoutBar.swift; sourceTree = "<group>"; };
 		C45C2DEC18638987AEE83DF7 /* CoachingSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachingSettingsView.swift; sourceTree = "<group>"; };
 		C4708069D9CB0D862B6D3765 /* RunSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunSummaryView.swift; sourceTree = "<group>"; };
 		C49960012FF421B7459C2F62 /* RunService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunService.swift; sourceTree = "<group>"; };
@@ -400,6 +402,7 @@
 		1B0D2332FCA8E404B8FB7128 /* Session */ = {
 			isa = PBXGroup;
 			children = (
+				C407A14AC9EAA41D7E97C485 /* MiniWorkoutBar.swift */,
 				1DD6B44B1B977B2EB92D215E /* SessionContainerView.swift */,
 				7BDCE4810AFEA6B0C6902B30 /* SessionPlaceholderView.swift */,
 			);
@@ -974,6 +977,7 @@
 				968DE1EA1D9F5D940E4394C6 /* LoadTrendCard.swift in Sources */,
 				ABE991D19232BC6D6AAF9136 /* LocationService.swift in Sources */,
 				7C7C3B1A994523C342761A39 /* LogModels.swift in Sources */,
+				710CCF18EBB24C181F4C7002 /* MiniWorkoutBar.swift in Sources */,
 				CD0413479485C96BC3B7F758 /* OnboardingFlowView.swift in Sources */,
 				B29A94D91EADFC17D2BA06B6 /* OnboardingModel.swift in Sources */,
 				B3732468744D9B820C1E44A5 /* OnboardingSteps.swift in Sources */,
