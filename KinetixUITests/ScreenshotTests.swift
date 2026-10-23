@@ -75,7 +75,15 @@ final class ScreenshotTests: XCTestCase {
         app.swipeUp()
         snap("14-plan-preview-first-week")
         tap("Start training")
-        XCTAssertTrue(app.tabBars.buttons["Today"].waitForExistence(timeout: 10))
+        // The app tour opens once after the plan is built; its last button goes to Today.
+        let tourNext = app.buttons["walkthrough.next"]
+        XCTAssertTrue(tourNext.waitForExistence(timeout: 10))
+        for page in 1...7 {
+            snap("14a-tour-\(page)")
+            tourNext.tap()
+        }
+        XCTAssertTrue(app.tabBars.buttons["Plan"].waitForExistence(timeout: 10))
+        app.tabBars.buttons["Plan"].tap()
         snap("14b-plan-tab-with-plan")
         app.tabBars.buttons["Today"].tap()
         snap("15-today")

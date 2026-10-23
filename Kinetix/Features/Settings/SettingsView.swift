@@ -15,6 +15,7 @@ struct SettingsView: View {
     @Environment(AppRouter.self) private var router
 
     @State private var confirmRegenerate = false
+    @State private var showWalkthrough = false
     @State private var confirmDelete = false
     @State private var confirmDeleteFinal = false
     @State private var exportURL: URL?
@@ -124,6 +125,12 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    Button {
+                        showWalkthrough = true
+                    } label: {
+                        Label("App tour", systemImage: "questionmark.circle")
+                    }
+                    .accessibilityIdentifier("settings.appTour")
                     NavigationLink {
                         HealthDisclaimerView()
                     } label: {
@@ -174,6 +181,12 @@ struct SettingsView: View {
             }
             .navigationTitle("Settings")
             .tint(KXColor.accent)
+            .fullScreenCover(isPresented: $showWalkthrough) {
+                WalkthroughView { openToday in
+                    showWalkthrough = false
+                    if openToday { router.selectedTab = .today }
+                }
+            }
             .confirmationDialog("Rebuild your plan from your current answers?", isPresented: $confirmRegenerate, titleVisibility: .visible) {
                 Button("Regenerate plan") {
                     if let profile = profileModel?.profile { PlanService.createPlan(for: profile, in: context) }

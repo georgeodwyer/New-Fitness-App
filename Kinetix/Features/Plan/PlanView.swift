@@ -9,6 +9,8 @@ struct PlanView: View {
     @Query(sort: \PlanChangeModel.createdAt, order: .reverse) private var changes: [PlanChangeModel]
     @Query(filter: #Predicate<UserProfileModel> { $0.deletedAt == nil }) private var profiles: [UserProfileModel]
     @State private var showOnboarding = false
+    @State private var showWalkthrough = false
+    @Environment(AppRouter.self) private var router
 
     private var format: DisplayFormat { DisplayFormat(units: profiles.first?.units ?? UnitPreference.stored) }
     private var outline: PlanOutline? { plans.first?.outline }
@@ -68,8 +70,17 @@ struct PlanView: View {
             .navigationDestination(for: PlannedSessionModel.self) { session in
                 SessionDetailView(session: session)
             }
-            .fullScreenCover(isPresented: $showOnboarding) {
+            .fullScreenCover(isPresented: $showOnboarding, onDismiss: {
+                // Just built a plan: show the app tour once.
+                if Walkthrough.isPending && !profiles.isEmpty { showWalkthrough = true }
+            }) {
                 OnboardingFlowView(onClose: { showOnboarding = false })
+            }
+            .fullScreenCover(isPresented: $showWalkthrough) {
+                WalkthroughView { openToday in
+                    showWalkthrough = false
+                    if openToday { router.selectedTab = .today }
+                }
             }
             // Building the plan saves a profile: close the set-up and show the new plan.
             .onChange(of: profiles.count) { _, count in
