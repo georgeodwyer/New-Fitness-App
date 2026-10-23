@@ -130,6 +130,7 @@
 		E018DCDDBC4BF22B9DCBA451 /* BuildChannel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2740B3F27E573D14E2F6054C /* BuildChannel.swift */; };
 		E18D623A542EBD8663A3226F /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 252A5F13C31E37644227D134 /* AuthService.swift */; };
 		E28000A1D061D045D76768F9 /* IntegrationSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5052A6236109C68A845CCA1A /* IntegrationSettings.swift */; };
+		E2FDA06D455ED83181BC45DA /* WalkthroughView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D49483D84839C27397EF32AE /* WalkthroughView.swift */; };
 		E34443073A1F6BE0D91C8DB9 /* SampleData.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5069ED66DFB790377708F8D /* SampleData.swift */; };
 		E573A0887E71CCACCFAA8B6D /* SessionContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DD6B44B1B977B2EB92D215E /* SessionContainerView.swift */; };
 		E6A08B134E4E21693787F746 /* GymTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5503EC67D52AB746CA65FF96 /* GymTests.swift */; };
@@ -330,6 +331,7 @@
 		D0194D5106F49F620FDB86E8 /* ShareService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareService.swift; sourceTree = "<group>"; };
 		D249250D5897255E15EBCE32 /* OnboardingFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingFlowView.swift; sourceTree = "<group>"; };
 		D4279740084F6D852D0D6FA4 /* WatchStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchStore.swift; sourceTree = "<group>"; };
+		D49483D84839C27397EF32AE /* WalkthroughView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkthroughView.swift; sourceTree = "<group>"; };
 		D763CB1795460ACC4115555D /* KXStepper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXStepper.swift; sourceTree = "<group>"; };
 		D7E3234A649534340E001365 /* KXCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXCard.swift; sourceTree = "<group>"; };
 		DA59942CB66FDA71A6631EDE /* KinetixUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = KinetixUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -535,6 +537,14 @@
 			path = Packages;
 			sourceTree = "<group>";
 		};
+		506B48D8CD7A4A45BA01353B /* Walkthrough */ = {
+			isa = PBXGroup;
+			children = (
+				D49483D84839C27397EF32AE /* WalkthroughView.swift */,
+			);
+			path = Walkthrough;
+			sourceTree = "<group>";
+		};
 		53D8121D2B7F96CF3E10389C /* Account */ = {
 			isa = PBXGroup;
 			children = (
@@ -591,6 +601,7 @@
 				3528D4A7E6EEADE70767D2FA /* Settings */,
 				36DD1705EA0C4180192DB459 /* Share */,
 				3486AD757FA77E95F7EF7C45 /* Strength */,
+				506B48D8CD7A4A45BA01353B /* Walkthrough */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -1041,6 +1052,7 @@
 				9F6D5D7C390529C797D53991 /* UnitPreference.swift in Sources */,
 				BDC6DDDC3E501DEEBDC63BE6 /* UserProfileModel.swift in Sources */,
 				0256EAD3B08ADE3512154318 /* VoiceCoach.swift in Sources */,
+				E2FDA06D455ED83181BC45DA /* WalkthroughView.swift in Sources */,
 				58A813AAE226C58C5E8EA99B /* WatchMirrorService.swift in Sources */,
 				FB99840249B20B1C46C58334 /* WatchSyncService.swift in Sources */,
 				72BB11CDF6863C2C39FDA03F /* WorkoutActivity.swift in Sources */,
