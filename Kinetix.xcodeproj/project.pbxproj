@@ -116,6 +116,7 @@
 		CCA12A2320F014BD6DA03CF3 /* RunWorkoutModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B488A5C64C09276C346F5B82 /* RunWorkoutModel.swift */; };
 		CD0413479485C96BC3B7F758 /* OnboardingFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D249250D5897255E15EBCE32 /* OnboardingFlowView.swift */; };
 		CE7E1D1D0F5BB1979A48EA1F /* ActivityExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24EE4D4AE4E5EC11003FF81E /* ActivityExportService.swift */; };
+		CF1312B2EEA8C82121C28541 /* LapsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58CC4DBE6FC7ADA3A6C7F4EE /* LapsCard.swift */; };
 		D01F9F689C654DD47EDC8ED5 /* AccountSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90BA113272970E6AD61E52D1 /* AccountSection.swift */; };
 		D06698D33FC2AC066E0A414A /* KXFont.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09457C53CBC5D758DE02ED68 /* KXFont.swift */; };
 		D187078BA75A613B810BDEEE /* SyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8625E979738A82F0E873A0DD /* SyncService.swift */; };
@@ -131,6 +132,7 @@
 		E18D623A542EBD8663A3226F /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 252A5F13C31E37644227D134 /* AuthService.swift */; };
 		E28000A1D061D045D76768F9 /* IntegrationSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5052A6236109C68A845CCA1A /* IntegrationSettings.swift */; };
 		E2FDA06D455ED83181BC45DA /* WalkthroughView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D49483D84839C27397EF32AE /* WalkthroughView.swift */; };
+		E33FDA73DE0178C4A40615A9 /* WatchControlsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3D4109323DCAF1418A3D9C5 /* WatchControlsStore.swift */; };
 		E34443073A1F6BE0D91C8DB9 /* SampleData.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5069ED66DFB790377708F8D /* SampleData.swift */; };
 		E573A0887E71CCACCFAA8B6D /* SessionContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DD6B44B1B977B2EB92D215E /* SessionContainerView.swift */; };
 		E6A08B134E4E21693787F746 /* GymTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5503EC67D52AB746CA65FF96 /* GymTests.swift */; };
@@ -261,6 +263,7 @@
 		5503EC67D52AB746CA65FF96 /* GymTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GymTests.swift; sourceTree = "<group>"; };
 		55937FA7CC685D3DBBA76FA0 /* ShareSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSessionView.swift; sourceTree = "<group>"; };
 		57D4371AF5820D576CE51646 /* GymService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GymService.swift; sourceTree = "<group>"; };
+		58CC4DBE6FC7ADA3A6C7F4EE /* LapsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LapsCard.swift; sourceTree = "<group>"; };
 		626F847EE3778CA53D1E28E9 /* SessionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionDetailView.swift; sourceTree = "<group>"; };
 		68F6AC05A25C4370A18ACAF3 /* KinetixWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KinetixWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6CB156067CAAF579368CC276 /* LoadTrendCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadTrendCard.swift; sourceTree = "<group>"; };
@@ -296,6 +299,7 @@
 		A150A73A24DB8D5355ECAE20 /* BalanceServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BalanceServiceTests.swift; sourceTree = "<group>"; };
 		A29407132DCE8269B5454E50 /* RunListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunListView.swift; sourceTree = "<group>"; };
 		A35A3ED64048A8315BCB94E8 /* HeartRateZonesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeartRateZonesView.swift; sourceTree = "<group>"; };
+		A3D4109323DCAF1418A3D9C5 /* WatchControlsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchControlsStore.swift; sourceTree = "<group>"; };
 		A4869AF91B0E573C72D5565D /* UserProfileModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfileModel.swift; sourceTree = "<group>"; };
 		A4F90BB8590CAE95AEE03BF5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		A6D1D0ED0DB03CD0353CFE18 /* RouteModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteModelTests.swift; sourceTree = "<group>"; };
@@ -699,6 +703,7 @@
 				6DCA983868F3800CCDF25C8B /* HeartRateMonitor.swift */,
 				5052A6236109C68A845CCA1A /* IntegrationSettings.swift */,
 				41DD740D22466B22510031CB /* StravaService.swift */,
+				A3D4109323DCAF1418A3D9C5 /* WatchControlsStore.swift */,
 				14EB6A71D2AFBFDA441F9020 /* WatchMirrorService.swift */,
 				7CCF3DFA4DA38CCD2DAE0954 /* WatchSyncService.swift */,
 				3E9AE388F264F792830FE28E /* WorkoutActivityController.swift */,
@@ -709,6 +714,7 @@
 		D482E96F3A920C6751F987D2 /* Run */ = {
 			isa = PBXGroup;
 			children = (
+				58CC4DBE6FC7ADA3A6C7F4EE /* LapsCard.swift */,
 				C4708069D9CB0D862B6D3765 /* RunSummaryView.swift */,
 				B488A5C64C09276C346F5B82 /* RunWorkoutModel.swift */,
 				12C1324B1AC05AA177D5BF93 /* RunWorkoutView.swift */,
@@ -998,6 +1004,7 @@
 				3312F6FAC1B80A1BF812DE48 /* KXText.swift in Sources */,
 				93B0A23AFFF5CCD24A81AF87 /* Keychain.swift in Sources */,
 				4ABFCBB55C182B3A0ED4611A /* KinetixApp.swift in Sources */,
+				CF1312B2EEA8C82121C28541 /* LapsCard.swift in Sources */,
 				AAB951D77E1C14D2213A481B /* LaunchSplashView.swift in Sources */,
 				968DE1EA1D9F5D940E4394C6 /* LoadTrendCard.swift in Sources */,
 				ABE991D19232BC6D6AAF9136 /* LocationService.swift in Sources */,
@@ -1053,6 +1060,7 @@
 				BDC6DDDC3E501DEEBDC63BE6 /* UserProfileModel.swift in Sources */,
 				0256EAD3B08ADE3512154318 /* VoiceCoach.swift in Sources */,
 				E2FDA06D455ED83181BC45DA /* WalkthroughView.swift in Sources */,
+				E33FDA73DE0178C4A40615A9 /* WatchControlsStore.swift in Sources */,
 				58A813AAE226C58C5E8EA99B /* WatchMirrorService.swift in Sources */,
 				FB99840249B20B1C46C58334 /* WatchSyncService.swift in Sources */,
 				72BB11CDF6863C2C39FDA03F /* WorkoutActivity.swift in Sources */,
