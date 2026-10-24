@@ -6,6 +6,8 @@ import TrainingEngine
 
 /// Settings → Integrations rows.
 struct IntegrationsSection: View {
+    /// Settings shows Apple Watch under Coaching & watch instead.
+    var includeWatch = true
     @State private var settings = IntegrationSettings.shared
     @State private var health = HealthService.shared
     @State private var monitor = HeartRateMonitor.shared
@@ -26,13 +28,7 @@ struct IntegrationsSection: View {
                            symbol: "waveform.path.ecg", tint: KXColor.danger, connected: settings.heartRateSensorID != nil)
         }
         .accessibilityIdentifier("settings.heartRate")
-        NavigationLink {
-            AppleWatchView()
-        } label: {
-            IntegrationRow(title: "Apple Watch", detail: settings.mirrorRunsToWatch ? "Shows runs you start on your iPhone" : "Runs started on your watch",
-                           symbol: "applewatch", tint: KXColor.ink, connected: settings.mirrorRunsToWatch)
-        }
-        .accessibilityIdentifier("settings.watch")
+        if includeWatch { AppleWatchRow() }
         NavigationLink {
             StravaView()
         } label: {
@@ -53,6 +49,21 @@ struct IntegrationsSection: View {
         case .disconnected: return "Upload runs automatically"
         case .connected(let name): return name.map { "Connected as \($0)" } ?? "Connected"
         }
+    }
+}
+
+/// Settings row for the Apple Watch screen (showing runs on the watch, gesture controls).
+struct AppleWatchRow: View {
+    @State private var settings = IntegrationSettings.shared
+
+    var body: some View {
+        NavigationLink {
+            AppleWatchView()
+        } label: {
+            IntegrationRow(title: "Apple Watch", detail: settings.mirrorRunsToWatch ? "Shows your runs · controls" : "Runs started on your watch",
+                           symbol: "applewatch", tint: KXColor.ink, connected: settings.mirrorRunsToWatch)
+        }
+        .accessibilityIdentifier("settings.watch")
     }
 }
 

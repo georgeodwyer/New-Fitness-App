@@ -27,14 +27,12 @@ struct RecordView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: KXSpacing.xl) {
                     KXScreenHeader(title: "Record")
-                    Text("Any run or gym session counts towards your training.")
-                        .font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
 
                     HStack(spacing: KXSpacing.md) {
                         NavigationLink {
                             RunSetupView(initial: nil)
                         } label: {
-                            choiceCard(title: "Run", detail: "Free run or your own workout with pace targets",
+                            choiceCard(title: "Run", detail: "Free run or a workout with pace targets",
                                        symbol: "figure.run", tint: KXColor.run)
                         }
                         .buttonStyle(.plain)
@@ -43,14 +41,12 @@ struct RecordView: View {
                         NavigationLink {
                             GymSetupView()
                         } label: {
-                            choiceCard(title: "Gym", detail: "Build and track your own workouts",
+                            choiceCard(title: "Gym", detail: "Your own workouts, sets and weights",
                                        symbol: "dumbbell.fill", tint: KXColor.lift)
                         }
                         .buttonStyle(.plain)
                         .accessibilityIdentifier("record.gym")
                     }
-
-                    routesSection
 
                     VStack(alignment: .leading, spacing: KXSpacing.md) {
                         KXSectionHeader("My run workouts", subtitle: templates.isEmpty ? nil : "Tap to start or edit")
@@ -77,6 +73,8 @@ struct RecordView: View {
                         }
                     }
                     .kxCard()
+
+                    routesSection
                 }
                 .padding(KXSpacing.screenMargin)
             }
@@ -202,7 +200,7 @@ struct RecordView: View {
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity, minHeight: 170, alignment: .topLeading)
+        .frame(maxWidth: .infinity, minHeight: 180, alignment: .topLeading)
         .kxCard()
         .accessibilityElement(children: .combine)
     }

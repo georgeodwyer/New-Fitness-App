@@ -59,3 +59,12 @@ struct NotificationsSection: View {
         isDenied = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus == .denied
     }
 }
+
+/// Settings → Notifications.
+struct NotificationsSettingsView: View {
+    var body: some View {
+        Form { NotificationsSection() }
+            .navigationTitle("Notifications")
+            .navigationBarTitleDisplayMode(.inline)
+    }
+}

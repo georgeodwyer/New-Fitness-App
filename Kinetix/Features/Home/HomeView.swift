@@ -54,7 +54,8 @@ struct HomeView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: KXSpacing.xl) {
-                    KXScreenHeader(title: "Today", onNotifications: { showUpdates = true })
+                    KXScreenHeader(title: "Today", onNotifications: { showUpdates = true },
+                                   onEditDashboard: { showEditDashboard = true })
                     greeting
                     if let banner { changeBanner(banner) }
                     if profile == nil { planPrompt }
@@ -65,15 +66,6 @@ struct HomeView: View {
                     if layout.visibleCards.contains(.checkIn), data.todaysCheckIn != nil {
                         checkInCard(data)
                     }
-                    Button {
-                        showEditDashboard = true
-                    } label: {
-                        Label("Edit dashboard", systemImage: "slider.horizontal.3")
-                            .font(KXFont.captionEmphasis)
-                    }
-                    .foregroundStyle(KXColor.inkSecondary)
-                    .frame(maxWidth: .infinity)
-                    .accessibilityIdentifier("dashboard.edit")
                 }
                 .padding(KXSpacing.screenMargin)
             }

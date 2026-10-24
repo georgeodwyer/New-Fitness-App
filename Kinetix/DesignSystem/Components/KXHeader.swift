@@ -5,6 +5,8 @@ import SwiftUI
 struct KXScreenHeader: View {
     let title: String
     var onNotifications: (() -> Void)?
+    /// Shows a ••• menu with "Edit dashboard" (Today).
+    var onEditDashboard: (() -> Void)?
 
     var body: some View {
         HStack(alignment: .bottom, spacing: KXSpacing.md) {
@@ -18,6 +20,21 @@ struct KXScreenHeader: View {
             Spacer()
             if let onNotifications {
                 KXIconButton(systemImage: "bell", accessibilityLabel: "Plan updates", size: 36, action: onNotifications)
+            }
+            if let onEditDashboard {
+                Menu {
+                    Button(action: onEditDashboard) {
+                        Label("Edit dashboard", systemImage: "slider.horizontal.3")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(KXColor.ink)
+                        .frame(width: 36, height: 36)
+                        .background(KXColor.surface, in: Circle())
+                }
+                .accessibilityLabel("More")
+                .accessibilityIdentifier("dashboard.more")
             }
         }
     }

@@ -167,7 +167,7 @@ final class ScreenshotTests: XCTestCase {
             snap("24b-exercise-history")
             app.navigationBars.buttons.firstMatch.tap()
         }
-        if app.buttons["Overall"].waitForExistence(timeout: 3) { app.buttons["Overall"].tap() }
+        if app.buttons["Summary"].waitForExistence(timeout: 3) { app.buttons["Summary"].tap() }
         snap("24g-progress-overall")
         if app.buttons["Health"].waitForExistence(timeout: 3) {
             app.buttons["Health"].tap()
@@ -230,8 +230,11 @@ final class ScreenshotTests: XCTestCase {
             }
             app.navigationBars.buttons.firstMatch.tap()
         }
-        let edit = app.buttons["dashboard.edit"].firstMatch
-        if edit.waitForExistence(timeout: 3) {
+        let more = app.buttons["dashboard.more"].firstMatch
+        if more.waitForExistence(timeout: 3) {
+            more.tap()
+            let edit = app.buttons["Edit dashboard"].firstMatch
+            guard edit.waitForExistence(timeout: 3) else { return }
             edit.tap()
             snap("20e-edit-dashboard")
             let done = app.buttons["dashboard.done"].firstMatch

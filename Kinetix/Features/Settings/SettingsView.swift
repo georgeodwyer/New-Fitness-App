@@ -26,8 +26,45 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
-                if let settings = coachingSettings.first {
-                    Section("Coaching") {
+                // Training: what the plan is built from.
+                Section {
+                    if let profileModel {
+                        NavigationLink {
+                            TrainingProfileView(profileModel: profileModel)
+                        } label: {
+                            settingsRow("Training profile", detail: trainingSummary(profileModel.profile),
+                                        symbol: "figure.mixed.cardio", tint: KXColor.lift)
+                        }
+                        .accessibilityIdentifier("settings.training")
+                    } else {
+                        Button {
+                            router.selectedTab = .plan
+                        } label: {
+                            settingsRow("Build a training plan", detail: "Running and lifting around your goal",
+                                        symbol: "figure.mixed.cardio", tint: KXColor.lift)
+                        }
+                        .accessibilityIdentifier("settings.buildPlan")
+                    }
+                    Picker(selection: unitsBinding) {
+                        Text("Kilometres & kg").tag(UnitSystem.metric)
+                        Text("Miles & lb").tag(UnitSystem.imperial)
+                    } label: {
+                        settingsRow("Units", detail: nil, symbol: "ruler", tint: KXColor.slate)
+                    }
+                    if profileModel != nil {
+                        Button {
+                            confirmRegenerate = true
+                        } label: {
+                            Label("Regenerate my plan", systemImage: "arrow.clockwise")
+                        }
+                    }
+                } header: {
+                    Text("Training")
+                }
+
+                // Coaching & watch: what you hear and feel during and around a session.
+                Section("Coaching & watch") {
+                    if let settings = coachingSettings.first {
                         NavigationLink {
                             CoachingSettingsView(settings: settings, units: currentUnits)
                         } label: {
@@ -36,69 +73,17 @@ struct SettingsView: View {
                         }
                         .accessibilityIdentifier("settings.coaching")
                     }
+                    AppleWatchRow()
+                    NavigationLink {
+                        NotificationsSettingsView()
+                    } label: {
+                        settingsRow("Notifications", detail: "Morning summary and rest alerts", symbol: "bell.fill", tint: KXColor.warning)
+                    }
+                    .accessibilityIdentifier("settings.notifications")
                 }
 
-                if let profileModel {
-                    Section {
-                        NavigationLink {
-                            TrainingProfileView(profileModel: profileModel)
-                        } label: {
-                            settingsRow("Training profile", detail: trainingSummary(profileModel.profile),
-                                        symbol: "figure.mixed.cardio", tint: KXColor.lift)
-                        }
-                        .accessibilityIdentifier("settings.training")
-                        Button {
-                            confirmRegenerate = true
-                        } label: {
-                            Label("Regenerate my plan", systemImage: "arrow.clockwise")
-                        }
-                    } header: {
-                        Text("Training")
-                    } footer: {
-                        Text("Changes can rebuild your plan. Completed sessions are kept.")
-                    }
-                } else {
-                    Section("Training") {
-                        Button {
-                            router.selectedTab = .plan
-                        } label: {
-                            settingsRow("Build a training plan", detail: "A running and lifting plan around your goal",
-                                        symbol: "figure.mixed.cardio", tint: KXColor.lift)
-                        }
-                        .accessibilityIdentifier("settings.buildPlan")
-                    }
-                }
-
-                Section {
-                    Picker("Appearance", selection: $appearance) {
-                        ForEach(AppearanceChoice.allCases) { Text($0.title).tag($0.rawValue) }
-                    }
-                    .pickerStyle(.segmented)
-                    .listRowBackground(Color.clear)
-                    .accessibilityIdentifier("settings.appearance")
-                } header: {
-                    Text("Appearance")
-                } footer: {
-                    Text("System follows your iPhone's light or dark setting.")
-                }
-
-                Section("Units") {
-                    Picker("Units", selection: unitsBinding) {
-                        Text("Kilometres & kg").tag(UnitSystem.metric)
-                        Text("Miles & lb").tag(UnitSystem.imperial)
-                    }
-                    .pickerStyle(.segmented)
-                    .listRowBackground(Color.clear)
-                }
-
-                NotificationsSection()
-
-                Section {
-                    IntegrationsSection()
-                } header: {
-                    Text("Integrations")
-                } footer: {
-                    Text("Set for this iPhone.")
+                Section("Connections") {
+                    IntegrationsSection(includeWatch: false)
                 }
 
                 Section {
@@ -119,12 +104,18 @@ struct SettingsView: View {
                         Label("Delete account and data", systemImage: "trash")
                     }
                 } header: {
-                    Text("Account & data")
+                    Text("Account")
                 } footer: {
-                    Text("Export gives you all your data as a file. Deleting is permanent, here and in the cloud.")
+                    Text("Deleting is permanent, here and in the cloud.")
                 }
 
                 Section {
+                    Picker(selection: $appearance) {
+                        ForEach(AppearanceChoice.allCases) { Text($0.title).tag($0.rawValue) }
+                    } label: {
+                        Label("Appearance", systemImage: "circle.lefthalf.filled")
+                    }
+                    .accessibilityIdentifier("settings.appearance")
                     Button {
                         showWalkthrough = true
                     } label: {
@@ -215,7 +206,7 @@ struct SettingsView: View {
         }
     }
 
-    private func settingsRow(_ title: String, detail: String, symbol: String, tint: Color) -> some View {
+    private func settingsRow(_ title: String, detail: String?, symbol: String, tint: Color) -> some View {
         HStack(spacing: KXSpacing.md) {
             Image(systemName: symbol)
                 .foregroundStyle(.white)
@@ -224,7 +215,7 @@ struct SettingsView: View {
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).foregroundStyle(KXColor.ink)
-                Text(detail).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+                if let detail { Text(detail).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary) }
             }
         }
     }
