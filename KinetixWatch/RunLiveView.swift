@@ -13,6 +13,7 @@ struct RunLiveView: View {
     @State private var lastCrownValue = 0.0
     @State private var crownTurned = 0.0
     @State private var crownLocked = false
+    @State private var lastCrownMove = Date.distantPast
     @FocusState private var crownFocused: Bool
 
     /// Crown value per full turn at `.medium` sensitivity. A best estimate: if a quarter turn
@@ -37,8 +38,7 @@ struct RunLiveView: View {
         .focused($crownFocused)
         .focusEffectDisabled()
         .digitalCrownRotation($crownValue, from: -1_000_000, through: 1_000_000, by: nil, sensitivity: .medium,
-                              isContinuous: false, isHapticFeedbackEnabled: false,
-                              onChange: { _ in }, onIdle: { crownIdle() })
+                              isContinuous: false, isHapticFeedbackEnabled: false)
         .onChange(of: crownValue) { _, value in crownMoved(to: value) }
         .onAppear { crownFocused = true }
         .overlay { crownRing }
@@ -196,6 +196,11 @@ struct RunLiveView: View {
     private func crownMoved(to value: Double) {
         let delta = value - lastCrownValue
         lastCrownValue = value
+        // A pause in turning starts a new gesture (and allows another trigger).
+        let now = Date()
+        if now.timeIntervalSince(lastCrownMove) > 0.4 { crownIdle() }
+        lastCrownMove = now
+        scheduleRingReset(after: now)
         guard workout.controls.crown != .off, workout.phase == .running, !crownLocked, delta != 0 else { return }
         crownTurned = (crownTurned == 0 || (crownTurned > 0) == (delta > 0)) ? crownTurned + delta : delta
         if abs(crownTurned) >= crownThreshold {
@@ -208,6 +213,14 @@ struct RunLiveView: View {
     private func crownIdle() {
         crownTurned = 0
         crownLocked = false
+    }
+
+    /// Hides the part-filled ring once the crown has stopped.
+    private func scheduleRingReset(after moment: Date) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(500))
+            if lastCrownMove == moment { crownIdle() }
+        }
     }
 
     /// Fills as the crown turns, so it's clear how far to go.
