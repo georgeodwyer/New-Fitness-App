@@ -310,7 +310,9 @@ struct RunWorkoutView: View {
                 Spacer()
                 if snapshot.isPaused { KXChip(text: "Paused", variant: .warning) }
                 else if !snapshot.gpsAvailable { KXChip(text: "Weak GPS", systemImage: "location.slash", variant: .warning) }
-                else if model.isMirroringToWatch { KXChip(text: "On Apple Watch", systemImage: "applewatch") }
+                else if model.isMirroringToWatch && model.watchNeedsOpening {
+                    KXChip(text: "Open Kinetix on your watch", systemImage: "applewatch", variant: .warning)
+                } else if model.isMirroringToWatch { KXChip(text: "On Apple Watch", systemImage: "applewatch") }
             }
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: KXSpacing.xs) {

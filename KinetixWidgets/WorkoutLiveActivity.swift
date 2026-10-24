@@ -3,11 +3,34 @@ import WidgetKit
 import ActivityKit
 import AppIntents
 
-/// Lock screen and Dynamic Island while a run or gym session is in progress.
+/// Lock screen and Dynamic Island while a run or gym session is in progress (iOS 17).
 struct WorkoutLiveActivity: Widget {
     var body: some WidgetConfiguration {
-        ActivityConfiguration(for: WorkoutActivityAttributes.self) { context in
+        WorkoutActivityLayout.configuration { context in
             LockScreenWorkoutView(title: context.attributes.title, kind: context.attributes.kind, state: context.state)
+        }
+    }
+}
+
+/// iOS 18 and later: the same, plus a layout made for Apple Watch. Without it the watch shows
+/// the tiny Dynamic Island version (an icon and the distance) when it shows the iPhone's
+/// workout in the Smart Stack.
+@available(iOS 18.0, *)
+struct WorkoutLiveActivityWithWatch: Widget {
+    var body: some WidgetConfiguration {
+        WorkoutActivityLayout.configuration { context in
+            FamilyWorkoutView(title: context.attributes.title, kind: context.attributes.kind, state: context.state)
+        }
+        .supplementalActivityFamilies([.small])
+    }
+}
+
+enum WorkoutActivityLayout {
+    static func configuration<Content: View>(
+        @ViewBuilder lockScreen: @escaping (ActivityViewContext<WorkoutActivityAttributes>) -> Content
+    ) -> some WidgetConfiguration {
+        ActivityConfiguration(for: WorkoutActivityAttributes.self) { context in
+            lockScreen(context)
                 .activityBackgroundTint(KXColor.surface)
                 .activitySystemActionForegroundColor(KXColor.accent)
                 .widgetURL(URL(string: "kinetix://workout"))
@@ -65,6 +88,87 @@ struct WorkoutLiveActivity: Widget {
                     .foregroundStyle(KXColor.accent)
             }
             .keylineTint(KXColor.accent)
+        }
+    }
+}
+
+/// Picks the layout for where the activity is shown: the full lock screen card on iPhone,
+/// a compact one on Apple Watch.
+@available(iOS 18.0, *)
+struct FamilyWorkoutView: View {
+    let title: String
+    let kind: String
+    let state: WorkoutActivityAttributes.ContentState
+    @Environment(\.activityFamily) private var family
+
+    var body: some View {
+        switch family {
+        case .small: WatchWorkoutView(title: title, kind: kind, state: state)
+        default: LockScreenWorkoutView(title: title, kind: kind, state: state)
+        }
+    }
+}
+
+/// The Apple Watch layout: the interval step, pace against target, then time, distance
+/// and heart rate (or the rest timer and next set in the gym).
+struct WatchWorkoutView: View {
+    let title: String
+    let kind: String
+    let state: WorkoutActivityAttributes.ContentState
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 4) {
+                Image(systemName: kind == "run" ? "figure.run" : "dumbbell.fill").foregroundStyle(KXColor.accent)
+                Text(headline).font(.caption2.weight(.semibold)).lineLimit(1)
+                Spacer(minLength: 0)
+                if state.mode == .paused {
+                    Image(systemName: "pause.circle.fill").foregroundStyle(KXColor.inkSecondary)
+                } else if let hr = state.heartRate {
+                    Label("\(hr)", systemImage: "heart.fill").font(.caption2.weight(.semibold).monospacedDigit())
+                        .foregroundStyle(KXColor.danger).labelStyle(.titleAndIcon)
+                }
+            }
+            if kind == "run" { run } else { strength }
+        }
+        .foregroundStyle(KXColor.ink)
+        .padding(.horizontal, 2)
+    }
+
+    private var headline: String {
+        guard let step = state.step else { return title }
+        return step + (state.stepDetail.map { " · \($0)" } ?? "")
+    }
+
+    private var run: some View {
+        VStack(alignment: .leading, spacing: 1) {
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text(state.pace ?? "--:--")
+                    .font(.title3.weight(.bold).monospacedDigit())
+                    .foregroundStyle(PaceStatusStyle(state.paceStatus).color)
+                if let target = state.target {
+                    Text(target).font(.caption2.monospacedDigit()).foregroundStyle(KXColor.inkSecondary).lineLimit(1)
+                }
+            }
+            HStack(spacing: 6) {
+                WorkoutClock(state: state)
+                Text(state.distance ?? "0.00")
+            }
+            .font(.caption2.weight(.semibold).monospacedDigit())
+            .foregroundStyle(KXColor.inkSecondary)
+        }
+    }
+
+    private var strength: some View {
+        VStack(alignment: .leading, spacing: 1) {
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                WorkoutClock(state: state).font(.title3.weight(.bold).monospacedDigit())
+                Text(state.mode == .resting ? "rest" : "\(state.setsDone ?? 0)/\(state.setsTotal ?? 0) sets")
+                    .font(.caption2).foregroundStyle(KXColor.inkSecondary)
+            }
+            if let next = state.nextSet {
+                Text("Next: \(next)").font(.caption2.weight(.semibold)).lineLimit(1)
+            }
         }
     }
 }

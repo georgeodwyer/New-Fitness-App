@@ -7,6 +7,10 @@ struct KinetixWidgetsBundle: WidgetBundle {
         TodayWidget()
         WeekWidget()
         LoadWidget()
-        WorkoutLiveActivity()
+        if #available(iOS 18.0, *) {
+            WorkoutLiveActivityWithWatch()
+        } else {
+            WorkoutLiveActivity()
+        }
     }
 }

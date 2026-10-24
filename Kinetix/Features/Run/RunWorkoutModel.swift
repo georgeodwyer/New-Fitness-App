@@ -36,6 +36,8 @@ final class RunWorkoutModel {
     private(set) var finalSummary: RunSummary?
     /// The run is showing on the Apple Watch.
     private(set) var isMirroringToWatch = false
+    /// The phone couldn't open Kinetix on the watch (asleep or locked): ask the runner to.
+    private(set) var watchNeedsOpening = false
     /// Goes up each time End is pressed on the watch (the run screen then finishes the run).
     private(set) var watchEndRequests = 0
     /// End requests the screen has acted on (one can arrive while the trainer is minimised).
@@ -312,7 +314,8 @@ final class RunWorkoutModel {
     private func startMirroring() {
         let handlers = WatchMirrorService.Handlers(
             command: { [weak self] command in self?.handleWatch(command) },
-            heartRate: { [weak self] bpm, _ in self?.receiveHeartRate(bpm, from: .watchLive) }
+            heartRate: { [weak self] bpm, _ in self?.receiveHeartRate(bpm, from: .watchLive) },
+            watchStatus: { [weak self] showing in self?.watchNeedsOpening = !showing }
         )
         isMirroringToWatch = WatchMirrorService.shared.begin(runId: mirrorRunId, handlers: handlers)
         publishToWatch()
@@ -321,6 +324,7 @@ final class RunWorkoutModel {
     private func stopMirroring(saved: Bool) {
         guard isMirroringToWatch else { return }
         isMirroringToWatch = false
+        watchNeedsOpening = false
         WatchMirrorService.shared.end(saved: saved)
     }
 

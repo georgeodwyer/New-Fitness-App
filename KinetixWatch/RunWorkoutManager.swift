@@ -291,6 +291,9 @@ final class RunWorkoutManager: NSObject {
 
     /// The phone has opened the app for a run it's recording.
     func startMirroring(configuration: HKWorkoutConfiguration) async {
+        // A finished watch run still on its summary screen is saved (with its usual effort) so
+        // it isn't lost, then the phone's run takes over.
+        if phase == .finished { save(effort: option?.typicalEffort ?? 5) }
         // A run already going on the watch carries on; the phone's run just isn't shown.
         guard phase == .idle else { return }
         reset()
@@ -345,7 +348,7 @@ final class RunWorkoutManager: NSObject {
         guard !endedMirrorRuns.contains(frame.runId) else { return }
         guard isMirroring else {
             // The phone is recording and the app is open but wasn't woken for it: join in.
-            guard phase == .idle, frame.isFresh(at: Date()) else { return }
+            guard phase == .idle || phase == .finished, frame.isFresh(at: Date()) else { return }
             let configuration = HKWorkoutConfiguration()
             configuration.activityType = .running
             configuration.locationType = .outdoor

@@ -16,6 +16,8 @@ final class WatchMirrorService: NSObject {
     struct Handlers {
         var command: @MainActor (MirrorCommand) -> Void
         var heartRate: @MainActor (Double, Date) -> Void
+        /// True once the watch is showing the run; false if it couldn't be opened.
+        var watchStatus: @MainActor (Bool) -> Void = { _ in }
     }
 
     private let healthStore = HKHealthStore()
@@ -49,14 +51,34 @@ final class WatchMirrorService: NSObject {
         guard isAvailable else { return false }
         self.runId = runId
         self.handlers = handlers
+        launchWatchApp(runId: runId, attempt: 1)
+        return true
+    }
+
+    /// Opens the watch app. The watch can be slow to wake, so try three times (now, after
+    /// 3 s and after 6 s more). If it still won't open, the run carries on without it and the
+    /// phone says so; opening Kinetix on the watch joins the run (frames still reach it).
+    private func launchWatchApp(runId: UUID, attempt: Int) {
         let configuration = HKWorkoutConfiguration()
         configuration.activityType = .running
         configuration.locationType = .outdoor
-        healthStore.startWatchApp(with: configuration) { _, _ in
-            // If the watch can't be woken (locked, off the wrist), the run carries on without
-            // it; frames sent through WatchConnectivity still reach it if the app is opened.
+        healthStore.startWatchApp(with: configuration) { success, _ in
+            Task { @MainActor in WatchMirrorService.shared.watchAppLaunch(runId: runId, attempt: attempt, success: success) }
         }
-        return true
+    }
+
+    private func watchAppLaunch(runId: UUID, attempt: Int, success: Bool) {
+        guard runId == self.runId, mirroredSession == nil else { return }
+        if success { return }
+        guard attempt < 3 else {
+            handlers?.watchStatus(false)
+            return
+        }
+        Task {
+            try? await Task.sleep(for: .seconds(3 * attempt))
+            guard runId == self.runId, mirroredSession == nil else { return }
+            launchWatchApp(runId: runId, attempt: attempt + 1)
+        }
     }
 
     /// Sends the run screen to the watch.
@@ -79,6 +101,7 @@ final class WatchMirrorService: NSObject {
     private func attach(_ session: HKWorkoutSession) {
         session.delegate = self
         mirroredSession = session
+        handlers?.watchStatus(true)
     }
 
     private func send(_ message: MirrorMessage) {
@@ -105,7 +128,12 @@ final class WatchMirrorService: NSObject {
         case .command(let command):
             if let handlers { handlers.command(command) } else { send(.ended(runId: nil, saved: false)) }
         case .heartRate(let bpm, let date):
-            if let handlers { handlers.heartRate(bpm, date) } else { send(.ended(runId: nil, saved: false)) }
+            if let handlers {
+                handlers.watchStatus(true)
+                handlers.heartRate(bpm, date)
+            } else {
+                send(.ended(runId: nil, saved: false))
+            }
         case .frame, .ended:
             break
         }
