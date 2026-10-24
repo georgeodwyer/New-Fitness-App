@@ -241,7 +241,11 @@ final class ScreenshotTests: XCTestCase {
 
     private func skipOrSwap() {
         app.swipeDown(); app.swipeDown(); app.swipeDown(); app.swipeDown(); app.swipeDown()
-        let button = app.buttons["Skip or swap"].firstMatch
+        // The session tile's ••• menu.
+        let more = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'More for'")).firstMatch
+        guard more.waitForExistence(timeout: 3) else { return }
+        more.tap()
+        let button = app.buttons["Skip, swap or move"].firstMatch
         guard button.waitForExistence(timeout: 3) else { return }
         button.tap()
         snap("29-skip-or-swap")

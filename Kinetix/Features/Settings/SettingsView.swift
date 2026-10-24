@@ -55,7 +55,7 @@ struct SettingsView: View {
                     } header: {
                         Text("Training")
                     } footer: {
-                        Text("Changing your goal, days or equipment offers to rebuild your plan. Completed sessions and progress are always kept.")
+                        Text("Changes can rebuild your plan. Completed sessions are kept.")
                     }
                 } else {
                     Section("Training") {
@@ -98,7 +98,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Integrations")
                 } footer: {
-                    Text("These settings apply to this iPhone.")
+                    Text("Set for this iPhone.")
                 }
 
                 Section {
@@ -121,7 +121,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Account & data")
                 } footer: {
-                    Text("Export gives you everything Kinetix stores about you as a JSON file. Deleting removes your account and all your data, on this iPhone and in the cloud, permanently.")
+                    Text("Export gives you all your data as a file. Deleting is permanent, here and in the cloud.")
                 }
 
                 Section {

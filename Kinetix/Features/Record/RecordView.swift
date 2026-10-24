@@ -27,7 +27,7 @@ struct RecordView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: KXSpacing.xl) {
                     KXScreenHeader(title: "Record")
-                    Text("Track any run or gym session. It counts towards your training load, and goes to Apple Health and Strava if they're connected.")
+                    Text("Any run or gym session counts towards your training.")
                         .font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
 
                     HStack(spacing: KXSpacing.md) {

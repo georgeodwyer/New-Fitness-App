@@ -33,39 +33,36 @@ struct CheckInCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: KXSpacing.md) {
             if let existing, !editing {
+                // Logged: one slim row (it sits at the bottom of Today by now).
                 let checkIn = existing.engineValue(restingHeartRate: restingHeartRate, hrv: hrv)
-                HStack(alignment: .top, spacing: KXSpacing.lg) {
+                HStack(spacing: KXSpacing.md) {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 34))
+                        .font(.title3)
                         .foregroundStyle(KXColor.accent)
                         .accessibilityHidden(true)
-                    VStack(alignment: .leading, spacing: KXSpacing.xs) {
-                        KXSectionHeader("Your score")
-                        Text("Sleep \(checkIn.sleep)/5 \u{00B7} soreness \(checkIn.soreness)/5 \u{00B7} energy \(checkIn.energy)/5")
-                            .font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink)
-                        Text(checkIn.isPoor
-                             ? "Logged and counted in your recovery. You're feeling run down, so today's plan has been eased where it can be."
-                             : "Logged and counted in your recovery.")
-                            .font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                        if let restingHeartRate { restingHeartRateLine(restingHeartRate) }
-                        if let hrv { hrvLine(hrv) }
-                        Button("Update") {
-                            sleep = existing.sleep; soreness = existing.soreness; energy = existing.energy
-                            sleepChosen = true
-                            editing = true
-                        }
-                        .font(KXFont.captionEmphasis)
-                        .foregroundStyle(KXColor.accent)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Your score logged").font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink)
+                        Text("Sleep \(checkIn.sleep) · soreness \(checkIn.soreness) · energy \(checkIn.energy)"
+                             + (checkIn.isPoor ? " · plan eased" : ""))
+                            .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
                     }
+                    Spacer(minLength: KXSpacing.sm)
+                    Button("Edit") {
+                        sleep = existing.sleep; soreness = existing.soreness; energy = existing.energy
+                        sleepChosen = true
+                        editing = true
+                    }
+                    .font(KXFont.captionEmphasis)
+                    .foregroundStyle(KXColor.accent)
                 }
+                .accessibilityElement(children: .combine)
             } else {
-                KXSectionHeader("Your score", subtitle: "How are you today? Optional · helps balance your training")
+                KXSectionHeader("Your score", subtitle: "How do you feel today? Optional")
                 if let restingHeartRate { restingHeartRateLine(restingHeartRate) }
                 if let hrv { hrvLine(hrv) }
                 ratingRow("Sleep", value: sleepBinding, low: "Poor", high: "Great", symbol: "moon.zzz")
                 if let sleepHours, !sleepChosen {
-                    Label("Apple Health: \(HealthMetric.sleep.format(sleepHours)) asleep, so \(SleepScore.score(hours: sleepHours))/5 is suggested. Change it if it felt different.",
+                    Label("\(HealthMetric.sleep.format(sleepHours)) asleep in Apple Health, so \(SleepScore.score(hours: sleepHours)) is suggested",
                           systemImage: "bed.double.fill")
                         .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
                         .fixedSize(horizontal: false, vertical: true)

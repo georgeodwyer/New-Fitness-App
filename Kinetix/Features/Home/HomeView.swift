@@ -21,6 +21,9 @@ struct HomeView: View {
     @State private var showEditDashboard = false
 
     @State private var actionSession: PlannedSessionModel?
+    @State private var detailSession: PlannedSessionModel?
+    /// Which of today's sessions the tile shows (nil: the first not yet done).
+    @State private var tileIndex: Int?
     @State private var banner: String?
     @State private var showUpdates = false
     @State private var health = HealthService.shared
@@ -58,6 +61,10 @@ struct HomeView: View {
                     ForEach(layout.visibleCards, id: \.self) { card in
                         dashboardCard(card, data: data)
                     }
+                    // Once today's score is logged it moves out of the way, to the bottom.
+                    if layout.visibleCards.contains(.checkIn), data.todaysCheckIn != nil {
+                        checkInCard(data)
+                    }
                     Button {
                         showEditDashboard = true
                     } label: {
@@ -73,6 +80,9 @@ struct HomeView: View {
             .refreshable { await refreshEverything() }
             .background(KXColor.background.ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
+            .navigationDestination(item: $detailSession) { session in
+                SessionDetailView(session: session)
+            }
         }
         .sheet(isPresented: $showEditDashboard) {
             EditDashboardView(layout: layout) { saveLayout($0) }
@@ -125,7 +135,7 @@ struct HomeView: View {
             Text(greetingText)
                 .font(KXFont.display)
                 .foregroundStyle(KXColor.accent)
-            Text(Date.now.formatted(.dateTime.weekday(.wide).day().month(.wide)) + " · here's your hybrid balance")
+            Text(Date.now.formatted(.dateTime.weekday(.wide).day().month(.wide)))
                 .font(KXFont.callout)
                 .foregroundStyle(KXColor.inkSecondary)
         }
@@ -172,70 +182,53 @@ struct HomeView: View {
         .kxCard(.accent)
     }
 
-    private func todaySection(recovery: RecoveryScore?) -> some View {
-        VStack(alignment: .leading, spacing: KXSpacing.md) {
-            KXSectionHeader("Today's sessions",
-                            subtitle: todaysSessions.isEmpty ? nil : "\(todaysSessions.count) session\(todaysSessions.count == 1 ? "" : "s") planned")
-            if todaysSessions.isEmpty {
-                VStack(alignment: .leading, spacing: KXSpacing.sm) {
-                    if let start = plans.first?.startDate, start > .now {
-                        Label("Your plan starts \(start.formatted(.dateTime.weekday(.wide).day().month(.wide)))", systemImage: "calendar")
-                            .font(KXFont.headline).foregroundStyle(KXColor.ink)
-                        Text("Until then, an easy 20–30 minute run, a walk or rest is perfect. Fresh legs for day one.")
-                            .font(KXFont.callout)
-                            .foregroundStyle(KXColor.inkSecondary)
-                    } else {
-                        Label("Rest day", systemImage: "bed.double").font(KXFont.headline).foregroundStyle(KXColor.ink)
-                        Text("Nothing scheduled today. Recovery is when the training sinks in.")
-                            .font(KXFont.callout)
-                            .foregroundStyle(KXColor.inkSecondary)
-                    }
+    /// Today's session and this week as two square tiles side by side (this week only when
+    /// its card is on the dashboard), then the lighter-version offer when recovery is fair.
+    private func todayTiles(data: DashboardData, showWeek: Bool) -> some View {
+        let recovery = data.strain.recovery
+        let start = plans.first?.startDate
+        return VStack(alignment: .leading, spacing: KXSpacing.sm) {
+            HStack(alignment: .top, spacing: KXSpacing.md) {
+                TodaySessionTile(
+                    sessions: todaysSessions,
+                    planStart: start.flatMap { $0 > .now ? $0 : nil },
+                    shownIndex: $tileIndex,
+                    onStart: { session in
+                        router.start(ActiveSession(id: session.id, kind: session.kind, title: session.title))
+                    },
+                    onDetails: { detailSession = $0 },
+                    onActions: { actionSession = $0 }
+                )
+                .frame(maxHeight: .infinity)
+                if showWeek {
+                    ThisWeekTile(days: data.week) { router.selectedTab = .plan }
+                        .frame(maxHeight: .infinity)
                 }
-                .kxCard(.tinted)
-            } else {
-                ForEach(Array(todaysSessions.enumerated()), id: \.element.id) { index, session in
-                    VStack(spacing: 0) {
-                        KXSessionCard(
-                            overline: overline(for: session, index: index),
-                            title: session.title,
-                            detail: "\(session.summary) · \(Int(session.plannedDurationMinutes)) min",
-                            kind: session.kind,
-                            status: session.status,
-                            onStart: session.kind.discipline == .crossTraining || session.kind.discipline == .mobility ? nil : {
-                                router.start(ActiveSession(id: session.id, kind: session.kind, title: session.title))
-                            }
-                        )
-                        if let profile, let recovery,
-                           let lighter = BalanceService.lighterOption(for: session, profile: profile, recovery: recovery) {
-                            LighterVersionOffer(recovery: recovery, option: lighter) {
-                                let changed = BalanceService.takeLighter(session, option: lighter, recovery: recovery,
-                                                                         profile: profile, in: context)
-                                banner = changed.first
-                            }
-                            .padding(.top, KXSpacing.sm)
-                        }
-                        if session.status == .planned {
-                            Button {
-                                actionSession = session
-                            } label: {
-                                Label("Skip or swap", systemImage: "arrow.left.arrow.right")
-                                    .font(KXFont.captionEmphasis)
-                            }
-                            .foregroundStyle(KXColor.inkSecondary)
-                            .padding(.top, KXSpacing.xs)
-                            .frame(maxWidth: .infinity, alignment: .trailing)
-                        }
-                    }
+            }
+            .fixedSize(horizontal: false, vertical: true)
+            if let profile, let recovery, let session = offerSession,
+               let lighter = BalanceService.lighterOption(for: session, profile: profile, recovery: recovery) {
+                LighterVersionOffer(recovery: recovery, option: lighter) {
+                    let changed = BalanceService.takeLighter(session, option: lighter, recovery: recovery,
+                                                             profile: profile, in: context)
+                    banner = changed.first
                 }
             }
         }
     }
 
-    private func overline(for session: PlannedSessionModel, index: Int) -> String {
-        let letters = ["A", "B", "C", "D"]
-        var text = "Session \(letters[min(index, 3)]) · \(session.slot == .morning ? "Morning" : "Evening")"
-        if session.status == .swapped { text += " · Swapped" }
-        return text
+    /// The session the lighter-version offer is about: the one on the tile.
+    private var offerSession: PlannedSessionModel? {
+        let sessions = todaysSessions
+        if let tileIndex, sessions.indices.contains(tileIndex) { return sessions[tileIndex] }
+        return sessions.first { $0.status == .planned || $0.status == .swapped }
+    }
+
+    private func checkInCard(_ data: DashboardData) -> some View {
+        CheckInCard(existing: data.todaysCheckIn, restingHeartRate: restingHeartRate, hrv: hrv,
+                    sleepHours: inputs.sleepHours) { checkIn in
+            saveCheckIn(checkIn, status: data.load.combined.status, ratio: data.load.combined.ratio)
+        }
     }
 
     private var restingHeartRate: RestingHeartRateSignal? { inputs.restingHeartRate }
@@ -246,12 +239,10 @@ struct HomeView: View {
     private func dashboardCard(_ card: DashboardCard, data: DashboardData) -> some View {
         switch card {
         case .today:
-            if profile != nil { todaySection(recovery: data.strain.recovery) }
+            if profile != nil { todayTiles(data: data, showWeek: layout.visibleCards.contains(.weekStrip)) }
         case .checkIn:
-            CheckInCard(existing: data.todaysCheckIn, restingHeartRate: restingHeartRate, hrv: hrv,
-                        sleepHours: inputs.sleepHours) { checkIn in
-                saveCheckIn(checkIn, status: data.load.combined.status, ratio: data.load.combined.ratio)
-            }
+            // Before it's logged it sits where it's placed; afterwards it's at the bottom.
+            if data.todaysCheckIn == nil { checkInCard(data) }
         case .body:
             BodyCard()
         case .load:
@@ -261,7 +252,8 @@ struct HomeView: View {
         case .week:
             WeekProgressCard(data: data, units: units)
         case .weekStrip:
-            WeekStripCard(days: data.week)
+            // Shown as the tile beside today's session; on its own only if Today is hidden.
+            if profile == nil || !layout.visibleCards.contains(.today) { WeekStripCard(days: data.week) }
         case .goal:
             if let plan = plans.first, let outline = plan.outline {
                 GoalProgressCard(outline: outline, goal: profile?.goal ?? .balancedHybrid)

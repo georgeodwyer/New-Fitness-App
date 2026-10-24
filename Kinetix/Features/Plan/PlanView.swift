@@ -15,17 +15,52 @@ struct PlanView: View {
     private var format: DisplayFormat { DisplayFormat(units: profiles.first?.units ?? UnitPreference.stored) }
     private var outline: PlanOutline? { plans.first?.outline }
 
+    @Environment(\.modelContext) private var context
+    /// Weeks not built yet, generated for display only.
+    @State private var previews: [Int: GeneratedWeek] = [:]
+    /// Weeks opened; the current week starts open.
+    @State private var expanded: Set<Int> = []
+    @State private var openedCurrentWeek = false
+
     private struct WeekGroup: Identifiable {
         let index: Int
         let target: WeekTarget?
         let days: [DayGroup]
+        let isPreview: Bool
         var id: Int { index }
+
+        var items: [Item] { days.flatMap(\.items) }
     }
 
     private struct DayGroup: Identifiable {
         let day: Date
-        let sessions: [PlannedSessionModel]
+        let items: [Item]
         var id: Date { day }
+    }
+
+    /// A built session (tap for detail) or a preview of one not built yet.
+    private enum Item: Identifiable {
+        case session(PlannedSessionModel)
+        case preview(GeneratedSession)
+
+        var id: String {
+            switch self {
+            case .session(let session): return session.id.uuidString
+            case .preview(let session): return "\(session.date.timeIntervalSince1970)-\(session.slot.rawValue)-\(session.title)"
+            }
+        }
+        var kind: SessionKind {
+            switch self {
+            case .session(let session): return session.kind
+            case .preview(let session): return session.kind
+            }
+        }
+        var meters: Double? {
+            switch self {
+            case .session(let session): return session.estimatedDistanceMeters
+            case .preview(let session): return session.estimatedDistanceMeters
+            }
+        }
     }
 
     private var weeks: [WeekGroup] {
@@ -36,14 +71,41 @@ struct PlanView: View {
             !$0.isSoftDeleted && $0.date >= today && ($0.plan?.id == activePlanID || activePlanID == nil)
         }
         let byWeek = Dictionary(grouping: upcoming, by: \.weekIndex)
-        return byWeek.keys.sorted().map { index in
+        let built = byWeek.keys.sorted().map { index in
             let byDay = Dictionary(grouping: byWeek[index] ?? []) { calendar.startOfDay(for: $0.date) }
             let days = byDay.keys.sorted().map { day in
-                DayGroup(day: day, sessions: (byDay[day] ?? []).sorted { $0.slot == .morning && $1.slot == .evening })
+                DayGroup(day: day, items: (byDay[day] ?? []).sorted { $0.slot == .morning && $1.slot == .evening }.map(Item.session))
             }
-            let target = outline.flatMap { $0.weeks.indices.contains(index) ? $0.weeks[index] : nil }
-            return WeekGroup(index: index, target: target, days: days)
+            return WeekGroup(index: index, target: target(index), days: days, isPreview: false)
         }
+        let builtIndexes = Set(built.map(\.index))
+        let later = previews.keys.sorted().filter { !builtIndexes.contains($0) }.compactMap { index -> WeekGroup? in
+            guard let week = previews[index] else { return nil }
+            let byDay = Dictionary(grouping: week.sessions.filter { $0.date >= today }) { calendar.startOfDay(for: $0.date) }
+            let days = byDay.keys.sorted().map { day in
+                DayGroup(day: day, items: (byDay[day] ?? []).sorted { $0.slot == .morning && $1.slot == .evening }.map(Item.preview))
+            }
+            return WeekGroup(index: index, target: week.target, days: days, isPreview: true)
+        }
+        return built + later
+    }
+
+    private func target(_ index: Int) -> WeekTarget? {
+        outline.flatMap { $0.weeks.indices.contains(index) ? $0.weeks[index] : nil }
+    }
+
+    /// Changes when the plan, its built weeks or the profile change (previews are rebuilt).
+    private var previewKey: String {
+        guard let plan = plans.first else { return "none" }
+        return "\(plan.id)-\(plan.generatedWeekCount)-\(profiles.first?.updatedAt.timeIntervalSince1970 ?? 0)"
+    }
+
+    private func loadPreviews() {
+        guard let plan = plans.first, let profile = profiles.first?.profile else {
+            previews = [:]
+            return
+        }
+        previews = PlanService.previewWeeks(for: plan, profile: profile, in: context)
     }
 
     var body: some View {
@@ -62,11 +124,18 @@ struct PlanView: View {
                             .kxCard(.tinted)
                     }
                     ForEach(weeks) { week in weekSection(week) }
-                    if !changes.isEmpty { changesSection }
+                    if !changes.isEmpty { changesLink }
                 }
                 .padding(KXSpacing.screenMargin)
             }
             .background(KXColor.background.ignoresSafeArea())
+            .task(id: previewKey) { loadPreviews() }
+            .onChange(of: weeks.first?.index, initial: true) { _, first in
+                // Open the current week once; after that, what's open is up to the runner.
+                guard !openedCurrentWeek, let first else { return }
+                expanded.insert(first)
+                openedCurrentWeek = true
+            }
             .navigationDestination(for: PlannedSessionModel.self) { session in
                 SessionDetailView(session: session)
             }
@@ -112,47 +181,105 @@ struct PlanView: View {
     }
 
     private func weekSection(_ week: WeekGroup) -> some View {
-        VStack(alignment: .leading, spacing: KXSpacing.sm) {
-            HStack {
-                Text("Week \(week.index + 1)").font(KXFont.headline).foregroundStyle(KXColor.ink)
-                if let target = week.target {
-                    KXChip(text: target.phase.displayName, variant: .secondary)
-                    if target.isRecoveryWeek { KXChip(text: "Recovery", variant: .outlined) }
+        let isOpen = expanded.contains(week.index)
+        return VStack(alignment: .leading, spacing: KXSpacing.sm) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    if isOpen { expanded.remove(week.index) } else { expanded.insert(week.index) }
                 }
-                Spacer()
-                if let target = week.target {
-                    Text("\(format.distance(target.runVolumeMeters, decimals: 0)) running")
-                        .font(KXFont.caption)
-                        .foregroundStyle(KXColor.inkSecondary)
-                }
+            } label: {
+                weekHeader(week, isOpen: isOpen)
             }
-            // The coach's note for the week.
-            let notes = plans.first?.notes(forWeek: week.index) ?? []
-            if !notes.isEmpty {
-                HStack(alignment: .top, spacing: KXSpacing.sm) {
-                    Image(systemName: "quote.opening")
-                        .font(.caption)
-                        .foregroundStyle(KXColor.accent)
-                        .accessibilityHidden(true)
-                    Text(notes.joined(separator: " "))
-                        .font(KXFont.callout)
+            .buttonStyle(.plain)
+            .accessibilityHint(isOpen ? "Hides this week's sessions" : "Shows this week's sessions")
+            if isOpen {
+                // The coach's note for the week.
+                let notes = week.isPreview ? (previews[week.index]?.notes ?? []) : (plans.first?.notes(forWeek: week.index) ?? [])
+                if !notes.isEmpty {
+                    HStack(alignment: .top, spacing: KXSpacing.sm) {
+                        Image(systemName: "quote.opening")
+                            .font(.caption)
+                            .foregroundStyle(KXColor.accent)
+                            .accessibilityHidden(true)
+                        Text(notes.joined(separator: " "))
+                            .font(KXFont.callout)
+                            .foregroundStyle(KXColor.inkSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("Coach's note: \(notes.joined(separator: " "))")
+                }
+                if week.isPreview {
+                    Label("Preview: these sessions are set about two weeks ahead and may adjust as you train.",
+                          systemImage: "eye")
+                        .font(KXFont.caption)
                         .foregroundStyle(KXColor.inkSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel("Coach's note: \(notes.joined(separator: " "))")
-            }
-            ForEach(week.days) { day in
-                VStack(alignment: .leading, spacing: KXSpacing.xs) {
-                    KXOverline(day.day.formatted(.dateTime.weekday(.wide).day().month()))
-                    ForEach(day.sessions) { session in
-                        NavigationLink(value: session) { sessionRow(session) }
-                            .buttonStyle(.plain)
-                            .accessibilityIdentifier("plan.session")
+                ForEach(week.days) { day in
+                    VStack(alignment: .leading, spacing: KXSpacing.xs) {
+                        KXOverline(day.day.formatted(.dateTime.weekday(.wide).day().month()))
+                        ForEach(day.items) { item in
+                            switch item {
+                            case .session(let session):
+                                NavigationLink(value: session) { sessionRow(session) }
+                                    .buttonStyle(.plain)
+                                    .accessibilityIdentifier("plan.session")
+                            case .preview(let session):
+                                previewRow(session)
+                            }
+                        }
                     }
                 }
             }
         }
+    }
+
+    /// "Week 3 · Build" with the week's dates and "3 runs · 2 lifts · 28 km".
+    private func weekHeader(_ week: WeekGroup, isOpen: Bool) -> some View {
+        HStack(alignment: .center, spacing: KXSpacing.sm) {
+            VStack(alignment: .leading, spacing: KXSpacing.xxs) {
+                HStack(spacing: KXSpacing.sm) {
+                    Text("Week \(week.index + 1)").font(KXFont.headline).foregroundStyle(KXColor.ink)
+                    if let target = week.target {
+                        KXChip(text: target.phase.displayName, variant: .secondary)
+                        if target.isRecoveryWeek { KXChip(text: "Recovery", variant: .outlined) }
+                    }
+                    if week.isPreview { KXChip(text: "Preview", variant: .outlined) }
+                }
+                Text(summary(week))
+                    .font(KXFont.caption)
+                    .foregroundStyle(KXColor.inkSecondary)
+            }
+            Spacer()
+            Image(systemName: "chevron.down")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(KXColor.inkTertiary)
+                .rotationEffect(.degrees(isOpen ? 180 : 0))
+                .accessibilityHidden(true)
+        }
+        .padding(.vertical, KXSpacing.xs)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+    }
+
+    private func summary(_ week: WeekGroup) -> String {
+        let items = week.items
+        let runs = items.filter { $0.kind.discipline == .run }.count
+        let lifts = items.filter { $0.kind.discipline == .strength }.count
+        let other = items.count - runs - lifts
+        var parts: [String] = []
+        if let first = week.days.first?.day, let last = week.days.last?.day {
+            parts.append(first == last ? first.formatted(.dateTime.day().month(.abbreviated))
+                         : "\(first.formatted(.dateTime.day().month(.abbreviated)))–\(last.formatted(.dateTime.day().month(.abbreviated)))")
+        }
+        if runs > 0 { parts.append("\(runs) run\(runs == 1 ? "" : "s")") }
+        if lifts > 0 { parts.append("\(lifts) lift\(lifts == 1 ? "" : "s")") }
+        if other > 0 { parts.append("\(other) other") }
+        let meters = items.compactMap(\.meters).reduce(0, +)
+        let distance = meters > 0 ? meters : (week.target?.runVolumeMeters ?? 0)
+        if distance > 0 { parts.append(format.distance(distance, decimals: 0)) }
+        return parts.joined(separator: " · ")
     }
 
     private func sessionRow(_ session: PlannedSessionModel) -> some View {
@@ -177,27 +304,44 @@ struct PlanView: View {
         .accessibilityElement(children: .combine)
     }
 
-    private var changesSection: some View {
-        VStack(alignment: .leading, spacing: KXSpacing.sm) {
-            KXSectionHeader("Why your plan looks like this")
-            ForEach(changes.prefix(4)) { change in
-                Label(change.summary, systemImage: change.cause.symbol)
+    /// A session not built yet: shown, but not opened or changed until it's built.
+    private func previewRow(_ session: GeneratedSession) -> some View {
+        HStack(spacing: KXSpacing.md) {
+            Image(systemName: session.kind.symbolName)
+                .foregroundStyle(session.kind.tint)
+                .frame(width: 28)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: KXSpacing.xxs) {
+                Text(session.title).font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink)
+                Text("\(session.summary) · \(Int(session.plannedDurationMinutes)) min")
                     .font(KXFont.caption)
                     .foregroundStyle(KXColor.inkSecondary)
             }
-            NavigationLink {
-                PlanChangesView(changes: Array(changes))
-                    .navigationTitle("What changed and why")
-                    .navigationBarTitleDisplayMode(.inline)
-            } label: {
-                Label("See every change, before and after", systemImage: "chevron.right")
-                    .labelStyle(.titleAndIcon)
-                    .font(KXFont.captionEmphasis)
-                    .foregroundStyle(KXColor.accent)
-            }
-            .accessibilityIdentifier("plan.allChanges")
+            Spacer()
         }
-        .kxCard(.tinted)
+        .kxCard(.tinted, padding: KXSpacing.md)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(session.title), preview")
+    }
+
+    /// One line to the full history of changes (the explanations live there).
+    private var changesLink: some View {
+        NavigationLink {
+            PlanChangesView(changes: Array(changes))
+                .navigationTitle("What changed and why")
+                .navigationBarTitleDisplayMode(.inline)
+        } label: {
+            HStack {
+                Label("Why your plan looks like this", systemImage: "questionmark.circle")
+                    .font(KXFont.bodyEmphasis)
+                    .foregroundStyle(KXColor.ink)
+                Spacer()
+                Image(systemName: "chevron.right").font(.caption).foregroundStyle(KXColor.inkTertiary)
+            }
+            .kxCard(.tinted, padding: KXSpacing.md)
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("plan.allChanges")
     }
 
     /// Phases are a sequence, so they use one hue from light (base) to dark (taper).
@@ -213,7 +357,7 @@ struct PlanIntroCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: KXSpacing.lg) {
             KXAccentHeadline(plain: "Your training,", accented: "planned")
-            Text("Answer a few questions (about two minutes) and Kinetix builds a running and lifting plan around your goal, your week and your equipment, then keeps it balanced as you train.")
+            Text("Answer a few questions (two minutes) for a running and lifting plan built around your week.")
                 .font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
                 .fixedSize(horizontal: false, vertical: true)
             VStack(alignment: .leading, spacing: KXSpacing.sm) {
@@ -225,7 +369,7 @@ struct PlanIntroCard: View {
             Button("Build my plan", action: onBuild)
                 .buttonStyle(.kx(.primary, fullWidth: true))
                 .accessibilityIdentifier("plan.build")
-            Text("Don't want a plan? You can still record runs and workouts from the Record tab.")
+            Text("Or just record sessions from the Record tab.")
                 .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
         }
         .kxCard()

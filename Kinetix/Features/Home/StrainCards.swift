@@ -4,51 +4,53 @@ import TrainingEngine
 
 // MARK: - Strain and recovery
 
-/// Today's strain (0–21) against its target band, recovery, legs and this week vs usual.
+/// Today's exertion ring, recovery and legs, kept to the numbers. Tap for what's behind them.
 struct StrainCard: View {
     let report: StrainReport
     /// Last night's Health data isn't in yet, so there's no recovery score.
     var isWaitingForLastNight = false
 
-    @ScaledMetric(relativeTo: .largeTitle) private var ringSize: CGFloat = 132
-    @State private var showRecovery = false
+    @ScaledMetric(relativeTo: .largeTitle) private var ringSize: CGFloat = 112
+    @State private var showDetail = false
 
     private var strain: Double { report.today.strain }
     private var target: StrainTarget { report.target }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: KXSpacing.lg) {
-            KXSectionHeader("Exertion", subtitle: "Today's target \(format(target.low))–\(format(target.high)) of 21")
-            HStack(alignment: .center, spacing: KXSpacing.lg) {
-                StrainRing(strain: strain, target: target)
-                    .frame(width: ringSize, height: ringSize)
-                VStack(alignment: .leading, spacing: KXSpacing.md) {
-                    recovery
-                    legs
+        Button {
+            showDetail = true
+        } label: {
+            VStack(alignment: .leading, spacing: KXSpacing.md) {
+                HStack {
+                    KXSectionHeader("Exertion", subtitle: "Target \(TodayFormat.one(target.low))–\(TodayFormat.one(target.high))")
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(KXColor.inkTertiary)
+                        .accessibilityHidden(true)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                HStack(alignment: .center, spacing: KXSpacing.lg) {
+                    StrainRing(strain: strain, target: target)
+                        .frame(width: ringSize, height: ringSize)
+                    VStack(alignment: .leading, spacing: KXSpacing.md) {
+                        recovery
+                        legs
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                Text(TodayFormat.status(strain: strain, target: target))
+                    .font(KXFont.callout)
+                    .foregroundStyle(KXColor.inkSecondary)
             }
-            Text(statusText + " " + target.reason)
-                .font(KXFont.callout)
-                .foregroundStyle(KXColor.inkSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-            if !report.today.activities.isEmpty { activities }
-            WeekVsUsualBar(ratio: report.weekVsUsual)
+            .kxCard()
+            .contentShape(Rectangle())
         }
-        .kxCard()
+        .buttonStyle(.plain)
+        .accessibilityHint("Shows what's behind your exertion and recovery")
         .accessibilityIdentifier("dashboard.exertion")
-        .sheet(isPresented: $showRecovery) {
-            if let recovery = report.recovery {
-                RecoveryBreakdownView(recovery: recovery)
-                    .presentationDetents([.medium, .large])
-            }
+        .sheet(isPresented: $showDetail) {
+            TodayBodyDetailView(report: report, isWaitingForLastNight: isWaitingForLastNight)
+                .presentationDetents([.large])
         }
-    }
-
-    private var statusText: String {
-        if strain > target.high { return "Above today's target: take the rest of the day easy." }
-        if strain >= target.low { return "You're in today's target range." }
-        return "\(format(target.low - strain)) to go to reach today's target."
     }
 
     private var recovery: some View {
@@ -60,54 +62,114 @@ struct StrainCard: View {
                         .font(KXFont.metricSmall)
                         .foregroundStyle(KXColor.ink)
                     // The colour is on a dot; the word stays in dark text so it's always readable.
-                    Circle().fill(color(recovery.band)).frame(width: 8, height: 8)
+                    Circle().fill(TodayFormat.color(recovery.band)).frame(width: 8, height: 8)
                         .accessibilityHidden(true)
                     Text(recovery.band.title)
                         .font(KXFont.captionEmphasis)
                         .foregroundStyle(KXColor.ink)
                 }
-                Button {
-                    showRecovery = true
-                } label: {
-                    HStack(spacing: 2) {
-                        Text("What's behind it")
-                        Image(systemName: "chevron.right").font(.caption2.weight(.semibold))
-                    }
-                    .font(KXFont.captionEmphasis)
-                    .foregroundStyle(KXColor.accent)
-                }
                 .accessibilityIdentifier("dashboard.recoveryBreakdown")
             } else {
-                Text(waitingText)
+                Text(isWaitingForLastNight ? "Waiting for last night's sleep" : "Not yet")
                     .font(KXFont.caption)
                     .foregroundStyle(KXColor.inkSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .accessibilityElement(children: .contain)
-    }
-
-    private var waitingText: String {
-        isWaitingForLastNight
-            ? "Waiting for last night's sleep from Apple Health. Pull down to refresh."
-            : "Add your score, or connect Apple Health, to see it."
+        .accessibilityElement(children: .combine)
     }
 
     private var legs: some View {
         VStack(alignment: .leading, spacing: KXSpacing.xxs) {
             KXOverline("Legs")
-            KXStatusPill(level: legsLevel, text: report.legs.status.title)
+            KXStatusPill(level: TodayFormat.legsLevel(report.legs.status), text: report.legs.status.title)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityHint(report.legs.status.advice)
+    }
+}
+
+/// Small shared formatting for the exertion card and its detail screen.
+enum TodayFormat {
+    static func one(_ value: Double) -> String { String(format: "%.1f", max(0, value)) }
+
+    static func status(strain: Double, target: StrainTarget) -> String {
+        if strain > target.high { return "Above today's target" }
+        if strain >= target.low { return "In today's target" }
+        return "\(one(target.low - strain)) to go today"
     }
 
-    private var legsLevel: KXStatusPill.Level {
-        switch report.legs.status {
+    static func color(_ band: RecoveryScore.Band) -> Color {
+        switch band {
+        case .low: return KXColor.danger
+        case .fair: return KXColor.warning
+        case .good, .great: return KXColor.success
+        }
+    }
+
+    static func legsLevel(_ status: LegsLoad.Status) -> KXStatusPill.Level {
+        switch status {
         case .fresh: return .optimal
         case .ok: return .neutral
         case .tired: return .low
         }
+    }
+}
+
+/// Everything behind today's numbers: the recovery breakdown, then exertion (why today's
+/// target is what it is, what's counted so far, this week against your usual) and legs.
+struct TodayBodyDetailView: View {
+    let report: StrainReport
+    var isWaitingForLastNight = false
+    @Environment(\.dismiss) private var dismiss
+
+    private var strain: Double { report.today.strain }
+    private var target: StrainTarget { report.target }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: KXSpacing.xl) {
+                    VStack(alignment: .leading, spacing: KXSpacing.md) {
+                        KXSectionHeader("Recovery")
+                        if let recovery = report.recovery {
+                            RecoveryBreakdownSection(recovery: recovery)
+                        } else {
+                            Text(isWaitingForLastNight
+                                 ? "Waiting for last night's sleep from Apple Health. Pull down on Today to refresh."
+                                 : "Add your score, or connect Apple Health, to see your recovery.")
+                                .font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    exertion
+                    VStack(alignment: .leading, spacing: KXSpacing.sm) {
+                        KXSectionHeader("Legs", subtitle: report.legs.status.title)
+                        Text(report.legs.status.advice)
+                            .font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .padding(KXSpacing.screenMargin)
+            }
+            .background(KXColor.background.ignoresSafeArea())
+            .navigationTitle("Today")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+        }
+        .tint(KXColor.accent)
+    }
+
+    private var exertion: some View {
+        VStack(alignment: .leading, spacing: KXSpacing.md) {
+            KXSectionHeader("Exertion", subtitle: "\(TodayFormat.one(strain)) of 21 · target \(TodayFormat.one(target.low))–\(TodayFormat.one(target.high))")
+            Text(TodayFormat.status(strain: strain, target: target) + ". " + target.reason)
+                .font(KXFont.callout)
+                .foregroundStyle(KXColor.inkSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            if !report.today.activities.isEmpty { activities }
+            WeekVsUsualBar(ratio: report.weekVsUsual)
+        }
+        .kxCard()
     }
 
     private var activities: some View {
@@ -124,7 +186,7 @@ struct StrainCard: View {
                             .accessibilityLabel("from heart rate")
                     }
                     Spacer()
-                    Text("+\(format(Strain.strain(load: activity.load)))")
+                    Text("+\(TodayFormat.one(Strain.strain(load: activity.load)))")
                         .font(KXFont.captionEmphasis.monospacedDigit())
                         .foregroundStyle(KXColor.inkSecondary)
                 }
@@ -144,16 +206,6 @@ struct StrainCard: View {
         case .steps: return "figure.walk"
         }
     }
-
-    private func color(_ band: RecoveryScore.Band) -> Color {
-        switch band {
-        case .low: return KXColor.danger
-        case .fair: return KXColor.warning
-        case .good, .great: return KXColor.success
-        }
-    }
-
-    private func format(_ value: Double) -> String { String(format: "%.1f", max(0, value)) }
 }
 
 /// A 0–21 ring: today's strain over a faint target band.
@@ -236,37 +288,26 @@ struct WeekVsUsualBar: View {
 }
 
 /// What makes up today's recovery: each reading, its score, its share and the points it adds.
-struct RecoveryBreakdownView: View {
+struct RecoveryBreakdownSection: View {
     let recovery: RecoveryScore
-    @Environment(\.dismiss) private var dismiss
 
     private var sorted: [RecoveryScore.Part] { recovery.parts.sorted { $0.share > $1.share } }
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: KXSpacing.lg) {
-                    HStack(alignment: .firstTextBaseline, spacing: KXSpacing.sm) {
-                        Text("\(Int(recovery.score))").font(KXFont.display).foregroundStyle(KXColor.ink)
-                        Text(recovery.band.title).font(KXFont.headline).foregroundStyle(KXColor.inkSecondary)
-                    }
-                    contributionBar
-                    ForEach(sorted, id: \.name) { part in
-                        row(part)
-                    }
-                    Text("Each reading is compared with your usual and scored 0–100: a normal day for you is about 72, better than usual 85+, and 90+ means clearly better on that reading. The total is the readings weighted HRV 45%, resting heart rate 25%, sleep 20% and your score 10%; a missing reading is left out and the others share its weight. \"Your usual\" is the middle of your last 30 days.")
-                        .font(KXFont.caption)
-                        .foregroundStyle(KXColor.inkTertiary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .padding(KXSpacing.screenMargin)
+        VStack(alignment: .leading, spacing: KXSpacing.lg) {
+            HStack(alignment: .firstTextBaseline, spacing: KXSpacing.sm) {
+                Text("\(Int(recovery.score))").font(KXFont.display).foregroundStyle(KXColor.ink)
+                Text(recovery.band.title).font(KXFont.headline).foregroundStyle(KXColor.inkSecondary)
             }
-            .background(KXColor.background.ignoresSafeArea())
-            .navigationTitle("Recovery")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+            contributionBar
+            ForEach(sorted, id: \.name) { part in
+                row(part)
+            }
+            Text("Each reading is compared with your usual and scored 0–100: a normal day for you is about 72, better than usual 85+, and 90+ means clearly better on that reading. The total is the readings weighted HRV 45%, resting heart rate 25%, sleep 20% and your score 10%; a missing reading is left out and the others share its weight. \"Your usual\" is the middle of your last 30 days.")
+                .font(KXFont.caption)
+                .foregroundStyle(KXColor.inkTertiary)
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .tint(KXColor.accent)
     }
 
     /// The total as segments, one per reading, sized by the points each adds.

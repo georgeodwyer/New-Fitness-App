@@ -95,6 +95,26 @@ enum PlanService {
         }
     }
 
+    /// Show the whole plan on the Plan tab, with weeks beyond the horizon as previews.
+    /// For launch, set this to false to show only the weeks already built (week by week).
+    static let showsWholePlan = true
+
+    /// The weeks not built yet, as they'd be generated today (not saved: they can still
+    /// change with progress, and become real sessions about two weeks out).
+    static func previewWeeks(for plan: TrainingPlanModel, profile: AthleteProfile, in context: ModelContext,
+                             now: Date = .now) -> [Int: GeneratedWeek] {
+        guard showsWholePlan, let outline = plan.outline, plan.generatedWeekCount < outline.weeks.count else { return [:] }
+        let generator = generator
+        let weights = workingWeights(in: context)
+        var weeks: [Int: GeneratedWeek] = [:]
+        for index in plan.generatedWeekCount..<outline.weeks.count {
+            if let week = generator.generateWeek(index, outline: outline, profile: profile, workingWeights: weights, notBefore: now) {
+                weeks[index] = week
+            }
+        }
+        return weeks
+    }
+
     /// Tops up the active plan's horizon (call on launch / foreground).
     static func refresh(in context: ModelContext, now: Date = .now) {
         guard let profileModel = try? context.fetch(FetchDescriptor<UserProfileModel>()).first(where: { !$0.isSoftDeleted }),
