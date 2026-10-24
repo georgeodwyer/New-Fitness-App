@@ -82,7 +82,8 @@ final class WatchSyncService: NSObject {
             cuesDuringWarmUpCoolDown: settings?.cuesDuringWarmUpCoolDown ?? false,
             units: units
         )
-        return WatchPlan(generatedAt: now, units: units, coaching: coaching, runs: planned + Array(templates))
+        return WatchPlan(generatedAt: now, units: units, coaching: coaching, runs: planned + Array(templates),
+                         controls: WatchControlsStore.settings)
     }
 
     // MARK: Watch → runs
@@ -141,6 +142,12 @@ extension WatchSyncService: WCSessionDelegate {
             self.lastSentPlan = nil
             self.sendPlan()
         }
+    }
+
+    /// The watch says which gestures it has (stored for Settings → Apple Watch controls).
+    nonisolated func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
+        guard let data = applicationContext["device"] as? Data, WatchDeviceInfo.decode(data) != nil else { return }
+        Task { @MainActor in UserDefaults.standard.set(data, forKey: WatchControlsStore.deviceKey) }
     }
 
     /// Messages during a mirrored run, when the direct workout link isn't up.

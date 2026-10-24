@@ -51,4 +51,20 @@ final class WatchSyncTests: XCTestCase {
         XCTAssertEqual(decoded.option.source, .free)
         XCTAssertEqual(decoded.summary.heartRateSamples.count, 1)
     }
+
+    func testDoubleTapModels() {
+        XCTAssertTrue(WatchControlSettings.supportsDoubleTap(machine: "Watch7,1"), "Series 9")
+        XCTAssertTrue(WatchControlSettings.supportsDoubleTap(machine: "Watch7,5"), "Ultra 2")
+        XCTAssertTrue(WatchControlSettings.supportsDoubleTap(machine: "Watch7,10"), "Series 10")
+        XCTAssertFalse(WatchControlSettings.supportsDoubleTap(machine: "Watch6,18"), "Ultra")
+        XCTAssertFalse(WatchControlSettings.supportsDoubleTap(machine: "Watch6,2"), "Series 8")
+        XCTAssertFalse(WatchControlSettings.supportsDoubleTap(machine: "x86_64"))
+    }
+
+    func testPlanWithoutControlsStillDecodes() throws {
+        var plan = WatchPlan(generatedAt: Date(timeIntervalSince1970: 100), units: .metric, coaching: CoachingConfig(), runs: [])
+        XCTAssertNil(WatchPlan.decode(plan.encoded())?.controls)
+        plan.controls = WatchControlSettings(doubleTap: .pauseResume, crown: .off)
+        XCTAssertEqual(WatchPlan.decode(plan.encoded())?.controls?.doubleTap, .pauseResume)
+    }
 }

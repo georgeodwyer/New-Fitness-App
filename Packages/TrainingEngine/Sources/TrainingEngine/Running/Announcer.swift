@@ -66,5 +66,12 @@ public enum Announcer {
         return "\(unit) \(split.index). \(Units.formatMinutesSeconds(split.durationSeconds)). Average pace \(paceText(split.averagePace, units: units)) \(perUnit(units))."
     }
 
+    public static func lap(_ lap: Lap, units: UnitSystem) -> String {
+        let pace = lap.pace.map { " Pace \(paceText($0, units: units)) \(perUnit(units))." } ?? ""
+        return "Lap \(lap.index). \(Units.formatMinutesSeconds(lap.durationSeconds)).\(pace)"
+    }
+
+    public static let undone = "Undone."
+
     public static let workoutComplete = "Workout complete. Great work. Keep moving to cool down, or finish your run."
 }

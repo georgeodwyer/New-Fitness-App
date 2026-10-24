@@ -264,6 +264,7 @@ extension RunLogModel: SyncableModel {
         var timeInTargetSeconds: Double
         var targetedSeconds: Double
         var segmentsData: Data?
+        var lapsData: Data?
         var effort: Double
         var load: Double
         var title: String
@@ -281,7 +282,7 @@ extension RunLogModel: SyncableModel {
         Payload(plannedSessionId: plannedSessionId, startedAt: startedAt, durationSeconds: durationSeconds, distanceMeters: distanceMeters,
                 routeData: routeData, splitsData: splitsData, heartRateData: heartRateData, averageHeartRate: averageHeartRate,
                 maxHeartRate: maxHeartRate, timeInTargetSeconds: timeInTargetSeconds, targetedSeconds: targetedSeconds,
-                segmentsData: segmentsData, effort: effort, load: load, title: title, isFinished: isFinished, finishedAt: finishedAt,
+                segmentsData: segmentsData, lapsData: lapsData, effort: effort, load: load, title: title, isFinished: isFinished, finishedAt: finishedAt,
                 usedSimulatedGPS: usedSimulatedGPS, healthKitWorkoutId: healthKitWorkoutId, stravaActivityId: stravaActivityId,
                 runTypeRaw: runTypeRaw, recordTypeRaw: recordTypeRaw, importSourceRaw: importSourceRaw)
     }
@@ -298,6 +299,7 @@ extension RunLogModel: SyncableModel {
         timeInTargetSeconds = p.timeInTargetSeconds
         targetedSeconds = p.targetedSeconds
         segmentsData = p.segmentsData
+        lapsData = p.lapsData
         effort = p.effort
         load = p.load
         title = p.title

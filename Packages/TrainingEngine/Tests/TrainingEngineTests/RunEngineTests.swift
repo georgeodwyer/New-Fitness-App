@@ -205,6 +205,84 @@ final class RunEngineTests: XCTestCase {
         XCTAssertTrue(events.first?.announcement.hasPrefix("Main set. 1 kilometre at 4:40 to 4:50 per kilometre") ?? false)
     }
 
+    func testManualLapsOnAFreeRun() {
+        let runner = SimulatedRunner(structure: steady(5000), driftMeters: 0, speedNoise: 0)
+        let samples = runner.samples(start: start, duration: 600)
+        var engine = RunEngine(structure: nil)
+        _ = engine.start(at: start)
+        XCTAssertFalse(engine.hasStepToSkip, "A free run has no steps: the gesture marks a lap")
+        for sample in samples.prefix(301) { _ = engine.addLocation(sample) }
+        let lap = engine.markLap(at: start.addingTimeInterval(300))
+        XCTAssertEqual(lap.index, 1)
+        XCTAssertEqual(lap.durationSeconds, 300, accuracy: 1)
+        XCTAssertEqual(lap.distanceMeters, 300 * 1000 / 285.0, accuracy: 20)
+        for sample in samples[301...] { _ = engine.addLocation(sample) }
+        let snapshot = engine.snapshot()
+        XCTAssertEqual(snapshot.lapNumber, 2)
+        XCTAssertEqual(snapshot.lapElapsedSeconds ?? 0, 300, accuracy: 1.5)
+        XCTAssertEqual(snapshot.lastLap?.index, 1)
+        let laps = engine.summary().laps ?? []
+        XCTAssertEqual(laps.count, 2, "The lap in progress is kept at the end")
+        XCTAssertEqual(laps.map(\.durationSeconds).reduce(0, +), engine.summary().durationSeconds, accuracy: 1)
+    }
+
+    func testNoLapsMeansNoLapsInSummary() {
+        var engine = RunEngine(structure: nil)
+        _ = engine.start(at: start)
+        _ = engine.tick(at: start.addingTimeInterval(60))
+        XCTAssertNil(engine.summary().laps)
+        XCTAssertNil(engine.snapshot().lapNumber)
+    }
+
+    func testUndoSkip() {
+        let structure = RunStructure(segments: [
+            RunSegment(kind: .warmUp, length: .duration(seconds: 600)),
+            RunSegment(kind: .work, length: .duration(seconds: 120), targetPace: target, label: "Rep 1")
+        ])
+        var engine = RunEngine(structure: structure)
+        _ = engine.start(at: start)
+        _ = engine.tick(at: start.addingTimeInterval(100))
+        _ = engine.skipSegment(at: start.addingTimeInterval(100))
+        XCTAssertEqual(engine.snapshot().segmentIndex, 1)
+        XCTAssertTrue(engine.canUndo)
+        XCTAssertTrue(engine.undoLastControl(at: start.addingTimeInterval(102)))
+        let snapshot = engine.snapshot()
+        XCTAssertEqual(snapshot.segmentIndex, 0, "Back in the warm-up")
+        if case .duration(let left)? = snapshot.segmentRemaining {
+            XCTAssertEqual(left, 498, accuracy: 0.5, "The seconds since the skip count towards the warm-up")
+        } else {
+            XCTFail("Expected time left")
+        }
+        XCTAssertTrue(engine.summary().segments.isEmpty || engine.summary().segments.count == 1)
+        XCTAssertFalse(engine.undoLastControl(at: start.addingTimeInterval(103)), "Only once")
+    }
+
+    func testUndoLap() {
+        var engine = RunEngine(structure: nil)
+        _ = engine.start(at: start)
+        _ = engine.tick(at: start.addingTimeInterval(200))
+        engine.markLap(at: start.addingTimeInterval(200))
+        XCTAssertTrue(engine.undoLastControl(at: start.addingTimeInterval(202)))
+        XCTAssertNil(engine.snapshot().lapNumber)
+        XCTAssertNil(engine.summary().laps)
+    }
+
+    func testUndoRefusedAfterAStepChangesByItself() {
+        let structure = RunStructure(segments: [
+            RunSegment(kind: .work, length: .duration(seconds: 60), targetPace: target, label: "Rep 1"),
+            RunSegment(kind: .recovery, length: .duration(seconds: 2)),
+            RunSegment(kind: .work, length: .duration(seconds: 60), targetPace: target, label: "Rep 2")
+        ])
+        var engine = RunEngine(structure: structure)
+        _ = engine.start(at: start)
+        _ = engine.skipSegment(at: start.addingTimeInterval(30))
+        _ = engine.tick(at: start.addingTimeInterval(33)) // the 2 s recovery ends by itself
+        XCTAssertEqual(engine.snapshot().segmentIndex, 2)
+        XCTAssertFalse(engine.canUndo)
+        XCTAssertFalse(engine.undoLastControl(at: start.addingTimeInterval(33)))
+        XCTAssertEqual(engine.snapshot().segmentIndex, 2)
+    }
+
     func testPauseExcludesTimeAndDistance() {
         let structure = steady(5000)
         let runner = SimulatedRunner(structure: structure, driftMeters: 0, speedNoise: 0)

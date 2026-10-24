@@ -55,6 +55,26 @@ final class RunWorkoutManager: NSObject {
     @ObservationIgnored private var timer: Timer?
     @ObservationIgnored private let speech = AVSpeechSynthesizer()
 
+    /// Shown for a few seconds after a gesture or button skips, laps or pauses.
+    struct UndoBanner: Equatable {
+        enum Kind: Equatable { case step, lap, pause }
+        var id = UUID()
+        var kind: Kind
+        var text: String
+    }
+    private(set) var undoBanner: UndoBanner?
+
+    /// What double tap and the crown do (set on the iPhone).
+    var controls: WatchControlSettings { WatchStore.shared.plan.controls ?? .standard }
+
+    /// "Next step" or "Lap", whichever the next-or-lap gesture would do right now.
+    var nextOrLapLabel: String { willSkipStep ? "Next step" : "Lap" }
+
+    private var willSkipStep: Bool {
+        if isMirroring { return mirrorIsStructured && snapshot?.isStructureComplete == false && snapshot?.segment != nil }
+        return engine?.hasStepToSkip ?? false
+    }
+
     var units: UnitSystem { mirrorUnits ?? WatchStore.shared.plan.units }
     var isPaused: Bool { snapshot?.isPaused ?? false }
     var isMirroring: Bool { mode == .mirroring }
@@ -160,6 +180,80 @@ final class RunWorkoutManager: NSObject {
         snapshot = engine.snapshot()
     }
 
+    // MARK: Gestures (double tap, crown) and undo
+
+    /// Runs a gesture's action. Skips, laps and pauses can be undone for a few seconds.
+    func perform(_ action: WatchControlSettings.Action) {
+        guard phase == .running else { return }
+        switch action {
+        case .off: return
+        case .pauseResume:
+            togglePause()
+            showUndo(UndoBanner(kind: .pause, text: isPaused ? "Paused" : "Resumed"))
+        case .nextOrLap:
+            nextOrLap()
+        }
+    }
+
+    /// Skips to the next step, or marks a lap when there are no steps left.
+    func nextOrLap() {
+        guard phase == .running else { return }
+        if willSkipStep {
+            let next = snapshot?.nextSegment.map { $0.label ?? $0.kind.displayName }
+            skipStep()
+            if isMirroring { WKInterfaceDevice.current().play(.notification) }
+            showUndo(UndoBanner(kind: .step, text: next.map { "Skipped to \($0)" } ?? "Skipped"))
+        } else {
+            markLap()
+        }
+    }
+
+    private func markLap() {
+        let number: Int
+        if isMirroring {
+            number = snapshot?.lapNumber ?? 1
+            sendToPhone(.command(.lap))
+            showUndo(UndoBanner(kind: .lap, text: "Lap \(number)"))
+        } else {
+            guard var engine else { return }
+            let lap = engine.markLap(at: Date())
+            self.engine = engine
+            snapshot = engine.snapshot()
+            if voiceEnabled { speak(Announcer.lap(lap, units: units)) }
+            showUndo(UndoBanner(kind: .lap, text: "Lap \(lap.index) · \(Units.formatMinutesSeconds(lap.durationSeconds))"))
+        }
+        WKInterfaceDevice.current().play(.success)
+    }
+
+    func undo() {
+        guard let banner = undoBanner, phase == .running else { return }
+        undoBanner = nil
+        switch banner.kind {
+        case .pause:
+            togglePause()
+        case .step, .lap:
+            if isMirroring {
+                sendToPhone(.command(.undo))
+            } else if var engine {
+                guard engine.undoLastControl(at: Date()) else { return }
+                self.engine = engine
+                snapshot = engine.snapshot()
+                if voiceEnabled { speak(Announcer.undone) }
+            }
+        }
+        WKInterfaceDevice.current().play(.retry)
+    }
+
+    private func showUndo(_ banner: UndoBanner) {
+        undoBanner = banner
+        let id = banner.id
+        let seconds = controls.undoSeconds
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(seconds))
+            if self?.undoBanner?.id == id { self?.undoBanner = nil }
+        }
+    }
+
     /// Stops recording and saves the workout to Apple Health; then the summary shows.
     func end() async {
         if isMirroring {
@@ -235,6 +329,7 @@ final class RunWorkoutManager: NSObject {
         finishedAt = nil
         lastMessage = nil
         errorText = nil
+        undoBanner = nil
         phase = .idle
     }
 

@@ -33,6 +33,8 @@ final class RunLogModel: SyncTracked {
     var targetedSeconds: Double = 0
     /// Encoded `[SegmentResult]`.
     var segmentsData: Data?
+    /// Encoded `[Lap]`: laps marked by hand (nil when none were).
+    var lapsData: Data?
     var usedSimulatedGPS: Bool = false
     /// `RunSessionType` raw value (easy, long, tempo…), when known.
     var runTypeRaw: String?

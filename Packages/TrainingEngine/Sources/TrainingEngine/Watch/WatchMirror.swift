@@ -25,6 +25,10 @@ public enum MirrorMessage: Codable, Equatable, Sendable {
 /// Buttons on the watch that control the phone's run.
 public enum MirrorCommand: String, Codable, Sendable {
     case pause, resume, skipStep, end
+    /// Marks a lap (a run without steps left).
+    case lap
+    /// Undoes the last skip or lap.
+    case undo
 }
 
 /// What the watch should tap the wrist for.

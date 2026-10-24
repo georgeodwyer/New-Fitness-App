@@ -29,6 +29,7 @@ enum RunService {
         log.routeData = StoredJSON.encode(summary.route)
         log.splitsData = StoredJSON.encode(summary.splits)
         log.segmentsData = StoredJSON.encode(summary.segments)
+        log.lapsData = summary.laps.flatMap { $0.isEmpty ? nil : StoredJSON.encode($0) }
         log.averageHeartRate = summary.averageHeartRate
         log.maxHeartRate = summary.maxHeartRate
         log.heartRateData = summary.heartRateSamples.isEmpty ? nil : StoredJSON.encode(summary.heartRateSamples)
@@ -125,6 +126,7 @@ extension RunLogModel {
     var countsTowardsHistory: Bool { isFinished && !isSoftDeleted && !usedSimulatedGPS }
     var route: [RoutePoint] { StoredJSON.decode([RoutePoint].self, from: routeData) ?? [] }
     var splits: [Split] { StoredJSON.decode([Split].self, from: splitsData) ?? [] }
+    var laps: [Lap] { StoredJSON.decode([Lap].self, from: lapsData) ?? [] }
     var segmentResults: [SegmentResult] { StoredJSON.decode([SegmentResult].self, from: segmentsData) ?? [] }
     var averagePace: Pace? { distanceMeters > 50 && durationSeconds > 0 ? Pace(metersPerSecond: distanceMeters / durationSeconds) : nil }
 }

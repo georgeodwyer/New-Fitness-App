@@ -31,6 +31,29 @@ final class WatchStore: NSObject {
         WCSession.default.activate()
     }
 
+    /// The hardware identifier, e.g. "Watch7,3".
+    static let machine: String = {
+        if let simulated = ProcessInfo.processInfo.environment["SIMULATOR_MODEL_IDENTIFIER"] { return simulated }
+        var size = 0
+        sysctlbyname("hw.machine", nil, &size, nil, 0)
+        var bytes = [CChar](repeating: 0, count: max(size, 1))
+        sysctlbyname("hw.machine", &bytes, &size, nil, 0)
+        return String(cString: bytes)
+    }()
+
+    /// Double tap works here (a supported watch on watchOS 11 or later, which apps need).
+    static var supportsDoubleTap: Bool {
+        guard #available(watchOS 11.0, *) else { return false }
+        return WatchControlSettings.supportsDoubleTap(machine: machine)
+    }
+
+    /// Tells the phone which gestures this watch has (for its Settings screen).
+    fileprivate func sendDeviceInfo() {
+        guard WCSession.isSupported(), WCSession.default.activationState == .activated else { return }
+        let info = WatchDeviceInfo(machine: Self.machine, supportsDoubleTap: Self.supportsDoubleTap)
+        try? WCSession.default.updateApplicationContext(["device": info.encoded()])
+    }
+
     fileprivate func receive(planData: Data) {
         guard let new = WatchPlan.decode(planData), new.generatedAt >= plan.generatedAt else { return }
         plan = new
@@ -89,6 +112,7 @@ extension WatchStore: WCSessionDelegate {
         Task { @MainActor in
             if let data { self.receive(planData: data) }
             self.resendOutbox()
+            self.sendDeviceInfo()
         }
     }
 

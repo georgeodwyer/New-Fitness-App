@@ -217,6 +217,25 @@ final class RunWorkoutModel {
         publishToWatch()
     }
 
+    /// Marks a lap (from the watch's gestures or Lap button).
+    func markLap() {
+        let lap = engine.markLap(at: clockNow())
+        snapshot = engine.snapshot()
+        let text = Announcer.lap(lap, units: units)
+        announcements.append(Announcement(text: text, isCue: false, time: snapshot.elapsedSeconds))
+        if announcements.count > 20 { announcements.removeFirst() }
+        voice.speak(text)
+        publishToWatch()
+    }
+
+    /// Undoes the last skip or lap (the watch's "Undo").
+    func undoLastControl() {
+        guard engine.undoLastControl(at: clockNow()) else { return }
+        snapshot = engine.snapshot()
+        voice.speak(Announcer.undone)
+        publishToWatch()
+    }
+
     /// Stops tracking and returns the summary for the effort sheet.
     func stop() -> RunSummary {
         timer?.invalidate()
@@ -343,6 +362,8 @@ final class RunWorkoutModel {
         case .pause: if !snapshot.isPaused { togglePause() }
         case .resume: if snapshot.isPaused { togglePause() }
         case .skipStep: skipSegment()
+        case .lap: markLap()
+        case .undo: undoLastControl()
         case .end: watchEndRequests += 1
         }
     }

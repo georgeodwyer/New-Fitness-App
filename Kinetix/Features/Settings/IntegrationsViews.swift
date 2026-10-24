@@ -100,8 +100,58 @@ struct AppleWatchView: View {
                       systemImage: "figure.run")
                     .font(KXFont.callout)
             }
+            WatchControlsSection()
         }
         .navigationTitle("Apple Watch")
+    }
+}
+
+/// Hands-free controls during a run: double tap and a firm turn of the Digital Crown.
+struct WatchControlsSection: View {
+    @State private var controls = WatchControlsStore.settings
+    private let device = WatchControlsStore.device
+
+    /// Unknown until the watch app has opened once; offer double tap then, with a note.
+    private var doubleTapKnownUnsupported: Bool { device.map { !$0.supportsDoubleTap } ?? false }
+
+    var body: some View {
+        Section {
+            if doubleTapKnownUnsupported {
+                LabeledContent("Double tap", value: "Not on this watch")
+            } else {
+                Picker("Double tap", selection: $controls.doubleTap) {
+                    ForEach(WatchControlSettings.Action.allCases, id: \.self) { Text($0.displayName).tag($0) }
+                }
+            }
+            Picker("Turn the crown", selection: $controls.crown) {
+                ForEach(WatchControlSettings.Action.allCases, id: \.self) { Text($0.displayName).tag($0) }
+            }
+            if controls.crown != .off {
+                Picker("Crown turn needed", selection: $controls.crownTurn) {
+                    Text("Quarter turn").tag(0.25)
+                    Text("Half turn").tag(0.5)
+                }
+            }
+            Picker("Undo shows for", selection: $controls.undoSeconds) {
+                Text("3 seconds").tag(3.0)
+                Text("5 seconds").tag(5.0)
+            }
+        } header: {
+            Text("Controls during a run")
+        } footer: {
+            Text(footer)
+        }
+        .onChange(of: controls) { _, new in WatchControlsStore.settings = new }
+    }
+
+    private var footer: String {
+        var text = "Next step / lap skips to the next step of a session, or marks a lap on a run without steps (laps show in the run's summary). Turn the crown firmly in one go: a ring fills, your wrist taps and it happens, so a brush of a sleeve won't do it. Undo shows for a moment afterwards in case."
+        if device == nil {
+            text += " Double tap needs Apple Watch Series 9 or later, Ultra 2 or later, or SE (3rd generation), with watchOS 11."
+        } else if doubleTapKnownUnsupported {
+            text += " Your watch doesn't have double tap, so use the crown."
+        }
+        return text
     }
 }
 

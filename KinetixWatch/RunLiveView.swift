@@ -8,6 +8,16 @@ struct RunLiveView: View {
     @State private var workout = RunWorkoutManager.shared
     @State private var page = 1
     @State private var confirmEnd = false
+    // Crown gesture: a firm turn in one go triggers the crown's action.
+    @State private var crownValue = 0.0
+    @State private var lastCrownValue = 0.0
+    @State private var crownTurned = 0.0
+    @State private var crownLocked = false
+    @FocusState private var crownFocused: Bool
+
+    /// Crown value per full turn at `.medium` sensitivity. A best estimate: if a quarter turn
+    /// feels too light or too stiff on a real watch, change this.
+    private static let crownUnitsPerTurn = 2.0
 
     private var format: DisplayFormat { DisplayFormat(units: workout.units) }
     private var isStructured: Bool { workout.isStructured }
@@ -23,6 +33,17 @@ struct RunLiveView: View {
             }
         }
         .tabViewStyle(.page)
+        .focusable()
+        .focused($crownFocused)
+        .focusEffectDisabled()
+        .digitalCrownRotation($crownValue, from: -1_000_000, through: 1_000_000, by: nil, sensitivity: .medium,
+                              isContinuous: false, isHapticFeedbackEnabled: false,
+                              onChange: { _ in }, onIdle: { crownIdle() })
+        .onChange(of: crownValue) { _, value in crownMoved(to: value) }
+        .onAppear { crownFocused = true }
+        .overlay { crownRing }
+        .overlay(alignment: .bottom) { gestureBar }
+        .animation(.easeInOut(duration: 0.2), value: workout.undoBanner)
         .confirmationDialog(workout.isMirroring ? "Finish this run?" : "End this run?", isPresented: $confirmEnd) {
             Button(workout.isMirroring ? "Finish run" : "End run") { Task { await workout.end() } }
             Button("Keep going", role: .cancel) {}
@@ -95,7 +116,14 @@ struct RunLiveView: View {
                 Text("\(snapshot?.averagePace.map { Units.formatPace($0, units: workout.units) } ?? "–:––")\(Units.paceUnitLabel(workout.units)) avg")
                     .font(.caption2).foregroundStyle(.secondary)
             }
-            heartRate(snapshot)
+            HStack {
+                heartRate(snapshot)
+                Spacer()
+                if let lap = snapshot?.lapNumber {
+                    Text("Lap \(lap) · \(Units.formatMinutesSeconds(snapshot?.lapElapsedSeconds ?? 0))")
+                        .font(.caption2.monospacedDigit()).foregroundStyle(.teal)
+                }
+            }
             status(snapshot)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -142,11 +170,10 @@ struct RunLiveView: View {
                 controlButton("End", symbol: "xmark", tint: .red) { confirmEnd = true }
             }
             HStack(spacing: 8) {
-                if isStructured {
-                    controlButton("Next step", symbol: "forward.end.fill", tint: .teal) {
-                        workout.skipStep()
-                        page = 1
-                    }
+                controlButton(workout.nextOrLapLabel, symbol: workout.nextOrLapLabel == "Lap" ? "flag.fill" : "forward.end.fill",
+                              tint: .teal) {
+                    workout.nextOrLap()
+                    page = 1
                 }
                 if !workout.isMirroring {
                     // On a mirrored run the iPhone does the talking.
@@ -156,6 +183,90 @@ struct RunLiveView: View {
                     }
                 }
             }
+        }
+    }
+
+    // MARK: Gestures
+
+    private var crownThreshold: Double { max(workout.controls.crownTurn, 0.1) * Self.crownUnitsPerTurn }
+    private var crownProgress: Double { min(abs(crownTurned) / crownThreshold, 1) }
+
+    /// Adds up a turn in one direction; reversing starts again. Reaching the threshold runs
+    /// the crown's action once, then the crown must stop before it can trigger again.
+    private func crownMoved(to value: Double) {
+        let delta = value - lastCrownValue
+        lastCrownValue = value
+        guard workout.controls.crown != .off, workout.phase == .running, !crownLocked, delta != 0 else { return }
+        crownTurned = (crownTurned == 0 || (crownTurned > 0) == (delta > 0)) ? crownTurned + delta : delta
+        if abs(crownTurned) >= crownThreshold {
+            crownLocked = true
+            crownTurned = 0
+            workout.perform(workout.controls.crown)
+        }
+    }
+
+    private func crownIdle() {
+        crownTurned = 0
+        crownLocked = false
+    }
+
+    /// Fills as the crown turns, so it's clear how far to go.
+    @ViewBuilder
+    private var crownRing: some View {
+        if crownProgress > 0.15 {
+            ZStack {
+                Circle().stroke(.white.opacity(0.2), lineWidth: 6)
+                Circle().trim(from: 0, to: crownProgress)
+                    .stroke(WatchColor.accent, style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                Image(systemName: symbol(for: workout.controls.crown)).font(.title2)
+            }
+            .frame(width: 70, height: 70)
+            .padding(8)
+            .background(.black.opacity(0.75), in: Circle())
+            .allowsHitTesting(false)
+        }
+    }
+
+    /// The Undo banner after a skip, lap or pause; otherwise the double tap button.
+    @ViewBuilder
+    private var gestureBar: some View {
+        if let banner = workout.undoBanner {
+            HStack(spacing: 6) {
+                Text(banner.text).font(.caption2.weight(.semibold)).lineLimit(1).minimumScaleFactor(0.7)
+                Spacer(minLength: 0)
+                Button("Undo") { workout.undo() }
+                    .font(.caption2.weight(.bold))
+                    .buttonStyle(.borderedProminent)
+                    .tint(WatchColor.accent)
+                    .controlSize(.mini)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 4)
+            .background(.black.opacity(0.85), in: Capsule())
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+        } else if WatchStore.supportsDoubleTap, workout.controls.doubleTap != .off {
+            HStack {
+                Spacer()
+                Button {
+                    workout.perform(workout.controls.doubleTap)
+                } label: {
+                    Image(systemName: symbol(for: workout.controls.doubleTap)).font(.footnote.weight(.bold))
+                        .frame(width: 30, height: 30)
+                }
+                .buttonStyle(.plain)
+                .background(.teal.opacity(0.35), in: Circle())
+                .doubleTapShortcut()
+                .accessibilityLabel(workout.controls.doubleTap == .pauseResume ? (workout.isPaused ? "Resume" : "Pause") : workout.nextOrLapLabel)
+            }
+        }
+    }
+
+    private func symbol(for action: WatchControlSettings.Action) -> String {
+        switch action {
+        case .off: return "circle"
+        case .pauseResume: return workout.isPaused ? "play.fill" : "pause.fill"
+        case .nextOrLap: return workout.nextOrLapLabel == "Lap" ? "flag.fill" : "forward.end.fill"
         }
     }
 
@@ -224,6 +335,18 @@ struct RunFinishedView: View {
         .confirmationDialog("Discard this run?", isPresented: $confirmDiscard) {
             Button("Discard", role: .destructive) { workout.discard() }
             Button("Keep", role: .cancel) {}
+        }
+    }
+}
+
+private extension View {
+    /// Makes this button the one double tap (finger and thumb) presses, on watchOS 11+.
+    @ViewBuilder
+    func doubleTapShortcut() -> some View {
+        if #available(watchOS 11.0, *) {
+            handGestureShortcut(.primaryAction)
+        } else {
+            self
         }
     }
 }

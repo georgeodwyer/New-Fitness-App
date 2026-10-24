@@ -46,6 +46,7 @@ struct RunSummaryView: View {
                 totals
                 targetCard
                 if !summary.splits.isEmpty { splitsCard }
+                if let laps = summary.laps, !laps.isEmpty { LapsCard(laps: laps, format: format) }
                 if summary.segments.contains(where: { $0.segment.kind == .work }) { repsCard }
             }
             .padding(KXSpacing.screenMargin)

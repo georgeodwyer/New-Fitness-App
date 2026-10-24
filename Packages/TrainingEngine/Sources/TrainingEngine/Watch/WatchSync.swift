@@ -46,6 +46,63 @@ public struct WatchRunOption: Codable, Equatable, Identifiable, Sendable {
                                                title: "Free run", detail: "No targets, splits only", recordType: "free")
 }
 
+/// What the watch's hands-free gestures do during a run (set on the iPhone).
+public struct WatchControlSettings: Codable, Equatable, Sendable {
+    public enum Action: String, Codable, CaseIterable, Sendable {
+        case off
+        /// Skips to the next step of a session, or marks a lap when there are no steps.
+        case nextOrLap
+        case pauseResume
+
+        public var displayName: String {
+            switch self {
+            case .off: return "Off"
+            case .nextOrLap: return "Next step / lap"
+            case .pauseResume: return "Pause / resume"
+            }
+        }
+    }
+
+    /// Double tap (finger and thumb), on watches that support it.
+    public var doubleTap: Action
+    /// A firm turn of the Digital Crown, on any watch.
+    public var crown: Action
+    /// How far the crown must turn in one go (in full turns): 0.25 or 0.5.
+    public var crownTurn: Double
+    /// Seconds an "Undo" shows after a gesture skips, laps or pauses.
+    public var undoSeconds: Double
+
+    public init(doubleTap: Action = .nextOrLap, crown: Action = .nextOrLap, crownTurn: Double = 0.25, undoSeconds: Double = 3) {
+        self.doubleTap = doubleTap
+        self.crown = crown
+        self.crownTurn = crownTurn
+        self.undoSeconds = undoSeconds
+    }
+
+    public static let standard = WatchControlSettings()
+
+    /// Watch models with double tap: Series 9 and later, Ultra 2 and later, SE (3rd gen)
+    /// (all "Watch7,x" or newer). `machine` is the hardware identifier, e.g. "Watch7,3".
+    public static func supportsDoubleTap(machine: String) -> Bool {
+        guard machine.hasPrefix("Watch"), let major = Int(machine.dropFirst(5).prefix { $0.isNumber }) else { return false }
+        return major >= 7
+    }
+}
+
+/// What the watch tells the phone about itself (so Settings only offers what it supports).
+public struct WatchDeviceInfo: Codable, Equatable, Sendable {
+    public var machine: String
+    public var supportsDoubleTap: Bool
+
+    public init(machine: String, supportsDoubleTap: Bool) {
+        self.machine = machine
+        self.supportsDoubleTap = supportsDoubleTap
+    }
+
+    public func encoded() -> Data { (try? WatchCoding.encoder.encode(self)) ?? Data() }
+    public static func decode(_ data: Data) -> WatchDeviceInfo? { try? WatchCoding.decoder.decode(WatchDeviceInfo.self, from: data) }
+}
+
 /// Everything the watch needs to train without the phone.
 public struct WatchPlan: Codable, Equatable, Sendable {
     public static let currentVersion = 1
@@ -56,13 +113,17 @@ public struct WatchPlan: Codable, Equatable, Sendable {
     public var coaching: CoachingConfig
     /// Planned runs still to do (today first), then saved workouts.
     public var runs: [WatchRunOption]
+    /// Gesture settings (nil from older phones: the watch uses the standard settings).
+    public var controls: WatchControlSettings?
 
-    public init(generatedAt: Date, units: UnitSystem, coaching: CoachingConfig, runs: [WatchRunOption]) {
+    public init(generatedAt: Date, units: UnitSystem, coaching: CoachingConfig, runs: [WatchRunOption],
+                controls: WatchControlSettings? = nil) {
         self.version = Self.currentVersion
         self.generatedAt = generatedAt
         self.units = units
         self.coaching = coaching
         self.runs = runs
+        self.controls = controls
     }
 
     public static let empty = WatchPlan(generatedAt: .distantPast, units: .metric, coaching: CoachingConfig(), runs: [])

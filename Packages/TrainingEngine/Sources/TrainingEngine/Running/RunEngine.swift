@@ -12,6 +12,29 @@ public struct Split: Codable, Equatable, Sendable {
     public var averageHeartRate: Double?
 }
 
+/// A lap the runner marked by hand (watch double tap, crown or the Lap button).
+public struct Lap: Codable, Equatable, Sendable {
+    /// 1-based.
+    public var index: Int
+    public var durationSeconds: Double
+    public var distanceMeters: Double
+    public var averageHeartRate: Double?
+    /// Run time when the lap ended.
+    public var endElapsedSeconds: Double
+
+    public init(index: Int, durationSeconds: Double, distanceMeters: Double, averageHeartRate: Double? = nil, endElapsedSeconds: Double) {
+        self.index = index
+        self.durationSeconds = durationSeconds
+        self.distanceMeters = distanceMeters
+        self.averageHeartRate = averageHeartRate
+        self.endElapsedSeconds = endElapsedSeconds
+    }
+
+    public var pace: Pace? {
+        distanceMeters > 20 && durationSeconds > 0 ? Pace(metersPerSecond: distanceMeters / durationSeconds) : nil
+    }
+}
+
 /// How a segment actually went.
 public struct SegmentResult: Codable, Equatable, Sendable {
     public var index: Int
@@ -69,6 +92,12 @@ public struct RunSnapshot: Codable, Equatable, Sendable {
     public var isStructureComplete: Bool
     public var lastCue: PaceCue?
     public var gpsAvailable: Bool
+    /// The lap in progress (2 after the first marked lap); nil until a lap is marked.
+    public var lapNumber: Int? = nil
+    public var lapElapsedSeconds: Double? = nil
+    public var lapDistanceMeters: Double? = nil
+    /// The last lap marked.
+    public var lastLap: Lap? = nil
 }
 
 public struct RunSummary: Codable, Equatable, Sendable {
@@ -84,11 +113,13 @@ public struct RunSummary: Codable, Equatable, Sendable {
     public var route: [RoutePoint]
     /// Heart rate through the run (at most one sample every 5 s).
     public var heartRateSamples: [HeartRateSample] = []
+    /// Laps marked by hand (nil when none were).
+    public var laps: [Lap]? = nil
 
     /// For building a summary outside the engine (e.g. a run sent from the watch, tests).
     public init(durationSeconds: Double, distanceMeters: Double, averagePace: Pace?, splits: [Split] = [], segments: [SegmentResult] = [],
                 timeInTargetSeconds: Double = 0, targetedSeconds: Double = 0, averageHeartRate: Double? = nil, maxHeartRate: Double? = nil,
-                route: [RoutePoint] = [], heartRateSamples: [HeartRateSample] = []) {
+                route: [RoutePoint] = [], heartRateSamples: [HeartRateSample] = [], laps: [Lap]? = nil) {
         self.durationSeconds = durationSeconds
         self.distanceMeters = distanceMeters
         self.averagePace = averagePace
@@ -100,6 +131,7 @@ public struct RunSummary: Codable, Equatable, Sendable {
         self.maxHeartRate = maxHeartRate
         self.route = route
         self.heartRateSamples = heartRateSamples
+        self.laps = laps
     }
 
     /// Fraction of measured target time spent on target (nil if nothing was targeted).
@@ -149,6 +181,31 @@ public struct RunEngine: Sendable {
     private var splits: [Split] = []
     private var lastSplitActive: Double = 0
     private var splitHeartRates: [Double] = []
+
+    // Manual laps
+    private var laps: [Lap] = []
+    private var lapStartActive: Double = 0
+    private var lapStartDistance: Double = 0
+    private var lapHeartRates: [Double] = []
+
+    /// How things stood just before the last skip or lap, so it can be undone.
+    private struct UndoPoint: Sendable {
+        var segmentIndex: Int
+        var segmentStartActive: Double
+        var segmentStartDistance: Double
+        var structureComplete: Bool
+        var segmentResultCount: Int
+        var segmentInTarget: Double
+        var segmentMeasured: Double
+        var lapCount: Int
+        var lapStartActive: Double
+        var lapStartDistance: Double
+        var lapHeartRates: [Double]
+        /// Segment results expected after the action (an automatic step change since then
+        /// makes undo unsafe).
+        var resultCountAfter: Int
+    }
+    private var undoPoint: UndoPoint?
 
     // Coaching
     private var offDirection: PaceRange.Position?
@@ -208,7 +265,71 @@ public struct RunEngine: Sendable {
     /// Moves to the next segment now (e.g. the runner taps "Skip").
     public mutating func skipSegment(at date: Date) -> [RunEvent] {
         advanceClock(to: date)
-        return finishSegment()
+        guard currentSegment != nil else { return [] }
+        let point = makeUndoPoint()
+        let events = finishSegment()
+        undoPoint = point
+        undoPoint?.resultCountAfter = segmentResults.count
+        return events
+    }
+
+    /// Whether "Next step" would skip a step (true) or there are no steps left, so the
+    /// gesture marks a lap instead.
+    public var hasStepToSkip: Bool { currentSegment != nil }
+
+    /// Ends the current lap now and starts the next one. Returns the finished lap.
+    @discardableResult
+    public mutating func markLap(at date: Date) -> Lap {
+        advanceClock(to: date)
+        var point = makeUndoPoint()
+        point.resultCountAfter = segmentResults.count
+        let lap = Lap(index: laps.count + 1,
+                      durationSeconds: activeSeconds - lapStartActive,
+                      distanceMeters: distance - lapStartDistance,
+                      averageHeartRate: lapHeartRates.isEmpty ? nil : lapHeartRates.reduce(0, +) / Double(lapHeartRates.count),
+                      endElapsedSeconds: activeSeconds)
+        laps.append(lap)
+        lapStartActive = activeSeconds
+        lapStartDistance = distance
+        lapHeartRates.removeAll()
+        undoPoint = point
+        return lap
+    }
+
+    /// Whether the last skip or lap can still be undone.
+    public var canUndo: Bool { undoPoint.map { $0.resultCountAfter == segmentResults.count } ?? false }
+
+    /// Undoes the last skip or lap (time and distance since then count towards the restored
+    /// step or lap). Returns false if there's nothing to undo or a step has changed since.
+    @discardableResult
+    public mutating func undoLastControl(at date: Date) -> Bool {
+        advanceClock(to: date)
+        guard let point = undoPoint, point.resultCountAfter == segmentResults.count else {
+            undoPoint = nil
+            return false
+        }
+        segmentIndex = point.segmentIndex
+        segmentStartActive = point.segmentStartActive
+        segmentStartDistance = point.segmentStartDistance
+        structureComplete = point.structureComplete
+        segmentResults.removeLast(segmentResults.count - point.segmentResultCount)
+        segmentInTarget = point.segmentInTarget + segmentInTarget
+        segmentMeasured = point.segmentMeasured + segmentMeasured
+        laps.removeLast(laps.count - point.lapCount)
+        lapStartActive = point.lapStartActive
+        lapStartDistance = point.lapStartDistance
+        lapHeartRates = point.lapHeartRates + lapHeartRates
+        resetCoach()
+        undoPoint = nil
+        return true
+    }
+
+    private func makeUndoPoint() -> UndoPoint {
+        UndoPoint(segmentIndex: segmentIndex, segmentStartActive: segmentStartActive, segmentStartDistance: segmentStartDistance,
+                  structureComplete: structureComplete, segmentResultCount: segmentResults.count,
+                  segmentInTarget: segmentInTarget, segmentMeasured: segmentMeasured,
+                  lapCount: laps.count, lapStartActive: lapStartActive, lapStartDistance: lapStartDistance,
+                  lapHeartRates: lapHeartRates, resultCountAfter: segmentResults.count)
     }
 
     // MARK: - Inputs
@@ -219,6 +340,7 @@ public struct RunEngine: Sendable {
         if !isPaused {
             heartRates.append(bpm)
             splitHeartRates.append(bpm)
+            lapHeartRates.append(bpm)
             if heartRateSamples.last.map({ activeSeconds - $0.elapsed >= 5 }) ?? true {
                 heartRateSamples.append(HeartRateSample(elapsed: activeSeconds, bpm: bpm))
             }
@@ -299,7 +421,11 @@ public struct RunEngine: Sendable {
             isPaused: isPaused,
             isStructureComplete: structureComplete || segments.isEmpty,
             lastCue: lastCue,
-            gpsAvailable: gpsFresh
+            gpsAvailable: gpsFresh,
+            lapNumber: laps.isEmpty ? nil : laps.count + 1,
+            lapElapsedSeconds: laps.isEmpty ? nil : activeSeconds - lapStartActive,
+            lapDistanceMeters: laps.isEmpty ? nil : distance - lapStartDistance,
+            lastLap: laps.last
         )
     }
 
@@ -319,8 +445,22 @@ public struct RunEngine: Sendable {
             averageHeartRate: heartRates.isEmpty ? nil : heartRates.reduce(0, +) / Double(heartRates.count),
             maxHeartRate: heartRates.max(),
             route: route,
-            heartRateSamples: heartRateSamples
+            heartRateSamples: heartRateSamples,
+            laps: summaryLaps
         )
+    }
+
+    /// The marked laps plus the one in progress (so the last stretch isn't lost).
+    private var summaryLaps: [Lap]? {
+        guard !laps.isEmpty else { return nil }
+        var all = laps
+        if activeSeconds - lapStartActive >= 1 {
+            all.append(Lap(index: laps.count + 1, durationSeconds: activeSeconds - lapStartActive,
+                           distanceMeters: distance - lapStartDistance,
+                           averageHeartRate: lapHeartRates.isEmpty ? nil : lapHeartRates.reduce(0, +) / Double(lapHeartRates.count),
+                           endElapsedSeconds: activeSeconds))
+        }
+        return all
     }
 
     // MARK: - Internals

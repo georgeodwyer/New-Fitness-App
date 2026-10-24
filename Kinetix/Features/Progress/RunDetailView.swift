@@ -38,6 +38,7 @@ struct RunDetailView: View {
                 let heartRate = RunAnalysis.heartRateSeries(log.heartRateSamples)
                 if heartRate.count >= 3 { RunLineChart(title: "Heart rate", points: heartRate, kind: .heartRate) }
                 if !log.splits.isEmpty { splitsCard }
+                if !log.laps.isEmpty { LapsCard(laps: log.laps, format: format) }
                 if log.segmentResults.contains(where: { $0.segment.targetPace != nil }) { effortsCard }
                 if let planned { plannedCard(planned) }
                 destinationsCard
