@@ -435,6 +435,19 @@ struct StravaView: View {
                 } footer: {
                     Text("You'll sign in on Strava's website and choose what Kinetix may do. Leave both boxes ticked: uploading your activities, and viewing them (for importing). Only sessions you finish after connecting are uploaded; the last 90 days of activities are imported.")
                 }
+                if BuildChannel.isTesting {
+                    Section {
+                        Label {
+                            Text("During the beta, Strava only lets a few people connect to Kinetix. If Strava says **Limit of connected athletes exceeded**, close that page: everything else in Kinetix works, and Strava opens up once it has approved the app.")
+                                .font(KXFont.caption)
+                                .foregroundStyle(KXColor.inkSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        } icon: {
+                            Image(systemName: "info.circle").foregroundStyle(KXColor.inkSecondary)
+                        }
+                    }
+                    .accessibilityIdentifier("strava.betaLimit")
+                }
             case .connected(let name):
                 Section("Account") {
                     LabeledContent("Connected as", value: name ?? "Strava athlete")
@@ -469,6 +482,7 @@ struct StravaView: View {
                                 .symbolRenderingMode(.multicolor)
                         }
                     }
+                    StravaAttribution()
                 } header: {
                     Text("From Strava")
                 } footer: {
@@ -546,5 +560,20 @@ private struct IntegrationHeader: View {
         }
         .listRowInsets(EdgeInsets())
         .padding(.vertical, KXSpacing.sm)
+    }
+}
+
+/// "Powered by Strava", shown with data that came from Strava (Strava's API brand rules).
+/// Uses Strava's own logo when it's in the asset catalog ("PoweredByStrava"), else text.
+struct StravaAttribution: View {
+    var body: some View {
+        Group {
+            if UIImage(named: "PoweredByStrava") != nil {
+                Image("PoweredByStrava").resizable().scaledToFit().frame(height: 18)
+            } else {
+                Text("Powered by Strava").font(KXFont.captionEmphasis).foregroundStyle(StravaView.brand)
+            }
+        }
+        .accessibilityLabel("Powered by Strava")
     }
 }

@@ -219,6 +219,7 @@ struct RunDetailView: View {
                 Text("Recorded in another app and imported from Strava. Effort is estimated from heart rate; tap Edit to set it.")
                     .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
                     .fixedSize(horizontal: false, vertical: true)
+                StravaAttribution()
             } else {
                 HStack {
                     Label("Apple Health", systemImage: "heart.fill")

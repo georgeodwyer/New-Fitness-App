@@ -87,3 +87,31 @@ Kinetix then imports your last 90 days (check Progress → Running), and from no
 - Strava's API terms ask apps to show where data came from: imported runs are labelled
   *From Strava* with a "View on Strava" link.
 - Disconnecting in Kinetix also revokes its access on Strava.
+
+## Getting more athletes (before testers or launch)
+
+New Strava apps can connect **one athlete** (you). Anyone else sees "Error 403: Limit of
+connected athletes exceeded" on Strava's page; in test builds, Kinetix's Strava screen
+explains this. To raise the limit, request a review with Strava's developer program form
+(linked from developers.strava.com, under rate limits / athlete capacity). Have ready:
+
+- Your app's **Client ID** (strava.com/settings/api).
+- What Kinetix does with Strava: uploads your own runs and gym sessions; imports your own
+  activities so your history and training load are complete. Each person only sees their
+  own data, and Strava data isn't used to train AI models.
+- Screenshots: the Connect with Strava button (Settings → Integrations → Strava) and an
+  imported run (Progress → a run marked From Strava) showing "Powered by Strava" and
+  "View on Strava".
+- A link to the privacy policy.
+
+### Brand images
+
+Strava's rules ask for their own artwork, unchanged. Download the "Connect with Strava"
+buttons and the "Powered by" / "Compatible with" logos from developers.strava.com/guidelines,
+unzip them into one folder and run:
+
+    python3 scripts/add_strava_assets.py path/to/strava-files
+
+That adds `StravaConnectButton`, `PoweredByStrava` and `StravaCompatible` to the asset
+catalog; the app switches from its plain stand-ins to them automatically.
+
