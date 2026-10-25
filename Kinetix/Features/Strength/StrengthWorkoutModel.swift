@@ -246,6 +246,52 @@ final class StrengthWorkoutModel {
         savedTemplateName = log.title
     }
 
+    // MARK: Reorder and swap
+
+    /// Moves an exercise before another (nil = to the end).
+    func move(_ key: String, before target: String?) {
+        WorkoutEditService.move(key: key, before: target, in: log, context: context)
+        updateLockScreen()
+    }
+
+    /// A swap that could be kept for next time (asked after swapping).
+    struct PendingKeep: Identifiable {
+        let id = UUID()
+        let fromId: String
+        let fromName: String
+        let to: ExerciseDefinition
+        let target: WorkoutEditService.KeepTarget
+    }
+    var pendingKeep: PendingKeep?
+    /// Shown briefly after a swap is kept.
+    private(set) var keptMessage: String?
+
+    /// The runner's equipment, for suggesting swaps.
+    var equipment: Equipment {
+        ((try? context.fetch(FetchDescriptor<UserProfileModel>())) ?? []).first { !$0.isSoftDeleted }?.profile.equipment ?? .fullGym
+    }
+
+    func swap(_ group: ExerciseGroup, to exercise: ExerciseDefinition) {
+        let fromId = group.first.exerciseId
+        let fromName = group.name
+        WorkoutEditService.swap(key: group.key, to: exercise, in: log, context: context)
+        refreshLastTime()
+        updateLockScreen()
+        if let target = WorkoutEditService.keepTarget(for: log, exerciseId: exercise.id, context: context) {
+            pendingKeep = PendingKeep(fromId: fromId, fromName: fromName, to: exercise, target: target)
+        }
+    }
+
+    func keepSwap() {
+        guard let pending = pendingKeep else { return }
+        WorkoutEditService.keep(from: pending.fromId, to: pending.to, log: log, context: context)
+        switch pending.target {
+        case .planDay(let day): keptMessage = "\(pending.to.name) is now in your \(day) sessions"
+        case .savedWorkout(let name): keptMessage = "\(pending.to.name) saved to \u{201C}\(name)\u{201D}"
+        }
+        pendingKeep = nil
+    }
+
     func addSet(to group: ExerciseGroup) {
         guard let last = group.sets.last else { return }
         StrengthService.addSet(after: last, to: log, in: context)

@@ -71,6 +71,27 @@ public struct TemplateLibrary: Sendable {
         exercises.first { $0.id == id }
     }
 
+    /// Close swaps for an exercise the runner can't get on: the same movement first, then the
+    /// same muscle, then the same kit, all doable with their equipment.
+    public func alternatives(to id: String, equipment: Equipment, limit: Int = 8) -> [ExerciseDefinition] {
+        guard let current = exercise(id: id) else { return [] }
+        func score(_ e: ExerciseDefinition) -> Int {
+            var s = 0
+            if current.pattern != "library", e.pattern == current.pattern { s += 4 }
+            if e.muscleGroup == current.muscleGroup { s += 2 }
+            if e.region == current.region { s += 1 }
+            if e.loading == current.loading { s += 1 }
+            return s
+        }
+        return exercises
+            .filter { $0.id != id && equipment.allows($0.requires) && $0.pattern != "station" }
+            .map { ($0, score($0)) }
+            .filter { $0.1 >= 2 }
+            .sorted { $0.1 != $1.1 ? $0.1 > $1.1 : $0.0.name < $1.0.name }
+            .prefix(limit)
+            .map(\.0)
+    }
+
     /// Session templates for a number of lifting days per week (capped at the largest split).
     public func split(liftingDays: Int) -> [StrengthSessionTemplate] {
         guard liftingDays > 0 else { return [] }

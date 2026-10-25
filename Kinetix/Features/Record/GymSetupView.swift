@@ -206,7 +206,8 @@ private struct GymStartFlow: ViewModifier {
             template.lastUsedAt = .now
             template.touch()
         }
-        let log = GymService.start(title: request.title, items: request.items, linkedPlanned: planned, in: context)
+        let log = GymService.start(title: request.title, items: request.items, linkedPlanned: planned,
+                                   templateId: request.templateId, in: context)
         self.request = nil
         router.start(ActiveSession(id: log.id, kind: .strength(.fullBody), title: log.title, strengthLogId: log.id))
     }

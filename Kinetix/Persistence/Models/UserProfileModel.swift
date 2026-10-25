@@ -36,6 +36,8 @@ final class UserProfileModel: SyncTracked {
     var heartRateZonesData: Data?
     /// Hyrox race category (Hyrox goal only).
     var hyroxDivisionRaw: String?
+    /// Encoded `[String: String]`: exercises swapped for a gym day and kept.
+    var exerciseSwapsData: Data?
 
     init(profile: AthleteProfile, id: UUID = UUID(), now: Date = .now) {
         self.id = id
@@ -63,6 +65,7 @@ final class UserProfileModel: SyncTracked {
         self.birthYear = profile.birthYear
         self.heartRateZonesData = profile.heartRateZones.map { StoredJSON.encode($0) }
         self.hyroxDivisionRaw = profile.hyroxDivision?.rawValue
+        self.exerciseSwapsData = profile.exerciseSwaps.map { StoredJSON.encode($0) }
     }
 
     /// The engine's view of this profile.
@@ -88,7 +91,8 @@ final class UserProfileModel: SyncTracked {
                 splitCode: splitCode,
                 birthYear: birthYear,
                 heartRateZones: StoredJSON.decode(HeartRateZoneSettings.self, from: heartRateZonesData),
-                hyroxDivision: hyroxDivisionRaw.flatMap(HyroxDivision.init(rawValue:))
+                hyroxDivision: hyroxDivisionRaw.flatMap(HyroxDivision.init(rawValue:)),
+                exerciseSwaps: StoredJSON.decode([String: String].self, from: exerciseSwapsData)
             )
         }
         set {
@@ -112,6 +116,7 @@ final class UserProfileModel: SyncTracked {
             birthYear = newValue.birthYear
             heartRateZonesData = newValue.heartRateZones.map { StoredJSON.encode($0) }
             hyroxDivisionRaw = newValue.hyroxDivision?.rawValue
+            exerciseSwapsData = newValue.exerciseSwaps.map { StoredJSON.encode($0) }
             touch()
         }
     }

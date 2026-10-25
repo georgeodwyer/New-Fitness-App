@@ -2,6 +2,30 @@ import XCTest
 @testable import TrainingEngine
 
 final class GymWorkoutTests: XCTestCase {
+    func testAlternativesPreferTheSameMovementAndRespectEquipment() throws {
+        let library = TestSupport.bundledTemplates
+        let bench = library.alternatives(to: "barbell-bench-press", equipment: .fullGym)
+        XCTAssertFalse(bench.isEmpty)
+        XCTAssertEqual(bench.first?.pattern, "horizontalPush", "Another horizontal press comes first")
+        XCTAssertFalse(bench.contains { $0.id == "barbell-bench-press" })
+        let dumbbellsOnly = library.alternatives(to: "barbell-bench-press", equipment: .dumbbellsOnly)
+        XCTAssertTrue(dumbbellsOnly.allSatisfy { Equipment.dumbbellsOnly.allows($0.requires) })
+        XCTAssertTrue(library.alternatives(to: "not-an-exercise", equipment: .fullGym).isEmpty)
+    }
+
+    func testKeptSwapIsUsedInFuturePlans() throws {
+        var profile = TestSupport.profile(goal: .buildStrength, days: [.monday, .wednesday, .friday, .saturday])
+        let generator = PlanGenerator(templates: TestSupport.bundledTemplates)
+        let outline = generator.makeOutline(for: profile, startingOn: TestSupport.monday)
+        let week = try XCTUnwrap(generator.generateWeek(0, outline: outline, profile: profile))
+        let session = try XCTUnwrap(week.sessions.first { $0.strength?.exercises.contains { $0.exerciseId == "barbell-back-squat" } == true })
+        profile.exerciseSwaps = [AthleteProfile.swapKey(day: session.title, exerciseId: "barbell-back-squat"): "leg-press"]
+        let swapped = try XCTUnwrap(generator.generateWeek(0, outline: outline, profile: profile))
+        let same = try XCTUnwrap(swapped.sessions.first { $0.title == session.title && $0.date == session.date })
+        XCTAssertTrue(same.strength?.exercises.contains { $0.exerciseId == "leg-press" } ?? false)
+        XCTAssertFalse(same.strength?.exercises.contains { $0.exerciseId == "barbell-back-squat" } ?? true)
+    }
+
     private func kg(_ value: Double) -> String { "\(Units.formatWeight(kg: value, units: .metric)) kg" }
 
     func testPrefillCopiesLastTimeSetBySet() {

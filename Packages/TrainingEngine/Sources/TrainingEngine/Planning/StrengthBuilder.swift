@@ -46,8 +46,13 @@ enum StrengthBuilder {
         var used = Set<String>()
 
         for slot in session.slots {
-            guard let exercise = templates.exercise(for: slot, equipment: context.profile.equipment),
-                  !used.contains(exercise.id) else { continue }
+            guard var exercise = templates.exercise(for: slot, equipment: context.profile.equipment) else { continue }
+            // The runner's own swap for this day, where they kept one.
+            if let swapId = context.profile.exerciseSwaps?[AthleteProfile.swapKey(day: session.name, exerciseId: exercise.id)],
+               let swapped = templates.exercise(id: swapId) {
+                exercise = swapped
+            }
+            guard !used.contains(exercise.id) else { continue }
             used.insert(exercise.id)
 
             var scheme = slot.role == .main ? goalPrescription.main : goalPrescription.accessory

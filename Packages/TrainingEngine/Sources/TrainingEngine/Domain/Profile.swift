@@ -139,6 +139,11 @@ public struct AthleteProfile: Codable, Equatable, Sendable {
     public var heartRateZones: HeartRateZoneSettings?
     /// Hyrox race category (Hyrox goal only).
     public var hyroxDivision: HyroxDivision?
+    /// Exercises the runner swapped for a gym day and kept: `swapKey(day:exerciseId:)` → the
+    /// exercise used instead (e.g. "Push|barbell-bench-press" → "dumbbell-bench-press").
+    public var exerciseSwaps: [String: String]?
+
+    public static func swapKey(day: String, exerciseId: String) -> String { "\(day)|\(exerciseId)" }
 
     public init(
         runningExperience: ExperienceLevel,
@@ -160,7 +165,8 @@ public struct AthleteProfile: Codable, Equatable, Sendable {
         splitCode: String? = nil,
         birthYear: Int? = nil,
         heartRateZones: HeartRateZoneSettings? = nil,
-        hyroxDivision: HyroxDivision? = nil
+        hyroxDivision: HyroxDivision? = nil,
+        exerciseSwaps: [String: String]? = nil
     ) {
         self.runningExperience = runningExperience
         self.recentRace = recentRace
@@ -182,6 +188,7 @@ public struct AthleteProfile: Codable, Equatable, Sendable {
         self.birthYear = birthYear
         self.heartRateZones = heartRateZones
         self.hyroxDivision = hyroxDivision
+        self.exerciseSwaps = exerciseSwaps
     }
 
     /// Age this year (nil when not given).

@@ -161,6 +161,7 @@ struct TrainingProfileView: View {
         var updated = model.profile
         updated.units = original.units // units are changed on the Settings screen
         updated.heartRateZones = original.heartRateZones // edited on the Heart rate zones screen
+        updated.exerciseSwaps = original.exerciseSwaps // set from the gym screen
         guard updated != original else { return }
         profileModel.profile = updated
         try? context.save()

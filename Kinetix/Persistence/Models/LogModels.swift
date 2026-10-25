@@ -83,6 +83,8 @@ final class StrengthLogModel: SyncTracked {
     var activeSeconds: Double = 0
     /// How long the warm-up took; nil until the warm-up is done or skipped.
     var warmUpSeconds: Double?
+    /// The saved gym workout it was started from (Record tab), if any.
+    var templateId: UUID?
 
     @Relationship(deleteRule: .cascade, inverse: \SetLogModel.session)
     var sets: [SetLogModel] = []

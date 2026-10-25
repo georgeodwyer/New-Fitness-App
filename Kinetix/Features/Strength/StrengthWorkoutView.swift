@@ -15,6 +15,7 @@ struct StrengthWorkoutView: View {
     @State private var showLeave = false
     @State private var summary: StrengthService.Summary?
     @State private var showPicker = false
+    @State private var swapGroup: StrengthWorkoutModel.ExerciseGroup?
     /// Set just before a discarded workout is deleted, so nothing reads it afterwards.
     @State private var discarded = false
 
@@ -54,6 +55,18 @@ struct StrengthWorkoutView: View {
                 model.addExercise(exercise)
             }
         }
+        .sheet(item: $swapGroup) { group in
+            SwapExerciseSheet(current: group, equipment: model.equipment, excluding: model.exerciseIds) { exercise in
+                model.swap(group, to: exercise)
+            }
+        }
+        .alert(keepTitle, isPresented: Binding(get: { model.pendingKeep != nil }, set: { if !$0 { model.pendingKeep = nil } }),
+               presenting: model.pendingKeep) { _ in
+            Button("Keep it") { model.keepSwap() }
+            Button("Just today", role: .cancel) { model.pendingKeep = nil }
+        } message: { pending in
+            Text(keepMessage(pending))
+        }
         .sheet(isPresented: $showFinish) {
             FinishWorkoutSheet(defaultEffort: model.planned?.plannedEffort ?? 7, completedSets: model.completedSets, totalSets: model.totalSets) { effort in
                 showFinish = false
@@ -91,8 +104,38 @@ struct StrengthWorkoutView: View {
                                          message: "Add your first exercise. Weights and reps fill in from last time.")
                         }
                         ForEach(model.groups) { group in
-                            ExerciseCard(group: group, isCurrent: group.key == model.currentKey, units: units, model: model)
+                            ExerciseCard(group: group, isCurrent: group.key == model.currentKey, units: units, model: model,
+                                         onSwap: { swapGroup = group })
                                 .id(group.key)
+                                // Press and hold to drag an exercise into a new place.
+                                .draggable(group.key) {
+                                    Label(group.name, systemImage: "line.3.horizontal")
+                                        .font(KXFont.bodyEmphasis)
+                                        .padding(KXSpacing.md)
+                                        .background(KXColor.surface, in: RoundedRectangle(cornerRadius: KXRadius.md))
+                                }
+                                .dropDestination(for: String.self) { keys, _ in
+                                    guard let key = keys.first, key != group.key else { return false }
+                                    withAnimation { model.move(key, before: group.key) }
+                                    return true
+                                }
+                        }
+                        if model.groups.count > 1 {
+                            // Drop here to move an exercise to the end.
+                            Text("Hold and drag an exercise to change the order")
+                                .font(KXFont.caption)
+                                .foregroundStyle(KXColor.inkTertiary)
+                                .frame(maxWidth: .infinity, minHeight: 36)
+                                .dropDestination(for: String.self) { keys, _ in
+                                    guard let key = keys.first else { return false }
+                                    withAnimation { model.move(key, before: nil) }
+                                    return true
+                                }
+                        }
+                        if let message = model.keptMessage {
+                            Label(message, systemImage: "checkmark.circle.fill")
+                                .font(KXFont.callout).foregroundStyle(KXColor.ink)
+                                .symbolRenderingMode(.multicolor)
                         }
                         if model.canEditExercises {
                             Button {
@@ -154,6 +197,17 @@ struct StrengthWorkoutView: View {
             }
         }
         .padding(KXSpacing.screenMargin)
+    }
+
+    private var keepTitle: String { model.pendingKeep.map { "Keep \($0.to.name)?" } ?? "" }
+
+    private func keepMessage(_ pending: StrengthWorkoutModel.PendingKeep) -> String {
+        switch pending.target {
+        case .planDay(let day):
+            return "Use \(pending.to.name) instead of \(pending.fromName) in every \(day) session from now on?"
+        case .savedWorkout(let name):
+            return "Save \(pending.to.name) instead of \(pending.fromName) in \u{201C}\(name)\u{201D}?"
+        }
     }
 
     private func closeAfterDialog() {
@@ -252,6 +306,7 @@ private struct ExerciseCard: View {
     let isCurrent: Bool
     let units: UnitSystem
     let model: StrengthWorkoutModel
+    let onSwap: () -> Void
 
     @State private var openSets: Set<UUID> = []
     @State private var exerciseOpen = false
@@ -299,20 +354,25 @@ private struct ExerciseCard: View {
                     }
                     .accessibilityLabel(isFolded ? "Show sets" : "Hide sets")
                 }
-                if model.canEditExercises {
-                    Menu {
+                Menu {
+                    if !group.isComplete {
+                        Button(action: onSwap) {
+                            Label("Swap exercise", systemImage: "arrow.left.arrow.right")
+                        }
+                    }
+                    if model.canEditExercises {
                         Button(role: .destructive) {
                             model.removeExercise(group)
                         } label: {
                             Label("Remove exercise", systemImage: "trash")
                         }
-                    } label: {
-                        Image(systemName: "ellipsis")
-                            .foregroundStyle(KXColor.inkSecondary)
-                            .frame(width: 32, height: 32)
                     }
-                    .accessibilityLabel("Options for \(group.name)")
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .foregroundStyle(KXColor.inkSecondary)
+                        .frame(width: 32, height: 32)
                 }
+                .accessibilityLabel("Options for \(group.name)")
             }
             if !isFolded {
                 ForEach(group.sets) { set in
@@ -633,5 +693,67 @@ private struct WarmUpPage: View {
             }
         }
         .padding(KXSpacing.screenMargin)
+    }
+}
+
+/// "Swap exercise": close matches for the runner's equipment first, then every exercise.
+private struct SwapExerciseSheet: View {
+    let current: StrengthWorkoutModel.ExerciseGroup
+    let equipment: Equipment
+    let excluding: Set<String>
+    let onPick: (ExerciseDefinition) -> Void
+
+    @Environment(\.modelContext) private var context
+    @Environment(\.dismiss) private var dismiss
+    @State private var query = ""
+
+    private var suggestions: [ExerciseDefinition] {
+        PlanService.templates.alternatives(to: current.first.exerciseId, equipment: equipment)
+            .filter { !excluding.contains($0.id) }
+    }
+
+    private var all: [ExerciseDefinition] {
+        ExerciseSearch.filter(GymService.library(in: context), query: query, muscle: nil, loading: nil)
+            .filter { !excluding.contains($0.id) }
+    }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                if query.isEmpty, !suggestions.isEmpty {
+                    Section("Close matches") {
+                        ForEach(suggestions, id: \.id) { row($0) }
+                    }
+                }
+                Section(query.isEmpty ? "All exercises" : "Results") {
+                    ForEach(all, id: \.id) { row($0) }
+                    if all.isEmpty {
+                        Text("No exercises match.").font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
+                    }
+                }
+            }
+            .searchable(text: $query, prompt: "Search exercises")
+            .navigationTitle("Swap \(current.name)")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
+        }
+        .tint(KXColor.accent)
+    }
+
+    private func row(_ exercise: ExerciseDefinition) -> some View {
+        Button {
+            onPick(exercise)
+            dismiss()
+        } label: {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(exercise.name).font(KXFont.body).foregroundStyle(KXColor.ink)
+                Text("\(exercise.muscleGroup.displayName) · \(exercise.loading.displayName)")
+                    .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("gym.swap.\(exercise.id)")
     }
 }

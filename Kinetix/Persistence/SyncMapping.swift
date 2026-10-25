@@ -86,6 +86,7 @@ extension UserProfileModel: SyncableModel {
         birthYear = p.birthYear
         heartRateZonesData = p.heartRateZones.map { StoredJSON.encode($0) }
         hyroxDivisionRaw = p.hyroxDivision?.rawValue
+        exerciseSwapsData = p.exerciseSwaps.map { StoredJSON.encode($0) }
         createdAt = payload.createdAt
     }
 
@@ -330,12 +331,14 @@ extension StrengthLogModel: SyncableModel {
         var isRecorded: Bool?
         var activeSeconds: Double?
         var warmUpSeconds: Double?
+        var templateId: UUID?
     }
     static var syncType: String { "strengthLog" }
     var syncPayload: Payload {
         Payload(plannedSessionId: plannedSessionId, startedAt: startedAt, durationSeconds: durationSeconds, effort: effort,
                 load: load, title: title, isFinished: isFinished, finishedAt: finishedAt, healthKitWorkoutId: healthKitWorkoutId,
-                stravaActivityId: stravaActivityId, isRecorded: isRecorded, activeSeconds: activeSeconds, warmUpSeconds: warmUpSeconds)
+                stravaActivityId: stravaActivityId, isRecorded: isRecorded, activeSeconds: activeSeconds, warmUpSeconds: warmUpSeconds,
+                templateId: templateId)
     }
     func applySync(_ p: Payload, context: ModelContext) {
         plannedSessionId = p.plannedSessionId
@@ -351,6 +354,7 @@ extension StrengthLogModel: SyncableModel {
         isRecorded = p.isRecorded ?? false
         activeSeconds = p.activeSeconds ?? 0
         warmUpSeconds = p.warmUpSeconds
+        templateId = p.templateId
     }
     static func makeForSync(id: UUID) -> StrengthLogModel { StrengthLogModel(plannedSessionId: nil, startedAt: .now, id: id) }
 }

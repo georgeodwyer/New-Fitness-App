@@ -45,9 +45,10 @@ enum GymService {
     }
 
     /// Creates a recorded workout with every exercise pre-filled from last time.
-    static func start(title: String, items: [GymTemplateItem], linkedPlanned: PlannedSessionModel?,
+    static func start(title: String, items: [GymTemplateItem], linkedPlanned: PlannedSessionModel?, templateId: UUID? = nil,
                       in context: ModelContext, now: Date = .now) -> StrengthLogModel {
         let log = StrengthLogModel(plannedSessionId: linkedPlanned?.id, startedAt: now)
+        log.templateId = templateId
         log.title = title.trimmingCharacters(in: .whitespaces).isEmpty ? "Gym workout" : title
         log.isRecorded = true
         context.insert(log)
