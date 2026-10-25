@@ -87,7 +87,7 @@ final class ProgrammePlannerTests: XCTestCase {
         XCTAssertEqual(outline.programmeGoal, .halfMarathon)
         XCTAssertEqual(outline.weeks.count, 13, "12 weeks and a recovery week")
         // 100%, 105%, 110%, deload 90%, then 115%: not cut, because it's measured against week 3.
-        for (actual, expected) in zip(km.prefix(5), [40, 42, 44, 36, 46]) {
+        for (actual, expected) in zip(km.prefix(5), [40.0, 42, 44, 36, 46]) {
             XCTAssertEqual(actual, expected, accuracy: 0.06)
         }
         XCTAssertEqual(km[8], 52) // peak, 130%
