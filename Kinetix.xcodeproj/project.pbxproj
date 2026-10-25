@@ -72,6 +72,7 @@
 		7ACA70325602396261B857E8 /* AccountService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27D5D1CA3AE70EB8EF9D18FD /* AccountService.swift */; };
 		7C7C3B1A994523C342761A39 /* LogModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08A053F7F4B39B04FED73E26 /* LogModels.swift */; };
 		7CA88CFE8439E3F9F876A122 /* WatchStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4279740084F6D852D0D6FA4 /* WatchStore.swift */; };
+		7F6C3F91173E450852BB2B7C /* WorkoutEditService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E84B289743F4727A53D8FF5 /* WorkoutEditService.swift */; };
 		8B54A4325A9E7F601F01144F /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D0A8758A0E38811D70F3371 /* HomeView.swift */; };
 		8B591D9BB2497AB6F03A5E2E /* RunService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C49960012FF421B7459C2F62 /* RunService.swift */; };
 		90CD0CC8516E0A04C6BA5AFD /* PersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD05F4DDF2E3BCB21AE7455E /* PersistenceTests.swift */; };
@@ -245,6 +246,7 @@
 		252A5F13C31E37644227D134 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		2740B3F27E573D14E2F6054C /* BuildChannel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildChannel.swift; sourceTree = "<group>"; };
 		27D5D1CA3AE70EB8EF9D18FD /* AccountService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountService.swift; sourceTree = "<group>"; };
+		2E84B289743F4727A53D8FF5 /* WorkoutEditService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutEditService.swift; sourceTree = "<group>"; };
 		2FCE0202A3E975345AA0F2B0 /* KXProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXProgress.swift; sourceTree = "<group>"; };
 		3000B3D5DB9BC4ADD3017915 /* ProgressScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressScreen.swift; sourceTree = "<group>"; };
 		3238845C1F80144B68E1D0D4 /* RouteService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteService.swift; sourceTree = "<group>"; };
@@ -683,6 +685,7 @@
 				AE4D2B82E6F373D0D19923E8 /* StrengthService.swift */,
 				8625E979738A82F0E873A0DD /* SyncService.swift */,
 				3CB8951AE011CBA263FE6226 /* VoiceCoach.swift */,
+				2E84B289743F4727A53D8FF5 /* WorkoutEditService.swift */,
 				CDF6D92FEC0650C4D16C7DA6 /* Integrations */,
 			);
 			path = Services;
@@ -1074,6 +1077,7 @@
 				72BB11CDF6863C2C39FDA03F /* WorkoutActivity.swift in Sources */,
 				6540A069DFA262A340BECB35 /* WorkoutActivityController.swift in Sources */,
 				1682D3131EDEDDCF809DC004 /* WorkoutBuilderView.swift in Sources */,
+				7F6C3F91173E450852BB2B7C /* WorkoutEditService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
