@@ -328,12 +328,14 @@ extension StrengthLogModel: SyncableModel {
         var healthKitWorkoutId: UUID?
         var stravaActivityId: String?
         var isRecorded: Bool?
+        var activeSeconds: Double?
+        var warmUpSeconds: Double?
     }
     static var syncType: String { "strengthLog" }
     var syncPayload: Payload {
         Payload(plannedSessionId: plannedSessionId, startedAt: startedAt, durationSeconds: durationSeconds, effort: effort,
                 load: load, title: title, isFinished: isFinished, finishedAt: finishedAt, healthKitWorkoutId: healthKitWorkoutId,
-                stravaActivityId: stravaActivityId, isRecorded: isRecorded)
+                stravaActivityId: stravaActivityId, isRecorded: isRecorded, activeSeconds: activeSeconds, warmUpSeconds: warmUpSeconds)
     }
     func applySync(_ p: Payload, context: ModelContext) {
         plannedSessionId = p.plannedSessionId
@@ -347,6 +349,8 @@ extension StrengthLogModel: SyncableModel {
         healthKitWorkoutId = p.healthKitWorkoutId
         stravaActivityId = p.stravaActivityId
         isRecorded = p.isRecorded ?? false
+        activeSeconds = p.activeSeconds ?? 0
+        warmUpSeconds = p.warmUpSeconds
     }
     static func makeForSync(id: UUID) -> StrengthLogModel { StrengthLogModel(plannedSessionId: nil, startedAt: .now, id: id) }
 }
@@ -369,13 +373,14 @@ extension SetLogModel: SyncableModel {
         var repRangeUpper: Int
         var restSeconds: Int
         var isBodyweight: Bool
+        var activeSeconds: Double?
     }
     static var syncType: String { "setLog" }
     var syncPayload: Payload {
         Payload(sessionId: session?.id, exerciseId: exerciseId, setIndex: setIndex, targetReps: targetReps, targetWeightKg: targetWeightKg,
                 actualReps: actualReps, actualWeightKg: actualWeightKg, rpe: rpe, completedAt: completedAt, progressionKey: progressionKey,
                 exerciseName: exerciseName, exerciseOrder: exerciseOrder, repRangeLower: repRangeLower, repRangeUpper: repRangeUpper,
-                restSeconds: restSeconds, isBodyweight: isBodyweight)
+                restSeconds: restSeconds, isBodyweight: isBodyweight, activeSeconds: activeSeconds)
     }
     func applySync(_ p: Payload, context: ModelContext) {
         exerciseId = p.exerciseId
@@ -393,6 +398,7 @@ extension SetLogModel: SyncableModel {
         repRangeUpper = p.repRangeUpper
         restSeconds = p.restSeconds
         isBodyweight = p.isBodyweight
+        activeSeconds = p.activeSeconds
         if let sessionId = p.sessionId, session?.id != sessionId {
             session = fetchOne(StrengthLogModel.self, id: sessionId, in: context)
         }

@@ -79,6 +79,10 @@ final class StrengthLogModel: SyncTracked {
     var finishedAt: Date?
     /// Started from the Record tab (your own workout) rather than opened from the plan.
     var isRecorded: Bool = false
+    /// Time spent doing sets (Start set → Finish set), not resting.
+    var activeSeconds: Double = 0
+    /// How long the warm-up took; nil until the warm-up is done or skipped.
+    var warmUpSeconds: Double?
 
     @Relationship(deleteRule: .cascade, inverse: \SetLogModel.session)
     var sets: [SetLogModel] = []
@@ -129,6 +133,8 @@ final class SetLogModel: SyncTracked {
     var restSeconds: Int = 90
     /// Bodyweight exercises have no load.
     var isBodyweight: Bool = false
+    /// How long the set took (Start set → Finish set), when timed.
+    var activeSeconds: Double?
 
     var isCompleted: Bool { completedAt != nil }
 

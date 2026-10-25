@@ -387,6 +387,11 @@ final class ScreenshotTests: XCTestCase {
         } else if app.buttons["Cancel"].firstMatch.exists {
             app.buttons["Cancel"].firstMatch.tap()
         }
+        let skipWarmUp = app.buttons["Skip warm-up"].firstMatch
+        if skipWarmUp.waitForExistence(timeout: 3) {
+            snap("61a-gym-warm-up")
+            skipWarmUp.tap()
+        }
         snap("61-gym-workout")
         let leave = app.buttons["Leave workout"].firstMatch
         if leave.waitForExistence(timeout: 3) {

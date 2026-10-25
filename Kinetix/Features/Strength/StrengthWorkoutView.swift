@@ -38,6 +38,50 @@ struct StrengthWorkoutView: View {
     private var workout: some View {
         VStack(spacing: 0) {
             header
+            if model.needsWarmUp {
+                WarmUpPage(model: model, units: units)
+            } else {
+                exercises
+            }
+        }
+        .background(KXColor.background.ignoresSafeArea())
+        .sensoryFeedback(.success, trigger: model.restFinishedCount)
+        .sensoryFeedback(.impact(weight: .medium), trigger: model.setStartedAt)
+        .onAppear { UIApplication.shared.isIdleTimerDisabled = true }
+        .onDisappear { UIApplication.shared.isIdleTimerDisabled = false }
+        .sheet(isPresented: $showPicker) {
+            ExercisePickerView(excluding: model.exerciseIds) { exercise in
+                model.addExercise(exercise)
+            }
+        }
+        .sheet(isPresented: $showFinish) {
+            FinishWorkoutSheet(defaultEffort: model.planned?.plannedEffort ?? 7, completedSets: model.completedSets, totalSets: model.totalSets) { effort in
+                showFinish = false
+                model.endSetTimer()
+                summary = StrengthService.finish(model.log, planned: model.planned, effort: effort, units: units, in: context)
+            }
+            .presentationDetents([.medium])
+        }
+        .confirmationDialog("Leave this workout?", isPresented: $showLeave, titleVisibility: .visible) {
+            // Close after the dialog has gone: iOS ignores a dismiss while the dialog is still closing.
+            Button("Keep for later") { closeAfterDialog() }
+            Button("Discard workout", role: .destructive) {
+                discarded = true
+                model.endLockScreen()
+                let log = model.log
+                closeAfterDialog()
+                // Delete once the screen has gone, so SwiftUI never draws a deleted workout.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                    StrengthService.discard(log, in: context)
+                }
+            }
+        } message: {
+            Text("Logged sets are saved, so you can pick up where you left off.")
+        }
+    }
+
+    private var exercises: some View {
+        VStack(spacing: 0) {
             if model.restEndsAt != nil { restBanner }
             ScrollViewReader { proxy in
                 ScrollView {
@@ -72,43 +116,44 @@ struct StrengthWorkoutView: View {
                     withAnimation { proxy.scrollTo(key, anchor: .top) }
                 }
             }
-            Button("Finish workout") { showFinish = true }
-                .buttonStyle(.kx(.primary, fullWidth: true))
-                .disabled(model.totalSets == 0)
-                .padding(KXSpacing.screenMargin)
+            setButton
         }
-        .background(KXColor.background.ignoresSafeArea())
-        .sensoryFeedback(.success, trigger: model.restFinishedCount)
-        .onAppear { UIApplication.shared.isIdleTimerDisabled = true }
-        .onDisappear { UIApplication.shared.isIdleTimerDisabled = false }
-        .sheet(isPresented: $showPicker) {
-            ExercisePickerView(excluding: model.exerciseIds) { exercise in
-                model.addExercise(exercise)
-            }
-        }
-        .sheet(isPresented: $showFinish) {
-            FinishWorkoutSheet(defaultEffort: model.planned?.plannedEffort ?? 7, completedSets: model.completedSets, totalSets: model.totalSets) { effort in
-                showFinish = false
-                summary = StrengthService.finish(model.log, planned: model.planned, effort: effort, units: units, in: context)
-            }
-            .presentationDetents([.medium])
-        }
-        .confirmationDialog("Leave this workout?", isPresented: $showLeave, titleVisibility: .visible) {
-            // Close after the dialog has gone: iOS ignores a dismiss while the dialog is still closing.
-            Button("Keep for later") { closeAfterDialog() }
-            Button("Discard workout", role: .destructive) {
-                discarded = true
-                model.endLockScreen()
-                let log = model.log
-                closeAfterDialog()
-                // Delete once the screen has gone, so SwiftUI never draws a deleted workout.
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-                    StrengthService.discard(log, in: context)
+    }
+
+    /// Start set → Finish set (timed) for the next set; Finish workout once they're all done.
+    @ViewBuilder
+    private var setButton: some View {
+        VStack(spacing: KXSpacing.xs) {
+            if model.totalSets > 0, model.nextSet != nil {
+                if let summary = model.nextSetSummary {
+                    Text(summary)
+                        .font(KXFont.caption)
+                        .foregroundStyle(KXColor.inkSecondary)
+                        .lineLimit(1)
                 }
+                if let started = model.setStartedAt {
+                    Button {
+                        model.finishSet()
+                    } label: {
+                        TimelineView(.periodic(from: started, by: 1)) { context in
+                            Text("Finish set · \(Units.formatMinutesSeconds(context.date.timeIntervalSince(started)))")
+                                .monospacedDigit()
+                        }
+                    }
+                    .buttonStyle(.kx(.inverted, fullWidth: true))
+                    .accessibilityIdentifier("gym.finishSet")
+                } else {
+                    Button("Start set") { model.startSet() }
+                        .buttonStyle(.kx(.primary, fullWidth: true))
+                        .accessibilityIdentifier("gym.startSet")
+                }
+            } else {
+                Button("Finish workout") { showFinish = true }
+                    .buttonStyle(.kx(.primary, fullWidth: true))
+                    .disabled(model.totalSets == 0)
             }
-        } message: {
-            Text("Logged sets are saved, so you can pick up where you left off.")
         }
+        .padding(KXSpacing.screenMargin)
     }
 
     private func closeAfterDialog() {
@@ -123,30 +168,38 @@ struct StrengthWorkoutView: View {
                 Text(model.log.title).font(KXFont.headline).foregroundStyle(KXColor.ink).lineLimit(1)
             }
             Spacer()
-            if model.canEditExercises {
-                Menu {
+            Menu {
+                Button {
+                    showFinish = true
+                } label: {
+                    Label("Finish workout", systemImage: "flag.checkered")
+                }
+                .disabled(model.totalSets == 0)
+                if model.canEditExercises {
                     Button {
                         model.saveAsTemplate()
                     } label: {
                         Label("Save as template", systemImage: "bookmark")
                     }
                     .disabled(model.totalSets == 0)
-                } label: {
-                    Image(systemName: "ellipsis.circle")
-                        .font(.title3)
-                        .foregroundStyle(KXColor.ink)
-                        .frame(width: 36, height: 44)
                 }
-                .accessibilityLabel("More")
-                .accessibilityIdentifier("gym.more")
+            } label: {
+                Image(systemName: "ellipsis.circle")
+                    .font(.title3)
+                    .foregroundStyle(KXColor.ink)
+                    .frame(width: 36, height: 44)
             }
-            VStack(alignment: .trailing, spacing: 0) {
-                TimelineView(.periodic(from: .now, by: 1)) { context in
+            .accessibilityLabel("More")
+            .accessibilityIdentifier("gym.more")
+            TimelineView(.periodic(from: .now, by: 1)) { context in
+                VStack(alignment: .trailing, spacing: 0) {
                     Text(Units.formatMinutesSeconds(context.date.timeIntervalSince(model.log.startedAt)))
                         .font(KXFont.bodyEmphasis.monospacedDigit())
                         .foregroundStyle(KXColor.ink)
+                    Text("Active \(Units.formatMinutesSeconds(model.activeSeconds(at: context.date))) · \(model.completedSets)/\(model.totalSets)")
+                        .font(KXFont.caption.monospacedDigit())
+                        .foregroundStyle(KXColor.inkSecondary)
                 }
-                Text("\(model.completedSets)/\(model.totalSets) sets").font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
             }
             .accessibilityElement(children: .combine)
             if let onMinimise {
@@ -171,7 +224,7 @@ struct StrengthWorkoutView: View {
                 }
                 .frame(width: 36, height: 36)
                 VStack(alignment: .leading, spacing: 0) {
-                    KXOverline("Rest", color: KXColor.onInverted.opacity(0.7))
+                    KXOverline(remaining > 0 ? "Rest" : "Rest done · start when ready", color: KXColor.onInverted.opacity(0.7))
                     Text(Units.formatMinutesSeconds(remaining))
                         .font(KXFont.metricSmall)
                         .foregroundStyle(KXColor.onInverted)
@@ -191,25 +244,41 @@ struct StrengthWorkoutView: View {
     }
 }
 
-/// One exercise with its sets.
+/// One exercise with its sets. Finished sets fold to one line (tap to open); a finished
+/// exercise folds to its name and a summary. The set just finished stays open for its
+/// effort rating until the next set starts.
 private struct ExerciseCard: View {
     let group: StrengthWorkoutModel.ExerciseGroup
     let isCurrent: Bool
     let units: UnitSystem
     let model: StrengthWorkoutModel
 
+    @State private var openSets: Set<UUID> = []
+    @State private var exerciseOpen = false
+
     private var format: DisplayFormat { DisplayFormat(units: units) }
+
+    private var holdsLastFinished: Bool {
+        guard let id = model.lastFinishedSetId else { return false }
+        return group.sets.contains { $0.id == id }
+    }
+
+    private var isFolded: Bool { group.isComplete && !exerciseOpen && !holdsLastFinished }
 
     var body: some View {
         VStack(alignment: .leading, spacing: KXSpacing.md) {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: KXSpacing.xxs) {
                     Text(group.name).font(KXFont.headline).foregroundStyle(KXColor.ink)
-                    Text(targetText).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
-                    if let lastTime = model.lastTime[group.first.exerciseId] {
-                        Label(lastTime, systemImage: "clock.arrow.circlepath")
-                            .font(KXFont.caption)
-                            .foregroundStyle(KXColor.inkSecondary)
+                    if isFolded {
+                        Text(doneSummary).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+                    } else {
+                        Text(targetText).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+                        if let lastTime = model.lastTime[group.first.exerciseId] {
+                            Label(lastTime, systemImage: "clock.arrow.circlepath")
+                                .font(KXFont.caption)
+                                .foregroundStyle(KXColor.inkSecondary)
+                        }
                     }
                 }
                 Spacer()
@@ -217,6 +286,18 @@ private struct ExerciseCard: View {
                     KXChip(text: "Done", systemImage: "checkmark", variant: .success)
                 } else if isCurrent {
                     KXChip(text: "Now", variant: .primary)
+                }
+                if group.isComplete {
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) { exerciseOpen.toggle() }
+                    } label: {
+                        Image(systemName: "chevron.down")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(KXColor.inkSecondary)
+                            .rotationEffect(.degrees(isFolded ? 0 : 180))
+                            .frame(width: 32, height: 32)
+                    }
+                    .accessibilityLabel(isFolded ? "Show sets" : "Hide sets")
                 }
                 if model.canEditExercises {
                     Menu {
@@ -233,16 +314,25 @@ private struct ExerciseCard: View {
                     .accessibilityLabel("Options for \(group.name)")
                 }
             }
-            ForEach(group.sets) { set in
-                SetRow(set: set, units: units, model: model)
+            if !isFolded {
+                ForEach(group.sets) { set in
+                    if set.isCompleted && set.id != model.lastFinishedSetId && !openSets.contains(set.id) {
+                        DoneSetRow(set: set, units: units) {
+                            withAnimation(.easeInOut(duration: 0.2)) { _ = openSets.insert(set.id) }
+                        }
+                    } else {
+                        SetRow(set: set, units: units, model: model)
+                            .onChange(of: set.isCompleted) { _, done in if !done { openSets.remove(set.id) } }
+                    }
+                }
+                Button {
+                    model.addSet(to: group)
+                } label: {
+                    Label("Add set", systemImage: "plus")
+                        .font(KXFont.captionEmphasis)
+                }
+                .foregroundStyle(KXColor.accent)
             }
-            Button {
-                model.addSet(to: group)
-            } label: {
-                Label("Add set", systemImage: "plus")
-                    .font(KXFont.captionEmphasis)
-            }
-            .foregroundStyle(KXColor.accent)
         }
         .kxCard(isCurrent ? .raised : .tinted)
         .overlay {
@@ -256,6 +346,55 @@ private struct ExerciseCard: View {
         let reps = "\(group.sets.count) × \(first.repRangeLower)–\(first.repRangeUpper)"
         let load = first.isBodyweight ? "bodyweight" : format.weight(first.targetWeightKg)
         return "Target \(reps) @ \(load) · rest \(Units.formatMinutesSeconds(Double(first.restSeconds)))"
+    }
+
+    /// "3 sets · 60 kg × 8, 8, 7"
+    private var doneSummary: String {
+        let done = group.sets.filter(\.isCompleted)
+        let reps = done.map { "\($0.actualReps)" }.joined(separator: ", ")
+        let weights = Set(done.map(\.actualWeightKg))
+        let load: String
+        if group.first.isBodyweight { load = "bodyweight" }
+        else if weights.count == 1, let w = weights.first { load = format.weight(w) }
+        else { load = "up to " + format.weight(weights.max() ?? 0) }
+        return "\(done.count) set\(done.count == 1 ? "" : "s") · \(load) × \(reps)"
+    }
+}
+
+/// A finished set on one line: "1 · 60 kg × 8 · RPE 8 ✓". Tap to change it.
+private struct DoneSetRow: View {
+    let set: SetLogModel
+    let units: UnitSystem
+    let onOpen: () -> Void
+
+    var body: some View {
+        Button(action: onOpen) {
+            HStack(spacing: KXSpacing.sm) {
+                Text("\(set.setIndex + 1)")
+                    .font(KXFont.captionEmphasis)
+                    .foregroundStyle(KXColor.inkSecondary)
+                    .frame(width: 20)
+                Text(set.isBodyweight ? "\(set.actualReps) reps"
+                     : "\(DisplayFormat(units: units).weight(set.actualWeightKg)) × \(set.actualReps)")
+                    .font(KXFont.bodyEmphasis.monospacedDigit())
+                    .foregroundStyle(KXColor.ink)
+                if let rpe = set.rpe {
+                    Text("RPE \(Int(rpe))").font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+                }
+                if let seconds = set.activeSeconds {
+                    Text(Units.formatMinutesSeconds(seconds)).font(KXFont.caption.monospacedDigit()).foregroundStyle(KXColor.inkTertiary)
+                }
+                Spacer()
+                Image(systemName: "checkmark.circle.fill").foregroundStyle(KXColor.success)
+            }
+            .padding(.horizontal, KXSpacing.sm)
+            .padding(.vertical, KXSpacing.xs)
+            .background(KXColor.success.opacity(0.08), in: RoundedRectangle(cornerRadius: KXRadius.sm, style: .continuous))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Set \(set.setIndex + 1) done, \(set.actualReps) reps")
+        .accessibilityHint("Opens the set to change it")
     }
 }
 
@@ -448,5 +587,51 @@ private struct FinishWorkoutSheet: View {
         case 9: return "Very hard"
         default: return "Maximal"
         }
+    }
+}
+
+/// Before the first set: a warm-up timer counting up, what's first, and "Start first set".
+private struct WarmUpPage: View {
+    let model: StrengthWorkoutModel
+    let units: UnitSystem
+
+    var body: some View {
+        VStack(spacing: KXSpacing.xl) {
+            Spacer()
+            VStack(spacing: KXSpacing.sm) {
+                KXOverline("Warm-up", color: KXColor.accent)
+                TimelineView(.periodic(from: model.warmUpStartedAt, by: 1)) { context in
+                    Text(Units.formatMinutesSeconds(context.date.timeIntervalSince(model.warmUpStartedAt)))
+                        .font(.system(size: 72, weight: .bold, design: .rounded).monospacedDigit())
+                        .foregroundStyle(KXColor.ink)
+                        .accessibilityLabel("Warm-up time \(Int(context.date.timeIntervalSince(model.warmUpStartedAt) / 60)) minutes")
+                }
+                Text("A few minutes of easy cardio, then lighter sets of your first lift.")
+                    .font(KXFont.callout)
+                    .foregroundStyle(KXColor.inkSecondary)
+                    .multilineTextAlignment(.center)
+            }
+            if let first = model.groups.first {
+                VStack(spacing: KXSpacing.xxs) {
+                    Text("First up").font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+                    Text(first.name).font(KXFont.headline).foregroundStyle(KXColor.ink)
+                    Text("\(first.sets.count) × \(first.first.repRangeLower)–\(first.first.repRangeUpper)"
+                         + (first.first.isBodyweight ? "" : " @ \(DisplayFormat(units: units).weight(first.first.targetWeightKg))"))
+                        .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+                }
+                .frame(maxWidth: .infinity)
+                .kxCard(.tinted)
+            }
+            Spacer()
+            VStack(spacing: KXSpacing.sm) {
+                Button("Start first set") { model.finishWarmUp(startFirstSet: true) }
+                    .buttonStyle(.kx(.primary, fullWidth: true))
+                    .accessibilityIdentifier("gym.startFirstSet")
+                Button("Skip warm-up") { model.finishWarmUp(startFirstSet: false) }
+                    .font(KXFont.captionEmphasis)
+                    .foregroundStyle(KXColor.inkSecondary)
+            }
+        }
+        .padding(KXSpacing.screenMargin)
     }
 }

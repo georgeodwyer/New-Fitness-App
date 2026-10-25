@@ -20,6 +20,13 @@ final class StrengthWorkoutModel {
     let planned: PlannedSessionModel?
     private let context: ModelContext
 
+    /// When the current set started (Start set); nil between sets.
+    private(set) var setStartedAt: Date?
+    /// The set finished last, kept open for its effort rating until the next set starts.
+    private(set) var lastFinishedSetId: UUID?
+    /// When this screen opened, for the warm-up timer.
+    let warmUpStartedAt = Date()
+
     /// When the current rest ends (nil = not resting).
     private(set) var restEndsAt: Date?
     private(set) var restTotalSeconds: Double = 0
@@ -99,13 +106,85 @@ final class StrengthWorkoutModel {
     func toggleComplete(_ set: SetLogModel) {
         if set.isCompleted {
             set.completedAt = nil
+            if let seconds = set.activeSeconds {
+                log.activeSeconds = max(0, log.activeSeconds - seconds)
+                set.activeSeconds = nil
+            }
+            if lastFinishedSetId == set.id { lastFinishedSetId = nil }
+        } else if set.id == nextSet?.id, setStartedAt != nil {
+            // Ticking the set that's being timed is the same as Finish set.
+            finishSet()
+            return
         } else {
             set.completedAt = .now
+            lastFinishedSetId = set.id
             startRest(seconds: Double(set.restSeconds))
         }
         set.touch()
+        log.touch()
         save()
         updateLockScreen()
+    }
+
+    // MARK: Start set / Finish set
+
+    /// The next set to do, in the workout's order.
+    var nextSet: SetLogModel? { log.orderedSets.first { !$0.isCompleted } }
+
+    /// "Bench Press · set 2 of 3 · 60 kg × 8"
+    var nextSetSummary: String? { nextSetText }
+
+    /// Time spent in sets so far, including the one under way.
+    func activeSeconds(at now: Date) -> Double {
+        log.activeSeconds + (setStartedAt.map { max(0, now.timeIntervalSince($0)) } ?? 0)
+    }
+
+    /// Starts timing the next set. Any rest still showing ends (rest is a guide, not a gate).
+    func startSet() {
+        guard nextSet != nil, setStartedAt == nil else { return }
+        if restEndsAt != nil { skipRest() }
+        lastFinishedSetId = nil
+        setStartedAt = .now
+        updateLockScreen()
+    }
+
+    /// Logs the set being done with the weight and reps shown, and starts its rest.
+    func finishSet() {
+        guard let set = nextSet else { return }
+        let now = Date()
+        if let start = setStartedAt {
+            let seconds = max(0, now.timeIntervalSince(start))
+            set.activeSeconds = seconds
+            log.activeSeconds += seconds
+        }
+        setStartedAt = nil
+        set.completedAt = now
+        lastFinishedSetId = set.id
+        set.touch()
+        log.touch()
+        save()
+        startRest(seconds: Double(set.restSeconds))
+        updateLockScreen()
+    }
+
+    /// Finishing the workout mid-set: the time so far counts as active, the set stays as it is.
+    func endSetTimer() {
+        guard let start = setStartedAt else { return }
+        log.activeSeconds += max(0, Date.now.timeIntervalSince(start))
+        setStartedAt = nil
+        save()
+    }
+
+    // MARK: Warm-up
+
+    /// The warm-up page shows before the first set of a workout that hasn't had one.
+    var needsWarmUp: Bool { log.warmUpSeconds == nil && completedSets == 0 && totalSets > 0 }
+
+    func finishWarmUp(startFirstSet: Bool) {
+        log.warmUpSeconds = max(0, Date.now.timeIntervalSince(warmUpStartedAt))
+        log.touch()
+        save()
+        if startFirstSet { startSet() }
     }
 
     func setRPE(_ value: Double?, for set: SetLogModel) {
