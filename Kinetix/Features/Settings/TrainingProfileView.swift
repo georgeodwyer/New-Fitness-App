@@ -102,6 +102,7 @@ struct TrainingProfileView: View {
             }
         }
         .fullScreenCover(item: $editing) { session in
+            let editedLifts = session.steps.contains(.liftEstimates)
             ProfileQuestionsView(model: model, steps: session.steps, onCancel: {
                 // Throw away unsaved edits.
                 model.load(original)
@@ -110,6 +111,11 @@ struct TrainingProfileView: View {
                 editing = nil
                 let planChanges = changes
                 save()
+                // Lift numbers set the working weights again (even if they're the same as before,
+                // so re-entering them fixes a plan that started from defaults).
+                if editedLifts {
+                    PlanService.applyLiftEstimates(profileModel.profile.liftEstimates, profile: profileModel.profile, in: context)
+                }
                 guard !planChanges.isEmpty else { return }
                 pendingChanges = planChanges
                 // Ask about the plan once the editor has closed (iOS ignores a dialog shown while it's closing).

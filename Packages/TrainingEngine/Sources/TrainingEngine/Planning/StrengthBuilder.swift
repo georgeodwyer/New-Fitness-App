@@ -20,6 +20,14 @@ public enum StrengthMath {
         }
     }
 
+    /// Working weight from a lift the runner entered (e.g. 90 kg × 3) for a rep range starting
+    /// at `reps`, with about two reps in reserve. An accessory use of a main lift is 80% of it.
+    public static func weight(from estimate: LiftEstimate, reps: Int, accessory: Bool, loading: ExerciseLoading) -> Double {
+        let oneRM = estimatedOneRepMax(weightKg: estimate.weightKg, reps: max(estimate.reps, 1))
+        let target = workingWeight(oneRepMax: oneRM, reps: reps)
+        return roundDown(accessory ? target * 0.8 : target, loading: loading)
+    }
+
     /// Rounds down to a loadable weight.
     public static func roundDown(_ weight: Double, loading: ExerciseLoading) -> Double {
         let step = increment(for: loading)
@@ -101,11 +109,7 @@ enum StrengthBuilder {
         if let lift = exercise.mainLift,
            let estimate = profile.liftEstimates.first(where: { $0.lift == lift }),
            estimate.weightKg > 0 {
-            let oneRM = StrengthMath.estimatedOneRepMax(weightKg: estimate.weightKg, reps: max(estimate.reps, 1))
-            let target = StrengthMath.workingWeight(oneRepMax: oneRM, reps: reps.lower)
-            // Accessory use of a main lift is lighter.
-            let scaled = role == .accessory ? target * 0.8 : target
-            return StrengthMath.roundDown(scaled, loading: exercise.loading)
+            return StrengthMath.weight(from: estimate, reps: reps.lower, accessory: role == .accessory, loading: exercise.loading)
         }
         // Hyrox stations start at the race weight for their division.
         if let division = profile.hyroxDivision, let race = exercise.defaultWeightKg?["hyrox-" + division.rawValue] {

@@ -133,6 +133,8 @@ struct PlanPreviewView: View {
         AppBootstrap.ensureDefaults(in: context)
         HealthNotice.accepted = true
         UnitPreference.stored = profile.units
+        // Numbers they entered win over any weights saved from an earlier plan.
+        PlanService.applyLiftEstimates(profile.liftEstimates, profile: profile, in: context)
         PlanService.createPlan(for: profile, in: context)
         Walkthrough.isPending = true
         // A good moment to ask: they've just got a plan to be reminded about.

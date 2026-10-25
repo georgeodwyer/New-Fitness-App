@@ -143,6 +143,62 @@ enum PlanService {
         return RecentRunning.summary(RecentRunning.merge(primary: logs, other: health), now: now)
     }
 
+    /// The runner entered (or changed) numbers for their main lifts: those lifts' working
+    /// weights start again from the numbers, in the saved weights and the sessions already
+    /// built. Lifts without numbers keep progressing from what they've logged.
+    static func applyLiftEstimates(_ estimates: [LiftEstimate], profile: AthleteProfile, in context: ModelContext, now: Date = .now) {
+        let byLift = Dictionary(estimates.filter { $0.weightKg > 0 }.map { ($0.lift, $0) }, uniquingKeysWith: { _, last in last })
+        guard !byLift.isEmpty else { return }
+        let library = templates
+        func match(_ exerciseId: String) -> (estimate: LiftEstimate, exercise: ExerciseDefinition)? {
+            guard let exercise = library.exercise(id: exerciseId), let lift = exercise.mainLift, let estimate = byLift[lift] else { return nil }
+            return (estimate, exercise)
+        }
+        var weights: [String: Double] = [:]
+
+        // Sessions already built for the coming weeks.
+        let today = Calendar.kinetix.startOfDay(for: now)
+        let sessions = ((try? context.fetch(FetchDescriptor<PlannedSessionModel>())) ?? []).filter {
+            !$0.isSoftDeleted && $0.date >= today && ($0.status == .planned || $0.status == .swapped) && ($0.plan?.isActive ?? true)
+        }
+        for session in sessions {
+            guard var prescription = session.strengthPrescription else { continue }
+            var changed = false
+            for index in prescription.exercises.indices {
+                let item = prescription.exercises[index]
+                guard item.weightKg != nil, let found = match(item.exerciseId) else { continue }
+                let weight = StrengthMath.weight(from: found.estimate, reps: item.repRange.lower, accessory: item.role == .accessory,
+                                                 loading: found.exercise.loading)
+                prescription.exercises[index].weightKg = weight
+                weights[item.progressionKey] = weights[item.progressionKey] ?? weight
+                changed = true
+            }
+            if changed {
+                session.strengthPrescriptionData = StoredJSON.encode(prescription)
+                session.touch(now: now)
+            }
+        }
+
+        // Saved working weights (used for every week built from now on).
+        let goal = library.prescription(for: profile.goal)
+        let states = ((try? context.fetch(FetchDescriptor<ExerciseStateModel>())) ?? []).filter { !$0.isSoftDeleted }
+        for state in states {
+            guard let found = match(state.exerciseId) else { continue }
+            let accessory = state.progressionKey.hasSuffix(".accessory")
+            let reps = (accessory ? goal?.accessory.repsLow : goal?.main.repsLow) ?? state.repRangeLower
+            let weight = weights[state.progressionKey]
+                ?? StrengthMath.weight(from: found.estimate, reps: max(reps, 1), accessory: accessory, loading: found.exercise.loading)
+            guard weight != state.workingWeightKg else { continue }
+            state.workingWeightKg = weight
+            state.stallCount = 0
+            state.lastChangeReason = "Set from your lift numbers"
+            state.lastChangedAt = now
+            state.touch(now: now)
+        }
+        try? context.save()
+        SyncService.shared.requestSync()
+    }
+
     /// Current working weights by progression key.
     static func workingWeights(in context: ModelContext) -> [String: Double] {
         let states = (try? context.fetch(FetchDescriptor<ExerciseStateModel>())) ?? []

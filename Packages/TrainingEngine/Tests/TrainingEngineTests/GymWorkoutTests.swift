@@ -2,6 +2,13 @@ import XCTest
 @testable import TrainingEngine
 
 final class GymWorkoutTests: XCTestCase {
+    func testWeightFromLiftNumbers() {
+        // 90 kg × 3 → 1RM 99 kg → 6 reps with 2 in reserve ≈ 78 kg → 77.5 kg on a barbell.
+        let bench = LiftEstimate(lift: .benchPress, weightKg: 90, reps: 3)
+        XCTAssertEqual(StrengthMath.weight(from: bench, reps: 6, accessory: false, loading: .barbell), 77.5)
+        XCTAssertEqual(StrengthMath.weight(from: bench, reps: 6, accessory: true, loading: .barbell), 62.5)
+    }
+
     func testAlternativesPreferTheSameMovementAndRespectEquipment() throws {
         let library = TestSupport.bundledTemplates
         let bench = library.alternatives(to: "barbell-bench-press", equipment: .fullGym)
