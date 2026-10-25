@@ -17,6 +17,8 @@ public enum MirrorMessage: Codable, Equatable, Sendable {
     case command(MirrorCommand)
     /// Watch → phone: a live heart-rate reading.
     case heartRate(bpm: Double, at: Date)
+    /// Phone → watch: the gym session right now (when something changes, and every few seconds).
+    case gymFrame(GymMirrorFrame)
 
     public func encoded() -> Data { (try? WatchCoding.encoder.encode(self)) ?? Data() }
     public static func decode(_ data: Data) -> MirrorMessage? { try? WatchCoding.decoder.decode(MirrorMessage.self, from: data) }
@@ -29,6 +31,8 @@ public enum MirrorCommand: String, Codable, Sendable {
     case lap
     /// Undoes the last skip or lap.
     case undo
+    /// Gym: start timing the next set / log it.
+    case startSet, finishSet
 }
 
 /// What the watch should tap the wrist for.
@@ -85,5 +89,54 @@ public struct MirrorFrame: Codable, Equatable, Sendable {
     /// Recent enough to show (or to start showing) on the watch.
     public func isFresh(at now: Date, maxAgeSeconds: Double = 15) -> Bool {
         now.timeIntervalSince(sentAt) <= maxAgeSeconds
+    }
+}
+
+/// The phone's gym session, for the watch to show: what's next, the set or rest timer, and
+/// the heart-rate zones to colour the watch's heart rate.
+public struct GymMirrorFrame: Codable, Equatable, Sendable {
+    /// The phone's workout (so an old session's frame is never shown).
+    public var sessionId: UUID
+    public var title: String
+    /// e.g. "Bench Press"
+    public var exercise: String?
+    /// e.g. "Set 2 of 3 · 60 kg × 8"
+    public var setText: String?
+    /// While a set is being timed.
+    public var setStartedAt: Date?
+    /// While resting (a guide: the next set starts when the runner starts it).
+    public var restEndsAt: Date?
+    public var setsDone: Int
+    public var setsTotal: Int
+    /// Where each heart-rate zone starts (zones 1–5), and max heart rate.
+    public var zoneStarts: [Double]
+    public var maxHeartRate: Double
+    public var sentAt: Date
+
+    public init(sessionId: UUID, title: String, exercise: String?, setText: String?, setStartedAt: Date?, restEndsAt: Date?,
+                setsDone: Int, setsTotal: Int, zoneStarts: [Double], maxHeartRate: Double, sentAt: Date) {
+        self.sessionId = sessionId
+        self.title = title
+        self.exercise = exercise
+        self.setText = setText
+        self.setStartedAt = setStartedAt
+        self.restEndsAt = restEndsAt
+        self.setsDone = setsDone
+        self.setsTotal = setsTotal
+        self.zoneStarts = zoneStarts
+        self.maxHeartRate = maxHeartRate
+        self.sentAt = sentAt
+    }
+
+    public var isComplete: Bool { setsTotal > 0 && setsDone >= setsTotal }
+
+    /// Recent enough to show (or to start showing) on the watch.
+    public func isFresh(at now: Date, maxAgeSeconds: Double = 20) -> Bool {
+        now.timeIntervalSince(sentAt) <= maxAgeSeconds
+    }
+
+    /// 0 below zone 1, else 1–5.
+    public func zone(for bpm: Double) -> Int {
+        zoneStarts.lastIndex { bpm >= $0 }.map { $0 + 1 } ?? 0
     }
 }

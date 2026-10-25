@@ -83,13 +83,17 @@ public struct TemplateLibrary: Sendable {
             if e.loading == current.loading { s += 1 }
             return s
         }
-        return exercises
-            .filter { $0.id != id && equipment.allows($0.requires) && $0.pattern != "station" }
-            .map { ($0, score($0)) }
-            .filter { $0.1 >= 2 }
-            .sorted { $0.1 != $1.1 ? $0.1 > $1.1 : $0.0.name < $1.0.name }
-            .prefix(limit)
-            .map(\.0)
+        var scored: [(exercise: ExerciseDefinition, score: Int)] = []
+        for candidate in exercises {
+            guard candidate.id != id, candidate.pattern != "station", equipment.allows(candidate.requires) else { continue }
+            let value = score(candidate)
+            if value >= 2 { scored.append((candidate, value)) }
+        }
+        scored.sort { (a: (exercise: ExerciseDefinition, score: Int), b: (exercise: ExerciseDefinition, score: Int)) -> Bool in
+            if a.score != b.score { return a.score > b.score }
+            return a.exercise.name < b.exercise.name
+        }
+        return scored.prefix(limit).map { $0.exercise }
     }
 
     /// Session templates for a number of lifting days per week (capped at the largest split).

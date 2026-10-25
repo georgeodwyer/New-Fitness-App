@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import SwiftData
+import HealthKit
 import TrainingEngine
 
 /// Live state of a strength workout: grouped sets and the rest timer.
@@ -39,9 +40,110 @@ final class StrengthWorkoutModel {
         self.planned = planned
         self.context = context
         self.units = units
+        let profile = ((try? context.fetch(FetchDescriptor<UserProfileModel>())) ?? []).first { !$0.isSoftDeleted }?.profile
+        let runs = (try? context.fetch(FetchDescriptor<RunLogModel>())) ?? []
+        zones = StrainService.zones(profile: profile, runs: runs)
         refreshLastTime()
         WorkoutActivityController.shared.start(title: log.title.isEmpty ? "Strength" : log.title, kind: "strength",
                                                state: lockScreenState)
+        startHeartRateAndWatch()
+    }
+
+    // MARK: Heart rate and Apple Watch
+
+    enum HeartRateSource { case watch, strap }
+
+    /// The runner's heart-rate zones (age, their own settings or what their runs show).
+    let zones: HeartRateZones
+    private(set) var heartRate: Double?
+    private(set) var heartRateSource: HeartRateSource?
+    private(set) var heartRateAt: Date?
+    /// Seconds spent in each zone this session (index 0 = below zone 1).
+    private(set) var secondsInZone: [Double] = Array(repeating: 0, count: 6)
+    /// Showing on the Apple Watch (the Kinetix watch app, recording a strength workout for heart rate).
+    private(set) var isOnWatch = false
+    /// The watch couldn't be opened (asleep or locked): ask the runner to open Kinetix there.
+    private(set) var watchNeedsOpening = false
+    @ObservationIgnored private var watchTimer: Timer?
+    @ObservationIgnored private var lastStrapAt: Date?
+
+    private func startHeartRateAndWatch() {
+        let monitor = HeartRateMonitor.shared
+        monitor.onHeartRate = { [weak self] bpm, _ in
+            MainActor.assumeIsolated { self?.receiveHeartRate(bpm, from: .strap) }
+        }
+        monitor.connectToSaved()
+        let handlers = WatchMirrorService.Handlers(
+            command: { [weak self] command in self?.handleWatch(command) },
+            heartRate: { [weak self] bpm, _ in self?.receiveHeartRate(bpm, from: .watch) },
+            watchStatus: { [weak self] showing in self?.watchNeedsOpening = !showing }
+        )
+        isOnWatch = WatchMirrorService.shared.begin(runId: log.id, handlers: handlers, activity: .traditionalStrengthTraining)
+        guard isOnWatch else { return }
+        publishToWatch()
+        // The watch treats silence as a lost phone, so keep it up to date between changes.
+        let timer = Timer(timeInterval: 5, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.publishToWatch() }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        watchTimer = timer
+    }
+
+    private func stopHeartRateAndWatch() {
+        watchTimer?.invalidate()
+        watchTimer = nil
+        if isOnWatch {
+            WatchMirrorService.shared.end(saved: true)
+            isOnWatch = false
+        }
+        HeartRateMonitor.shared.onHeartRate = nil
+        HeartRateMonitor.shared.disconnect()
+    }
+
+    /// A chest strap, when one's connected, wins over the watch.
+    private func receiveHeartRate(_ bpm: Double, from source: HeartRateSource) {
+        guard bpm > 30, bpm < 250 else { return }
+        let now = Date()
+        if source == .watch, let strap = lastStrapAt, now.timeIntervalSince(strap) < 10 { return }
+        if source == .strap { lastStrapAt = now }
+        if let previous = heartRate, let at = heartRateAt {
+            secondsInZone[zones.zone(for: previous)] += min(10, max(0, now.timeIntervalSince(at)))
+        }
+        heartRate = bpm
+        heartRateAt = now
+        heartRateSource = source
+    }
+
+    /// No reading for 20 seconds: show it as gone rather than stale.
+    func currentHeartRate(at now: Date) -> Double? {
+        guard let heartRateAt, now.timeIntervalSince(heartRateAt) < 20 else { return nil }
+        return heartRate
+    }
+
+    private func handleWatch(_ command: MirrorCommand) {
+        switch command {
+        case .startSet: startSet()
+        case .finishSet: finishSet()
+        default: break
+        }
+    }
+
+    private func publishToWatch() {
+        guard isOnWatch else { return }
+        let next = nextSet
+        var setText: String?
+        if let next, let group = groups.first(where: { $0.sets.contains { $0.id == next.id } }),
+           let index = group.sets.firstIndex(where: { $0.id == next.id }) {
+            let load = next.isBodyweight ? "\(next.actualReps) reps"
+                : "\(DisplayFormat(units: units).weight(next.actualWeightKg)) × \(next.actualReps)"
+            setText = "Set \(index + 1) of \(group.sets.count) · \(load)"
+        }
+        let resting = restEndsAt.map { $0 > .now } ?? false
+        let frame = GymMirrorFrame(sessionId: log.id, title: log.title.isEmpty ? "Gym" : log.title,
+                                   exercise: next?.exerciseName, setText: setText, setStartedAt: setStartedAt,
+                                   restEndsAt: resting ? restEndsAt : nil, setsDone: completedSets, setsTotal: totalSets,
+                                   zoneStarts: zones.starts, maxHeartRate: zones.maxHeartRate, sentAt: .now)
+        WatchMirrorService.shared.publish(frame)
     }
 
     private let units: UnitSystem
@@ -73,10 +175,12 @@ final class StrengthWorkoutModel {
 
     private func updateLockScreen() {
         WorkoutActivityController.shared.update(lockScreenState, important: true)
+        publishToWatch()
     }
 
     /// Call when leaving the workout (finished, discarded or closed).
     func endLockScreen() {
+        stopHeartRateAndWatch()
         NotificationService.cancelRest()
         restTask?.cancel()
         restTask = nil

@@ -20,7 +20,7 @@ struct KinetixWatchApp: App {
                 case .idle, .starting:
                     RunListView()
                 case .running:
-                    RunLiveView()
+                    if workout.isGym { GymLiveView() } else { RunLiveView() }
                 case .finished:
                     RunFinishedView()
                 }

@@ -78,6 +78,12 @@ final class RunWorkoutManager: NSObject {
     var units: UnitSystem { mirrorUnits ?? WatchStore.shared.plan.units }
     var isPaused: Bool { snapshot?.isPaused ?? false }
     var isMirroring: Bool { mode == .mirroring }
+    /// Showing a gym session from the phone (a strength workout, for heart rate).
+    private(set) var isGym = false
+    /// The phone's gym session right now.
+    private(set) var gymFrame: GymMirrorFrame?
+    /// The watch's own latest heart rate (shown on the gym screen).
+    private(set) var liveHeartRate: Double?
     /// The run has steps (so the rep page is shown).
     var isStructured: Bool { isMirroring ? mirrorIsStructured : option?.structure != nil }
 
@@ -185,6 +191,10 @@ final class RunWorkoutManager: NSObject {
     /// Runs a gesture's action. Skips, laps and pauses can be undone for a few seconds.
     func perform(_ action: WatchControlSettings.Action) {
         guard phase == .running else { return }
+        if isGym {
+            if action != .off { gymPrimary() }
+            return
+        }
         switch action {
         case .off: return
         case .pauseResume:
@@ -324,6 +334,9 @@ final class RunWorkoutManager: NSObject {
         mirrorIsStructured = false
         mirrorUnits = nil
         mirrorRunId = nil
+        isGym = false
+        gymFrame = nil
+        liveHeartRate = nil
         lastFrameAt = nil
         startedAt = nil
         finishedAt = nil
@@ -355,6 +368,7 @@ final class RunWorkoutManager: NSObject {
     private func receiveHeartRate(_ bpm: Double, at date: Date) {
         if isMirroring {
             guard phase == .running else { return }
+            liveHeartRate = bpm
             sendToPhone(.heartRate(bpm: bpm, at: date))
             return
         }
@@ -393,8 +407,9 @@ final class RunWorkoutManager: NSObject {
         guard phase == .idle else { return }
         reset()
         mode = .mirroring
+        isGym = configuration.activityType == .traditionalStrengthTraining
         phase = .running
-        option = WatchRunOption(id: UUID(), source: .free, title: "Run on iPhone")
+        option = WatchRunOption(id: UUID(), source: .free, title: isGym ? "Gym on iPhone" : "Run on iPhone")
         let start = Date()
         startedAt = start
         lastFrameAt = start
@@ -433,10 +448,51 @@ final class RunWorkoutManager: NSObject {
         case .ended(let runId, let saved):
             if let runId { endedMirrorRuns.insert(runId) }
             guard isMirroring, runId == nil || runId == mirrorRunId || mirrorRunId == nil else { return }
-            Task { await finishMirroring(notice: saved ? "Run finished on your iPhone." : "Run discarded on your iPhone.") }
+            let what = isGym ? "Gym session" : "Run"
+            Task { await finishMirroring(notice: saved ? "\(what) finished on your iPhone." : "\(what) discarded on your iPhone.") }
+        case .gymFrame(let frame):
+            receiveGym(frame)
         case .command, .heartRate:
             break
         }
+    }
+
+    private func receiveGym(_ frame: GymMirrorFrame) {
+        guard !endedMirrorRuns.contains(frame.sessionId) else { return }
+        guard isMirroring else {
+            // The phone's gym session is on and the app is open but wasn't woken for it: join in.
+            guard phase == .idle || phase == .finished, frame.isFresh(at: Date()) else { return }
+            let configuration = HKWorkoutConfiguration()
+            configuration.activityType = .traditionalStrengthTraining
+            configuration.locationType = .indoor
+            Task { await startMirroring(configuration: configuration) }
+            return
+        }
+        guard isGym else { return }
+        let device = WKInterfaceDevice.current()
+        // Rest over (the phone's guide time): a tap to say the next set can start.
+        if let old = gymFrame?.restEndsAt, old > Date(), frame.restEndsAt == nil, frame.setStartedAt == nil {
+            device.play(.notification)
+        }
+        mirrorRunId = frame.sessionId
+        lastFrameAt = Date()
+        isPhoneLinkStale = false
+        gymFrame = frame
+        if option?.title != frame.title {
+            option = WatchRunOption(id: frame.sessionId, source: .free, title: frame.title)
+        }
+    }
+
+    /// Start set / Finish set from the watch (button, double tap or crown).
+    func gymPrimary() {
+        guard isGym, var frame = gymFrame, !frame.isComplete else { return }
+        let starting = frame.setStartedAt == nil
+        sendToPhone(.command(starting ? .startSet : .finishSet))
+        // Show it straight away; the phone's next update confirms it.
+        frame.setStartedAt = starting ? Date() : nil
+        if starting { frame.restEndsAt = nil }
+        gymFrame = frame
+        WKInterfaceDevice.current().play(starting ? .start : .success)
     }
 
     private func receive(_ frame: MirrorFrame) {
@@ -477,13 +533,18 @@ final class RunWorkoutManager: NSObject {
         isPhoneLinkStale = silence > 15
         // The phone has gone quiet for a long time (its app was closed): stop showing the run.
         if silence > 600 {
-            Task { await finishMirroring(notice: "Lost touch with your iPhone. Check the run there.") }
+            Task { await finishMirroring(notice: isGym ? "Lost touch with your iPhone. Check your gym session there."
+                                                      : "Lost touch with your iPhone. Check the run there.") }
         }
     }
 
     /// End pressed on the watch: the phone finishes the run and asks how hard it was.
     private func endMirroredRun() async {
         guard isMirroring else { return }
+        if isGym {
+            await finishMirroring(notice: "Stopped showing your gym session. Carry on on your iPhone.")
+            return
+        }
         if isPhoneLinkStale {
             await finishMirroring(notice: "Stopped showing the run. Your iPhone may still be recording it.")
             return

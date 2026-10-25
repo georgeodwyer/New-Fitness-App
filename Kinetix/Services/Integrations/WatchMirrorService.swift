@@ -47,21 +47,25 @@ final class WatchMirrorService: NSObject {
 
     /// Opens the watch app for this run. Returns false if there's no watch to use.
     @discardableResult
-    func begin(runId: UUID, handlers: Handlers) -> Bool {
+    func begin(runId: UUID, handlers: Handlers, activity: HKWorkoutActivityType = .running) -> Bool {
         guard isAvailable else { return false }
         self.runId = runId
         self.handlers = handlers
+        self.activity = activity
         launchWatchApp(runId: runId, attempt: 1)
         return true
     }
+
+    /// What the watch's workout records: a run (outdoors) or a gym session (indoors).
+    private var activity: HKWorkoutActivityType = .running
 
     /// Opens the watch app. The watch can be slow to wake, so try three times (now, after
     /// 3 s and after 6 s more). If it still won't open, the run carries on without it and the
     /// phone says so; opening Kinetix on the watch joins the run (frames still reach it).
     private func launchWatchApp(runId: UUID, attempt: Int) {
         let configuration = HKWorkoutConfiguration()
-        configuration.activityType = .running
-        configuration.locationType = .outdoor
+        configuration.activityType = activity
+        configuration.locationType = activity == .running ? .outdoor : .indoor
         healthStore.startWatchApp(with: configuration) { success, _ in
             Task { @MainActor in WatchMirrorService.shared.watchAppLaunch(runId: runId, attempt: attempt, success: success) }
         }
@@ -85,6 +89,12 @@ final class WatchMirrorService: NSObject {
     func publish(_ frame: MirrorFrame) {
         guard frame.runId == runId else { return }
         send(.frame(frame))
+    }
+
+    /// Sends the gym session to the watch.
+    func publish(_ frame: GymMirrorFrame) {
+        guard frame.sessionId == runId else { return }
+        send(.gymFrame(frame))
     }
 
     /// The run is over: the watch stops and goes back to its list.
@@ -134,7 +144,7 @@ final class WatchMirrorService: NSObject {
             } else {
                 send(.ended(runId: nil, saved: false))
             }
-        case .frame, .ended:
+        case .frame, .gymFrame, .ended:
             break
         }
     }

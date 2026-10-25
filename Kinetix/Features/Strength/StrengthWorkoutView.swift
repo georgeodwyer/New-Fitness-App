@@ -16,6 +16,8 @@ struct StrengthWorkoutView: View {
     @State private var summary: StrengthService.Summary?
     @State private var showPicker = false
     @State private var swapGroup: StrengthWorkoutModel.ExerciseGroup?
+    /// 0 = exercises, 1 = heart rate.
+    @State private var page = 0
     /// Set just before a discarded workout is deleted, so nothing reads it afterwards.
     @State private var discarded = false
 
@@ -96,6 +98,18 @@ struct StrengthWorkoutView: View {
     private var exercises: some View {
         VStack(spacing: 0) {
             if model.restEndsAt != nil { restBanner }
+            // Swipe left for heart rate.
+            TabView(selection: $page) {
+                exerciseList.tag(0)
+                GymHeartRatePage(model: model).tag(1)
+            }
+            .tabViewStyle(.page(indexDisplayMode: .always))
+            .indexViewStyle(.page(backgroundDisplayMode: .always))
+            setButton
+        }
+    }
+
+    private var exerciseList: some View {
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(spacing: KXSpacing.lg) {
@@ -153,14 +167,13 @@ struct StrengthWorkoutView: View {
                         }
                     }
                     .padding(KXSpacing.screenMargin)
+                    .padding(.bottom, KXSpacing.xl)
                 }
                 .onChange(of: model.currentKey) { _, key in
                     guard let key else { return }
                     withAnimation { proxy.scrollTo(key, anchor: .top) }
                 }
             }
-            setButton
-        }
     }
 
     /// Start set → Finish set (timed) for the next set; Finish workout once they're all done.
@@ -755,5 +768,117 @@ private struct SwapExerciseSheet: View {
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("gym.swap.\(exercise.id)")
+    }
+}
+
+/// The second page: live heart rate in the middle, the five zones below with a marker for
+/// where you are, and time in each zone this session.
+private struct GymHeartRatePage: View {
+    let model: StrengthWorkoutModel
+
+    private static let colors: [Color] = [KXColor.slate, KXColor.teal, KXColor.success, KXColor.warning, KXColor.danger]
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 1)) { context in
+            let bpm = model.currentHeartRate(at: context.date)
+            let zone = bpm.map { model.zones.zone(for: $0) } ?? 0
+            VStack(spacing: KXSpacing.xl) {
+                Spacer(minLength: KXSpacing.md)
+                VStack(spacing: KXSpacing.xs) {
+                    Image(systemName: "heart.fill")
+                        .font(.title2)
+                        .foregroundStyle(bpm == nil ? KXColor.inkTertiary : KXColor.danger)
+                        .symbolEffect(.pulse, isActive: bpm != nil)
+                    Text(bpm.map { "\(Int($0.rounded()))" } ?? "--")
+                        .font(.system(size: 88, weight: .bold, design: .rounded).monospacedDigit())
+                        .foregroundStyle(KXColor.ink)
+                        .contentTransition(.numericText())
+                    Text(zone > 0 ? "Zone \(zone) · \(HeartRateZones.names[zone - 1])" : (bpm == nil ? "No heart rate yet" : "Below zone 1"))
+                        .font(KXFont.headline)
+                        .foregroundStyle(zone > 0 ? Self.colors[zone - 1] : KXColor.inkSecondary)
+                    Text(sourceText)
+                        .font(KXFont.caption)
+                        .foregroundStyle(KXColor.inkSecondary)
+                        .multilineTextAlignment(.center)
+                }
+                .accessibilityElement(children: .combine)
+                Spacer(minLength: KXSpacing.md)
+                zoneBar(bpm: bpm)
+                timeInZones
+            }
+            .padding(KXSpacing.screenMargin)
+            .padding(.bottom, KXSpacing.xl)
+        }
+    }
+
+    private var sourceText: String {
+        switch model.heartRateSource {
+        case .strap?: return "From your chest strap"
+        case .watch?: return "From Kinetix on your Apple Watch"
+        case nil:
+            if model.watchNeedsOpening { return "Open Kinetix on your Apple Watch to see your heart rate" }
+            return model.isOnWatch ? "Waiting for your Apple Watch…" : "Wear your Apple Watch with Kinetix on it, or pair a chest strap in Settings"
+        }
+    }
+
+    /// Five coloured zones with a marker at the current heart rate.
+    private func zoneBar(bpm: Double?) -> some View {
+        let high = model.zones.maxHeartRate
+        let starts = model.zones.starts.count == 5 ? model.zones.starts : HeartRateZones.startShares.map { $0 * high }
+        let low = starts.first ?? 90
+        return VStack(spacing: KXSpacing.xs) {
+            GeometryReader { geo in
+                let width = geo.size.width
+                ZStack(alignment: .leading) {
+                    HStack(spacing: 2) {
+                        ForEach(0..<5, id: \.self) { index in
+                            let from = starts[index]
+                            let to = index < 4 ? starts[index + 1] : high
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(Self.colors[index])
+                                .frame(width: max(0, width * (to - from) / max(1, high - low) - 2))
+                        }
+                    }
+                    if let bpm {
+                        let x = width * min(max((bpm - low) / max(1, high - low), 0), 1)
+                        Image(systemName: "arrowtriangle.down.fill")
+                            .font(.caption)
+                            .foregroundStyle(KXColor.ink)
+                            .offset(x: x - 6, y: -16)
+                            .animation(.easeInOut, value: bpm)
+                    }
+                }
+            }
+            .frame(height: 14)
+            HStack(spacing: 0) {
+                ForEach(0..<5, id: \.self) { index in
+                    Text("Z\(index + 1)")
+                        .font(KXFont.captionEmphasis)
+                        .foregroundStyle(KXColor.inkSecondary)
+                        .frame(maxWidth: .infinity)
+                }
+            }
+        }
+        .padding(.top, KXSpacing.md)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Heart rate zones")
+    }
+
+    private var timeInZones: some View {
+        HStack(spacing: 0) {
+            ForEach(1...5, id: \.self) { zone in
+                VStack(spacing: 2) {
+                    Text(Units.formatMinutesSeconds(model.secondsInZone[zone]))
+                        .font(KXFont.captionEmphasis.monospacedDigit())
+                        .foregroundStyle(KXColor.ink)
+                    Text(model.zones.starts.indices.contains(zone - 1) ? "\(Int(model.zones.starts[zone - 1]))+" : "")
+                        .font(.caption2)
+                        .foregroundStyle(KXColor.inkTertiary)
+                }
+                .frame(maxWidth: .infinity)
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Time in each zone this session")
     }
 }

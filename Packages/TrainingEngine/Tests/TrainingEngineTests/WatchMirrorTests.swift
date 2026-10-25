@@ -71,4 +71,17 @@ final class WatchMirrorTests: XCTestCase {
         XCTAssertTrue(frame.isFresh(at: start.addingTimeInterval(10)))
         XCTAssertFalse(frame.isFresh(at: start.addingTimeInterval(16)))
     }
+
+    func testGymFrameRoundTripsAndZones() throws {
+        let frame = GymMirrorFrame(sessionId: UUID(), title: "Push", exercise: "Bench Press", setText: "Set 2 of 3 · 60 kg × 8",
+                                   setStartedAt: Date(timeIntervalSince1970: 1_000), restEndsAt: nil, setsDone: 1, setsTotal: 9,
+                                   zoneStarts: [95, 114, 133, 152, 171], maxHeartRate: 190, sentAt: Date(timeIntervalSince1970: 1_005))
+        let decoded = try XCTUnwrap(MirrorMessage.decode(MirrorMessage.gymFrame(frame).encoded()))
+        XCTAssertEqual(decoded, .gymFrame(frame))
+        XCTAssertEqual(frame.zone(for: 80), 0)
+        XCTAssertEqual(frame.zone(for: 140), 3)
+        XCTAssertEqual(frame.zone(for: 185), 5)
+        XCTAssertFalse(frame.isComplete)
+        XCTAssertEqual(MirrorMessage.decode(MirrorMessage.command(.finishSet).encoded()), .command(.finishSet))
+    }
 }
