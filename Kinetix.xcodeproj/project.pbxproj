@@ -110,6 +110,7 @@
 		C575D31A531D7DA5CD6DFE99 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 074EA809EFF2571D597D33DA /* NotificationService.swift */; };
 		C64CEB9EB7A5439075E2C10D /* HeartRateMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DCA983868F3800CCDF25C8B /* HeartRateMonitor.swift */; };
 		C9AA92DC8EF36D69C1F597C2 /* DashboardService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79BC49909BB83B41E036C205 /* DashboardService.swift */; };
+		CA3AB9490849AF1427ABFB57 /* PlanTiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B2D8C1F7D9198D6379D9125 /* PlanTiles.swift */; };
 		CAC2303CFFBE51FB0B6EB5E5 /* HealthDisclaimerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76EC9F0A55E7B2D91BA49545 /* HealthDisclaimerView.swift */; };
 		CACA374A1C695897F27F3846 /* RunDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB63E4848B35BB437454824E /* RunDetailView.swift */; };
 		CB20E0045605C43C08FD0F0F /* StrengthWorkoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09686787D51317AEE10572A2 /* StrengthWorkoutView.swift */; };
@@ -234,6 +235,7 @@
 		14EB6A71D2AFBFDA441F9020 /* WatchMirrorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchMirrorService.swift; sourceTree = "<group>"; };
 		15A2B8D3E8EAC9797667326F /* LocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationService.swift; sourceTree = "<group>"; };
 		18F5261D8A4C543FC07B8C9C /* KXColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXColor.swift; sourceTree = "<group>"; };
+		1B2D8C1F7D9198D6379D9125 /* PlanTiles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanTiles.swift; sourceTree = "<group>"; };
 		1B3E42DCF57077752A8EC424 /* TodayTiles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayTiles.swift; sourceTree = "<group>"; };
 		1CCC3286E58148E4A728A4C5 /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
 		1D0A8758A0E38811D70F3371 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
@@ -392,6 +394,7 @@
 			isa = PBXGroup;
 			children = (
 				9379EA201DE82CD3ADB9493E /* PlanChangesView.swift */,
+				1B2D8C1F7D9198D6379D9125 /* PlanTiles.swift */,
 				13D4219D257608DB539A51D9 /* PlanView.swift */,
 				626F847EE3778CA53D1E28E9 /* SessionDetailView.swift */,
 			);
@@ -1032,6 +1035,7 @@
 				1153E095AEC952349F00FE4F /* PlanModels.swift in Sources */,
 				BD17DBB64F9EEE349E1919E5 /* PlanPreviewView.swift in Sources */,
 				BFA529069514CFA98ADFAF18 /* PlanService.swift in Sources */,
+				CA3AB9490849AF1427ABFB57 /* PlanTiles.swift in Sources */,
 				70C07E1CB04C57F050ED4CD7 /* PlanView.swift in Sources */,
 				F611A87F94DBFAB54FFA2E62 /* PrivacyPolicyView.swift in Sources */,
 				465A7A42EEAE1F5D2D2C0DEC /* ProfileQuestionsView.swift in Sources */,
