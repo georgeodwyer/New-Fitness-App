@@ -30,6 +30,14 @@ struct DisplayFormat {
         Units.formatWeight(kg: kg, units: units) + " " + Units.weightUnitLabel(units)
     }
 
+    /// A set's weight, or "pick a weight" for a machine they haven't used yet (0).
+    func load(_ kg: Double) -> String { kg > 0 ? weight(kg) : "pick a weight" }
+
+    /// "60 kg × 8", or "8 reps · pick a weight" before they've chosen one.
+    func set(weightKg: Double, reps: Int) -> String {
+        weightKg > 0 ? "\(weight(weightKg)) × \(reps)" : "\(reps) reps · pick a weight"
+    }
+
     func segmentLength(_ length: SegmentLength) -> String {
         switch length {
         case .distance(let meters):

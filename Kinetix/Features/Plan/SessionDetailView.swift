@@ -131,7 +131,7 @@ struct SessionDetailView: View {
                     VStack(alignment: .trailing, spacing: KXSpacing.xxs) {
                         Text("\(exercise.sets) × \(exercise.repRange.lower)–\(exercise.repRange.upper)")
                             .font(KXFont.bodyEmphasis.monospacedDigit())
-                        Text(exercise.weightKg.map { format.weight($0) } ?? "Bodyweight")
+                        Text(exercise.weightKg.map { format.load($0) } ?? "Bodyweight")
                             .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
                     }
                 }

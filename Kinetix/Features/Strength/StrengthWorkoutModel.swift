@@ -135,7 +135,7 @@ final class StrengthWorkoutModel {
         if let next, let group = groups.first(where: { $0.sets.contains { $0.id == next.id } }),
            let index = group.sets.firstIndex(where: { $0.id == next.id }) {
             let load = next.isBodyweight ? "\(next.actualReps) reps"
-                : "\(DisplayFormat(units: units).weight(next.actualWeightKg)) × \(next.actualReps)"
+                : DisplayFormat(units: units).set(weightKg: next.actualWeightKg, reps: next.actualReps)
             setText = "Set \(index + 1) of \(group.sets.count) · \(load)"
         }
         let resting = restEndsAt.map { $0 > .now } ?? false
@@ -156,7 +156,7 @@ final class StrengthWorkoutModel {
               let set = group.sets.first(where: { !$0.isCompleted }),
               let index = group.sets.firstIndex(where: { $0.id == set.id }) else { return nil }
         let load = set.isBodyweight ? "\(set.actualReps) reps"
-            : "\(DisplayFormat(units: units).weight(set.actualWeightKg)) × \(set.actualReps)"
+            : DisplayFormat(units: units).set(weightKg: set.actualWeightKg, reps: set.actualReps)
         return "\(group.name) · set \(index + 1) of \(group.sets.count) · \(load)"
     }
 
@@ -298,7 +298,17 @@ final class StrengthWorkoutModel {
     }
 
     func update(_ set: SetLogModel, weight: Double? = nil, reps: Int? = nil) {
-        if let weight { set.actualWeightKg = max(0, weight) }
+        if let weight {
+            set.actualWeightKg = max(0, weight)
+            // First weight picked for a machine: later sets of it use the same.
+            if set.actualWeightKg > 0 {
+                for later in log.orderedSets where later.progressionKey == set.progressionKey && later.exerciseId == set.exerciseId
+                    && later.setIndex > set.setIndex && !later.isCompleted && later.actualWeightKg == 0 {
+                    later.actualWeightKg = set.actualWeightKg
+                    later.touch()
+                }
+            }
+        }
         if let reps { set.actualReps = max(0, reps) }
         set.touch()
         save()

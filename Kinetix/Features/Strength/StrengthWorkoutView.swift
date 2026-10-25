@@ -417,7 +417,7 @@ private struct ExerciseCard: View {
     private var targetText: String {
         let first = group.first
         let reps = "\(group.sets.count) × \(first.repRangeLower)–\(first.repRangeUpper)"
-        let load = first.isBodyweight ? "bodyweight" : format.weight(first.targetWeightKg)
+        let load = first.isBodyweight ? "bodyweight" : format.load(first.targetWeightKg)
         return "Target \(reps) @ \(load) · rest \(Units.formatMinutesSeconds(Double(first.restSeconds)))"
     }
 
@@ -689,7 +689,7 @@ private struct WarmUpPage: View {
                     Text("First up").font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
                     Text(first.name).font(KXFont.headline).foregroundStyle(KXColor.ink)
                     Text("\(first.sets.count) × \(first.first.repRangeLower)–\(first.first.repRangeUpper)"
-                         + (first.first.isBodyweight ? "" : " @ \(DisplayFormat(units: units).weight(first.first.targetWeightKg))"))
+                         + (first.first.isBodyweight ? "" : " @ \(DisplayFormat(units: units).load(first.first.targetWeightKg))"))
                         .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
                 }
                 .frame(maxWidth: .infinity)

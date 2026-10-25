@@ -9,6 +9,28 @@ final class GymWorkoutTests: XCTestCase {
         XCTAssertEqual(StrengthMath.weight(from: bench, reps: 6, accessory: true, loading: .barbell), 62.5)
     }
 
+    func testVariationsFollowTheirMainLiftAndMachinesStartBlank() throws {
+        let library = TestSupport.bundledTemplates
+        let estimates = [LiftEstimate(lift: .benchPress, weightKg: 90, reps: 3)]
+        func weight(_ id: String) throws -> Double? {
+            StrengthMath.weight(for: try XCTUnwrap(library.exercise(id: id)), estimates: estimates, reps: 6, accessory: false)
+        }
+        // Bench working weight ≈ 78 kg: dumbbells 40% per hand → 31 → 30 kg; incline barbell 80% → 62.5 kg.
+        XCTAssertEqual(try weight("barbell-bench-press"), 77.5)
+        XCTAssertEqual(try weight("dumbbell-bench-press"), 30)
+        XCTAssertEqual(try weight("incline-bench-press"), 62.5)
+        XCTAssertNil(try weight("dumbbell-shoulder-press"), "No overhead press number given")
+        XCTAssertNil(try weight("dumbbell-curl"), "Isolation moves keep the level default")
+
+        var profile = TestSupport.profile(goal: .buildStrength, days: [.monday, .wednesday, .friday])
+        profile.liftEstimates = estimates
+        let machine = try XCTUnwrap(library.exercise(id: "chest-press-machine"))
+        XCTAssertEqual(StrengthBuilder.startingWeight(for: machine, role: .accessory, reps: RepRange(8, 12), profile: profile), 0)
+        let curl = try XCTUnwrap(library.exercise(id: "dumbbell-curl"))
+        XCTAssertEqual(StrengthBuilder.startingWeight(for: curl, role: .accessory, reps: RepRange(8, 12), profile: profile),
+                       curl.defaultWeight(for: profile.liftingExperience))
+    }
+
     func testAlternativesPreferTheSameMovementAndRespectEquipment() throws {
         let library = TestSupport.bundledTemplates
         let bench = library.alternatives(to: "barbell-bench-press", equipment: .fullGym)

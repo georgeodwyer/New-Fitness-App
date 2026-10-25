@@ -38,6 +38,18 @@ public enum BodyRegion: String, Codable, Sendable {
     case upper, lower, core
 }
 
+/// Starts an exercise at a share of a main lift's working weight (e.g. dumbbell bench at 40%
+/// of the barbell bench weight, per hand).
+public struct LiftLink: Codable, Equatable, Sendable {
+    public var lift: MainLift
+    public var ratio: Double
+
+    public init(lift: MainLift, ratio: Double) {
+        self.lift = lift
+        self.ratio = ratio
+    }
+}
+
 public struct ExerciseDefinition: Codable, Equatable, Sendable {
     public var id: String
     public var name: String
@@ -51,9 +63,12 @@ public struct ExerciseDefinition: Codable, Equatable, Sendable {
     public var muscle: MuscleGroup?
     /// Extra exercises for the gym tracker only; never chosen when generating plans.
     public var libraryOnly: Bool?
+    /// Takes its starting weight from this main lift's number (variations of the big lifts).
+    public var liftLink: LiftLink?
 
     public init(id: String, name: String, pattern: String, requires: Equipment, loading: ExerciseLoading, region: BodyRegion,
-                mainLift: MainLift? = nil, defaultWeightKg: [String: Double]? = nil, muscle: MuscleGroup? = nil, libraryOnly: Bool? = nil) {
+                mainLift: MainLift? = nil, defaultWeightKg: [String: Double]? = nil, muscle: MuscleGroup? = nil, libraryOnly: Bool? = nil,
+                liftLink: LiftLink? = nil) {
         self.id = id
         self.name = name
         self.pattern = pattern
@@ -64,6 +79,7 @@ public struct ExerciseDefinition: Codable, Equatable, Sendable {
         self.defaultWeightKg = defaultWeightKg
         self.muscle = muscle
         self.libraryOnly = libraryOnly
+        self.liftLink = liftLink
     }
 
     public var muscleGroup: MuscleGroup { muscle ?? MuscleGroup(pattern: pattern) }

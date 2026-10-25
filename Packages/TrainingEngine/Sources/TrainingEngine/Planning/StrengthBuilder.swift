@@ -28,6 +28,18 @@ public enum StrengthMath {
         return roundDown(accessory ? target * 0.8 : target, loading: loading)
     }
 
+    /// Working weight from their lift numbers for a main lift, or a variation linked to one
+    /// (nil when the exercise isn't linked or they haven't given that lift).
+    public static func weight(for exercise: ExerciseDefinition, estimates: [LiftEstimate], reps: Int, accessory: Bool) -> Double? {
+        func estimate(_ lift: MainLift) -> LiftEstimate? { estimates.first { $0.lift == lift && $0.weightKg > 0 } }
+        if let lift = exercise.mainLift, let found = estimate(lift) {
+            return weight(from: found, reps: reps, accessory: accessory, loading: exercise.loading)
+        }
+        guard let link = exercise.liftLink, let found = estimate(link.lift) else { return nil }
+        let oneRM = estimatedOneRepMax(weightKg: found.weightKg, reps: max(found.reps, 1))
+        return roundDown(workingWeight(oneRepMax: oneRM, reps: reps) * link.ratio, loading: exercise.loading)
+    }
+
     /// Rounds down to a loadable weight.
     public static func roundDown(_ weight: Double, loading: ExerciseLoading) -> Double {
         let step = increment(for: loading)
@@ -104,18 +116,19 @@ enum StrengthBuilder {
         return StrengthPrescription(exercises: exercises)
     }
 
-    /// Starting weight: from the user's estimate for main lifts, else a default for their level.
+    /// Starting weight: from their lift numbers for main lifts and linked variations, else a
+    /// default for their level. Machines with no default start at 0 ("pick a weight").
     static func startingWeight(for exercise: ExerciseDefinition, role: SlotRole, reps: RepRange, profile: AthleteProfile) -> Double? {
-        if let lift = exercise.mainLift,
-           let estimate = profile.liftEstimates.first(where: { $0.lift == lift }),
-           estimate.weightKg > 0 {
-            return StrengthMath.weight(from: estimate, reps: reps.lower, accessory: role == .accessory, loading: exercise.loading)
+        if let weight = StrengthMath.weight(for: exercise, estimates: profile.liftEstimates, reps: reps.lower, accessory: role == .accessory) {
+            return weight
         }
         // Hyrox stations start at the race weight for their division.
         if let division = profile.hyroxDivision, let race = exercise.defaultWeightKg?["hyrox-" + division.rawValue] {
             return race
         }
-        guard let base = exercise.defaultWeight(for: profile.liftingExperience) else { return nil }
+        guard let base = exercise.defaultWeight(for: profile.liftingExperience) else {
+            return exercise.loading == .machine ? 0 : nil
+        }
         let scaled = role == .accessory && exercise.mainLift != nil ? base * 0.8 : base
         return StrengthMath.roundDown(scaled, loading: exercise.loading)
     }

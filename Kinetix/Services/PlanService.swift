@@ -148,16 +148,25 @@ enum PlanService {
         return RecentRunning.summary(RecentRunning.merge(primary: logs, other: health), now: now)
     }
 
-    /// The runner entered (or changed) numbers for their main lifts: those lifts' working
-    /// weights start again from the numbers, in the saved weights and the sessions already
-    /// built. Lifts without numbers keep progressing from what they've logged.
+    /// The runner entered (or changed) their lift numbers: main lifts and the variations linked
+    /// to them start again from the numbers, in the saved weights, the sessions already built
+    /// and any workout they've opened but not finished. Machines they've never logged go back
+    /// to "pick a weight". Everything else keeps progressing from what they've logged.
     static func applyLiftEstimates(_ estimates: [LiftEstimate], profile: AthleteProfile, in context: ModelContext, now: Date = .now) {
-        let byLift = Dictionary(estimates.filter { $0.weightKg > 0 }.map { ($0.lift, $0) }, uniquingKeysWith: { _, last in last })
-        guard !byLift.isEmpty else { return }
+        let estimates = estimates.filter { $0.weightKg > 0 }
         let library = templates
-        func match(_ exerciseId: String) -> (estimate: LiftEstimate, exercise: ExerciseDefinition)? {
-            guard let exercise = library.exercise(id: exerciseId), let lift = exercise.mainLift, let estimate = byLift[lift] else { return nil }
-            return (estimate, exercise)
+        let goal = library.prescription(for: profile.goal)
+        // Machines without a default weight that they've never logged.
+        let logged = Set(((try? context.fetch(FetchDescriptor<SetLogModel>())) ?? [])
+            .filter { !$0.isSoftDeleted && $0.isCompleted && $0.actualWeightKg > 0 }
+            .map(\.exerciseId))
+        func target(_ exerciseId: String, reps: Int, accessory: Bool) -> Double? {
+            guard let exercise = library.exercise(id: exerciseId) else { return nil }
+            if let weight = StrengthMath.weight(for: exercise, estimates: estimates, reps: max(reps, 1), accessory: accessory) {
+                return weight
+            }
+            if exercise.loading == .machine, exercise.defaultWeightKg == nil, !logged.contains(exerciseId) { return 0 }
+            return nil
         }
         var weights: [String: Double] = [:]
 
@@ -171,11 +180,11 @@ enum PlanService {
             var changed = false
             for index in prescription.exercises.indices {
                 let item = prescription.exercises[index]
-                guard item.weightKg != nil, let found = match(item.exerciseId) else { continue }
-                let weight = StrengthMath.weight(from: found.estimate, reps: item.repRange.lower, accessory: item.role == .accessory,
-                                                 loading: found.exercise.loading)
-                prescription.exercises[index].weightKg = weight
+                guard let current = item.weightKg,
+                      let weight = target(item.exerciseId, reps: item.repRange.lower, accessory: item.role == .accessory) else { continue }
                 weights[item.progressionKey] = weights[item.progressionKey] ?? weight
+                guard weight != current else { continue }
+                prescription.exercises[index].weightKg = weight
                 changed = true
             }
             if changed {
@@ -185,20 +194,30 @@ enum PlanService {
         }
 
         // Saved working weights (used for every week built from now on).
-        let goal = library.prescription(for: profile.goal)
         let states = ((try? context.fetch(FetchDescriptor<ExerciseStateModel>())) ?? []).filter { !$0.isSoftDeleted }
         for state in states {
-            guard let found = match(state.exerciseId) else { continue }
             let accessory = state.progressionKey.hasSuffix(".accessory")
             let reps = (accessory ? goal?.accessory.repsLow : goal?.main.repsLow) ?? state.repRangeLower
-            let weight = weights[state.progressionKey]
-                ?? StrengthMath.weight(from: found.estimate, reps: max(reps, 1), accessory: accessory, loading: found.exercise.loading)
-            guard weight != state.workingWeightKg else { continue }
+            guard let weight = weights[state.progressionKey] ?? target(state.exerciseId, reps: reps, accessory: accessory),
+                  weight != state.workingWeightKg else { continue }
             state.workingWeightKg = weight
             state.stallCount = 0
-            state.lastChangeReason = "Set from your lift numbers"
+            state.lastChangeReason = weight > 0 ? "Set from your lift numbers" : "Pick a weight on your first session"
             state.lastChangedAt = now
             state.touch(now: now)
+        }
+
+        // A plan workout they've opened but not finished: sets not done yet, unless they changed the weight.
+        let open = ((try? context.fetch(FetchDescriptor<StrengthLogModel>())) ?? []).filter { !$0.isSoftDeleted && !$0.isFinished && !$0.isRecorded }
+        for log in open {
+            for set in log.sets where !set.isSoftDeleted && !set.isCompleted && !set.isBodyweight && set.actualWeightKg == set.targetWeightKg {
+                let accessory = set.progressionKey.hasSuffix(".accessory")
+                guard let weight = weights[set.progressionKey] ?? target(set.exerciseId, reps: set.repRangeLower, accessory: accessory),
+                      weight != set.targetWeightKg else { continue }
+                set.targetWeightKg = weight
+                set.actualWeightKg = weight
+                set.touch(now: now)
+            }
         }
         try? context.save()
         SyncService.shared.requestSync()

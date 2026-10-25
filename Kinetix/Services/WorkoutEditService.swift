@@ -42,7 +42,7 @@ enum WorkoutEditService {
         let role = key.split(separator: ".").last.map(String.init) ?? "free"
         let newKey = role == "free" ? GymPrefill.freeKey(exerciseId: exercise.id) : "\(exercise.id).\(role)"
         let isBodyweight = exercise.loading == .bodyweight
-        let weight = isBodyweight ? 0 : startingWeight(for: exercise, key: newKey, context: context)
+        let weight = isBodyweight ? 0 : startingWeight(for: exercise, key: newKey, reps: first.repRangeLower, context: context)
         for set in sets {
             set.exerciseId = exercise.id
             set.exerciseName = exercise.name
@@ -57,12 +57,17 @@ enum WorkoutEditService {
         try? context.save()
     }
 
-    private static func startingWeight(for exercise: ExerciseDefinition, key: String, context: ModelContext) -> Double {
+    private static func startingWeight(for exercise: ExerciseDefinition, key: String, reps: Int, context: ModelContext) -> Double {
         let descriptor = FetchDescriptor<ExerciseStateModel>(predicate: #Predicate { $0.progressionKey == key })
         if let state = (try? context.fetch(descriptor))?.first(where: { !$0.isSoftDeleted }) { return state.workingWeightKg }
         if let last = GymService.previousSets(exerciseId: exercise.id, in: context).first, last.weightKg > 0 { return last.weightKg }
-        let level = ((try? context.fetch(FetchDescriptor<UserProfileModel>())) ?? []).first { !$0.isSoftDeleted }?.profile.liftingExperience
-        return exercise.defaultWeight(for: level ?? .beginner) ?? 0
+        let profile = ((try? context.fetch(FetchDescriptor<UserProfileModel>())) ?? []).first { !$0.isSoftDeleted }?.profile
+        // From their lift numbers for main lifts and linked variations (machines start at 0: "pick a weight").
+        if let profile, let weight = StrengthMath.weight(for: exercise, estimates: profile.liftEstimates, reps: max(reps, 1),
+                                                         accessory: key.hasSuffix(".accessory")) {
+            return weight
+        }
+        return exercise.defaultWeight(for: profile?.liftingExperience ?? .beginner) ?? 0
     }
 
     // MARK: Keep the swap
@@ -135,7 +140,7 @@ enum WorkoutEditService {
                 let key = "\(exercise.id).\(item.role.rawValue)"
                 item.exerciseId = exercise.id
                 item.name = exercise.name
-                item.weightKg = exercise.loading == .bodyweight ? nil : startingWeight(for: exercise, key: key, context: context)
+                item.weightKg = exercise.loading == .bodyweight ? nil : startingWeight(for: exercise, key: key, reps: item.repRange.lower, context: context)
                 return item
             }
             session.strengthPrescriptionData = StoredJSON.encode(prescription)
