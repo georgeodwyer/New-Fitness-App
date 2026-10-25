@@ -32,8 +32,11 @@ GOALS = {
 ZONES = {
     "e": "easy", "easy": "easy", "steady": "steady", "m": "marathon", "mp": "marathon", "hm": "halfMarathon",
     "hmp": "halfMarathon", "t": "threshold", "10k": "tenK", "5k": "fiveK", "i": "interval", "r": "repetition",
+    # Coach's words: tempo is threshold pace; 3K is run at interval pace (the app has no 3K zone).
+    "tempo": "threshold", "3k": "interval",
 }
-ZONE_PATTERN = r"(steady|hmp|hm|mp|m|10k|5k|t|i|r|e|easy)"
+# Longer codes first, so "EASY" isn't read as "E" and "TEMPO" isn't read as "T".
+ZONE_PATTERN = r"(steady|easy|tempo|hmp|hm|mp|m|10k|5k|3k|t|i|r|e)"
 # Session type column → how the app schedules it, and the name shown.
 SESSION_TYPES = {
     "easy": ("easy", "Easy run"), "e": ("easy", "Easy run"), "recovery": ("recovery", "Recovery run"),
@@ -46,7 +49,7 @@ SESSION_TYPES = {
 SPLITS = {
     "full body ×1": "fullBody1", "full body ×2": "fullBody2", "full body ×3": "fullBody3", "upper / lower": "upperLower",
     "push / pull / legs": "ppl", "push / pull / legs ×2": "ppl6", "upper / lower / full": "upperLowerFull",
-    "ppl + upper / lower": "pplUpperLower",
+    "ppl + upper / lower": "pplUpperLower", "ppl + upper + shoulders & arms": "pplUpperArms",
     "hyrox: stations ×2": "hyroxStations2", "hyrox: strength + stations": "hyroxHybrid3",
 }
 PATTERNS = {
@@ -206,7 +209,7 @@ def workout(text, session_type):
         return shares(segments)
 
     # Finish: '13 km E, final 3 km @ STEADY'
-    m = re.match(r"(\d+(?:\.\d+)?)\s*km\s*(?:@\s*)?e\b.*?final\s+(\d+(?:\.\d+)?)\s*km\s*@?\s*" + ZONE_PATTERN + r"\b", t, re.I)
+    m = re.match(r"(\d+(?:\.\d+)?)\s*km\s*(?:@\s*)?(?:easy|e)\b.*?final\s+(\d+(?:\.\d+)?)\s*km\s*@?\s*" + ZONE_PATTERN + r"\b", t, re.I)
     if m:
         total, final = float(m.group(1)), float(m.group(2))
         if final >= total:
@@ -227,7 +230,7 @@ def workout(text, session_type):
             block = reps(piece)
             if block:
                 parts.append(block)
-            elif re.match(LENGTH + r"\s*(?:@\s*)?e\b", piece, re.I) or not re.search(r"@", piece):
+            elif re.match(LENGTH + r"\s*(?:@\s*)?(?:easy|e)\b", piece, re.I) or not re.search(r"@", piece):
                 parts.append({"kind": "share", "share": 1.0, "zone": plain_zone})
             else:
                 raise ParseError(f"can't read '{piece}'")
@@ -289,7 +292,8 @@ def number(value, what):
 def day_focus(name):
     """Push / Pull / Legs / Upper / Lower days; anything else is full body."""
     n = name.lower()
-    for word, focus in (("push", "push"), ("pull", "pull"), ("leg", "legs"), ("upper", "upper"), ("lower", "lower")):
+    for word, focus in (("push", "push"), ("pull", "pull"), ("leg", "legs"), ("upper", "upper"), ("lower", "lower"),
+                        ("shoulder", "upper"), ("arm", "upper")):
         if word in n:
             return focus
     return "fullBody"

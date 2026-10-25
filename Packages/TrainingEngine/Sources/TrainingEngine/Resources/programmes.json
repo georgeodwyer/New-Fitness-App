@@ -11,9 +11,9 @@
    "longRunShare": 0.3,
    "warmUpShare": 0.06,
    "warmUpMinMeters": 1500.0,
-   "warmUpMaxMeters": 2500.0,
+   "warmUpMaxMeters": 2000.0,
    "fastRepsShare": 0.1,
-   "fastRepsFloorMeters": 2000.0,
+   "fastRepsFloorMeters": 3000.0,
    "thresholdRepsShare": 0.15,
    "thresholdRepsFloorMeters": 3000.0,
    "steadyRepsShare": 0.25,
@@ -37,7 +37,7 @@
    "warmUpMinMeters": 1500.0,
    "warmUpMaxMeters": 2500.0,
    "fastRepsShare": 0.1,
-   "fastRepsFloorMeters": 2000.0,
+   "fastRepsFloorMeters": 6000.0,
    "thresholdRepsShare": 0.15,
    "thresholdRepsFloorMeters": 3000.0,
    "steadyRepsShare": 0.25,
@@ -56,12 +56,12 @@
    "longestRunMeters": 32000.0,
    "shortestRunMeters": 4000.0,
    "maxWeeklyIncrease": 0.12,
-   "longRunShare": 0.32,
+   "longRunShare": 0.35,
    "warmUpShare": 0.06,
    "warmUpMinMeters": 1500.0,
-   "warmUpMaxMeters": 2500.0,
+   "warmUpMaxMeters": 3000.0,
    "fastRepsShare": 0.1,
-   "fastRepsFloorMeters": 2000.0,
+   "fastRepsFloorMeters": 8000.0,
    "thresholdRepsShare": 0.15,
    "thresholdRepsFloorMeters": 3000.0,
    "steadyRepsShare": 0.25,
@@ -138,7 +138,7 @@
    "runsMin": 3,
    "runsMax": 5,
    "liftsMin": 1,
-   "liftsMax": 2,
+   "liftsMax": 5,
    "defaultSplit": "fullBody2"
   },
   "halfMarathon": {
@@ -1009,6 +1009,332 @@
     ]
    },
    {
+    "code": "pplUpperArms",
+    "name": "PPL + Upper + Shoulders & arms",
+    "suits": "5 lifting days, muscle focus.",
+    "shown": true,
+    "days": [
+     {
+      "name": "Push",
+      "focus": "push",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "named",
+        "exerciseName": "Barbell Bench Press",
+        "sets": 2,
+        "repsLow": 6,
+        "repsHigh": 8,
+        "restSeconds": 150
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Chest Press Machine",
+        "sets": 3,
+        "repsLow": 8,
+        "repsHigh": 12,
+        "restSeconds": 90
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Dumbbell Lateral Raise",
+        "sets": 3,
+        "repsLow": 8,
+        "repsHigh": 12,
+        "restSeconds": 90
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Cable Fly",
+        "sets": 3,
+        "repsLow": 8,
+        "repsHigh": 12,
+        "restSeconds": 90
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Triceps Pushdown",
+        "sets": 3,
+        "repsLow": 8,
+        "repsHigh": 12,
+        "restSeconds": 90
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Overhead Triceps Extension",
+        "sets": 3,
+        "repsLow": 8,
+        "repsHigh": 12,
+        "restSeconds": 90
+       }
+      ]
+     },
+     {
+      "name": "Pull",
+      "focus": "pull",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "named",
+        "exerciseName": "Lat Pulldown",
+        "sets": 2,
+        "repsLow": 6,
+        "repsHigh": 8,
+        "restSeconds": 150
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Rear Delt Fly",
+        "sets": 3,
+        "repsLow": 8,
+        "repsHigh": 12,
+        "restSeconds": 90
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Dumbbell Curl",
+        "sets": 3,
+        "repsLow": 8,
+        "repsHigh": 12,
+        "restSeconds": 90
+       },
+       {
+        "role": "main",
+        "pattern": "named",
+        "exerciseName": "Seated Cable Row",
+        "sets": 3,
+        "repsLow": 6,
+        "repsHigh": 8,
+        "restSeconds": 150
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Preacher Curl",
+        "sets": 3,
+        "repsLow": 8,
+        "repsHigh": 12,
+        "restSeconds": 90
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Face Pull",
+        "sets": 3,
+        "repsLow": 8,
+        "repsHigh": 12,
+        "restSeconds": 90
+       }
+      ]
+     },
+     {
+      "name": "Legs",
+      "focus": "legs",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "named",
+        "exerciseName": "Barbell Back Squat",
+        "sets": 3,
+        "repsLow": 6,
+        "repsHigh": 8,
+        "restSeconds": 150
+       },
+       {
+        "role": "main",
+        "pattern": "named",
+        "exerciseName": "Romanian Deadlift",
+        "sets": 3,
+        "repsLow": 6,
+        "repsHigh": 8,
+        "restSeconds": 150
+       },
+       {
+        "role": "main",
+        "pattern": "named",
+        "exerciseName": "Leg Press",
+        "sets": 3,
+        "repsLow": 6,
+        "repsHigh": 8,
+        "restSeconds": 150
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Hanging Leg Raise",
+        "sets": 3,
+        "repsLow": 8,
+        "repsHigh": 12,
+        "restSeconds": 90
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Cable Crunch",
+        "sets": 3,
+        "repsLow": 8,
+        "repsHigh": 12,
+        "restSeconds": 90
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Leg Extension",
+        "sets": 3,
+        "repsLow": 8,
+        "repsHigh": 12,
+        "restSeconds": 90
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Leg Curl",
+        "sets": 3,
+        "repsLow": 8,
+        "repsHigh": 12,
+        "restSeconds": 90
+       }
+      ]
+     },
+     {
+      "name": "Upper",
+      "focus": "upper",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "named",
+        "exerciseName": "Incline Dumbbell Press",
+        "sets": 2,
+        "repsLow": 8,
+        "repsHigh": 12,
+        "restSeconds": 150
+       },
+       {
+        "role": "main",
+        "pattern": "named",
+        "exerciseName": "Barbell Row",
+        "sets": 2,
+        "repsLow": 6,
+        "repsHigh": 8,
+        "restSeconds": 150
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Hammer Curl",
+        "sets": 3,
+        "repsLow": 8,
+        "repsHigh": 12,
+        "restSeconds": 90
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Chest Press Machine",
+        "sets": 3,
+        "repsLow": 8,
+        "repsHigh": 12,
+        "restSeconds": 90
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Lat Pulldown",
+        "sets": 3,
+        "repsLow": 8,
+        "repsHigh": 12,
+        "restSeconds": 90
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Dips",
+        "sets": 3,
+        "repsLow": 8,
+        "repsHigh": 12,
+        "restSeconds": 90
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Overhead Triceps Extension",
+        "sets": 3,
+        "repsLow": 8,
+        "repsHigh": 12,
+        "restSeconds": 90
+       }
+      ]
+     },
+     {
+      "name": "Shoulders & arms",
+      "focus": "upper",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "named",
+        "exerciseName": "Overhead Press",
+        "sets": 3,
+        "repsLow": 6,
+        "repsHigh": 8,
+        "restSeconds": 150
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Rear Delt Fly",
+        "sets": 3,
+        "repsLow": 8,
+        "repsHigh": 12,
+        "restSeconds": 90
+       },
+       {
+        "role": "main",
+        "pattern": "named",
+        "exerciseName": "Close-Grip Bench Press",
+        "sets": 3,
+        "repsLow": 6,
+        "repsHigh": 8,
+        "restSeconds": 150
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Dumbbell Lateral Raise",
+        "sets": 3,
+        "repsLow": 8,
+        "repsHigh": 12,
+        "restSeconds": 90
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Triceps Pushdown",
+        "sets": 3,
+        "repsLow": 8,
+        "repsHigh": 12,
+        "restSeconds": 90
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Dumbbell Curl",
+        "sets": 3,
+        "repsLow": 8,
+        "repsHigh": 12,
+        "restSeconds": 90
+       }
+      ]
+     }
+    ]
+   },
+   {
     "code": "hyroxStations2",
     "name": "Hyrox: stations ×2",
     "suits": "Hyrox: two station sessions covering all eight stations.",
@@ -1273,7 +1599,7 @@
      "sets": 2,
      "repsLow": 8,
      "repsHigh": 12,
-     "restSeconds": 60
+     "restSeconds": 90
     }
    },
    "faster5k": {
@@ -1301,7 +1627,7 @@
      "sets": 2,
      "repsLow": 8,
      "repsHigh": 12,
-     "restSeconds": 60
+     "restSeconds": 90
     }
    },
    "halfMarathon": {
@@ -1315,7 +1641,7 @@
      "sets": 2,
      "repsLow": 8,
      "repsHigh": 12,
-     "restSeconds": 60
+     "restSeconds": 90
     }
    },
    "marathon": {
@@ -1329,7 +1655,7 @@
      "sets": 2,
      "repsLow": 8,
      "repsHigh": 12,
-     "restSeconds": 60
+     "restSeconds": 90
     }
    },
    "buildStrength": {
@@ -1337,7 +1663,7 @@
      "sets": 5,
      "repsLow": 4,
      "repsHigh": 6,
-     "restSeconds": 180
+     "restSeconds": 150
     },
     "accessory": {
      "sets": 3,
@@ -1351,13 +1677,13 @@
      "sets": 4,
      "repsLow": 8,
      "repsHigh": 12,
-     "restSeconds": 120
+     "restSeconds": 150
     },
     "accessory": {
      "sets": 3,
      "repsLow": 10,
      "repsHigh": 15,
-     "restSeconds": 75
+     "restSeconds": 90
     }
    },
    "balancedHybrid": {
@@ -1371,7 +1697,7 @@
      "sets": 3,
      "repsLow": 8,
      "repsHigh": 12,
-     "restSeconds": 75
+     "restSeconds": 90
     }
    },
    "hyrox": {
@@ -1392,6 +1718,1360 @@
  },
  "programmes": [
   {
+   "goal": "faster10k",
+   "name": "Faster 10K",
+   "description": "Sharper speed and threshold work to lower your 10K time.",
+   "lengthWeeks": 12,
+   "afterLastWeek": "repeat",
+   "runsPerWeekMin": 3,
+   "runsPerWeekMax": 5,
+   "longRunCapMeters": 16000.0,
+   "weeklyCapMeters": 45000.0,
+   "taperWeeks": 1,
+   "raceReadyMeters": {
+    "beginner": 20000.0,
+    "intermediate": 40000.0,
+    "advanced": 55000.0
+   },
+   "weeks": [
+    {
+     "week": 1,
+     "phase": "base",
+     "isDeload": false,
+     "isRaceWeek": false,
+     "volume": 1.0,
+     "longRun": {
+      "kind": "auto"
+     },
+     "strength": "normal",
+     "note": "Settle in: one quality session, the rest easy."
+    },
+    {
+     "week": 2,
+     "phase": "base",
+     "isDeload": false,
+     "isRaceWeek": false,
+     "volume": 1.05,
+     "longRun": {
+      "kind": "auto"
+     },
+     "strength": "normal",
+     "note": null
+    },
+    {
+     "week": 3,
+     "phase": "base",
+     "isDeload": false,
+     "isRaceWeek": false,
+     "volume": 1.1,
+     "longRun": {
+      "kind": "auto"
+     },
+     "strength": "heavy",
+     "note": null
+    },
+    {
+     "week": 4,
+     "phase": "base",
+     "isDeload": true,
+     "isRaceWeek": false,
+     "volume": 0.9,
+     "longRun": {
+      "kind": "auto"
+     },
+     "strength": "light",
+     "note": "Lighter week: let the work sink in."
+    },
+    {
+     "week": 5,
+     "phase": "build",
+     "isDeload": false,
+     "isRaceWeek": false,
+     "volume": 1.1,
+     "longRun": {
+      "kind": "auto"
+     },
+     "strength": "normal",
+     "note": null
+    },
+    {
+     "week": 6,
+     "phase": "build",
+     "isDeload": false,
+     "isRaceWeek": false,
+     "volume": 1.15,
+     "longRun": {
+      "kind": "auto"
+     },
+     "strength": "heavy",
+     "note": null
+    },
+    {
+     "week": 7,
+     "phase": "build",
+     "isDeload": false,
+     "isRaceWeek": false,
+     "volume": 1.2,
+     "longRun": {
+      "kind": "auto"
+     },
+     "strength": "normal",
+     "note": null
+    },
+    {
+     "week": 8,
+     "phase": "build",
+     "isDeload": true,
+     "isRaceWeek": false,
+     "volume": 0.95,
+     "longRun": {
+      "kind": "auto"
+     },
+     "strength": "light",
+     "note": "Lighter week before the peak."
+    },
+    {
+     "week": 9,
+     "phase": "peak",
+     "isDeload": false,
+     "isRaceWeek": false,
+     "volume": 1.25,
+     "longRun": {
+      "kind": "auto"
+     },
+     "strength": "normal",
+     "note": "Biggest week."
+    },
+    {
+     "week": 10,
+     "phase": "peak",
+     "isDeload": false,
+     "isRaceWeek": false,
+     "volume": 1.25,
+     "longRun": {
+      "kind": "auto"
+     },
+     "strength": "normal",
+     "note": null
+    },
+    {
+     "week": 11,
+     "phase": "taper",
+     "isDeload": false,
+     "isRaceWeek": false,
+     "volume": 0.85,
+     "longRun": {
+      "kind": "auto"
+     },
+     "strength": "light",
+     "note": "Freshen up."
+    },
+    {
+     "week": 12,
+     "phase": "taper",
+     "isDeload": false,
+     "isRaceWeek": true,
+     "volume": 0.55,
+     "longRun": {
+      "kind": "race"
+     },
+     "strength": "none",
+     "note": "Race day!"
+    }
+   ],
+   "sessions": [
+    {
+     "week": 1,
+     "order": 1,
+     "name": "Fartlek",
+     "type": "intervals",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 8,
+       "steps": [
+        {
+         "seconds": 60.0,
+         "zone": "fiveK",
+         "effort": true
+        },
+        {
+         "seconds": 60.0,
+         "zone": "easy",
+         "effort": false,
+         "recovery": true
+        }
+       ],
+       "recovery": null
+      }
+     ],
+     "text": "8 x (1 min @ 5K effort / 1 min easy jog)",
+     "note": null
+    },
+    {
+     "week": 1,
+     "order": 2,
+     "name": "Easy run",
+     "type": "easy",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "Easy continuous run",
+     "note": null
+    },
+    {
+     "week": 1,
+     "order": 3,
+     "name": "Progression run",
+     "type": "tempo",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 0.5,
+       "zone": "easy"
+      },
+      {
+       "kind": "share",
+       "share": 0.3333,
+       "zone": "steady"
+      },
+      {
+       "kind": "share",
+       "share": 0.1667,
+       "zone": "threshold"
+      }
+     ],
+     "text": "3 km EASY → 2 km STEADY → 1 km TEMPO",
+     "note": null
+    },
+    {
+     "week": 1,
+     "order": 4,
+     "name": "Long run",
+     "type": "long",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "Long run, conversational throughout",
+     "note": null
+    },
+    {
+     "week": 2,
+     "order": 1,
+     "name": "Hills",
+     "type": "intervals",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 8,
+       "steps": [
+        {
+         "seconds": 45.0,
+         "zone": "hill",
+         "effort": true,
+         "label": "Uphill"
+        }
+       ],
+       "recovery": {
+        "seconds": 45.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Jog back down"
+       }
+      }
+     ],
+     "text": "8 x 45 s uphill @ hard effort, jog back down as recovery",
+     "note": null
+    },
+    {
+     "week": 2,
+     "order": 2,
+     "name": "Recovery run",
+     "type": "recovery",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "recovery"
+      }
+     ],
+     "text": "Very relaxed recovery run",
+     "note": null
+    },
+    {
+     "week": 2,
+     "order": 3,
+     "name": "Tempo run",
+     "type": "tempo",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 2,
+       "steps": [
+        {
+         "seconds": 480.0,
+         "zone": "threshold",
+         "effort": false
+        }
+       ],
+       "recovery": {
+        "seconds": 120.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Recovery jog"
+       }
+      }
+     ],
+     "text": "2 x 8 min @ TEMPO, 2 min jog between",
+     "note": null
+    },
+    {
+     "week": 2,
+     "order": 4,
+     "name": "Long run",
+     "type": "long",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "Long run, conversational; finish with 4 x 20 s strides",
+     "note": null
+    },
+    {
+     "week": 3,
+     "order": 1,
+     "name": "Intervals",
+     "type": "intervals",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 8,
+       "steps": [
+        {
+         "meters": 400.0,
+         "zone": "fiveK",
+         "effort": false
+        }
+       ],
+       "recovery": {
+        "seconds": 75.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Recovery jog"
+       }
+      }
+     ],
+     "text": "8 x 400 m @ 5K, 75 s jog between",
+     "note": null
+    },
+    {
+     "week": 3,
+     "order": 2,
+     "name": "Easy run",
+     "type": "easy",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "Easy continuous run",
+     "note": null
+    },
+    {
+     "week": 3,
+     "order": 3,
+     "name": "Progression run",
+     "type": "tempo",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 0.4286,
+       "zone": "easy"
+      },
+      {
+       "kind": "share",
+       "share": 0.2857,
+       "zone": "steady"
+      },
+      {
+       "kind": "share",
+       "share": 0.2857,
+       "zone": "threshold"
+      }
+     ],
+     "text": "3 km EASY → 2 km STEADY → 2 km TEMPO",
+     "note": null
+    },
+    {
+     "week": 3,
+     "order": 4,
+     "name": "Long run",
+     "type": "long",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "Long run, conversational throughout",
+     "note": null
+    },
+    {
+     "week": 4,
+     "order": 1,
+     "name": "Fartlek",
+     "type": "intervals",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 6,
+       "steps": [
+        {
+         "seconds": 120.0,
+         "zone": "tenK",
+         "effort": true
+        },
+        {
+         "seconds": 60.0,
+         "zone": "easy",
+         "effort": false,
+         "recovery": true
+        }
+       ],
+       "recovery": null
+      }
+     ],
+     "text": "6 x (2 min @ 10K effort / 1 min easy)",
+     "note": null
+    },
+    {
+     "week": 4,
+     "order": 2,
+     "name": "Recovery run",
+     "type": "recovery",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "recovery"
+      }
+     ],
+     "text": "Very relaxed recovery run",
+     "note": null
+    },
+    {
+     "week": 4,
+     "order": 3,
+     "name": "Tempo run",
+     "type": "tempo",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 1,
+       "steps": [
+        {
+         "seconds": 900.0,
+         "zone": "threshold",
+         "effort": false
+        }
+       ],
+       "recovery": null
+      }
+     ],
+     "text": "15 min continuous @ TEMPO",
+     "note": null
+    },
+    {
+     "week": 4,
+     "order": 4,
+     "name": "Long run",
+     "type": "long",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "Shorter long run, easy",
+     "note": null
+    },
+    {
+     "week": 5,
+     "order": 1,
+     "name": "Intervals",
+     "type": "intervals",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 6,
+       "steps": [
+        {
+         "meters": 1000.0,
+         "zone": "tenK",
+         "effort": false
+        }
+       ],
+       "recovery": {
+        "seconds": 90.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Recovery jog"
+       }
+      }
+     ],
+     "text": "6 x 1 km @ 10K, 90 s jog between",
+     "note": null
+    },
+    {
+     "week": 5,
+     "order": 2,
+     "name": "Easy run",
+     "type": "easy",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "Easy continuous run",
+     "note": null
+    },
+    {
+     "week": 5,
+     "order": 3,
+     "name": "Tempo run",
+     "type": "tempo",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 3,
+       "steps": [
+        {
+         "seconds": 480.0,
+         "zone": "threshold",
+         "effort": false
+        }
+       ],
+       "recovery": {
+        "seconds": 120.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Recovery jog"
+       }
+      }
+     ],
+     "text": "3 x 8 min @ TEMPO, 2 min jog between",
+     "note": null
+    },
+    {
+     "week": 5,
+     "order": 4,
+     "name": "Long run",
+     "type": "long",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 0.7,
+       "zone": "easy"
+      },
+      {
+       "kind": "share",
+       "share": 0.3,
+       "zone": "steady"
+      }
+     ],
+     "text": "10 km EASY, final 3 km @ STEADY",
+     "note": null
+    },
+    {
+     "week": 6,
+     "order": 1,
+     "name": "Hills",
+     "type": "intervals",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 10,
+       "steps": [
+        {
+         "seconds": 60.0,
+         "zone": "hill",
+         "effort": true,
+         "label": "Uphill"
+        }
+       ],
+       "recovery": {
+        "seconds": 60.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Jog back down"
+       }
+      }
+     ],
+     "text": "10 x 60 s uphill @ hard effort, jog back down",
+     "note": null
+    },
+    {
+     "week": 6,
+     "order": 2,
+     "name": "Recovery run",
+     "type": "recovery",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "recovery"
+      }
+     ],
+     "text": "Very relaxed recovery run",
+     "note": null
+    },
+    {
+     "week": 6,
+     "order": 3,
+     "name": "Progression run",
+     "type": "tempo",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 0.375,
+       "zone": "easy"
+      },
+      {
+       "kind": "share",
+       "share": 0.375,
+       "zone": "steady"
+      },
+      {
+       "kind": "share",
+       "share": 0.25,
+       "zone": "tenK"
+      }
+     ],
+     "text": "3 km EASY → 3 km STEADY → 2 km 10K",
+     "note": null
+    },
+    {
+     "week": 6,
+     "order": 4,
+     "name": "Long run",
+     "type": "long",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "Long run, conversational throughout",
+     "note": null
+    },
+    {
+     "week": 7,
+     "order": 1,
+     "name": "Fartlek",
+     "type": "intervals",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 5,
+       "steps": [
+        {
+         "seconds": 180.0,
+         "zone": "tenK",
+         "effort": false
+        },
+        {
+         "seconds": 60.0,
+         "zone": "fiveK",
+         "effort": false
+        },
+        {
+         "seconds": 30.0,
+         "zone": "interval",
+         "effort": false
+        },
+        {
+         "seconds": 90.0,
+         "zone": "easy",
+         "effort": false,
+         "recovery": true
+        }
+       ],
+       "recovery": null
+      }
+     ],
+     "text": "5 x (3 min @ 10K / 1 min @ 5K / 30 s @ 3K / 90 s easy)",
+     "note": null
+    },
+    {
+     "week": 7,
+     "order": 2,
+     "name": "Easy run",
+     "type": "easy",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "Easy continuous run",
+     "note": null
+    },
+    {
+     "week": 7,
+     "order": 3,
+     "name": "Tempo run",
+     "type": "tempo",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 2,
+       "steps": [
+        {
+         "seconds": 720.0,
+         "zone": "threshold",
+         "effort": false
+        }
+       ],
+       "recovery": {
+        "seconds": 180.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Recovery jog"
+       }
+      }
+     ],
+     "text": "2 x 12 min @ TEMPO, 3 min jog between",
+     "note": null
+    },
+    {
+     "week": 7,
+     "order": 4,
+     "name": "Long run",
+     "type": "long",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 0.7273,
+       "zone": "easy"
+      },
+      {
+       "kind": "share",
+       "share": 0.2727,
+       "zone": "threshold"
+      }
+     ],
+     "text": "11 km EASY, final 3 km @ TEMPO",
+     "note": null
+    },
+    {
+     "week": 8,
+     "order": 1,
+     "name": "Hills",
+     "type": "intervals",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 8,
+       "steps": [
+        {
+         "seconds": 75.0,
+         "zone": "hill",
+         "effort": true,
+         "label": "Uphill"
+        }
+       ],
+       "recovery": {
+        "seconds": 75.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Jog back down"
+       }
+      }
+     ],
+     "text": "8 x 75 s uphill @ hard effort, jog back down",
+     "note": null
+    },
+    {
+     "week": 8,
+     "order": 2,
+     "name": "Recovery run",
+     "type": "recovery",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "recovery"
+      }
+     ],
+     "text": "Very relaxed recovery run",
+     "note": null
+    },
+    {
+     "week": 8,
+     "order": 3,
+     "name": "Progression run",
+     "type": "tempo",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 0.4286,
+       "zone": "easy"
+      },
+      {
+       "kind": "share",
+       "share": 0.2857,
+       "zone": "steady"
+      },
+      {
+       "kind": "share",
+       "share": 0.2857,
+       "zone": "threshold"
+      }
+     ],
+     "text": "3 km EASY → 2 km STEADY → 2 km TEMPO",
+     "note": null
+    },
+    {
+     "week": 8,
+     "order": 4,
+     "name": "Long run",
+     "type": "long",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "Shorter long run, easy",
+     "note": null
+    },
+    {
+     "week": 9,
+     "order": 1,
+     "name": "Intervals",
+     "type": "intervals",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 5,
+       "steps": [
+        {
+         "meters": 1600.0,
+         "zone": "tenK",
+         "effort": false
+        }
+       ],
+       "recovery": {
+        "seconds": 120.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Recovery jog"
+       }
+      }
+     ],
+     "text": "5 x 1.6 km @ 10K, 2 min jog between",
+     "note": null
+    },
+    {
+     "week": 9,
+     "order": 2,
+     "name": "Easy run",
+     "type": "easy",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "Easy continuous run",
+     "note": null
+    },
+    {
+     "week": 9,
+     "order": 3,
+     "name": "Tempo run",
+     "type": "tempo",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 1,
+       "steps": [
+        {
+         "seconds": 1500.0,
+         "zone": "threshold",
+         "effort": false
+        }
+       ],
+       "recovery": null
+      }
+     ],
+     "text": "25 min continuous @ TEMPO",
+     "note": null
+    },
+    {
+     "week": 9,
+     "order": 4,
+     "name": "Long run",
+     "type": "long",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 0.75,
+       "zone": "easy"
+      },
+      {
+       "kind": "share",
+       "share": 0.25,
+       "zone": "steady"
+      }
+     ],
+     "text": "12 km EASY, final 3 km @ STEADY",
+     "note": null
+    },
+    {
+     "week": 10,
+     "order": 1,
+     "name": "Intervals",
+     "type": "intervals",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 6,
+       "steps": [
+        {
+         "meters": 800.0,
+         "zone": "fiveK",
+         "effort": false
+        }
+       ],
+       "recovery": {
+        "seconds": 90.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Recovery jog"
+       }
+      }
+     ],
+     "text": "6 x 800 m @ 5K, 90 s jog between",
+     "note": null
+    },
+    {
+     "week": 10,
+     "order": 2,
+     "name": "Recovery run",
+     "type": "recovery",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "recovery"
+      }
+     ],
+     "text": "Very relaxed recovery run",
+     "note": null
+    },
+    {
+     "week": 10,
+     "order": 3,
+     "name": "Tempo run",
+     "type": "tempo",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 2,
+       "steps": [
+        {
+         "meters": 3000.0,
+         "zone": "tenK",
+         "effort": false
+        }
+       ],
+       "recovery": {
+        "seconds": 120.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Recovery jog"
+       }
+      }
+     ],
+     "text": "2 x 3 km @ 10K, 2 min jog between",
+     "note": null
+    },
+    {
+     "week": 10,
+     "order": 4,
+     "name": "Long run",
+     "type": "long",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 0.6667,
+       "zone": "easy"
+      },
+      {
+       "kind": "share",
+       "share": 0.3333,
+       "zone": "tenK"
+      }
+     ],
+     "text": "12 km EASY, final 4 km @ 10K",
+     "note": null
+    },
+    {
+     "week": 11,
+     "order": 1,
+     "name": "Intervals",
+     "type": "intervals",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 5,
+       "steps": [
+        {
+         "meters": 1000.0,
+         "zone": "tenK",
+         "effort": false
+        }
+       ],
+       "recovery": {
+        "seconds": 90.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Recovery jog"
+       }
+      }
+     ],
+     "text": "5 x 1 km @ 10K, 90 s jog between",
+     "note": null
+    },
+    {
+     "week": 11,
+     "order": 2,
+     "name": "Easy run",
+     "type": "easy",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "Easy continuous run",
+     "note": null
+    },
+    {
+     "week": 11,
+     "order": 3,
+     "name": "Fartlek",
+     "type": "intervals",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 6,
+       "steps": [
+        {
+         "seconds": 90.0,
+         "zone": "tenK",
+         "effort": false
+        },
+        {
+         "seconds": 90.0,
+         "zone": "easy",
+         "effort": false,
+         "recovery": true
+        }
+       ],
+       "recovery": null
+      }
+     ],
+     "text": "6 x (90 s @ 10K / 90 s easy)",
+     "note": null
+    },
+    {
+     "week": 11,
+     "order": 4,
+     "name": "Long run",
+     "type": "long",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "Reduced long run, easy",
+     "note": null
+    },
+    {
+     "week": 12,
+     "order": 1,
+     "name": "Intervals",
+     "type": "intervals",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 4,
+       "steps": [
+        {
+         "meters": 800.0,
+         "zone": "tenK",
+         "effort": false
+        }
+       ],
+       "recovery": {
+        "seconds": 90.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Recovery jog"
+       }
+      }
+     ],
+     "text": "4 x 800 m @ 10K, 90 s jog between",
+     "note": null
+    },
+    {
+     "week": 12,
+     "order": 2,
+     "name": "Easy run",
+     "type": "easy",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "Easy continuous run",
+     "note": null
+    },
+    {
+     "week": 12,
+     "order": 3,
+     "name": "Shakeout",
+     "type": "easy",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      },
+      {
+       "kind": "reps",
+       "repeats": 4,
+       "steps": [
+        {
+         "seconds": 20.0,
+         "zone": "repetition",
+         "effort": true,
+         "label": "Stride"
+        }
+       ],
+       "recovery": {
+        "seconds": 60,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Easy jog"
+       }
+      }
+     ],
+     "text": "4 km EASY + 4 x 20 s strides",
+     "note": null
+    },
+    {
+     "week": 12,
+     "order": 4,
+     "name": "Race day",
+     "type": "race",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "race"
+      }
+     ],
+     "text": "10K RACE – race at goal 10K pace",
+     "note": null
+    }
+   ]
+  },
+  {
    "goal": "halfMarathon",
    "name": "Half marathon",
    "description": "Aerobic base, threshold and a long run that builds to race distance.",
@@ -1403,9 +3083,9 @@
    "weeklyCapMeters": 70000.0,
    "taperWeeks": 2,
    "raceReadyMeters": {
-    "beginner": 30000.0,
-    "intermediate": 45000.0,
-    "advanced": 65000.0
+    "beginner": 25000.0,
+    "intermediate": 40000.0,
+    "advanced": 55000.0
    },
    "weeks": [
     {

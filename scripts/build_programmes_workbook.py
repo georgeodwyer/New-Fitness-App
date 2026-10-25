@@ -84,6 +84,7 @@ ZONES = [("E", "Easy", "Conversational. Easy runs, long runs, warm-ups, cool-dow
 SPLITS = [("Full body ×1", "fullBody1", 1), ("Full body ×2", "fullBody2", 2), ("Full body ×3", "fullBody3", 3),
           ("Upper / Lower", "upperLower", 4), ("Push / Pull / Legs", "ppl", 3), ("Push / Pull / Legs ×2", "ppl6", 6),
           ("Upper / Lower / Full", "upperLowerFull", 3), ("PPL + Upper / Lower", "pplUpperLower", 5),
+          ("PPL + Upper + Shoulders & arms", "pplUpperArms", 5),
           ("Hyrox: stations ×2", "hyroxStations2", 2), ("Hyrox: strength + stations", "hyroxHybrid3", 3)]
 PATTERNS = [("Any squat", "squat"), ("Any hinge (deadlift)", "hinge"), ("Any hinge accessory (RDL, bridge)", "hingeAccessory"),
             ("Any lunge / split squat", "lunge"), ("Any calf raise", "calf"), ("Any horizontal push (bench, press-up)", "horizontalPush"),
@@ -244,12 +245,12 @@ header(prog, pcols, [18, 22, 10, 18, 10, 10, 10, 10, 10, 10, 12, 12, 12, 9, 20, 
 prog.cell(row=1, column=17).comment = Comment("Which runners see this goal in onboarding, by their running experience.", "Kinetix")
 prog.cell(row=1, column=11).comment = Comment("The weekly volume this race needs at each level. Run weeks' % are a % of this. "
                                               "Runners below it build up to it; runners above it ease down to it.", "Kinetix")
-READY = {"first5k": (15, None, None), "faster5k": (20, 30, 45), "faster10k": (25, 40, 55), "halfMarathon": (30, 45, 65), "marathon": (40, 60, 85),
+READY = {"first5k": (15, None, None), "faster5k": (20, 30, 45), "faster10k": (20, 40, 55), "halfMarathon": (25, 40, 55), "marathon": (50, 75, 85),
          "buildStrength": (10, 15, 25), "buildMuscle": (10, 15, 25), "balancedHybrid": (15, 25, 40), "hyrox": (20, 30, 45)}
 defaults = {
     "first5k": (8, "Repeat", 3, 4, 1, 2, 8, 25, 1, "Full body ×2", "Build up to running 5K comfortably, then race it."),
     "faster5k": (8, "Repeat", 3, 5, 1, 2, 12, 60, 1, "Full body ×2", "Speed, VO2max and threshold work to lower your 5K time."),
-    "faster10k": (10, "Repeat", 3, 5, 1, 2, 16, 45, 1, "Full body ×2", "Sharper speed and threshold work to lower your 10K time."),
+    "faster10k": (12, "Repeat", 3, 5, 1, 5, 16, 45, 1, "Full body ×2", "Sharper speed and threshold work to lower your 10K time."),
     "halfMarathon": (12, "Repeat", 3, 5, 1, 2, 22, 70, 2, "Full body ×2", "Aerobic base, threshold and a long run that builds to race distance."),
     "marathon": (16, "Repeat", 4, 6, 1, 2, 32, 100, 3, "Full body ×2", "Volume, long runs and marathon-pace work, with a three-week taper."),
     "buildStrength": (8, "Repeat", 1, 3, 2, 4, 10, 25, 1, "Upper / Lower", "Heavy compound lifts with enough running to keep your engine."),
@@ -407,12 +408,14 @@ split_days = {
     "fullBody1": "Full body", "fullBody2": "Full body A, Full body B", "fullBody3": "Full body A, Full body B, Full body C",
     "upperLower": "Upper A, Lower A, Upper B, Lower B", "ppl": "Push, Pull, Legs", "ppl6": "Push A, Pull A, Legs A, Push B, Pull B, Legs B",
     "upperLowerFull": "Upper, Lower, Full body", "pplUpperLower": "Push, Pull, Legs, Upper, Lower",
+    "pplUpperArms": "Push, Pull, Legs, Upper, Shoulders & arms",
     "hyroxStations2": "Stations A, Stations B", "hyroxHybrid3": "Strength A, Stations, Strength B"}
 suits = {
     "fullBody1": "Very busy weeks or running-focused plans.", "fullBody2": "Most runners: two sessions that cover everything.",
     "fullBody3": "Balanced hybrid, newer lifters.", "upperLower": "Strength focus with 4 lifting days.",
     "ppl": "Muscle focus with 3 lifting days.", "ppl6": "Experienced lifters, muscle focus, light running.",
     "upperLowerFull": "3 days, a bit more volume per muscle than full body.", "pplUpperLower": "5 lifting days, muscle focus.",
+    "pplUpperArms": "5 lifting days, muscle focus with a shoulders and arms day.",
     "hyroxStations2": "Hyrox: two station sessions covering all eight stations.",
     "hyroxHybrid3": "Hyrox: two strength days and one station day."}
 saved_splits = {}

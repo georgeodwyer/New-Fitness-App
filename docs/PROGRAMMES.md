@@ -64,8 +64,8 @@ marathon for three example runners and prints a week-by-week preview (lines star
 - **Afterwards:** an easy recovery week (60% of the starting volume), then the programme
   again, starting from the runner's last four weeks of running.
 - **Paces** come from their race time: E, STEADY (marathon pace + 10–20 s/km), M, HM, T,
-  10K, 5K, I, R. `@ … effort` shows the pace as a guide only (no off-pace warnings); hills
-  have no pace.
+  10K, 5K, I, R. EASY works as E, TEMPO as T, and 3K uses I pace (there's no 3K zone).
+  `@ … effort` shows the pace as a guide only (no off-pace warnings); hills have no pace.
 
 ## Gym splits
 
