@@ -82,16 +82,16 @@ final class ProgrammePlannerTests: XCTestCase {
     }
 
     func testAtRaceReadyTheProgrammeIsAsWritten() {
-        // Intermediate race-ready volume is 45 km.
-        let (km, outline) = volumes(level: .intermediate, weeklyKm: 45)
+        // Intermediate race-ready volume is 40 km.
+        let (km, outline) = volumes(level: .intermediate, weeklyKm: 40)
         XCTAssertEqual(outline.programmeGoal, .halfMarathon)
         XCTAssertEqual(outline.weeks.count, 13, "12 weeks and a recovery week")
         // 100%, 105%, 110%, deload 90%, then 115%: not cut, because it's measured against week 3.
-        for (actual, expected) in zip(km.prefix(5), [45, 47.25, 49.5, 40.5, 51.75]) {
+        for (actual, expected) in zip(km.prefix(5), [40, 42, 44, 36, 46]) {
             XCTAssertEqual(actual, expected, accuracy: 0.06)
         }
-        XCTAssertEqual(km[8], 58.5) // peak, 130%
-        XCTAssertEqual(km[11], 24.75, accuracy: 0.06) // race week, 55% (not counting the race)
+        XCTAssertEqual(km[8], 52) // peak, 130%
+        XCTAssertEqual(km[11], 22, accuracy: 0.06) // race week, 55% (not counting the race)
         XCTAssertTrue(outline.weeks[3].isRecoveryWeek)
         XCTAssertEqual(outline.weeks.last?.isPostProgrammeRecovery, true)
     }
@@ -104,28 +104,28 @@ final class ProgrammePlannerTests: XCTestCase {
             XCTAssertLessThanOrEqual(km[i], recent * 1.1 + 0.1, "week \(i + 1)")
         }
         XCTAssertLessThan(km[3], km[2], "Deload weeks still dip")
-        XCTAssertGreaterThan(km[8], 40, "Builds towards the race-ready 45 km")
-        XCTAssertLessThanOrEqual(km[8], 45 * 1.3 + 0.1)
+        XCTAssertGreaterThan(km[8], 36, "Builds towards the race-ready 40 km")
+        XCTAssertLessThanOrEqual(km[8], 40 * 1.3 + 0.1)
         XCTAssertNil(outline.weeks[0].isEasyStart)
     }
 
     func testAboveRaceReadyEasesDown() {
-        // A marathoner on 60 km/week doing the half (intermediate race-ready 45 km).
+        // A marathoner on 60 km/week doing the half (intermediate race-ready 40 km).
         let (km, _) = volumes(level: .intermediate, weeklyKm: 60)
         XCTAssertEqual(km[0], 60, "No sudden drop")
         XCTAssertEqual(km[1], 1.05 * 51, accuracy: 0.1, "Base down 15%")
-        XCTAssertEqual(km[2], 1.1 * 45, accuracy: 0.1, "Then at race-ready")
-        XCTAssertEqual(km[8], 1.3 * 45, accuracy: 0.1)
+        XCTAssertEqual(km[2], 1.1 * 43.35, accuracy: 0.1, "Down another 15%")
+        XCTAssertEqual(km[8], 1.3 * 40, accuracy: 0.1, "At race-ready by the peak")
     }
 
     func testEasyFirstWeekOnlyWhenAsked() {
-        let (km, outline) = volumes(level: .intermediate, weeklyKm: 45, easyStart: true)
+        let (km, outline) = volumes(level: .intermediate, weeklyKm: 40, easyStart: true)
         XCTAssertEqual(outline.weeks[0].isEasyStart, true)
-        XCTAssertEqual(km[0], 27, "60% of current volume")
+        XCTAssertEqual(km[0], 24, "60% of current volume")
         XCTAssertEqual(outline.weeks[1].programmeWeek, 1)
-        XCTAssertEqual(km[1], 45, "Week 1 isn't held back by the easy week")
+        XCTAssertEqual(km[1], 40, "Week 1 isn't held back by the easy week")
         let generated = try! XCTUnwrap(generator.generateWeek(0, outline: outline, profile: {
-            var p = profile(runners[1]); p.weeklyRunMeters = 45000; p.easyFirstWeek = true; p.racedRecently = true
+            var p = profile(runners[1]); p.weeklyRunMeters = 40000; p.easyFirstWeek = true; p.racedRecently = true
             p.easyFirstWeekRequestedAt = monday; return p
         }(), notBefore: nil))
         XCTAssertTrue(runs(generated).allSatisfy { $0.title == "Easy run" })
