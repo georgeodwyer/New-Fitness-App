@@ -7,6 +7,16 @@ struct GymLiveView: View {
     @State private var workout = RunWorkoutManager.shared
     @State private var page = 1
     @State private var confirmEnd = false
+    // Crown: a firm turn in one go starts or finishes a set (same feel as on runs).
+    @State private var crownValue = 0.0
+    @State private var lastCrownValue = 0.0
+    @State private var crownTurned = 0.0
+    @State private var crownLocked = false
+    @State private var lastCrownMove = Date.distantPast
+    @FocusState private var crownFocused: Bool
+
+    /// Crown value per full turn at `.medium` sensitivity (matches the run screen).
+    private static let crownUnitsPerTurn = 2.0
 
     private static let zoneColors: [Color] = [.gray, .teal, .green, .orange, .red]
 
@@ -16,6 +26,14 @@ struct GymLiveView: View {
             main.tag(1)
         }
         .tabViewStyle(.page)
+        .focusable()
+        .focused($crownFocused)
+        .focusEffectDisabled()
+        .digitalCrownRotation($crownValue, from: -1_000_000, through: 1_000_000, by: nil, sensitivity: .medium,
+                              isContinuous: false, isHapticFeedbackEnabled: false)
+        .onChange(of: crownValue) { _, value in crownMoved(to: value) }
+        .onAppear { crownFocused = true }
+        .overlay { crownRing }
         .confirmationDialog("Stop showing this session?", isPresented: $confirmEnd) {
             Button("Stop showing") { Task { await workout.end() } }
             Button("Keep going", role: .cancel) {}
@@ -25,6 +43,58 @@ struct GymLiveView: View {
     }
 
     private var frame: GymMirrorFrame? { workout.gymFrame }
+
+    // MARK: Crown
+
+    private var crownEnabled: Bool { workout.controls.crown != .off && frame.map { !$0.isComplete } ?? false }
+    private var crownThreshold: Double { max(workout.controls.crownTurn, 0.1) * Self.crownUnitsPerTurn }
+    private var crownProgress: Double { min(abs(crownTurned) / crownThreshold, 1) }
+
+    private func crownMoved(to value: Double) {
+        let delta = value - lastCrownValue
+        lastCrownValue = value
+        let now = Date()
+        if now.timeIntervalSince(lastCrownMove) > 0.4 { crownIdle() }
+        lastCrownMove = now
+        scheduleRingReset(after: now)
+        guard crownEnabled, !crownLocked, delta != 0 else { return }
+        crownTurned = (crownTurned == 0 || (crownTurned > 0) == (delta > 0)) ? crownTurned + delta : delta
+        if abs(crownTurned) >= crownThreshold {
+            crownLocked = true
+            crownTurned = 0
+            workout.gymPrimary()
+        }
+    }
+
+    private func crownIdle() {
+        crownTurned = 0
+        crownLocked = false
+    }
+
+    private func scheduleRingReset(after moment: Date) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(500))
+            if lastCrownMove == moment { crownIdle() }
+        }
+    }
+
+    @ViewBuilder
+    private var crownRing: some View {
+        if crownProgress > 0.15 {
+            let starting = frame?.setStartedAt == nil
+            ZStack {
+                Circle().stroke(.white.opacity(0.2), lineWidth: 6)
+                Circle().trim(from: 0, to: crownProgress)
+                    .stroke(starting ? WatchColor.accent : .green, style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                Image(systemName: starting ? "play.fill" : "checkmark").font(.title2)
+            }
+            .frame(width: 70, height: 70)
+            .padding(8)
+            .background(.black.opacity(0.75), in: Circle())
+            .allowsHitTesting(false)
+        }
+    }
 
     private var main: some View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
