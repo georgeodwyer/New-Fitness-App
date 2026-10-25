@@ -47,7 +47,7 @@ struct RunSummaryView: View {
                 targetCard
                 if !summary.splits.isEmpty { splitsCard }
                 if let laps = summary.laps, !laps.isEmpty { LapsCard(laps: laps, format: format) }
-                if summary.segments.contains(where: { $0.segment.kind == .work }) { repsCard }
+                if !summary.segments.isEmpty { PlannedVsActualCard(results: summary.segments, format: format) }
             }
             .padding(KXSpacing.screenMargin)
         }
@@ -141,34 +141,6 @@ struct RunSummaryView: View {
                 }
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("Split \(split.index), \(Units.formatMinutesSeconds(split.durationSeconds))")
-            }
-        }
-        .kxCard()
-    }
-
-    private var repsCard: some View {
-        VStack(alignment: .leading, spacing: KXSpacing.sm) {
-            KXSectionHeader("Efforts", subtitle: "Actual pace against target")
-            ForEach(summary.segments.filter { $0.segment.kind == .work }, id: \.index) { result in
-                let onTarget = result.secondsMeasured > 0 && result.secondsInTarget / result.secondsMeasured >= 0.7
-                HStack {
-                    Image(systemName: onTarget ? "checkmark.circle.fill" : "exclamationmark.circle")
-                        .foregroundStyle(onTarget ? KXColor.success : KXColor.warning)
-                        .accessibilityHidden(true)
-                    VStack(alignment: .leading, spacing: KXSpacing.xxs) {
-                        Text(result.segment.label ?? "Effort").font(KXFont.bodyEmphasis)
-                        Text(result.segment.targetPace.map { "Target \(format.paceRange($0))" } ?? "")
-                            .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
-                    }
-                    Spacer()
-                    VStack(alignment: .trailing, spacing: KXSpacing.xxs) {
-                        Text(result.averagePace.map { format.pace($0) } ?? "--")
-                            .font(KXFont.bodyEmphasis.monospacedDigit())
-                        Text("\(format.distance(result.distanceMeters, decimals: 2)) · \(Units.formatMinutesSeconds(result.durationSeconds))")
-                            .font(KXFont.caption.monospacedDigit()).foregroundStyle(KXColor.inkSecondary)
-                    }
-                }
-                .accessibilityElement(children: .combine)
             }
         }
         .kxCard()

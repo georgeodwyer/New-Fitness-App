@@ -39,7 +39,7 @@ struct RunDetailView: View {
                 if heartRate.count >= 3 { RunLineChart(title: "Heart rate", points: heartRate, kind: .heartRate) }
                 if !log.splits.isEmpty { splitsCard }
                 if !log.laps.isEmpty { LapsCard(laps: log.laps, format: format) }
-                if log.segmentResults.contains(where: { $0.segment.targetPace != nil }) { effortsCard }
+                if !log.segmentResults.isEmpty { PlannedVsActualCard(results: log.segmentResults, format: format) }
                 if let planned { plannedCard(planned) }
                 destinationsCard
                 Button(role: .destructive) { confirmDelete = true } label: {
@@ -152,33 +152,6 @@ struct RunDetailView: View {
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("Split \(split.index), \(Units.formatMinutesSeconds(split.durationSeconds))"
                                     + (split.averageHeartRate.map { ", \(Int($0)) beats per minute" } ?? ""))
-            }
-        }
-        .kxCard()
-    }
-
-    private var effortsCard: some View {
-        VStack(alignment: .leading, spacing: KXSpacing.sm) {
-            KXSectionHeader("Against target", subtitle: "Each targeted step and the pace you ran")
-            ForEach(log.segmentResults.filter { $0.segment.targetPace != nil }, id: \.index) { result in
-                let share = result.secondsMeasured > 0 ? result.secondsInTarget / result.secondsMeasured : 0
-                let onTarget = share >= 0.7
-                HStack {
-                    Image(systemName: onTarget ? "checkmark.circle.fill" : "exclamationmark.circle")
-                        .foregroundStyle(onTarget ? KXColor.success : KXColor.warning)
-                        .accessibilityHidden(true)
-                    VStack(alignment: .leading, spacing: KXSpacing.xxs) {
-                        Text(result.segment.label ?? result.segment.kind.builderName).font(KXFont.bodyEmphasis)
-                        Text(result.segment.targetPace.map { "Target \(format.paceRange($0))" } ?? "")
-                            .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
-                    }
-                    Spacer()
-                    VStack(alignment: .trailing, spacing: KXSpacing.xxs) {
-                        Text(result.averagePace.map { format.pace($0) } ?? "--").font(KXFont.bodyEmphasis.monospacedDigit())
-                        Text("\(Int((share * 100).rounded()))% on target").font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
-                    }
-                }
-                .accessibilityElement(children: .combine)
             }
         }
         .kxCard()
