@@ -121,6 +121,7 @@
 		CF1312B2EEA8C82121C28541 /* LapsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58CC4DBE6FC7ADA3A6C7F4EE /* LapsCard.swift */; };
 		D01F9F689C654DD47EDC8ED5 /* AccountSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90BA113272970E6AD61E52D1 /* AccountSection.swift */; };
 		D06698D33FC2AC066E0A414A /* KXFont.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09457C53CBC5D758DE02ED68 /* KXFont.swift */; };
+		D11DEB954AE20FA65C016D3A /* GymLiveView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59C34693744398934B3DC293 /* GymLiveView.swift */; };
 		D187078BA75A613B810BDEEE /* SyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8625E979738A82F0E873A0DD /* SyncService.swift */; };
 		D1ADD89D851D0A6C48CD30E3 /* TrainingEngine in Frameworks */ = {isa = PBXBuildFile; productRef = 4DE9D951D067C603E67191DB /* TrainingEngine */; };
 		D252CB074F5B2866FB756DB0 /* RunningProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C67A71E900CE4D68CC760BF /* RunningProgressView.swift */; };
@@ -269,6 +270,7 @@
 		55937FA7CC685D3DBBA76FA0 /* ShareSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSessionView.swift; sourceTree = "<group>"; };
 		57D4371AF5820D576CE51646 /* GymService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GymService.swift; sourceTree = "<group>"; };
 		58CC4DBE6FC7ADA3A6C7F4EE /* LapsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LapsCard.swift; sourceTree = "<group>"; };
+		59C34693744398934B3DC293 /* GymLiveView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GymLiveView.swift; sourceTree = "<group>"; };
 		626F847EE3778CA53D1E28E9 /* SessionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionDetailView.swift; sourceTree = "<group>"; };
 		68BA25507C64D36A65136666 /* ProgressSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressSummaryView.swift; sourceTree = "<group>"; };
 		68F6AC05A25C4370A18ACAF3 /* KinetixWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KinetixWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -447,6 +449,7 @@
 			isa = PBXGroup;
 			children = (
 				B86E9E847C741EE0B68892BC /* Assets.xcassets */,
+				59C34693744398934B3DC293 /* GymLiveView.swift */,
 				0D09E7C2A3E3650F504BB2DD /* Info.plist */,
 				EA669D15368E1CA7DFE58741 /* KinetixWatch.entitlements */,
 				440A4666F40E86B1CABE7D24 /* KinetixWatchApp.swift */,
@@ -1086,6 +1089,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				6AB0A803B59FF266099C71B8 /* Formatters.swift in Sources */,
+				D11DEB954AE20FA65C016D3A /* GymLiveView.swift in Sources */,
 				DA069B8EE244D1C28E2ABD3B /* KinetixWatchApp.swift in Sources */,
 				6B6C655E71CA57EA30150748 /* RunListView.swift in Sources */,
 				472AAFBD4EF97300B0F82965 /* RunLiveView.swift in Sources */,
