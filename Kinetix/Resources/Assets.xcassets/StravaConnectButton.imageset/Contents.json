@@ -1,7 +1,7 @@
 {
   "images": [
     {
-      "filename": "StravaConnectButton-light.png",
+      "filename": "StravaConnectButton-light@1x.png",
       "idiom": "universal",
       "scale": "1x"
     },
@@ -12,9 +12,25 @@
           "value": "dark"
         }
       ],
-      "filename": "StravaConnectButton-dark.png",
+      "filename": "StravaConnectButton-dark@1x.png",
       "idiom": "universal",
       "scale": "1x"
+    },
+    {
+      "filename": "StravaConnectButton-light@2x.png",
+      "idiom": "universal",
+      "scale": "2x"
+    },
+    {
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "dark"
+        }
+      ],
+      "filename": "StravaConnectButton-dark@2x.png",
+      "idiom": "universal",
+      "scale": "2x"
     }
   ],
   "info": {
