@@ -116,7 +116,9 @@ struct PlanView: View {
                     if profiles.isEmpty {
                         PlanIntroCard { showOnboarding = true }
                     }
-                    if let outline { overview(outline) }
+                    if let outline {
+                        PlanTopTiles(outline: outline, profile: profiles.first?.profile, profileModel: profiles.first, format: format)
+                    }
                     if weeks.isEmpty && !profiles.isEmpty {
                         Text("No sessions planned yet.")
                             .font(KXFont.callout)
@@ -156,28 +158,6 @@ struct PlanView: View {
                 if count > 0 { showOnboarding = false }
             }
         }
-    }
-
-    private func overview(_ outline: PlanOutline) -> some View {
-        VStack(alignment: .leading, spacing: KXSpacing.md) {
-            KXSectionHeader(outline.eventDate == nil ? "Rolling block" : "Road to your event",
-                            subtitle: outline.eventDate.map { "Event: \($0.formatted(.dateTime.day().month(.wide).year()))" })
-            HStack(spacing: KXSpacing.xxs) {
-                ForEach(outline.blocks, id: \.firstWeek) { block in
-                    VStack(alignment: .leading, spacing: KXSpacing.xs) {
-                        Capsule()
-                            .fill(color(for: block.phase))
-                            .frame(height: 8)
-                        Text(block.phase.displayName).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .layoutPriority(Double(block.weekCount))
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityLabel("\(block.phase.displayName), \(block.weekCount) weeks")
-                }
-            }
-        }
-        .kxCard()
     }
 
     private func weekSection(_ week: WeekGroup) -> some View {
