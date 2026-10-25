@@ -55,6 +55,7 @@
 		6138BDF777275FD7654DA4D4 /* TrainingProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F327708828E05100B42EDD57 /* TrainingProfileView.swift */; };
 		63E3B789A3726B06318F6FB0 /* StrainCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20FB067B24E854B00EC36D31 /* StrainCards.swift */; };
 		6540A069DFA262A340BECB35 /* WorkoutActivityController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E9AE388F264F792830FE28E /* WorkoutActivityController.swift */; };
+		66DA5C06963D2763BA10F4BD /* PlannedVsActualCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E0ED981D2B76C4BA7EF7BF8 /* PlannedVsActualCard.swift */; };
 		67E40FA365E4371536043DA4 /* RecordTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85DC3ED0960A484ACB127C77 /* RecordTests.swift */; };
 		69CF5E31BCF438B10AAEFD2E /* HealthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 130A6B35CC5FB984FCCD948F /* HealthService.swift */; };
 		6A5C33C319519EE85058D5AF /* KXSpacing.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2EEE532F379E91567B19BF6 /* KXSpacing.swift */; };
@@ -240,6 +241,7 @@
 		1CCC3286E58148E4A728A4C5 /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
 		1D0A8758A0E38811D70F3371 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		1DD6B44B1B977B2EB92D215E /* SessionContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionContainerView.swift; sourceTree = "<group>"; };
+		1E0ED981D2B76C4BA7EF7BF8 /* PlannedVsActualCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlannedVsActualCard.swift; sourceTree = "<group>"; };
 		1F31D7238D3089FE39D1AF49 /* KXOptionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXOptionCard.swift; sourceTree = "<group>"; };
 		20B9963B730BCD17BDF41812 /* PlanModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanModels.swift; sourceTree = "<group>"; };
 		20FB067B24E854B00EC36D31 /* StrainCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrainCards.swift; sourceTree = "<group>"; };
@@ -729,6 +731,7 @@
 			isa = PBXGroup;
 			children = (
 				58CC4DBE6FC7ADA3A6C7F4EE /* LapsCard.swift */,
+				1E0ED981D2B76C4BA7EF7BF8 /* PlannedVsActualCard.swift */,
 				C4708069D9CB0D862B6D3765 /* RunSummaryView.swift */,
 				B488A5C64C09276C346F5B82 /* RunWorkoutModel.swift */,
 				12C1324B1AC05AA177D5BF93 /* RunWorkoutView.swift */,
@@ -1037,6 +1040,7 @@
 				BFA529069514CFA98ADFAF18 /* PlanService.swift in Sources */,
 				CA3AB9490849AF1427ABFB57 /* PlanTiles.swift in Sources */,
 				70C07E1CB04C57F050ED4CD7 /* PlanView.swift in Sources */,
+				66DA5C06963D2763BA10F4BD /* PlannedVsActualCard.swift in Sources */,
 				F611A87F94DBFAB54FFA2E62 /* PrivacyPolicyView.swift in Sources */,
 				465A7A42EEAE1F5D2D2C0DEC /* ProfileQuestionsView.swift in Sources */,
 				F030C9653CAED7265051687D /* ProgressScreen.swift in Sources */,
