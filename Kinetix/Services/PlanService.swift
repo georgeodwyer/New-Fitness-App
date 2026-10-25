@@ -29,8 +29,9 @@ enum PlanService {
 
     static func preview(for profile: AthleteProfile, now: Date = .now) -> Preview {
         let generator = generator
-        let outline = generator.makeOutline(for: profile, startingOn: generator.planStart(from: now))
-        let firstWeek = generator.generateWeek(0, outline: outline, profile: profile, notBefore: now)
+        let outline = generator.makeOutline(for: profile, startingOn: generator.planStart(from: now, requested: profile.planStartDate))
+        let firstWeek = generator.generateWeek(0, outline: outline, profile: profile,
+                                               notBefore: generator.firstSessionDay(from: now, requested: profile.planStartDate))
         return Preview(outline: outline, firstWeek: firstWeek, zones: PaceZones(profile: profile))
     }
 
@@ -49,8 +50,10 @@ enum PlanService {
         }
 
         let generator = generator
-        let outline = generator.makeOutline(for: profile, startingOn: generator.planStart(from: now))
-        let plan = TrainingPlanModel(goal: profile.goal, startDate: outline.startDate, endDate: outline.eventDate)
+        let outline = generator.makeOutline(for: profile, startingOn: generator.planStart(from: now, requested: profile.planStartDate))
+        // A chosen start day mid-week: the plan (and Today's "Plan starts …") begins that day.
+        let firstDay = generator.firstSessionDay(from: now, requested: profile.planStartDate)
+        let plan = TrainingPlanModel(goal: profile.goal, startDate: max(outline.startDate, firstDay), endDate: outline.eventDate)
         plan.outline = outline
         context.insert(plan)
         context.insert(PlanChangeModel(summary: "Created a new \(outline.weeks.count)-week plan for \(profile.goal.displayName.lowercased()).", now: now))
@@ -80,7 +83,8 @@ enum PlanService {
         while plan.generatedWeekCount < outline.weeks.count,
               outline.weeks[plan.generatedWeekCount].startDate <= horizon {
             let index = plan.generatedWeekCount
-            if let week = generator.generateWeek(index, outline: outline, profile: profile, workingWeights: weights, notBefore: now) {
+            if let week = generator.generateWeek(index, outline: outline, profile: profile, workingWeights: weights,
+                                                notBefore: generator.firstSessionDay(from: now, requested: profile.planStartDate)) {
                 for generated in week.sessions {
                     let session = PlannedSessionModel(generated: generated, weekIndex: index)
                     context.insert(session)
@@ -108,7 +112,8 @@ enum PlanService {
         let weights = workingWeights(in: context)
         var weeks: [Int: GeneratedWeek] = [:]
         for index in plan.generatedWeekCount..<outline.weeks.count {
-            if let week = generator.generateWeek(index, outline: outline, profile: profile, workingWeights: weights, notBefore: now) {
+            if let week = generator.generateWeek(index, outline: outline, profile: profile, workingWeights: weights,
+                                                notBefore: generator.firstSessionDay(from: now, requested: profile.planStartDate)) {
                 weeks[index] = week
             }
         }

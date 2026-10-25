@@ -42,6 +42,8 @@ final class OnboardingModel {
     private var heartRateZones: HeartRateZoneSettings?
     /// Kept as they were when editing (set from the gym screen, not asked here).
     private var exerciseSwaps: [String: String]?
+    /// The day they want the plan to start (nil = as soon as sensible). Set on the plan preview.
+    var planStartDate: Date?
     var runningExperience: ExperienceLevel?
     var knowsRaceTime = false
     var raceDistance: RaceDistance = .fiveK
@@ -168,7 +170,8 @@ final class OnboardingModel {
             birthYear: knowsAge ? Calendar.current.component(.year, from: .now) - age : nil,
             heartRateZones: heartRateZones,
             hyroxDivision: goal == .hyrox ? hyroxDivision : nil,
-            exerciseSwaps: exerciseSwaps
+            exerciseSwaps: exerciseSwaps,
+            planStartDate: planStartDate
         )
     }
 
@@ -189,6 +192,7 @@ final class OnboardingModel {
         if let profileAge = profile.age() { age = profileAge }
         heartRateZones = profile.heartRateZones
         exerciseSwaps = profile.exerciseSwaps
+        planStartDate = profile.planStartDate
         if let race = profile.recentRace {
             knowsRaceTime = true
             raceDistance = RaceDistance.allCases.min { abs($0.rawValue - race.distanceMeters) < abs($1.rawValue - race.distanceMeters) } ?? .fiveK

@@ -2,6 +2,26 @@ import XCTest
 @testable import TrainingEngine
 
 final class PlanGeneratorTests: XCTestCase {
+    func testChosenStartDay() throws {
+        let generator = PlanGenerator(templates: TestSupport.bundledTemplates)
+        let calendar = generator.calendar
+        let today = TestSupport.monday
+        let thursday = calendar.date(byAdding: .day, value: 10, to: today)! // Thursday next week
+        XCTAssertEqual(generator.planStart(from: today, requested: thursday), calendar.date(byAdding: .day, value: 7, to: today))
+        XCTAssertEqual(generator.firstSessionDay(from: today, requested: thursday), calendar.startOfDay(for: thursday))
+        // A day that has passed counts as today.
+        let past = calendar.date(byAdding: .day, value: -3, to: today)!
+        XCTAssertEqual(generator.planStart(from: today, requested: past), generator.planStart(from: today))
+        XCTAssertEqual(generator.firstSessionDay(from: today, requested: past), today)
+
+        var profile = TestSupport.profile(goal: .balancedHybrid)
+        profile.planStartDate = thursday
+        let outline = generator.makeOutline(for: profile, startingOn: generator.planStart(from: today, requested: thursday))
+        let week = try XCTUnwrap(generator.generateWeek(0, outline: outline, profile: profile,
+                                                        notBefore: generator.firstSessionDay(from: today, requested: thursday)))
+        XCTAssertTrue(week.sessions.allSatisfy { $0.date >= calendar.startOfDay(for: thursday) }, "Nothing before the chosen day")
+    }
+
     private let generator = TestSupport.generator
     private let calendar = TestSupport.calendar
 

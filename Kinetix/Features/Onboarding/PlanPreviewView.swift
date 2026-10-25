@@ -5,10 +5,37 @@ import TrainingEngine
 /// End of onboarding: shows the generated plan and saves it on "Start training".
 struct PlanPreviewView: View {
     let model: OnboardingModel
-    let preview: PlanService.Preview
+    private let initialPreview: PlanService.Preview
     let onBack: () -> Void
 
     @Environment(\.modelContext) private var context
+    /// Rebuilt when they pick another start day.
+    @State private var updatedPreview: PlanService.Preview?
+
+    init(model: OnboardingModel, preview: PlanService.Preview, onBack: @escaping () -> Void) {
+        self.model = model
+        self.initialPreview = preview
+        self.onBack = onBack
+    }
+
+    private var preview: PlanService.Preview { updatedPreview ?? initialPreview }
+
+    /// The first day of the plan: their chosen day, or the usual start (never before today).
+    private var startDay: Date {
+        let calendar = Calendar.kinetix
+        let today = calendar.startOfDay(for: .now)
+        if let chosen = model.planStartDate, calendar.startOfDay(for: chosen) > today { return calendar.startOfDay(for: chosen) }
+        return max(preview.outline.startDate, today)
+    }
+
+    private var startBinding: Binding<Date> {
+        Binding(get: { startDay }, set: { day in
+            let chosen = Calendar.kinetix.startOfDay(for: day)
+            // Today means "as soon as possible", same as not choosing.
+            model.planStartDate = chosen > Calendar.kinetix.startOfDay(for: .now) ? chosen : nil
+            updatedPreview = PlanService.preview(for: model.profile)
+        })
+    }
 
     private var format: DisplayFormat { DisplayFormat(units: model.units) }
 
@@ -21,6 +48,7 @@ struct PlanPreviewView: View {
                         .font(KXFont.body)
                         .foregroundStyle(KXColor.inkSecondary)
                 }
+                startCard
                 phasesCard
                 zonesCard
                 firstWeekCard
@@ -42,11 +70,25 @@ struct PlanPreviewView: View {
 
     private var summaryLine: String {
         let weeks = preview.outline.weeks.count
-        let start = preview.outline.startDate.formatted(.dateTime.weekday(.wide).day().month(.wide))
+        let start = startDay.formatted(.dateTime.weekday(.wide).day().month(.wide))
         if let event = preview.outline.eventDate {
             return "\(weeks) weeks to your event on \(event.formatted(.dateTime.day().month(.wide))). Starts \(start)."
         }
         return "A \(weeks)-week block that keeps rolling. Starts \(start)."
+    }
+
+    private var startCard: some View {
+        VStack(alignment: .leading, spacing: KXSpacing.sm) {
+            DatePicker(selection: startBinding, in: Calendar.kinetix.startOfDay(for: .now)...Date.now.addingTimeInterval(180 * 86_400),
+                       displayedComponents: .date) {
+                Label("Start on", systemImage: "calendar").font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink)
+            }
+            .accessibilityIdentifier("plan.startDate")
+            Text("Sessions begin that day. Until then, Today shows when your plan starts.")
+                .font(KXFont.caption)
+                .foregroundStyle(KXColor.inkSecondary)
+        }
+        .kxCard()
     }
 
     private var phasesCard: some View {

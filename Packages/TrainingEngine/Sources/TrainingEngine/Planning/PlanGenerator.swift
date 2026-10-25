@@ -37,6 +37,19 @@ public struct PlanGenerator: Sendable {
         self.calendar = calendar
     }
 
+    /// Where the plan's first week starts: the Monday of the week they chose to start in
+    /// (a chosen day that has passed counts as today), or the usual start.
+    public func planStart(from today: Date, requested: Date?) -> Date {
+        guard let requested, calendar.startOfDay(for: requested) > calendar.startOfDay(for: today) else { return planStart(from: today) }
+        return calendar.startOfISOWeek(for: requested)
+    }
+
+    /// The first day sessions can be on: the chosen start day, or today.
+    public func firstSessionDay(from today: Date, requested: Date?) -> Date {
+        guard let requested, calendar.startOfDay(for: requested) > calendar.startOfDay(for: today) else { return today }
+        return calendar.startOfDay(for: requested)
+    }
+
     /// The Monday the plan starts: this week if it's Monday–Wednesday, else next week.
     public func planStart(from today: Date) -> Date {
         let monday = calendar.startOfISOWeek(for: today)

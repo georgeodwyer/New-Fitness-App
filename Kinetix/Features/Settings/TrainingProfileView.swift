@@ -50,6 +50,23 @@ struct TrainingProfileView: View {
 
     private var changes: [String] { model.profile.planAffectingChanges(comparedTo: original) }
 
+    /// The chosen start day, or today once the plan is under way.
+    private var startBinding: Binding<Date> {
+        Binding(get: {
+            let today = Calendar.kinetix.startOfDay(for: .now)
+            return max(model.planStartDate.map { Calendar.kinetix.startOfDay(for: $0) } ?? today, today)
+        }, set: { day in
+            let chosen = Calendar.kinetix.startOfDay(for: day)
+            // Today means "as soon as possible", same as not choosing.
+            model.planStartDate = chosen > Calendar.kinetix.startOfDay(for: .now) ? chosen : nil
+            let planChanges = changes
+            save()
+            guard !planChanges.isEmpty else { return }
+            pendingChanges = planChanges
+            showRegenerate = true
+        })
+    }
+
     var body: some View {
         List {
             Section {
@@ -94,6 +111,16 @@ struct TrainingProfileView: View {
                 row("Experience", value: model.runningExperience?.displayName ?? "–", step: .runningExperience)
                 row("Recent race time", value: raceText, step: .raceTime)
                 row("Running right now", value: currentRunningText, step: .currentRunning)
+            }
+            Section {
+                DatePicker("Start on", selection: startBinding,
+                           in: Calendar.kinetix.startOfDay(for: .now)...Date.now.addingTimeInterval(180 * 86_400),
+                           displayedComponents: .date)
+                    .accessibilityIdentifier("profile.startDate")
+            } header: {
+                Text("Plan")
+            } footer: {
+                Text("Pick a later day to start your plan then. Changing it offers to rebuild your plan from that day.")
             }
             Section("Lifting") {
                 row("Experience", value: model.liftingExperience?.displayName ?? "–", step: .liftingExperience)

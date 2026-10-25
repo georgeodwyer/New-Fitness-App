@@ -87,6 +87,7 @@ extension UserProfileModel: SyncableModel {
         heartRateZonesData = p.heartRateZones.map { StoredJSON.encode($0) }
         hyroxDivisionRaw = p.hyroxDivision?.rawValue
         exerciseSwapsData = p.exerciseSwaps.map { StoredJSON.encode($0) }
+        planStartDate = p.planStartDate
         createdAt = payload.createdAt
     }
 

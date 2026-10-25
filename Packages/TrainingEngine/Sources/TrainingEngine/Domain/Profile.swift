@@ -142,6 +142,9 @@ public struct AthleteProfile: Codable, Equatable, Sendable {
     /// Exercises the runner swapped for a gym day and kept: `swapKey(day:exerciseId:)` → the
     /// exercise used instead (e.g. "Push|barbell-bench-press" → "dumbbell-bench-press").
     public var exerciseSwaps: [String: String]?
+    /// The day they chose to start their plan (nil = as soon as sensible: this Monday if it's
+    /// early in the week, else next Monday).
+    public var planStartDate: Date?
 
     public static func swapKey(day: String, exerciseId: String) -> String { "\(day)|\(exerciseId)" }
 
@@ -166,7 +169,8 @@ public struct AthleteProfile: Codable, Equatable, Sendable {
         birthYear: Int? = nil,
         heartRateZones: HeartRateZoneSettings? = nil,
         hyroxDivision: HyroxDivision? = nil,
-        exerciseSwaps: [String: String]? = nil
+        exerciseSwaps: [String: String]? = nil,
+        planStartDate: Date? = nil
     ) {
         self.runningExperience = runningExperience
         self.recentRace = recentRace
@@ -189,6 +193,7 @@ public struct AthleteProfile: Codable, Equatable, Sendable {
         self.heartRateZones = heartRateZones
         self.hyroxDivision = hyroxDivision
         self.exerciseSwaps = exerciseSwaps
+        self.planStartDate = planStartDate
     }
 
     /// Age this year (nil when not given).
@@ -213,6 +218,9 @@ extension AthleteProfile {
         if liftingExperience != other.liftingExperience { changes.append("lifting experience") }
         if recentRace != other.recentRace { changes.append("race time") }
         if liftEstimates != other.liftEstimates { changes.append("lift numbers") }
+        if planStartDate.map({ Int($0.timeIntervalSince1970 / 86400) }) != other.planStartDate.map({ Int($0.timeIntervalSince1970 / 86400) }) {
+            changes.append("start date")
+        }
         if weeklyRunMeters != other.weeklyRunMeters || longestRecentRunMeters != other.longestRecentRunMeters {
             changes.append("current running")
         }
