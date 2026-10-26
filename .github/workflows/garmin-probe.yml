@@ -1,0 +1,33 @@
+name: Garmin probe (temporary)
+on:
+  workflow_dispatch:
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+      - name: Garmin iOS SDK repo
+        run: |
+          for repo in garmin/connectiq-companion-app-sdk-ios garmin/connectiq-ios-sdk garmin/connectiq-companion-app-sdk; do
+            echo "=== $repo"; git ls-remote --tags "https://github.com/$repo" 2>&1 | tail -n 8 || true
+          done
+          git clone --depth 1 https://github.com/garmin/connectiq-companion-app-sdk-ios sdk 2>&1 || true
+          if [ -d sdk ]; then
+            find sdk -maxdepth 3 | head -n 60
+            echo "=== Package.swift"; cat sdk/Package.swift 2>/dev/null || true
+            echo "=== headers"; find sdk -name "*.h" | head -n 20
+            for h in $(find sdk -name "ConnectIQ.h" -o -name "IQApp.h" -o -name "IQDevice.h" | head -n 6); do echo "--- $h"; cat "$h"; done
+          fi
+      - name: SDK manager CLI
+        run: |
+          go install github.com/lindell/connect-iq-sdk-manager-cli@latest 2>&1 | tail -n 5
+          ls "$(go env GOPATH)/bin"
+          CLI="$(ls "$(go env GOPATH)"/bin/connect-iq-sdk-manager* | head -n 1)"
+          "$CLI" --help || true
+          "$CLI" sdk --help || true
+          "$CLI" device --help || true
+          "$CLI" agreement --help || true
+          "$CLI" login --help || true
+          "$CLI" sdk list 2>&1 | tail -n 15 || true
