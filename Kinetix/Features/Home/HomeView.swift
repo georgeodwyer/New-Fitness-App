@@ -22,6 +22,7 @@ struct HomeView: View {
 
     @State private var actionSession: PlannedSessionModel?
     @State private var detailSession: PlannedSessionModel?
+    @State private var showCalendar = false
     /// Which of today's sessions the tile shows (nil: the first not yet done).
     @State private var tileIndex: Int?
     @State private var banner: String?
@@ -75,6 +76,7 @@ struct HomeView: View {
             .navigationDestination(item: $detailSession) { session in
                 SessionDetailView(session: session)
             }
+            .navigationDestination(isPresented: $showCalendar) { TrainingCalendarView() }
         }
         .sheet(isPresented: $showEditDashboard) {
             EditDashboardView(layout: layout) { saveLayout($0) }
@@ -193,7 +195,7 @@ struct HomeView: View {
                 )
                 .frame(maxHeight: .infinity)
                 if showWeek {
-                    ThisWeekTile(days: data.week) { router.selectedTab = .plan }
+                    ThisWeekTile(days: data.week) { showCalendar = true }
                         .frame(maxHeight: .infinity)
                 }
             }

@@ -147,6 +147,7 @@ struct ThisWeekTile: View {
     private var sessions: [PlannedSessionModel] { days.flatMap(\.sessions) }
     private var done: Int { sessions.filter { $0.status == .completed }.count }
     private var total: Int { sessions.filter { $0.status != .skipped }.count }
+    private var doubleDays: Int { days.filter { $0.sessions.filter { $0.status != .skipped }.count >= 2 }.count }
 
     private var next: PlannedSessionModel? {
         let today = Calendar.kinetix.startOfDay(for: .now)
@@ -189,12 +190,13 @@ struct ThisWeekTile: View {
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("This week: \(done) of \(total) sessions done" + (next.map { ". Next: \($0.title)" } ?? ""))
-        .accessibilityHint("Opens your plan")
+        .accessibilityLabel("This week: \(done) of \(total) sessions done" + (doubleDays > 0 ? ", \(doubleDays) double-session day\(doubleDays == 1 ? "" : "s")" : "") + (next.map { ". Next: \($0.title)" } ?? ""))
+        .accessibilityHint("Opens your calendar")
         .accessibilityIdentifier("today.weekTile")
     }
 
-    /// Filled when the day's sessions are done, a ring when still to do, faint for rest days.
+    /// Filled when the day's sessions are done, a ring when still to do, faint for rest days;
+    /// a blue dot when there are two sessions.
     private func dayDot(_ day: DashboardData.WeekDay) -> some View {
         let active = day.sessions.filter { $0.status != .skipped }
         let allDone = !active.isEmpty && active.allSatisfy { $0.status == .completed }
@@ -212,6 +214,16 @@ struct ThisWeekTile: View {
                 }
             }
             .frame(height: 14)
+            .overlay(alignment: .topTrailing) {
+                // Blue dot: two sessions that day.
+                if active.count >= 2 {
+                    Circle()
+                        .fill(KXColor.doubleSession)
+                        .overlay(Circle().stroke(KXColor.surface, lineWidth: 1))
+                        .frame(width: 7, height: 7)
+                        .offset(x: 4, y: -2)
+                }
+            }
         }
     }
 }

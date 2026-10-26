@@ -10,10 +10,17 @@ struct PlanView: View {
     @Query(filter: #Predicate<UserProfileModel> { $0.deletedAt == nil }) private var profiles: [UserProfileModel]
     @State private var showOnboarding = false
     @State private var showWalkthrough = false
+    @State private var showCalendar = false
     @Environment(AppRouter.self) private var router
 
     private var format: DisplayFormat { DisplayFormat(units: profiles.first?.units ?? UnitPreference.stored) }
     private var outline: PlanOutline? { plans.first?.outline }
+
+    /// The calendar button, once there's a plan.
+    private var calendarAction: (() -> Void)? {
+        if profiles.isEmpty { return nil }
+        return { showCalendar = true }
+    }
 
     @Environment(\.modelContext) private var context
     /// Weeks not built yet, generated for display only.
@@ -112,7 +119,7 @@ struct PlanView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: KXSpacing.xl) {
-                    KXScreenHeader(title: "Training Plan")
+                    KXScreenHeader(title: "Training Plan", onCalendar: calendarAction)
                     if profiles.isEmpty {
                         PlanIntroCard { showOnboarding = true }
                     }
@@ -138,6 +145,7 @@ struct PlanView: View {
                 expanded.insert(first)
                 openedCurrentWeek = true
             }
+            .navigationDestination(isPresented: $showCalendar) { TrainingCalendarView() }
             .navigationDestination(for: PlannedSessionModel.self) { session in
                 SessionDetailView(session: session)
             }

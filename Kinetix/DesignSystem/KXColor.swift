@@ -34,6 +34,8 @@ enum KXColor {
     static let lift = dynamic(light: 0x008E80, dark: 0x2A9D8F)
     /// De-emphasis for "other" data (cross-training, mobility).
     static let other = dynamic(light: 0xA3B1AD, dark: 0x5E6D69)
+    /// Marks a day with two sessions.
+    static let doubleSession = dynamic(light: 0x2F7DE1, dark: 0x5B9BF0)
 
     /// Status colours: reserved meaning, always shown with an icon and a label.
     static let success = Color(UIColor(hex: 0x0CA30C))

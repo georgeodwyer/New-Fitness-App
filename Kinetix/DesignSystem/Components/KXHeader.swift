@@ -7,6 +7,8 @@ struct KXScreenHeader: View {
     var onNotifications: (() -> Void)?
     /// Shows a ••• menu with "Edit dashboard" (Today).
     var onEditDashboard: (() -> Void)?
+    /// Shows a calendar button (Plan).
+    var onCalendar: (() -> Void)? = nil
 
     var body: some View {
         HStack(alignment: .bottom, spacing: KXSpacing.md) {
@@ -18,6 +20,10 @@ struct KXScreenHeader: View {
                     .accessibilityAddTraits(.isHeader)
             }
             Spacer()
+            if let onCalendar {
+                KXIconButton(systemImage: "calendar", accessibilityLabel: "Calendar", size: 36, action: onCalendar)
+                    .accessibilityIdentifier("plan.calendar")
+            }
             if let onNotifications {
                 KXIconButton(systemImage: "bell", accessibilityLabel: "Plan updates", size: 36, action: onNotifications)
             }
