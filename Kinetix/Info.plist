@@ -28,6 +28,14 @@
 				<string>kinetix</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.georgeodwyer.kinetix.garmin</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>kinetix-ciq</string>
+			</array>
+		</dict>
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
@@ -38,6 +46,7 @@
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>instagram-stories</string>
+		<string>gcm-ciq</string>
 	</array>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>Kinetix connects to Bluetooth heart rate straps to show live heart rate during workouts.</string>

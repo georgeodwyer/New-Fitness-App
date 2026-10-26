@@ -23,6 +23,7 @@
 		1682D3131EDEDDCF809DC004 /* WorkoutBuilderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B16CC86849C40BB16FD55693 /* WorkoutBuilderView.swift */; };
 		176A9CA264F5F1958B93191B /* CoachingSettingsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E4B9C42AA415E0578CF122F /* CoachingSettingsModel.swift */; };
 		1AC8C576044C6F8943D0AF01 /* KXColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18F5261D8A4C543FC07B8C9C /* KXColor.swift */; };
+		1B3C3B5BEC535848B04D4F04 /* GarminView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE0936484F36B69A2CADB66 /* GarminView.swift */; };
 		216F5523D8A55BAAAE128F93 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B86E9E847C741EE0B68892BC /* Assets.xcassets */; };
 		22851E1FF85868FF37945C3E /* RunWorkoutManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9816665D38BFB8C7D3C8793 /* RunWorkoutManager.swift */; };
 		23D4F39B01462EFBBA9B2DD3 /* AppRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEB367BF9ABEF3898F8358B4 /* AppRouter.swift */; };
@@ -110,6 +111,7 @@
 		C34EAB3E216D85D3BD92BA60 /* SyncServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8696410FC6193358A919F22E /* SyncServiceTests.swift */; };
 		C575D31A531D7DA5CD6DFE99 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 074EA809EFF2571D597D33DA /* NotificationService.swift */; };
 		C64CEB9EB7A5439075E2C10D /* HeartRateMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DCA983868F3800CCDF25C8B /* HeartRateMonitor.swift */; };
+		C8BD4134C7F5F339B5BA7ACF /* ConnectIQ in Frameworks */ = {isa = PBXBuildFile; productRef = DD2BE8F2C99D02C9EA688FEC /* ConnectIQ */; };
 		C9AA92DC8EF36D69C1F597C2 /* DashboardService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79BC49909BB83B41E036C205 /* DashboardService.swift */; };
 		CA3AB9490849AF1427ABFB57 /* PlanTiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B2D8C1F7D9198D6379D9125 /* PlanTiles.swift */; };
 		CAC2303CFFBE51FB0B6EB5E5 /* HealthDisclaimerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76EC9F0A55E7B2D91BA49545 /* HealthDisclaimerView.swift */; };
@@ -145,6 +147,7 @@
 		E6A08B134E4E21693787F746 /* GymTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5503EC67D52AB746CA65FF96 /* GymTests.swift */; };
 		E8900BCC467BDA427CF1A84C /* GymTemplateEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE60D8E623FC5E87ABB1C84E /* GymTemplateEditorView.swift */; };
 		EDB481995BF3F7256917D1B9 /* KXCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7E3234A649534340E001365 /* KXCard.swift */; };
+		EDDBE2DBA03463F2DC09D72B /* GarminService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B99B3456A48D48299CDD2873 /* GarminService.swift */; };
 		EFCD60EA3DA0160280D59C6C /* DashboardWeekCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F0CC62D8E175B3EDF30B986 /* DashboardWeekCards.swift */; };
 		EFF93589CAA9CF6D5AE20771 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4999561CDF8222C282BCAEDC /* RootView.swift */; };
 		F030C9653CAED7265051687D /* ProgressScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3000B3D5DB9BC4ADD3017915 /* ProgressScreen.swift */; };
@@ -268,6 +271,7 @@
 		4C2E983D74F526A10F2CFA2B /* KXEditableNumber.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXEditableNumber.swift; sourceTree = "<group>"; };
 		4CEFC9DC0DB12F2DAA439DBF /* HealthDashboardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthDashboardTests.swift; sourceTree = "<group>"; };
 		4D6BE077FE5F5E7DDF9BD93A /* HealthConsentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthConsentView.swift; sourceTree = "<group>"; };
+		4FE0936484F36B69A2CADB66 /* GarminView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GarminView.swift; sourceTree = "<group>"; };
 		5052A6236109C68A845CCA1A /* IntegrationSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntegrationSettings.swift; sourceTree = "<group>"; };
 		53E2CA92347B3217FE2818A5 /* OnboardingModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingModel.swift; sourceTree = "<group>"; };
 		54B7256C957EAF28749C4ECF /* HistoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryTests.swift; sourceTree = "<group>"; };
@@ -325,6 +329,7 @@
 		B488A5C64C09276C346F5B82 /* RunWorkoutModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunWorkoutModel.swift; sourceTree = "<group>"; };
 		B86E9E847C741EE0B68892BC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B9816665D38BFB8C7D3C8793 /* RunWorkoutManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunWorkoutManager.swift; sourceTree = "<group>"; };
+		B99B3456A48D48299CDD2873 /* GarminService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GarminService.swift; sourceTree = "<group>"; };
 		BB43F58AC57A99553DE11F51 /* Kinetix.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Kinetix.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BC81380BD9DF38CCD3C11EB8 /* StrainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrainService.swift; sourceTree = "<group>"; };
 		BCB45CC899A400282E14A651 /* Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Persistence.swift; sourceTree = "<group>"; };
@@ -388,6 +393,7 @@
 			files = (
 				70A9566473D1E63FDF6E9305 /* TrainingEngine in Frameworks */,
 				997D9CDDED136526D197815A /* KinetixSync in Frameworks */,
+				C8BD4134C7F5F339B5BA7ACF /* ConnectIQ in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -513,6 +519,7 @@
 			children = (
 				C45C2DEC18638987AEE83DF7 /* CoachingSettingsView.swift */,
 				CF24C085F57A681388D5C38D /* DesignGalleryView.swift */,
+				4FE0936484F36B69A2CADB66 /* GarminView.swift */,
 				4D6BE077FE5F5E7DDF9BD93A /* HealthConsentView.swift */,
 				76EC9F0A55E7B2D91BA49545 /* HealthDisclaimerView.swift */,
 				A35A3ED64048A8315BCB94E8 /* HeartRateZonesView.swift */,
@@ -718,6 +725,7 @@
 			isa = PBXGroup;
 			children = (
 				24EE4D4AE4E5EC11003FF81E /* ActivityExportService.swift */,
+				B99B3456A48D48299CDD2873 /* GarminService.swift */,
 				130A6B35CC5FB984FCCD948F /* HealthService.swift */,
 				6DCA983868F3800CCDF25C8B /* HeartRateMonitor.swift */,
 				5052A6236109C68A845CCA1A /* IntegrationSettings.swift */,
@@ -898,6 +906,7 @@
 			packageProductDependencies = (
 				047896C2DD13857BB0AC3280 /* TrainingEngine */,
 				2CA9B1268AB94CE9AE75FDC2 /* KinetixSync */,
+				DD2BE8F2C99D02C9EA688FEC /* ConnectIQ */,
 			);
 			productName = Kinetix;
 			productReference = BB43F58AC57A99553DE11F51 /* Kinetix.app */;
@@ -938,6 +947,7 @@
 			mainGroup = 891339C1F89F15F0AA2F5F71;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
+				BB4A3EFFF02E58ED9BD4279E /* XCRemoteSwiftPackageReference "connectiq-companion-app-sdk-ios" */,
 				1087ECFE100FFD24A8788E76 /* XCLocalSwiftPackageReference "Packages/TrainingEngine" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -996,6 +1006,8 @@
 				CB879CFAC14AEDF939944E8C /* EditDashboardView.swift in Sources */,
 				F2A324D050EF67C1DB246CEA /* ExerciseHistoryView.swift in Sources */,
 				6FE2872F3A8B36B3EB17EF7F /* Formatters.swift in Sources */,
+				EDDBE2DBA03463F2DC09D72B /* GarminService.swift in Sources */,
+				1B3C3B5BEC535848B04D4F04 /* GarminView.swift in Sources */,
 				605B6E2AF0A60490FC53798F /* GymService.swift in Sources */,
 				9F4B9AF3C9674797C22FF1D7 /* GymSetupView.swift in Sources */,
 				E8900BCC467BDA427CF1A84C /* GymTemplateEditorView.swift in Sources */,
@@ -1546,6 +1558,17 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		BB4A3EFFF02E58ED9BD4279E /* XCRemoteSwiftPackageReference "connectiq-companion-app-sdk-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/garmin/connectiq-companion-app-sdk-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.8.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		047896C2DD13857BB0AC3280 /* TrainingEngine */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -1558,6 +1581,11 @@
 		4DE9D951D067C603E67191DB /* TrainingEngine */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = TrainingEngine;
+		};
+		DD2BE8F2C99D02C9EA688FEC /* ConnectIQ */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BB4A3EFFF02E58ED9BD4279E /* XCRemoteSwiftPackageReference "connectiq-companion-app-sdk-ios" */;
+			productName = ConnectIQ;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
