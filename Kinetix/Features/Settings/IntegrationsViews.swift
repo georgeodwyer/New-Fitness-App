@@ -141,10 +141,23 @@ struct WatchControlsSection: View {
                 ForEach(WatchControlSettings.Action.allCases, id: \.self) { Text($0.displayName).tag($0) }
             }
             if controls.crown != .off {
-                Picker("Crown turn needed", selection: $controls.crownTurn) {
-                    Text("Quarter turn").tag(0.25)
-                    Text("Half turn").tag(0.5)
+                VStack(alignment: .leading, spacing: KXSpacing.xs) {
+                    HStack {
+                        Text("Crown sensitivity")
+                        Spacer()
+                        Text("\(controls.sensitivity) of 5").foregroundStyle(KXColor.inkSecondary)
+                    }
+                    Picker("Crown sensitivity", selection: sensitivity) {
+                        ForEach(Array(WatchControlSettings.sensitivityRange), id: \.self) { Text("\($0)").tag($0) }
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    Text(WatchControlSettings.sensitivityDescription(controls.sensitivity))
+                        .font(KXFont.caption)
+                        .foregroundStyle(KXColor.inkSecondary)
                 }
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier("watch.crownSensitivity")
             }
             Picker("Undo shows for", selection: $controls.undoSeconds) {
                 Text("3 seconds").tag(3.0)
@@ -158,8 +171,13 @@ struct WatchControlsSection: View {
         .onChange(of: controls) { _, new in WatchControlsStore.settings = new }
     }
 
+    /// 1 (least) to 5 (most); older saved settings show as 3.
+    private var sensitivity: Binding<Int> {
+        Binding(get: { controls.sensitivity }, set: { controls.crownSensitivity = $0 })
+    }
+
     private var footer: String {
-        var text = "Next step / lap skips to the next step of a session, or marks a lap on a run without steps (laps show in the run's summary). Turn the crown firmly in one go: a ring fills, your wrist taps and it happens, so a brush of a sleeve won't do it. Undo shows for a moment afterwards in case."
+        var text = "Next step / lap skips to the next step of a session, or marks a lap on a run without steps (laps show in the run's summary). Turn the crown firmly in one go: a ring fills, your wrist taps and it happens. If a sleeve keeps skipping steps, turn the sensitivity down: lower levels need a bigger, quicker turn, so slow rubbing never counts. Undo shows for a moment afterwards in case."
         if device == nil {
             text += " Double tap needs Apple Watch Series 9 or later, Ultra 2 or later, or SE (3rd generation), with watchOS 11."
         } else if doubleTapKnownUnsupported {

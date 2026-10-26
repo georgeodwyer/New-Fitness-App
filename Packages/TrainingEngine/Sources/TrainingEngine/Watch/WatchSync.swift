@@ -71,12 +71,57 @@ public struct WatchControlSettings: Codable, Equatable, Sendable {
     public var crownTurn: Double
     /// Seconds an "Undo" shows after a gesture skips, laps or pauses.
     public var undoSeconds: Double
+    /// How easily the crown triggers, 1 (needs a big, quick turn) to 5 (a quarter turn).
+    /// Lower levels stop a sleeve brushing the crown from skipping steps. Nil in settings
+    /// saved before this existed (treated as 3).
+    public var crownSensitivity: Int?
 
-    public init(doubleTap: Action = .nextOrLap, crown: Action = .nextOrLap, crownTurn: Double = 0.25, undoSeconds: Double = 3) {
+    public init(doubleTap: Action = .nextOrLap, crown: Action = .nextOrLap, crownTurn: Double = 0.25, undoSeconds: Double = 3,
+                crownSensitivity: Int? = 3) {
         self.doubleTap = doubleTap
         self.crown = crown
         self.crownTurn = crownTurn
         self.undoSeconds = undoSeconds
+        self.crownSensitivity = crownSensitivity
+    }
+
+    public static let sensitivityRange = 1...5
+
+    /// The sensitivity in use (1–5).
+    public var sensitivity: Int { min(max(crownSensitivity ?? 3, 1), 5) }
+
+    /// How far the crown must turn (in full turns) for the current sensitivity.
+    public var crownTurnsNeeded: Double {
+        switch sensitivity {
+        case 1: return 1.0
+        case 2: return 0.75
+        case 3: return 0.5
+        case 4: return 0.35
+        default: return 0.25
+        }
+    }
+
+    /// The turn must be done within this many seconds: a slow drag (like a sleeve rubbing)
+    /// never adds up to a trigger.
+    public var crownWindowSeconds: Double {
+        switch sensitivity {
+        case 1: return 0.6
+        case 2: return 0.7
+        case 3: return 0.8
+        case 4: return 1.0
+        default: return 1.2
+        }
+    }
+
+    /// "Needs a full, quick turn", for Settings.
+    public static func sensitivityDescription(_ level: Int) -> String {
+        switch level {
+        case 1: return "Least sensitive: a full, quick turn"
+        case 2: return "Three-quarters of a turn, quickly"
+        case 3: return "Half a turn, quickly"
+        case 4: return "About a third of a turn"
+        default: return "Most sensitive: a quarter turn"
+        }
     }
 
     public static let standard = WatchControlSettings()

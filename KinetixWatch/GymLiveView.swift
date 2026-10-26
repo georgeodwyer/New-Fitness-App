@@ -13,6 +13,8 @@ struct GymLiveView: View {
     @State private var crownTurned = 0.0
     @State private var crownLocked = false
     @State private var lastCrownMove = Date.distantPast
+    /// When the current turn began: it must reach the threshold within the sensitivity's window.
+    @State private var crownStartedAt = Date.distantPast
     @FocusState private var crownFocused: Bool
 
     /// Crown value per full turn at `.medium` sensitivity (matches the run screen).
@@ -47,7 +49,7 @@ struct GymLiveView: View {
     // MARK: Crown
 
     private var crownEnabled: Bool { workout.controls.crown != .off && frame.map { !$0.isComplete } ?? false }
-    private var crownThreshold: Double { max(workout.controls.crownTurn, 0.1) * Self.crownUnitsPerTurn }
+    private var crownThreshold: Double { workout.controls.crownTurnsNeeded * Self.crownUnitsPerTurn }
     private var crownProgress: Double { min(abs(crownTurned) / crownThreshold, 1) }
 
     private func crownMoved(to value: Double) {
@@ -58,7 +60,14 @@ struct GymLiveView: View {
         lastCrownMove = now
         scheduleRingReset(after: now)
         guard crownEnabled, !crownLocked, delta != 0 else { return }
-        crownTurned = (crownTurned == 0 || (crownTurned > 0) == (delta > 0)) ? crownTurned + delta : delta
+        let sameWay = crownTurned != 0 && (crownTurned > 0) == (delta > 0)
+        if sameWay && now.timeIntervalSince(crownStartedAt) <= workout.controls.crownWindowSeconds {
+            crownTurned += delta
+        } else {
+            // A new turn (or one too slow to count, like a sleeve rubbing): start again.
+            crownTurned = delta
+            crownStartedAt = now
+        }
         if abs(crownTurned) >= crownThreshold {
             crownLocked = true
             crownTurned = 0

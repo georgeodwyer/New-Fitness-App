@@ -61,6 +61,21 @@ final class WatchSyncTests: XCTestCase {
         XCTAssertFalse(WatchControlSettings.supportsDoubleTap(machine: "x86_64"))
     }
 
+    func testCrownSensitivity() throws {
+        // Settings saved before sensitivity existed read as the middle level.
+        let old = #"{"doubleTap":"nextOrLap","crown":"nextOrLap","crownTurn":0.25,"undoSeconds":3}"#
+        let decoded = try JSONDecoder().decode(WatchControlSettings.self, from: Data(old.utf8))
+        XCTAssertNil(decoded.crownSensitivity)
+        XCTAssertEqual(decoded.sensitivity, 3)
+        XCTAssertEqual(decoded.crownTurnsNeeded, 0.5)
+        var settings = WatchControlSettings(crownSensitivity: 1)
+        XCTAssertEqual(settings.crownTurnsNeeded, 1)
+        XCTAssertLessThan(settings.crownWindowSeconds, WatchControlSettings(crownSensitivity: 5).crownWindowSeconds)
+        settings.crownSensitivity = 9
+        XCTAssertEqual(settings.sensitivity, 5, "Out-of-range values are clamped")
+        XCTAssertEqual(WatchControlSettings.standard.sensitivity, 3)
+    }
+
     func testPlanWithoutControlsStillDecodes() throws {
         var plan = WatchPlan(generatedAt: Date(timeIntervalSince1970: 100), units: .metric, coaching: CoachingConfig(), runs: [])
         XCTAssertNil(WatchPlan.decode(plan.encoded())?.controls)
