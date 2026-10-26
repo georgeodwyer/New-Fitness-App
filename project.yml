@@ -16,6 +16,10 @@ settings:
 packages:
   TrainingEngine:
     path: Packages/TrainingEngine
+  # Garmin's Connect IQ companion SDK: talks to the Kinetix app on Garmin watches (garmin/).
+  ConnectIQ:
+    url: https://github.com/garmin/connectiq-companion-app-sdk-ios
+    from: 1.8.0
 targets:
   Kinetix:
     type: application
@@ -28,6 +32,8 @@ targets:
         product: TrainingEngine
       - package: TrainingEngine
         product: KinetixSync
+      - package: ConnectIQ
+        product: ConnectIQ
       - target: KinetixWidgets
       - target: KinetixWatch
     configFiles:
@@ -65,11 +71,13 @@ targets:
         ITSAppUsesNonExemptEncryption: false
         NSSupportsLiveActivities: true
         NSPhotoLibraryAddUsageDescription: "Kinetix saves the run and workout cards you choose to your photo library."
-        LSApplicationQueriesSchemes: [instagram-stories]
+        LSApplicationQueriesSchemes: [instagram-stories, gcm-ciq]
         InstagramAppID: $(INSTAGRAM_APP_ID)
         CFBundleURLTypes:
           - CFBundleURLName: com.georgeodwyer.kinetix
             CFBundleURLSchemes: [kinetix]
+          - CFBundleURLName: com.georgeodwyer.kinetix.garmin
+            CFBundleURLSchemes: [kinetix-ciq]
   KinetixWidgets:
     type: app-extension
     platform: iOS

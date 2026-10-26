@@ -19,6 +19,7 @@ struct KinetixApp: App {
             if !LaunchOptions().isUITesting {
                 WatchSyncService.shared.configure(container: appContainer)
                 WatchMirrorService.shared.configure()
+                GarminService.shared.configure(container: appContainer)
             }
         }
         if launch.seedSample {

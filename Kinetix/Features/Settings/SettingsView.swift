@@ -74,6 +74,7 @@ struct SettingsView: View {
                         .accessibilityIdentifier("settings.coaching")
                     }
                     AppleWatchRow()
+                    GarminRow()
                     NavigationLink {
                         NotificationsSettingsView()
                     } label: {

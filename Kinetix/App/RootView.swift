@@ -54,6 +54,8 @@ struct RootView: View {
         }
         // Links from widgets and the lock screen: kinetix://tab/<today|plan|record|progress|settings>.
         .onOpenURL { url in
+            // Back from Garmin Connect after choosing watches.
+            if GarminService.shared.handle(url: url) { return }
             guard url.scheme == "kinetix", url.host != "localhost" else { return }
             if url.host == "tab" {
                 switch url.lastPathComponent {

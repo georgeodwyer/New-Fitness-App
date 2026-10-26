@@ -17,3 +17,9 @@ xcuserdata/
 
 # macOS
 .DS_Store
+
+# Garmin watch app build output and signing keys
+garmin/build/
+garmin/bin/
+garmin/developer_key*
+*.der

@@ -117,11 +117,15 @@ extension RunLogModel {
     /// "Recorded" for Record-tab runs, "Planned" for plan sessions.
     var sourceTag: String? {
         if isImportedFromStrava { return "From Strava" }
+        if isFromGarmin { return "Garmin" }
         if recordTypeRaw != nil { return "Recorded" }
         return plannedSessionId != nil ? "Planned" : nil
     }
     /// Recorded elsewhere and brought in from Strava (never sent back to Strava or Health).
     var isImportedFromStrava: Bool { importSourceRaw == "strava" }
+    /// Recorded on the Kinetix Garmin app: Garmin Connect already has it (and sends it on to
+    /// Strava and Health if you've linked them), so Kinetix doesn't upload it again.
+    var isFromGarmin: Bool { importSourceRaw == "garmin" }
     /// Simulated GPS runs are practice data: shown, but left out of totals and best efforts.
     var countsTowardsHistory: Bool { isFinished && !isSoftDeleted && !usedSimulatedGPS }
     var route: [RoutePoint] { StoredJSON.decode([RoutePoint].self, from: routeData) ?? [] }

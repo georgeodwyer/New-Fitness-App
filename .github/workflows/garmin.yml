@@ -1,0 +1,102 @@
+name: Garmin watch app
+
+# Builds the Kinetix Connect IQ app (garmin/) for the watches in garmin/manifest.xml and
+# keeps the .prg as a download on the run, to copy onto a watch for testing.
+#
+# Needs these repository secrets (Settings → Secrets and variables → Actions):
+#   GARMIN_USERNAME, GARMIN_PASSWORD  your Garmin account (to download the watch definitions;
+#                                     two-step verification must be off for this account)
+#   CIQ_DEVELOPER_KEY                 optional: base64 of your Connect IQ developer key (.der).
+#                                     Without it a throwaway key is made (fine for testing,
+#                                     but the store needs the same key every time).
+# Without the Garmin login the build is skipped with a note, so the rest of CI stays green.
+
+on:
+  push:
+    paths:
+      - 'garmin/**'
+      - '.github/workflows/garmin.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: garmin-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GARMIN_USERNAME: ${{ secrets.GARMIN_USERNAME }}
+      GARMIN_PASSWORD: ${{ secrets.GARMIN_PASSWORD }}
+      CIQ_DEVELOPER_KEY: ${{ secrets.CIQ_DEVELOPER_KEY }}
+      SDK_VERSION: '8.1.1'
+    steps:
+      - name: Check for the Garmin login
+        id: secrets
+        run: |
+          if [ -z "$GARMIN_USERNAME" ] || [ -z "$GARMIN_PASSWORD" ]; then
+            echo "::notice::Garmin build skipped: add GARMIN_USERNAME and GARMIN_PASSWORD secrets to build the watch app."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.secrets.outputs.ready == 'true'
+
+      - uses: actions/setup-java@v4
+        if: steps.secrets.outputs.ready == 'true'
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: actions/setup-go@v5
+        if: steps.secrets.outputs.ready == 'true'
+        with:
+          go-version: '1.22'
+
+      - name: Install the Connect IQ SDK and watch definitions
+        if: steps.secrets.outputs.ready == 'true'
+        working-directory: garmin
+        run: |
+          go install github.com/lindell/connect-iq-sdk-manager-cli@latest
+          CLI="$(ls "$(go env GOPATH)"/bin/connect-iq-sdk-manager* | head -n 1)"
+          echo "Using $CLI"
+          "$CLI" agreement accept || true
+          "$CLI" login
+          "$CLI" sdk set "$SDK_VERSION"
+          "$CLI" device download --manifest manifest.xml
+          SDK_PATH="$("$CLI" sdk current-path | tail -n 1)"
+          echo "SDK is at $SDK_PATH"
+          echo "SDK_BIN=$SDK_PATH/bin" >> "$GITHUB_ENV"
+
+      - name: Developer key
+        if: steps.secrets.outputs.ready == 'true'
+        working-directory: garmin
+        run: |
+          if [ -n "$CIQ_DEVELOPER_KEY" ]; then
+            echo "$CIQ_DEVELOPER_KEY" | base64 -d > developer_key.der
+          else
+            echo "::notice::No CIQ_DEVELOPER_KEY secret: using a throwaway key (fine for testing on your watch)."
+            openssl genrsa -out developer_key.pem 4096
+            openssl pkcs8 -topk8 -inform PEM -outform DER -in developer_key.pem -out developer_key.der -nocrypt
+          fi
+
+      - name: Build for each watch
+        if: steps.secrets.outputs.ready == 'true'
+        working-directory: garmin
+        run: |
+          mkdir -p build
+          for device in $(grep -o 'product id="[^"]*"' manifest.xml | cut -d'"' -f2); do
+            echo "Building for $device"
+            "$SDK_BIN/monkeyc" -f monkey.jungle -d "$device" -y developer_key.der -o "build/Kinetix-$device.prg" -w
+          done
+          ls -la build
+
+      - uses: actions/upload-artifact@v4
+        if: steps.secrets.outputs.ready == 'true'
+        with:
+          name: kinetix-garmin
+          path: garmin/build/*.prg
+          retention-days: 30

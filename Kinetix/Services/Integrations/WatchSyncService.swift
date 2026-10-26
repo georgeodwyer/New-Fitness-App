@@ -30,6 +30,8 @@ final class WatchSyncService: NSObject {
 
     /// Sends the next week's runs and saved workouts (only if something changed).
     func sendPlan(now: Date = .now) {
+        // Garmin watches get the same runs (it checks for changes itself).
+        GarminService.shared.sendPlan(now: now)
         guard canSend, let context = container?.mainContext else { return }
         let plan = Self.makePlan(in: context, now: now)
         // Compare without the timestamp, which always differs.
@@ -90,7 +92,8 @@ final class WatchSyncService: NSObject {
 
     /// Saves a run from the watch. Returns the saved run, or nil if it was already saved.
     @discardableResult
-    static func save(_ result: WatchRunResult, in context: ModelContext) -> RunLogModel? {
+    /// `importSource` marks runs from another watch (e.g. "garmin"), which aren't uploaded again.
+    static func save(_ result: WatchRunResult, importSource: String? = nil, in context: ModelContext) -> RunLogModel? {
         let id = result.id
         let existing = (try? context.fetch(FetchDescriptor<RunLogModel>(predicate: #Predicate { $0.id == id }))) ?? []
         guard existing.isEmpty else { return nil }
@@ -110,6 +113,7 @@ final class WatchSyncService: NSObject {
             log.runTypeRaw = type.rawValue
         }
         log.healthKitWorkoutId = result.healthKitWorkoutId
+        log.importSourceRaw = importSource
         context.insert(log)
         RunService.finish(result.summary, log: log, planned: planned, effort: result.effort, in: context, now: result.finishedAt)
         return log

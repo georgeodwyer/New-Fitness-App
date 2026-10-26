@@ -28,7 +28,10 @@ struct IntegrationsSection: View {
                            symbol: "waveform.path.ecg", tint: KXColor.danger, connected: settings.heartRateSensorID != nil)
         }
         .accessibilityIdentifier("settings.heartRate")
-        if includeWatch { AppleWatchRow() }
+        if includeWatch {
+            AppleWatchRow()
+            GarminRow()
+        }
         NavigationLink {
             StravaView()
         } label: {
