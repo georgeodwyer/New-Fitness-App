@@ -61,7 +61,7 @@ final class GarminService: NSObject {
     /// Opens Garmin Connect to choose watches; it comes back through `handle(url:)`.
     func connect() {
         #if canImport(ConnectIQ)
-        ConnectIQ.sharedInstance().showConnectIQDeviceSelection()
+        ConnectIQ.sharedInstance().showDeviceSelection()
         #endif
     }
 
@@ -83,8 +83,8 @@ final class GarminService: NSObject {
 
     func forget() {
         #if canImport(ConnectIQ)
-        ConnectIQ.sharedInstance().unregisterForAllDeviceEvents(self)
-        ConnectIQ.sharedInstance().unregisterForAllAppMessages(self)
+        ConnectIQ.sharedInstance().unregister(forAllDeviceEvents: self)
+        ConnectIQ.sharedInstance().unregister(forAllAppMessages: self)
         linked = []
         #endif
         UserDefaults.standard.removeObject(forKey: Self.devicesKey)
@@ -126,7 +126,7 @@ final class GarminService: NSObject {
     #if canImport(ConnectIQ)
     private func app(on device: IQDevice) -> IQApp? {
         guard let id = UUID(uuidString: GarminSync.watchAppId) else { return nil }
-        return IQApp(uuid: id, storeUuid: id, device: device)
+        return IQApp(uuid: id, store: id, device: device)
     }
 
     private func send(_ message: [String: Any], to device: IQDevice, done: @escaping @MainActor (Bool) -> Void) {
@@ -139,9 +139,9 @@ final class GarminService: NSObject {
     }
 
     private func listen() {
-        let iq = ConnectIQ.sharedInstance()
-        iq.unregisterForAllDeviceEvents(self)
-        iq.unregisterForAllAppMessages(self)
+        guard let iq = ConnectIQ.sharedInstance() else { return }
+        iq.unregister(forAllDeviceEvents: self)
+        iq.unregister(forAllAppMessages: self)
         for device in linked {
             iq.register(forDeviceEvents: device, delegate: self)
             if let app = app(on: device) { iq.register(forAppMessages: app, delegate: self) }
