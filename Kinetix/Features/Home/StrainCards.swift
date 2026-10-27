@@ -90,7 +90,8 @@ struct StrainCard: View {
 
 /// Small shared formatting for the exertion card and its detail screen.
 enum TodayFormat {
-    static func one(_ value: Double) -> String { String(format: "%.1f", max(0, value)) }
+    /// Exertion as a whole number (0–100).
+    static func one(_ value: Double) -> String { "\(Int(max(0, value).rounded()))" }
 
     static func status(strain: Double, target: StrainTarget) -> String {
         if strain > target.high { return "Above today's target" }
@@ -161,7 +162,7 @@ struct TodayBodyDetailView: View {
 
     private var exertion: some View {
         VStack(alignment: .leading, spacing: KXSpacing.md) {
-            KXSectionHeader("Exertion", subtitle: "\(TodayFormat.one(strain)) of 21 · target \(TodayFormat.one(target.low))–\(TodayFormat.one(target.high))")
+            KXSectionHeader("Exertion", subtitle: "\(TodayFormat.one(strain)) of 100 · target \(TodayFormat.one(target.low))–\(TodayFormat.one(target.high))")
             Text(TodayFormat.status(strain: strain, target: target) + ". " + target.reason)
                 .font(KXFont.callout)
                 .foregroundStyle(KXColor.inkSecondary)
@@ -208,7 +209,7 @@ struct TodayBodyDetailView: View {
     }
 }
 
-/// A 0–21 ring: today's strain over a faint target band.
+/// A 0–100 ring: today's strain over a faint target band.
 struct StrainRing: View {
     let strain: Double
     let target: StrainTarget
@@ -229,15 +230,15 @@ struct StrainRing: View {
                         style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
                 .rotationEffect(.degrees(-90))
             VStack(spacing: 0) {
-                Text(String(format: "%.1f", strain))
+                Text(TodayFormat.one(strain))
                     .font(.system(size: 34, weight: .bold, design: .rounded).monospacedDigit())
                     .foregroundStyle(KXColor.ink)
-                Text("of 21").font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+                Text("of 100").font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
             }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Exertion \(String(format: "%.1f", strain)) of 21")
-        .accessibilityValue("Target \(String(format: "%.1f", target.low)) to \(String(format: "%.1f", target.high))")
+        .accessibilityLabel("Exertion \(TodayFormat.one(strain)) of 100")
+        .accessibilityValue("Target \(TodayFormat.one(target.low)) to \(TodayFormat.one(target.high))")
     }
 }
 
@@ -411,9 +412,9 @@ struct DailyStrainChart: View {
                         }
                 }
             }
-            .chartYScale(domain: 0...21)
+            .chartYScale(domain: 0...100)
             .chartYAxis {
-                AxisMarks(position: .leading, values: [0, 7, 14, 21]) { _ in
+                AxisMarks(position: .leading, values: [0, 25, 50, 75, 100]) { _ in
                     AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5)).foregroundStyle(KXColor.border)
                     AxisValueLabel().foregroundStyle(KXColor.inkSecondary)
                 }
@@ -436,7 +437,7 @@ struct DailyStrainChart: View {
     private func tooltip(_ day: DayStrain) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(day.date.formatted(.dateTime.weekday(.abbreviated).day().month())).font(.caption2.weight(.semibold))
-            Text("Exertion \(String(format: "%.1f", day.strain))").font(.caption2.weight(.semibold))
+            Text("Exertion \(TodayFormat.one(day.strain))").font(.caption2.weight(.semibold))
             ForEach(day.activities.prefix(4)) { activity in
                 Text(activity.name).font(.caption2)
             }

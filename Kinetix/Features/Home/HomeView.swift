@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 import TrainingEngine
 
-/// Dashboard: today's sessions, recovery check-in, body data from Apple Health, strain (0–21)
+/// Dashboard: today's sessions, recovery check-in, body data from Apple Health, exertion (0–100)
 /// against today's target with recovery and legs, daily strain, this week against plan, the week
 /// at a glance, progress towards the goal, recent PRs and estimated race times. Cards can be
 /// reordered and hidden (Edit dashboard); the layout syncs with the account.

@@ -45,11 +45,11 @@ final class StrainTests: XCTestCase {
 
     func testStrainScale() {
         XCTAssertEqual(Strain.strain(load: 0), 0)
-        XCTAssertEqual(Strain.strain(load: 1000), 21, accuracy: 0.001)
-        XCTAssertEqual(Strain.strain(load: 5000), 21)
+        XCTAssertEqual(Strain.strain(load: 1000), 100, accuracy: 0.001)
+        XCTAssertEqual(Strain.strain(load: 5000), 100)
         // An easy hour (zone 2) lands around 10, a hard hour around 13.
-        XCTAssertEqual(Strain.strain(load: 120), 9.6, accuracy: 0.3)
-        XCTAssertEqual(Strain.strain(load: 240), 13.0, accuracy: 0.3)
+        XCTAssertEqual(Strain.strain(load: 120), 45.7, accuracy: 1.5)
+        XCTAssertEqual(Strain.strain(load: 240), 61.9, accuracy: 1.5)
         XCTAssertEqual(Strain.load(forStrain: Strain.strain(load: 300)), 300, accuracy: 0.01)
     }
 
@@ -68,13 +68,27 @@ final class StrainTests: XCTestCase {
         XCTAssertEqual(minutes[2], 60, accuracy: 0.1)
     }
 
+    func testRecoveryScalesTheDay() {
+        XCTAssertEqual(RecoveryScore.volumeMultiplier(score: 95), 1.05)
+        XCTAssertEqual(RecoveryScore.volumeMultiplier(score: 72), 1)
+        XCTAssertEqual(RecoveryScore.volumeMultiplier(score: 67), 1)
+        XCTAssertEqual(RecoveryScore.volumeMultiplier(score: 50), 0.847, accuracy: 0.001, "50 → about 15% less")
+        XCTAssertEqual(RecoveryScore.volumeMultiplier(score: 10), 0.6, "Never less than 60%")
+        XCTAssertEqual(RecoveryScore(score: 50, parts: []).volumeChangeText, "15% less")
+        XCTAssertNil(RecoveryScore(score: 75, parts: []).volumeChangeText)
+        let normal = StrainTarget.make(plannedLoad: 120, everydayLoad: 30, usualDailyLoad: 150, recovery: RecoveryScore(score: 75, parts: []))
+        let tired = StrainTarget.make(plannedLoad: 120, everydayLoad: 30, usualDailyLoad: 150, recovery: RecoveryScore(score: 50, parts: []))
+        XCTAssertLessThan(tired.middle, normal.middle)
+        XCTAssertTrue(tired.reason.contains("15% less"))
+    }
+
     func testRecovery() {
         XCTAssertNil(RecoveryScore.make(hrv: nil, restingHeartRate: nil, sleepHours: nil, checkIn: nil))
         let good = RecoveryScore.make(hrv: HRVSignal(today: 66, baseline: 60), restingHeartRate: RestingHeartRateSignal(today: 50, baseline: 52),
                                       sleepHours: 8.2, checkIn: nil)
         XCTAssertEqual(good?.band, .good)
         XCTAssertEqual(good?.score, 84)
-        XCTAssertEqual(good?.targetEffect, .higher)
+        XCTAssertEqual(good?.targetEffect, .normal, "84 is as planned; 85+ allows more")
         let poor = RecoveryScore.make(hrv: HRVSignal(today: 45, baseline: 60), restingHeartRate: RestingHeartRateSignal(today: 60, baseline: 52),
                                       sleepHours: 5, checkIn: RecoveryCheckIn(sleep: 2, soreness: 4, energy: 2))
         XCTAssertEqual(poor?.band, .low)

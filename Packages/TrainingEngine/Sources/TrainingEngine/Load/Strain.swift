@@ -1,7 +1,8 @@
 import Foundation
 
-// Daily strain (0–21), heart-rate zones, recovery (0–100), a daily strain target and legs
-// load. Strain is a log scale like Whoop's: each point is harder to earn than the last.
+// Daily exertion (0–100), heart-rate zones, recovery (0–100), a daily strain target and legs
+// load. Exertion is a log scale: each point is harder to earn than the last (an easy hour
+// ≈ 45, a hard hour ≈ 60, a very big day 90+).
 //
 // Under the hood everything is "load": minutes weighted by intensity. With heart rate, each
 // minute counts its zone number (zone 1 = 1 … zone 5 = 5, Edwards' TRIMP). Without it, a
@@ -100,13 +101,13 @@ public struct HeartRateZones: Equatable, Sendable {
 // MARK: - Strain
 
 public enum Strain {
-    public static let maximum = 21.0
-    /// Load at which strain reaches 21 (about four hours of hard racing).
+    public static let maximum = 100.0
+    /// Load at which exertion reaches 100 (about four hours of hard racing).
     static let fullLoad = 1000.0
     /// Shapes the curve: lower makes small days score higher.
     static let softness = 30.0
 
-    /// 0–21 from a day's load.
+    /// 0–100 from a day's load.
     public static func strain(load: Double) -> Double {
         guard load > 0 else { return 0 }
         return min(maximum, maximum * log(1 + load / softness) / log(1 + fullLoad / softness))
@@ -265,7 +266,28 @@ public struct RecoveryScore: Equatable, Sendable {
     public var band: Band { score < 50 ? .low : score < 70 ? .fair : score < 85 ? .good : .great }
 
     /// Clearly below usual eases the target; clearly above allows a bit more.
-    public var targetEffect: TargetEffect { vsUsual < 34 ? .lower : vsUsual >= 67 ? .higher : .normal }
+    public var targetEffect: TargetEffect {
+        let multiplier = volumeMultiplier
+        return multiplier < 1 ? .lower : multiplier > 1 ? .higher : .normal
+    }
+
+    /// How much of the planned training suits today's recovery (the shown score):
+    /// 85+ → 105%, 67–84 → as planned, below 67 → 0.9% less per point, down to 60%.
+    /// e.g. 50 → 85% (15% less). Used for the exertion target and lighter sessions.
+    public var volumeMultiplier: Double { Self.volumeMultiplier(score: score) }
+
+    public static func volumeMultiplier(score: Double) -> Double {
+        if score >= 85 { return 1.05 }
+        if score >= 67 { return 1 }
+        return max(0.6, 1 - (67 - score) * 0.009)
+    }
+
+    /// "15% less", "5% more" or nil when as planned.
+    public var volumeChangeText: String? {
+        let percent = Int(((volumeMultiplier - 1) * 100).rounded())
+        if percent == 0 { return nil }
+        return percent < 0 ? "\(-percent)% less" : "\(percent)% more"
+    }
 
     static let weights = (hrv: 0.45, restingHeartRate: 0.25, sleep: 0.2, checkIn: 0.1)
 
@@ -359,7 +381,7 @@ public struct StrainTarget: Equatable, Sendable {
     public func contains(_ strain: Double) -> Bool { strain >= low && strain <= high }
 
     /// Today's target: the plan's sessions plus everyday activity, nudged by recovery
-    /// (high: up to 10% more load, low: 30% less). Without a plan, their usual day.
+    /// (see `RecoveryScore.volumeMultiplier`). Without a plan, their usual day.
     /// - Parameters:
     ///   - plannedLoad: today's planned sessions as load (nil = no plan).
     ///   - everydayLoad: their typical non-workout activity (steps) as load.
@@ -373,18 +395,14 @@ public struct StrainTarget: Equatable, Sendable {
         } else {
             reason = "Your usual day over the last four weeks."
         }
-        switch recovery?.targetEffect {
-        case .higher?:
-            load *= 1.1
-            reason += " Your recovery is well above usual, so there's room for a bit more."
-        case .lower?:
-            load *= 0.7
-            reason += " Your recovery is low, so aim lower today."
-        case .normal?, nil:
-            break
+        if let recovery, let change = recovery.volumeChangeText {
+            load *= recovery.volumeMultiplier
+            reason += recovery.volumeMultiplier > 1
+                ? " Recovery is \(Int(recovery.score.rounded())), so there's room for \(change)."
+                : " Recovery is \(Int(recovery.score.rounded())), so aim for \(change) today."
         }
         let middle = Strain.strain(load: load)
-        return StrainTarget(low: max(0, middle - 1.5), high: min(Strain.maximum, middle + 1.5), reason: reason)
+        return StrainTarget(low: max(0, middle - 7), high: min(Strain.maximum, middle + 7), reason: reason)
     }
 
     /// A planned session's expected load: minutes × planned effort ÷ 2.

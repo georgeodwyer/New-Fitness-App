@@ -241,7 +241,7 @@ struct LoadWidgetView: View {
     @Environment(\.widgetFamily) private var family
 
     private var strain: Double { snapshot?.strain ?? 0 }
-    private var strainText: String { snapshot?.strain.map { String(format: "%.1f", $0) } ?? "–" }
+    private var strainText: String { snapshot?.strain.map { "\(Int($0.rounded()))" } ?? "–" }
     private var targetText: String? {
         guard let low = snapshot?.strainLow, let high = snapshot?.strainHigh else { return nil }
         return String(format: "Target %.1f–%.1f", low, high)
@@ -252,7 +252,7 @@ struct LoadWidgetView: View {
         if let snapshot {
             switch family {
             case .accessoryCircular:
-                Gauge(value: min(strain, 21), in: 0...21) {
+                Gauge(value: min(strain, 100), in: 0...100) {
                     Text("Exertion")
                 } currentValueLabel: {
                     Text(strainText)
@@ -261,7 +261,7 @@ struct LoadWidgetView: View {
             case .accessoryRectangular:
                 VStack(alignment: .leading, spacing: 1) {
                     Text("EXERTION").font(.caption2.weight(.bold))
-                    Text(strainText + " / 21").font(.headline.monospacedDigit())
+                    Text(strainText + " / 100").font(.headline.monospacedDigit())
                     if let targetText { Text(targetText).font(.caption) }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -271,7 +271,7 @@ struct LoadWidgetView: View {
                     HStack(alignment: .firstTextBaseline, spacing: 2) {
                         Text(strainText).font(.system(size: 38, weight: .bold, design: .rounded).monospacedDigit())
                             .foregroundStyle(KXColor.ink)
-                        Text("/21").font(.caption).foregroundStyle(KXColor.inkSecondary)
+                        Text("/100").font(.caption).foregroundStyle(KXColor.inkSecondary)
                     }
                     if let targetText {
                         Text(targetText).font(.caption.weight(.semibold)).foregroundStyle(KXColor.ink)
