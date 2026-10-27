@@ -180,7 +180,7 @@ private struct GymStartFlow: ViewModifier {
                     Button("No, it's an extra session") { start(linking: nil) }
                     Button("Do the planned \(planned.title.lowercased()) instead") {
                         request = nil
-                        router.start(ActiveSession(id: planned.id, kind: planned.kind, title: planned.title))
+                        router.startPlanned(planned, in: context)
                     }
                 }
             } message: {

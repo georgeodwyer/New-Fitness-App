@@ -8,6 +8,7 @@ struct SessionDetailView: View {
     let session: PlannedSessionModel
     @Query(filter: #Predicate<UserProfileModel> { $0.deletedAt == nil }) private var profiles: [UserProfileModel]
     @Environment(AppRouter.self) private var router
+    @Environment(\.modelContext) private var context
     @State private var showActions = false
     @State private var lastChange: String?
     @Query(sort: \PlanChangeModel.createdAt, order: .reverse) private var allChanges: [PlanChangeModel]
@@ -71,7 +72,7 @@ struct SessionDetailView: View {
             if session.status == .planned || session.status == .swapped,
                session.kind.discipline == .run || session.kind.discipline == .strength {
                 Button("Start session") {
-                    router.start(ActiveSession(id: session.id, kind: session.kind, title: session.title))
+                    router.startPlanned(session, in: context)
                 }
                 .buttonStyle(.kx(.primary, fullWidth: true))
                 .padding(KXSpacing.screenMargin)

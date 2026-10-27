@@ -129,6 +129,17 @@ struct MainTabView: View {
                 .tabItem { Label("Settings", systemImage: "gearshape") }
                 .tag(AppRouter.Tab.settings)
         }
+        // Below-par recovery: reduce today's session or keep it as planned?
+        .confirmationDialog("Recovery is below par today", isPresented: Binding(
+            get: { router.pendingReduction != nil },
+            set: { if !$0 { router.pendingReduction = nil } }
+        ), titleVisibility: .visible, presenting: router.pendingReduction) { pending in
+            Button("\(pending.option.title) and start") { router.answerReduction(reduce: true, in: context) }
+            Button("Keep as planned") { router.answerReduction(reduce: false, in: context) }
+            Button("Cancel", role: .cancel) { router.pendingReduction = nil }
+        } message: { pending in
+            Text("Your recovery is \(Int(pending.recovery.score.rounded())). \(pending.option.detail).")
+        }
         .fullScreenCover(item: $router.presentedSession) { session in
             SessionContainerView(session: session)
                 .environment(router)

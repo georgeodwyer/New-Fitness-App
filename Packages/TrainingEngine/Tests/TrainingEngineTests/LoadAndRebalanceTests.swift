@@ -266,4 +266,48 @@ final class RebalancerTests: XCTestCase {
         for index in week.indices { week[index].changeReason = "Already changed" }
         XCTAssertTrue(Rebalancer.adjustForLoad(week: week, status: .high, checkIn: nil, context: context(today: 0)).isEmpty)
     }
+
+    func testReductionScalesWithRecovery() throws {
+        let target = PaceRange(fastest: Pace(secondsPerKm: 235), slowest: Pace(secondsPerKm: 245))
+        var segments = [RunSegment(kind: .warmUp, length: .distance(meters: 2000))]
+        for rep in 1...6 {
+            segments.append(RunSegment(kind: .work, length: .distance(meters: 800), targetPace: target, label: "Rep \(rep) of 6"))
+            if rep < 6 { segments.append(RunSegment(kind: .recovery, length: .duration(seconds: 90))) }
+        }
+        segments.append(RunSegment(kind: .coolDown, length: .distance(meters: 1500)))
+        let intervals = WeekSession(id: UUID(), date: date(0), slot: .morning, kind: .run(.intervals), isKey: true, title: "Intervals",
+                                    durationMinutes: 60, effort: 8, runStructure: RunStructure(segments: segments))
+        let tired = RecoveryScore(score: 50, parts: [])
+        let option = try XCTUnwrap(Rebalancer.reduced(intervals, recovery: tired))
+        XCTAssertEqual(option.title, "Reduce by 15%")
+        let reps = option.replacement.runStructure?.segments.filter { $0.kind == .work } ?? []
+        XCTAssertEqual(reps.count, 5, "6 reps × 0.85 → 5")
+        XCTAssertEqual(reps.last?.label, "Rep 5 of 5")
+        XCTAssertEqual(option.replacement.runStructure?.segments.last?.kind, .coolDown)
+        XCTAssertEqual(option.replacement.runStructure?.segments.first?.kind, .warmUp)
+        XCTAssertEqual(option.replacement.durationMinutes, 51)
+
+        // A steady run gets shorter; warm-up and cool-down don't.
+        let tempo = WeekSession(id: UUID(), date: date(0), slot: .morning, kind: .run(.tempo), isKey: false, title: "Tempo",
+                                durationMinutes: 50, effort: 7, runStructure: RunStructure(segments: [
+                                    RunSegment(kind: .warmUp, length: .distance(meters: 2000)),
+                                    RunSegment(kind: .work, length: .distance(meters: 5000), targetPace: target),
+                                    RunSegment(kind: .coolDown, length: .distance(meters: 1500))]))
+        let shorter = try XCTUnwrap(Rebalancer.reduced(tempo, recovery: tired)).replacement.runStructure?.segments ?? []
+        XCTAssertEqual(shorter[1].length, .distance(meters: 4200))
+        XCTAssertEqual(shorter[0].length, .distance(meters: 2000))
+
+        // Gym: same weights, fewer sets, at least one each.
+        let gym = WeekSession(id: UUID(), date: date(0), slot: .evening, kind: .strength(.fullBody), isKey: false, title: "Push",
+                              durationMinutes: 60, effort: 7, strength: StrengthPrescription(exercises: [
+                                ExercisePrescription(exerciseId: "a", name: "Bench", role: .main, sets: 4, repRange: RepRange(6, 8), weightKg: 80, restSeconds: 150),
+                                ExercisePrescription(exerciseId: "b", name: "Fly", role: .accessory, sets: 3, repRange: RepRange(10, 12), weightKg: 12, restSeconds: 60),
+                                ExercisePrescription(exerciseId: "c", name: "Raise", role: .accessory, sets: 3, repRange: RepRange(12, 15), weightKg: 8, restSeconds: 60)]))
+        let lighter = try XCTUnwrap(Rebalancer.reduced(gym, recovery: tired)).replacement.strength?.exercises ?? []
+        XCTAssertEqual(lighter.reduce(0) { $0 + $1.sets }, 8, "10 sets × 0.85 → 8")
+        XCTAssertEqual(lighter.map(\.weightKg), [80, 12, 8])
+        XCTAssertTrue(lighter.allSatisfy { $0.sets >= 1 })
+
+        XCTAssertNil(Rebalancer.reduced(intervals, recovery: RecoveryScore(score: 75, parts: [])), "No cut when recovery is fine")
+    }
 }

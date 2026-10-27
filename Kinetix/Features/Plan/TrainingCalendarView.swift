@@ -384,7 +384,7 @@ struct TrainingCalendarView: View {
                     Button { openSession = session } label: { Label("Details", systemImage: "info.circle") }
                     if calendar.isDateInToday(session.date) {
                         Button {
-                            router.start(ActiveSession(id: session.id, kind: session.kind, title: session.title))
+                            router.startPlanned(session, in: context)
                         } label: { Label("Start", systemImage: "play.fill") }
                     }
                     if session.status == .planned {

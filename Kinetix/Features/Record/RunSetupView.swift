@@ -90,7 +90,7 @@ struct RunSetupView: View {
                 Button("Yes, count it as my \(planned.title.lowercased())") { start(linking: planned) }
                 Button("No, it's an extra run") { start(linking: nil) }
                 Button("Do the planned \(planned.title.lowercased()) instead") {
-                    router.start(ActiveSession(id: planned.id, kind: planned.kind, title: planned.title))
+                    router.startPlanned(planned, in: context)
                 }
             }
         } message: {

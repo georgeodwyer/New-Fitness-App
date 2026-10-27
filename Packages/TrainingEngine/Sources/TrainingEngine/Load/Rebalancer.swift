@@ -418,6 +418,91 @@ public enum Rebalancer {
                           replacement: lighter, explanation: reason)
     }
 
+    /// Today's session cut to suit recovery (`RecoveryScore.volumeMultiplier`), offered when
+    /// it's started: runs keep their type and paces with less of the main work (intervals
+    /// lose reps; steady parts and long runs get shorter; warm-up and cool-down stay); gym
+    /// sessions keep their weights with fewer sets (at least one per exercise). nil when
+    /// recovery doesn't call for less, or the session was already changed.
+    public static func reduced(_ session: WeekSession, recovery: RecoveryScore) -> SwapOption? {
+        let multiplier = recovery.volumeMultiplier
+        guard multiplier < 1, session.status == .planned, session.changeReason == nil,
+              let change = recovery.volumeChangeText else { return nil }
+        let score = Int(recovery.score.rounded())
+        let reason = "Reduced by \(change.replacingOccurrences(of: " less", with: "")) because your recovery is \(score) today."
+        var reduced = session
+        if case .run = session.kind, let structure = session.runStructure, !structure.segments.isEmpty {
+            reduced.runStructure = reducedRun(structure, multiplier: multiplier)
+            reduced.summary = session.summary.isEmpty ? change : session.summary + " · \(change)"
+        } else if let strength = session.strength, !strength.exercises.isEmpty {
+            reduced.strength = reducedGym(strength, multiplier: multiplier)
+            let before = strength.exercises.reduce(0) { $0 + $1.sets }
+            let after = reduced.strength?.exercises.reduce(0) { $0 + $1.sets } ?? before
+            guard after < before else { return nil }
+            reduced.summary = "Same weights, \(after) sets instead of \(before)"
+        } else {
+            return nil
+        }
+        reduced.durationMinutes = max(10, (session.durationMinutes * multiplier).rounded())
+        reduced.effort = max(2, (session.effort * (0.5 + multiplier / 2) * 10).rounded() / 10)
+        reduced.status = .swapped
+        reduced.changeReason = reason
+        return SwapOption(id: "reduced", title: "Reduce by \(change.replacingOccurrences(of: " less", with: ""))",
+                          detail: reduced.summary, systemImage: "arrow.down.right.circle", replacement: reduced, explanation: reason)
+    }
+
+    /// Fewer reps for repeated efforts; otherwise the middle of the run shortened.
+    static func reducedRun(_ structure: RunStructure, multiplier: Double) -> RunStructure {
+        let segments = structure.segments
+        let workIndexes = segments.indices.filter { segments[$0].kind == .work }
+        let repeated = workIndexes.count >= 3 && Set(workIndexes.map { segments[$0].length }).count == 1
+        if repeated {
+            let keep = max(1, Int((Double(workIndexes.count) * multiplier).rounded()))
+            guard keep < workIndexes.count else { return structure }
+            // Cut after the last kept rep up to the next non-rep part (the cool-down).
+            let lastKept = workIndexes[keep - 1]
+            let afterReps = (workIndexes.last ?? lastKept) + 1
+            var result = Array(segments[...lastKept]) + Array(segments[min(afterReps, segments.count)...])
+            // Renumber "Rep n of m" labels.
+            var rep = 0
+            for i in result.indices where result[i].kind == .work && result[i].label?.hasPrefix("Rep ") == true {
+                rep += 1
+                result[i].label = "Rep \(rep) of \(keep)"
+            }
+            return RunStructure(segments: result)
+        }
+        return RunStructure(segments: segments.map { segment in
+            guard segment.kind != .warmUp, segment.kind != .coolDown else { return segment }
+            var copy = segment
+            switch segment.length {
+            case .distance(let meters): copy.length = .distance(meters: max(200, (meters * multiplier / 100).rounded() * 100))
+            case .duration(let seconds): copy.length = .duration(seconds: max(30, (seconds * multiplier / 10).rounded() * 10))
+            }
+            return copy
+        })
+    }
+
+    /// Takes sets off until total sets fall by about the share: accessories and later
+    /// exercises first, never below one set each.
+    static func reducedGym(_ strength: StrengthPrescription, multiplier: Double) -> StrengthPrescription {
+        var exercises = strength.exercises
+        let total = exercises.reduce(0) { $0 + $1.sets }
+        var toRemove = total - max(exercises.count, Int((Double(total) * multiplier).rounded()))
+        while toRemove > 0 {
+            let candidates = exercises.indices.filter { exercises[$0].sets > 1 }
+            guard !candidates.isEmpty else { break }
+            // Most sets first; among equals accessories, then the later exercise.
+            let pick = candidates.max { a, b in
+                let ea = exercises[a], eb = exercises[b]
+                if ea.sets != eb.sets { return ea.sets < eb.sets }
+                if (ea.role == .accessory) != (eb.role == .accessory) { return eb.role == .accessory }
+                return a < b
+            }!
+            exercises[pick].sets -= 1
+            toRemove -= 1
+        }
+        return StrengthPrescription(exercises: exercises)
+    }
+
     /// On a low recovery day, today's hard runs and gym sessions become their lighter versions.
     public static func taperForRecovery(week: [WeekSession], recovery: RecoveryScore?, context: Context) -> [Adjustment] {
         guard let recovery, RecoveryTaper(recovery) == .ease else { return [] }

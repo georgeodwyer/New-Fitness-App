@@ -196,9 +196,7 @@ struct HomeView: View {
                     sessions: todaysSessions,
                     planStart: start.flatMap { $0 > .now ? $0 : nil },
                     shownIndex: $tileIndex,
-                    onStart: { session in
-                        router.start(ActiveSession(id: session.id, kind: session.kind, title: session.title))
-                    },
+                    onStart: { session in router.startPlanned(session, in: context) },
                     onDetails: { detailSession = $0 },
                     onActions: { actionSession = $0 }
                 )
@@ -209,13 +207,12 @@ struct HomeView: View {
                 }
             }
             .fixedSize(horizontal: false, vertical: true)
-            if let profile, let recovery, let session = offerSession,
-               let lighter = BalanceService.lighterOption(for: session, profile: profile, recovery: recovery) {
-                LighterVersionOffer(recovery: recovery, option: lighter) {
-                    let changed = BalanceService.takeLighter(session, option: lighter, recovery: recovery,
-                                                             profile: profile, in: context)
-                    banner = changed.first
-                }
+            // On a below-par day, starting a session asks whether to reduce it (see AppRouter).
+            if let recovery, let change = recovery.volumeChangeText, recovery.volumeMultiplier < 1 {
+                Label("Recovery \(Int(recovery.score.rounded())): you'll be offered \(change) when you start today's session.",
+                      systemImage: "arrow.down.right.circle")
+                    .font(KXFont.caption)
+                    .foregroundStyle(KXColor.inkSecondary)
             }
         }
     }

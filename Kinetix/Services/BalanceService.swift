@@ -65,14 +65,8 @@ enum BalanceService {
                                                    context: context(profile: profile, now: now))
         let triggers = loadTriggers(status: status, ratio: ratio) + recoveryTriggers(checkIn, restingHeartRate: restingHeartRate, hrv: hrv)
         var explanations = apply(adjustments, to: models, profile: profile, triggers: triggers, in: modelContext, now: now)
-        // A low recovery score eases today's hard sessions that weren't already changed above.
-        let changed = Set(adjustments.map(\.session.id))
-        let remaining = models.map(\.weekSession).filter { !changed.contains($0.id) }
-        let tapers = Rebalancer.taperForRecovery(week: remaining, recovery: recovery, context: context(profile: profile, now: now))
-        if let recovery, !tapers.isEmpty {
-            explanations += apply(tapers, to: models, profile: profile, triggers: recoveryScoreTriggers(recovery),
-                                  in: modelContext, now: now)
-        }
+        // Recovery no longer changes sessions on its own: it's offered when a session starts
+        // (see `reduction(for:in:)`).
         return explanations
     }
 
@@ -145,6 +139,36 @@ enum BalanceService {
                               now: Date = .now) -> SwapOption? {
         guard let recovery, Rebalancer.RecoveryTaper(recovery) == .offer else { return nil }
         return Rebalancer.lighterVersion(of: session.weekSession, recovery: recovery, context: context(profile: profile, now: now))
+    }
+
+    /// Today's recovery, worked out the same way as on Today.
+    static func todaysRecovery(in context: ModelContext, now: Date = .now) -> RecoveryScore? {
+        func all<T: PersistentModel>(_ type: T.Type) -> [T] { (try? context.fetch(FetchDescriptor<T>())) ?? [] }
+        let profile = all(UserProfileModel.self).first { !$0.isSoftDeleted }
+        let sessions = all(PlannedSessionModel.self).filter { !$0.isSoftDeleted && ($0.plan?.isActive ?? true) }
+        let data = DashboardService.make(sessions: sessions, runs: all(RunLogModel.self), lifts: all(StrengthLogModel.self),
+                                         checkIns: all(RecoveryCheckInModel.self), profile: profile?.profile,
+                                         external: IntegrationSettings.shared.loadWorkouts, health: HealthInputs.current, now: now)
+        return data.strain.recovery
+    }
+
+    /// The cut to offer when today's session starts on a below-par recovery day (nil: start as planned).
+    static func reduction(for session: PlannedSessionModel, in context: ModelContext, now: Date = .now) -> (option: SwapOption, recovery: RecoveryScore)? {
+        guard Calendar.kinetix.isDate(session.date, inSameDayAs: now),
+              session.kind.discipline == .run || session.kind.discipline == .strength,
+              let recovery = todaysRecovery(in: context, now: now),
+              let option = Rebalancer.reduced(session.weekSession, recovery: recovery) else { return nil }
+        return (option, recovery)
+    }
+
+    /// Takes the reduced version (recorded with the recovery readings, so it can be undone).
+    @discardableResult
+    static func takeReduced(_ session: PlannedSessionModel, option: SwapOption, recovery: RecoveryScore,
+                            in modelContext: ModelContext, now: Date = .now) -> [String] {
+        guard let profile = ((try? modelContext.fetch(FetchDescriptor<UserProfileModel>())) ?? []).first(where: { !$0.isSoftDeleted })?.profile
+        else { return [] }
+        return apply([Adjustment(session: option.replacement, explanation: option.explanation, cause: .lowRecovery)], to: [session],
+                     profile: profile, triggers: recoveryScoreTriggers(recovery), in: modelContext, now: now)
     }
 
     /// Takes the lighter version on a fair recovery day (recorded with the recovery readings).
