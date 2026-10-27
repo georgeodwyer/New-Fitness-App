@@ -19,7 +19,7 @@ final class CalendarTests: XCTestCase {
     func testCalendarFromTodayLongPlan() { openFromToday(launch(["-seed-weeks", "40"])) }
 
     private func openFromToday(_ app: XCUIApplication) {
-        let tile = app.buttons["today.weekTile"].firstMatch
+        let tile = app.descendants(matching: .any).matching(identifier: "today.weekTile").firstMatch
         for _ in 0..<6 where !(tile.exists && tile.isHittable) { app.swipeUp() }
         XCTAssertTrue(tile.waitForExistence(timeout: 5), "No This week tile")
         tile.tap()

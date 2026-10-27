@@ -80,10 +80,27 @@ jobs:
       # Opens the calendar from Today and the Plan tab (it has crashed on devices before).
       - name: Calendar UI test
         run: |
+          # While the tests run, sample the app every 20 s so a hang shows where it's stuck.
+          mkdir -p samples
+          ( n=0; while true; do sleep 20; n=$((n+1))
+              pid=$(pgrep -f "Kinetix.app/Kinetix$" | head -n 1)
+              [ -n "$pid" ] && sample "$pid" 2 -file "samples/sample-$(printf %03d $n).txt" >/dev/null 2>&1
+            done ) &
+          SAMPLER=$!
           ./scripts/xcodebuild-step.sh calendar-ui-test.log test-without-building \
             -project Kinetix.xcodeproj -scheme Kinetix -destination "id=$UDID" \
             -derivedDataPath DerivedData -only-testing:KinetixUITests/CalendarTests \
             && status=0 || status=$?
+          kill $SAMPLER 2>/dev/null || true
+          if [ "$status" -ne 0 ]; then
+            for f in samples/*.txt; do
+              [ -f "$f" ] || continue
+              echo "==== $f: app frames"
+              grep -E "Kinetix|TrainingEngine" "$f" | grep -v -E "^(Process|Path|Identifier|Load Address|Code Type|Parent)" | sed -E 's/ +\(in [^)]*\)//' | awk '!seen[$0]++' | head -n 40
+              echo "==== $f: top of stack"
+              sed -n '/Sort by top of stack/,/^$/p' "$f" | head -n 25
+            done
+          fi
           grep -n -i -E "crash|fatal error|terminated|Thread [0-9]+ Crashed|EXC_" calendar-ui-test.log | head -40 || true
           mkdir -p crash-reports
           find ~/Library/Logs/DiagnosticReports -newer build.log \( -name "Kinetix*" -o -name "*.ips" \) -exec cp {} crash-reports/ \; 2>/dev/null || true
@@ -95,7 +112,9 @@ jobs:
         uses: actions/upload-artifact@v5
         with:
           name: crash-reports
-          path: crash-reports/
+          path: |
+            crash-reports/
+            samples/
           if-no-files-found: ignore
 
       # Off by default (the owner tests builds through TestFlight). Run it by hand from
