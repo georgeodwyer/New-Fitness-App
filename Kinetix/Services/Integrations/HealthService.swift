@@ -80,7 +80,9 @@ final class HealthService {
     private let sleepType = HKCategoryType(.sleepAnalysis)
 
     private var readTypes: Set<HKObjectType> {
-        var types: Set<HKObjectType> = [heartRateType, restingType, HKObjectType.workoutType(), sleepType]
+        // Includes everything the Apple Watch app reads, so one permission sheet covers both.
+        var types: Set<HKObjectType> = [heartRateType, restingType, HKObjectType.workoutType(), sleepType, distanceType,
+                                        HKQuantityType(.activeEnergyBurned)]
         for metric in HealthMetric.allCases { if let type = Self.quantityType(for: metric) { types.insert(type) } }
         return types
     }
@@ -107,7 +109,11 @@ final class HealthService {
         case .sleep: return .hour()
         }
     }
-    private var shareTypes: Set<HKSampleType> { [HKObjectType.workoutType(), distanceType, HKSeriesType.workoutRoute()] }
+    /// What Kinetix saves: from the phone (workouts, distance, routes) and the Apple Watch
+    /// (its workouts also save heart rate and energy). Asked for together, once.
+    private var shareTypes: Set<HKSampleType> {
+        [HKObjectType.workoutType(), distanceType, HKSeriesType.workoutRoute(), heartRateType, HKQuantityType(.activeEnergyBurned)]
+    }
 
     // MARK: - Permission
 

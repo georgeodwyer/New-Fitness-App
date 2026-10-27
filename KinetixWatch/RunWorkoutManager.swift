@@ -91,12 +91,18 @@ final class RunWorkoutManager: NSObject {
 
     // MARK: Permission
 
+    /// Asks for Health access only when something hasn't been decided yet (the same list the
+    /// iPhone asks for, so allowing it once on the phone covers the watch too).
     func requestAuthorization() async {
         guard HKHealthStore.isHealthDataAvailable() else { return }
-        let share: Set<HKSampleType> = [HKObjectType.workoutType(), HKSeriesType.workoutRoute()]
+        let share: Set<HKSampleType> = [HKObjectType.workoutType(), HKSeriesType.workoutRoute(), HKQuantityType(.distanceWalkingRunning),
+                                        HKQuantityType(.heartRate), HKQuantityType(.activeEnergyBurned)]
         let read: Set<HKObjectType> = [HKQuantityType(.heartRate), HKQuantityType(.distanceWalkingRunning),
                                        HKQuantityType(.activeEnergyBurned), HKObjectType.workoutType()]
-        try? await healthStore.requestAuthorization(toShare: share, read: read)
+        let status = try? await healthStore.statusForAuthorizationRequest(toShare: share, read: read)
+        if status == .shouldRequest {
+            try? await healthStore.requestAuthorization(toShare: share, read: read)
+        }
         if locationManager.authorizationStatus == .notDetermined { locationManager.requestWhenInUseAuthorization() }
     }
 
