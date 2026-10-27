@@ -6,7 +6,6 @@ import TrainingEngine
 /// stored plan, and records a one-sentence explanation for every change.
 @MainActor
 enum BalanceService {
-    static let lastAutoAdjustKey = "balance.lastAutoAdjustDay"
 
     private static func context(profile: AthleteProfile, now: Date) -> Rebalancer.Context {
         Rebalancer.Context(
@@ -48,26 +47,30 @@ enum BalanceService {
                      profile: profile, triggers: [trigger], in: modelContext, now: now)
     }
 
-    /// Eases the coming days if load is high or today's check-in is poor. Runs at most
-    /// once a day unless `force` (e.g. right after a check-in).
+    /// Kept so "delete everything" clears it on phones that ran the old automatic check.
+    static let lastAutoAdjustKey = "balance.lastAutoAdjustDay"
+    static let undidAutomaticChangesKey = "balance.undidAutomaticChanges.v1"
+
+    /// The plan no longer changes by itself for a spike in training load or a poor score:
+    /// recovery (HRV, resting heart rate, sleep and your score) decides, when a session starts
+    /// (see `reduction(for:in:)`). This puts back, once, any session still ahead that the old
+    /// automatic check eased. Returns how many were put back.
     @discardableResult
-    static func autoAdjust(profile: AthleteProfile, status: LoadStatus, checkIn: RecoveryCheckIn?, in modelContext: ModelContext,
-                           now: Date = .now, force: Bool = false, ratio: Double? = nil,
-                           restingHeartRate: RestingHeartRateSignal? = nil, hrv: HRVSignal? = nil,
-                           recovery: RecoveryScore? = nil, dataKey: String = "") -> [String] {
-        let calendar = Calendar.kinetix
-        // Once a day for each state of the data (so it runs again when last night's data arrives).
-        let dayKey = ISO8601DateFormatter().string(from: calendar.startOfDay(for: now)) + "|" + dataKey
-        if !force, UserDefaults.standard.string(forKey: lastAutoAdjustKey) == dayKey { return [] }
-        UserDefaults.standard.set(dayKey, forKey: lastAutoAdjustKey)
-        let models = week(containing: now, in: modelContext)
-        let adjustments = Rebalancer.adjustForLoad(week: models.map(\.weekSession), status: status, checkIn: checkIn,
-                                                   context: context(profile: profile, now: now))
-        let triggers = loadTriggers(status: status, ratio: ratio) + recoveryTriggers(checkIn, restingHeartRate: restingHeartRate, hrv: hrv)
-        var explanations = apply(adjustments, to: models, profile: profile, triggers: triggers, in: modelContext, now: now)
-        // Recovery no longer changes sessions on its own: it's offered when a session starts
-        // (see `reduction(for:in:)`).
-        return explanations
+    static func undoAutomaticChanges(in context: ModelContext, now: Date = .now) -> Int {
+        guard !UserDefaults.standard.bool(forKey: undidAutomaticChangesKey) else { return 0 }
+        UserDefaults.standard.set(true, forKey: undidAutomaticChangesKey)
+        let automatic: Set<ChangeCause> = [.highLoad, .poorRecovery]
+        let changes = ((try? context.fetch(FetchDescriptor<PlanChangeModel>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)]))) ?? [])
+            .filter { !$0.isSoftDeleted && automatic.contains($0.cause) && $0.undoneAt == nil }
+        var count = 0
+        for change in changes {
+            guard let id = change.sessionId,
+                  let session = try? context.fetch(FetchDescriptor<PlannedSessionModel>(predicate: #Predicate { $0.id == id })).first,
+                  canUndo(change, session: session, now: now) else { continue }
+            undo(change, session: session, in: context, now: now)
+            count += 1
+        }
+        return count
     }
 
     // MARK: - Move and undo

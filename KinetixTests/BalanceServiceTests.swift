@@ -60,12 +60,25 @@ final class BalanceServiceTests: XCTestCase {
         XCTAssertTrue(fields.contains { $0.field == .session })
     }
 
-    func testHighLoadChangeRecordsTheRatio() throws {
-        BalanceService.autoAdjust(profile: SampleData.profile, status: .high, checkIn: nil, in: context, now: monday, force: true, ratio: 1.42)
-        let changes = try context.fetch(FetchDescriptor<PlanChangeModel>()).filter { $0.cause == .highLoad }
-        XCTAssertFalse(changes.isEmpty)
-        XCTAssertEqual(changes.first?.triggers.first?.value, "142% of your usual")
-        XCTAssertNotNil(changes.first?.before)
+    func testLoadSpikeChangesArePutBackOnce() throws {
+        UserDefaults.standard.removeObject(forKey: BalanceService.undidAutomaticChangesKey)
+        let lift = try XCTUnwrap(thisWeek().first { $0.strengthPrescription != nil })
+        let originalSets = lift.strengthPrescription!.exercises.reduce(0) { $0 + $1.sets }
+        // What the old automatic load check did: one set fewer per exercise, with a restore point.
+        let restore = SessionRestorePoint(lift)
+        var fewer = lift.strengthPrescription!
+        for index in fewer.exercises.indices { fewer.exercises[index].sets -= 1 }
+        lift.strengthPrescriptionData = StoredJSON.encode(fewer)
+        let change = PlanChangeModel(summary: "Eased your session because your training load has spiked.", sessionId: lift.id, now: monday)
+        change.causeRaw = ChangeCause.highLoad.rawValue
+        change.restoreData = StoredJSON.encode(restore)
+        context.insert(change)
+        try context.save()
+
+        XCTAssertEqual(BalanceService.undoAutomaticChanges(in: context, now: monday), 1)
+        XCTAssertEqual(lift.strengthPrescription!.exercises.reduce(0) { $0 + $1.sets }, originalSets)
+        XCTAssertNotNil(change.undoneAt)
+        XCTAssertEqual(BalanceService.undoAutomaticChanges(in: context, now: monday), 0, "Only once")
     }
 
     func testPoorRecoveryTriggersIncludeCheckInAndRestingHeartRate() {
@@ -81,13 +94,6 @@ final class BalanceServiceTests: XCTestCase {
         let explanations = BalanceService.skip(session, profile: SampleData.profile, in: context, now: monday)
         XCTAssertEqual(session.status, .skipped)
         XCTAssertFalse(explanations.isEmpty)
-    }
-
-    func testAutoAdjustRunsOncePerDay() throws {
-        let first = BalanceService.autoAdjust(profile: SampleData.profile, status: .high, checkIn: nil, in: context, now: monday)
-        let second = BalanceService.autoAdjust(profile: SampleData.profile, status: .high, checkIn: nil, in: context, now: monday)
-        XCTAssertFalse(first.isEmpty, "A load spike eases something this week")
-        XCTAssertTrue(second.isEmpty, "Doesn't adjust twice on the same day")
     }
 
     func testDashboardDataAdherenceAndLoad() throws {

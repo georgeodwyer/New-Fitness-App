@@ -28,6 +28,8 @@ struct PlanView: View {
     /// Weeks opened; the current week starts open.
     @State private var expanded: Set<Int> = []
     @State private var openedCurrentWeek = false
+    /// Whether finished weeks of the programme are shown.
+    @State private var showHistory = false
 
     private struct WeekGroup: Identifiable {
         let index: Int
@@ -70,14 +72,15 @@ struct PlanView: View {
         }
     }
 
-    private var weeks: [WeekGroup] {
+    /// The programme's weeks, past ones included (the current week shows its earlier days too).
+    private var allWeeks: [WeekGroup] {
         let calendar = Calendar.kinetix
         let today = calendar.startOfDay(for: .now)
         let activePlanID = plans.first?.id
-        let upcoming = sessions.filter {
-            !$0.isSoftDeleted && $0.date >= today && ($0.plan?.id == activePlanID || activePlanID == nil)
+        let planSessions = sessions.filter {
+            !$0.isSoftDeleted && ($0.plan?.id == activePlanID || activePlanID == nil)
         }
-        let byWeek = Dictionary(grouping: upcoming, by: \.weekIndex)
+        let byWeek = Dictionary(grouping: planSessions, by: \.weekIndex)
         let built = byWeek.keys.sorted().map { index in
             let byDay = Dictionary(grouping: byWeek[index] ?? []) { calendar.startOfDay(for: $0.date) }
             let days = byDay.keys.sorted().map { day in
@@ -95,6 +98,19 @@ struct PlanView: View {
             return WeekGroup(index: index, target: week.target, days: days, isPreview: true)
         }
         return built + later
+    }
+
+    /// Finished weeks (before this one), oldest first.
+    private func pastWeeks(_ all: [WeekGroup]) -> [WeekGroup] {
+        let thisWeek = Calendar.kinetix.startOfISOWeek(for: .now)
+        return all.filter { ($0.days.last?.day ?? .distantFuture) < thisWeek }
+    }
+
+    /// This week and the ones to come.
+    private var weeks: [WeekGroup] {
+        let all = allWeeks
+        let past = Set(pastWeeks(all).map(\.index))
+        return all.filter { !past.contains($0.index) }
     }
 
     private func target(_ index: Int) -> WeekTarget? {
@@ -132,7 +148,10 @@ struct PlanView: View {
                             .foregroundStyle(KXColor.inkSecondary)
                             .kxCard(.tinted)
                     }
-                    ForEach(weeks) { week in weekSection(week) }
+                    let all = allWeeks
+                    let past = pastWeeks(all)
+                    if !past.isEmpty { historySection(past) }
+                    ForEach(all.filter { week in !past.contains { $0.index == week.index } }) { week in weekSection(week) }
                     if !changes.isEmpty { changesLink }
                 }
                 .padding(KXSpacing.screenMargin)
@@ -165,6 +184,46 @@ struct PlanView: View {
             .onChange(of: profiles.count) { _, count in
                 if count > 0 { showOnboarding = false }
             }
+        }
+    }
+
+    /// "Earlier weeks": the programme so far, folded away until opened.
+    @ViewBuilder
+    private func historySection(_ past: [WeekGroup]) -> some View {
+        let sessions = past.flatMap(\.items).compactMap { item -> PlannedSessionModel? in
+            if case .session(let session) = item { return session }
+            return nil
+        }
+        let done = sessions.filter { $0.status == .completed }.count
+        Button {
+            withAnimation(.easeInOut(duration: 0.2)) { showHistory.toggle() }
+        } label: {
+            HStack(spacing: KXSpacing.sm) {
+                Image(systemName: "clock.arrow.circlepath")
+                    .foregroundStyle(KXColor.accent)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: KXSpacing.xxs) {
+                    Text("Earlier weeks").font(KXFont.headline).foregroundStyle(KXColor.ink)
+                    Text("\(past.count) week\(past.count == 1 ? "" : "s") · \(done) of \(sessions.count) sessions done")
+                        .font(KXFont.caption)
+                        .foregroundStyle(KXColor.inkSecondary)
+                }
+                Spacer()
+                Image(systemName: "chevron.down")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(KXColor.inkTertiary)
+                    .rotationEffect(.degrees(showHistory ? 180 : 0))
+                    .accessibilityHidden(true)
+            }
+            .padding(.vertical, KXSpacing.xs)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityHint(showHistory ? "Hides the weeks you've finished" : "Shows the weeks you've finished")
+        .accessibilityIdentifier("plan.history")
+        if showHistory {
+            ForEach(past) { week in weekSection(week) }
         }
     }
 

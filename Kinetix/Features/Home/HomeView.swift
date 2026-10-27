@@ -103,34 +103,24 @@ struct HomeView: View {
             PlanUpdatesSheet(changes: Array(changes.filter { !$0.isSoftDeleted }.prefix(30)))
                 .presentationDetents([.medium, .large])
         }
-        .onAppear {
-            // With Health connected, wait until it's been read today (the refresh below runs it).
-            if !health.isConnected || health.isFreshToday { checkPlan() }
+        .onAppear { putBackAutomaticChanges() }
+    }
+
+    /// The plan now changes on recovery only (when a session starts): once, put back any
+    /// session the old load check eased.
+    private func putBackAutomaticChanges() {
+        let count = BalanceService.undoAutomaticChanges(in: context)
+        if count > 0 {
+            banner = "Put back \(count) session\(count == 1 ? "" : "s") eased for a spike in load. Your plan now adjusts on recovery only, when you start a session."
         }
-        .onChange(of: health.lastRefresh) { checkPlan() }
     }
 
-    /// Eases the coming days when load is high or your score is low. Runs once per day for
-    /// each state of the Health data, so it looks again once last night's data arrives.
-    private func checkPlan() {
-        guard let profile else { return }
-        let inputs = inputs
-        let data = data
-        let changed = BalanceService.autoAdjust(profile: profile, status: data.load.combined.status,
-                                                checkIn: data.todaysCheckIn?.engineValue(restingHeartRate: inputs.restingHeartRate, hrv: inputs.hrv),
-                                                in: context, ratio: data.load.combined.ratio,
-                                                restingHeartRate: inputs.restingHeartRate, hrv: inputs.hrv,
-                                                recovery: data.strain.recovery, dataKey: inputs.planCheckKey)
-        if let first = changed.first { banner = first }
-    }
-
-    /// Pull to refresh: re-reads Apple Health and Strava, syncs, then checks the plan again.
+    /// Pull to refresh: re-reads Apple Health and Strava and syncs.
     private func refreshEverything() async {
         await health.refresh(force: true)
         await StravaService.shared.importRecent(in: context, force: true)
         await SyncService.shared.sync(context: context)
         WidgetSnapshotService.update(in: context)
-        checkPlan()
     }
 
     private var greeting: some View {
@@ -227,7 +217,7 @@ struct HomeView: View {
     private func checkInCard(_ data: DashboardData) -> some View {
         CheckInCard(existing: data.todaysCheckIn, restingHeartRate: restingHeartRate, hrv: hrv,
                     sleepHours: inputs.sleepHours) { checkIn in
-            saveCheckIn(checkIn, status: data.load.combined.status, ratio: data.load.combined.ratio)
+            saveCheckIn(checkIn)
         }
     }
 
@@ -283,7 +273,7 @@ struct HomeView: View {
         SyncService.shared.requestSync()
     }
 
-    private func saveCheckIn(_ answers: RecoveryCheckIn, status: LoadStatus, ratio: Double?) {
+    private func saveCheckIn(_ answers: RecoveryCheckIn) {
         var checkIn = answers
         checkIn.restingHeartRateElevated = restingHeartRate?.isElevated ?? false
         checkIn.hrvSuppressed = hrv?.isSuppressed ?? false
@@ -298,13 +288,6 @@ struct HomeView: View {
             context.insert(RecoveryCheckInModel(date: today, sleep: checkIn.sleep, soreness: checkIn.soreness, energy: checkIn.energy))
         }
         try? context.save()
-        if let profile {
-            let changed = BalanceService.autoAdjust(profile: profile, status: status, checkIn: checkIn, in: context, force: true,
-                                                    ratio: ratio, restingHeartRate: restingHeartRate, hrv: hrv,
-                                                    recovery: StrainService.recovery(health: inputs, checkIn: checkIn),
-                                                    dataKey: inputs.planCheckKey)
-            if let first = changed.first { banner = first }
-        }
     }
 }
 
