@@ -63,6 +63,7 @@
 		6A5C33C319519EE85058D5AF /* KXSpacing.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2EEE532F379E91567B19BF6 /* KXSpacing.swift */; };
 		6AB0A803B59FF266099C71B8 /* Formatters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03230B905B53975A34E0C37E /* Formatters.swift */; };
 		6B6C655E71CA57EA30150748 /* RunListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A29407132DCE8269B5454E50 /* RunListView.swift */; };
+		6E7327BE2BAC15C40A64397A /* CalendarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A1F79A98C11CFA85E3E4C1 /* CalendarTests.swift */; };
 		6F2333E9AC60E44595804758 /* BalanceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E677E3A17BFA4777DEC73596 /* BalanceService.swift */; };
 		6FE2872F3A8B36B3EB17EF7F /* Formatters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03230B905B53975A34E0C37E /* Formatters.swift */; };
 		7069554845EABC54FCA85309 /* SyncTracked.swift in Sources */ = {isa = PBXBuildFile; fileRef = C29BBA81B297D8EE2CF1FF89 /* SyncTracked.swift */; };
@@ -368,6 +369,7 @@
 		DD08ED26A91FB4B4953B85A1 /* WatchSyncTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchSyncTests.swift; sourceTree = "<group>"; };
 		DE60D8E623FC5E87ABB1C84E /* GymTemplateEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GymTemplateEditorView.swift; sourceTree = "<group>"; };
 		DFBEFA7B7B4203748B86952F /* AccountServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountServiceTests.swift; sourceTree = "<group>"; };
+		E1A1F79A98C11CFA85E3E4C1 /* CalendarTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarTests.swift; sourceTree = "<group>"; };
 		E266EDCEE7A3C5533B50F72F /* KXText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXText.swift; sourceTree = "<group>"; };
 		E29498CEEBE32CAE95B52D85 /* KXHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXHeader.swift; sourceTree = "<group>"; };
 		E52E3E78C54380C735C981F1 /* SyncMapping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncMapping.swift; sourceTree = "<group>"; };
@@ -789,6 +791,7 @@
 		DDE2EC73D53650C94703DEB0 /* KinetixUITests */ = {
 			isa = PBXGroup;
 			children = (
+				E1A1F79A98C11CFA85E3E4C1 /* CalendarTests.swift */,
 				CE8F9A4EC4A0EB227AB709AD /* ScreenshotTests.swift */,
 			);
 			path = KinetixUITests;
@@ -1181,6 +1184,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6E7327BE2BAC15C40A64397A /* CalendarTests.swift in Sources */,
 				FE3C5A0DF03F3DC1CE544053 /* ScreenshotTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
