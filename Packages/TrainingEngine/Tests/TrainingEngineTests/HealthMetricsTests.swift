@@ -94,7 +94,7 @@ final class HealthMetricsTests: XCTestCase {
         XCTAssertEqual(layout.cards, DashboardCard.defaultOrder)
         layout.setHidden(.records, true)
         XCTAssertFalse(layout.visibleCards.contains(.records))
-        layout.move(fromOffsets: IndexSet(integer: 2), toOffset: 0) // body to the top
+        layout.move(fromOffsets: IndexSet(integer: DashboardCard.defaultOrder.firstIndex(of: .body)!), toOffset: 0) // body to the top
         XCTAssertEqual(layout.cards.first, .body)
         XCTAssertEqual(layout.cards.count, DashboardCard.allCases.count)
 
@@ -102,7 +102,7 @@ final class HealthMetricsTests: XCTestCase {
         let old = DashboardLayout(order: [], hidden: [])
         var saved = old
         saved.order = ["checkIn", "today", "load", "futureCard"]
-        XCTAssertEqual(Array(saved.cards.prefix(3)), [.checkIn, .body, .today], "New cards appear after their default neighbour")
+        XCTAssertEqual(Array(saved.cards.prefix(3)), [.checkIn, .body, .dailyLoad], "New cards appear after their default neighbour")
         XCTAssertEqual(saved.cards.count, DashboardCard.allCases.count)
         XCTAssertFalse(saved.cards.map(\.rawValue).contains("futureCard"))
     }
