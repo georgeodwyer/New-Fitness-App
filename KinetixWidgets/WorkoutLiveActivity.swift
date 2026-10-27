@@ -77,14 +77,19 @@ enum WorkoutActivityLayout {
                 Image(systemName: context.attributes.kind == "run" ? "figure.run" : "dumbbell.fill")
                     .foregroundStyle(KXColor.accent)
             } compactTrailing: {
-                if state.mode == .resting {
-                    WorkoutClock(state: state).monospacedDigit().frame(maxWidth: 48)
+                // The gym has no pace: always the clock (rest countdown, set or session time).
+                if state.mode == .resting || context.attributes.kind != "run" {
+                    WorkoutClock(state: state).monospacedDigit().frame(maxWidth: 52)
+                        .foregroundStyle(state.mode == .resting ? KXColor.accent : KXColor.ink)
                 } else {
                     Text(state.pace ?? state.distance ?? "").monospacedDigit()
                         .foregroundStyle(PaceStatusStyle(state.paceStatus).color)
                 }
             } minimal: {
-                Image(systemName: context.attributes.kind == "run" ? "figure.run" : "dumbbell.fill")
+                // Shared with another app's activity: the timer matters more than an icon.
+                WorkoutClock(state: state)
+                    .font(.caption2.weight(.semibold).monospacedDigit())
+                    .minimumScaleFactor(0.6)
                     .foregroundStyle(KXColor.accent)
             }
             .keylineTint(KXColor.accent)
