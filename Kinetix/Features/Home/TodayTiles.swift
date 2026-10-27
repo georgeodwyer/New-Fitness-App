@@ -33,7 +33,7 @@ struct TodaySessionTile: View {
     private func sessionTile(_ session: PlannedSessionModel, index: Int) -> some View {
         VStack(alignment: .leading, spacing: KXSpacing.sm) {
             HStack(alignment: .center) {
-                KXOverline(overline(session), color: KXColor.accent)
+                KXOverline(overline(session), color: session.kind.tint)
                 Spacer(minLength: 0)
                 Menu {
                     Button { onDetails(session) } label: { Label("Details", systemImage: "info.circle") }
@@ -55,9 +55,10 @@ struct TodaySessionTile: View {
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundStyle(session.kind.tint)
                         .frame(width: 36, height: 36)
-                        .background(KXColor.surfaceTint, in: Circle())
+                        .background(session.kind.tint.opacity(0.14), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
                     Text(session.title)
                         .font(KXFont.headline)
+                        .textCase(.uppercase)
                         .foregroundStyle(KXColor.ink)
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
@@ -113,7 +114,7 @@ struct TodaySessionTile: View {
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(KXColor.teal)
                 .frame(width: 36, height: 36)
-                .background(KXColor.surfaceTint, in: Circle())
+                .background(KXColor.teal.opacity(0.14), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
             if let planStart {
                 Text("Plan starts \(planStart.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated)))")
                     .font(KXFont.headline).foregroundStyle(KXColor.ink)
@@ -196,7 +197,7 @@ struct ThisWeekTile: View {
     }
 
     /// Filled when the day's sessions are done, a ring when still to do, faint for rest days;
-    /// a blue dot when there are two sessions.
+    /// a small dot when there are two sessions.
     private func dayDot(_ day: DashboardData.WeekDay) -> some View {
         let active = day.sessions.filter { $0.status != .skipped }
         let allDone = !active.isEmpty && active.allSatisfy { $0.status == .completed }
@@ -215,7 +216,7 @@ struct ThisWeekTile: View {
             }
             .frame(height: 14)
             .overlay(alignment: .topTrailing) {
-                // Blue dot: two sessions that day.
+                // A dot in the gym colour: two sessions that day.
                 if active.count >= 2 {
                     Circle()
                         .fill(KXColor.doubleSession)
