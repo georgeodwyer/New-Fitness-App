@@ -20,7 +20,9 @@ enum SampleData {
     /// Inserts the sample profile, default coaching settings and a generated plan that
     /// started this Monday (so the current week is populated for demos and screenshots).
     @MainActor
-    static func seed(into context: ModelContext, now: Date = .now) {
+    static func seed(into context: ModelContext, weeksToRace: Int? = nil, now: Date = .now) {
+        var profile = profile
+        if let weeksToRace { profile.eventDate = Calendar.current.date(byAdding: .weekOfYear, value: weeksToRace, to: now) }
         context.insert(UserProfileModel(profile: profile))
         context.insert(CoachingSettingsModel())
         let monday = Calendar.kinetix.startOfISOWeek(for: now)

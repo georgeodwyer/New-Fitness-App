@@ -77,6 +77,27 @@ jobs:
             -project Kinetix.xcodeproj -scheme Kinetix -destination "id=$UDID" \
             -derivedDataPath DerivedData -only-testing:KinetixTests
 
+      # Opens the calendar from Today and the Plan tab (it has crashed on devices before).
+      - name: Calendar UI test
+        run: |
+          ./scripts/xcodebuild-step.sh calendar-ui-test.log test-without-building \
+            -project Kinetix.xcodeproj -scheme Kinetix -destination "id=$UDID" \
+            -derivedDataPath DerivedData -only-testing:KinetixUITests/CalendarTests \
+            && status=0 || status=$?
+          grep -n -i -E "crash|fatal error|terminated|Thread [0-9]+ Crashed|EXC_" calendar-ui-test.log | head -40 || true
+          mkdir -p crash-reports
+          find ~/Library/Logs/DiagnosticReports -newer build.log \( -name "Kinetix*" -o -name "*.ips" \) -exec cp {} crash-reports/ \; 2>/dev/null || true
+          for f in crash-reports/*; do [ -f "$f" ] && { echo "==== $f"; head -c 20000 "$f"; echo; }; done
+          exit $status
+
+      - name: Upload crash reports
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: crash-reports
+          path: crash-reports/
+          if-no-files-found: ignore
+
       # Off by default (the owner tests builds through TestFlight). Run it by hand from
       # Actions → CI → Run workflow, ticking "screenshots".
       - name: Screenshots and screen recording

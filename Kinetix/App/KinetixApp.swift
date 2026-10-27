@@ -24,7 +24,7 @@ struct KinetixApp: App {
         }
         if launch.seedSample {
             MainActor.assumeIsolated {
-                SampleData.seed(into: container.mainContext)
+                SampleData.seed(into: container.mainContext, weeksToRace: launch.seedWeeks)
                 if launch.seedHistory {
                     SampleData.seedHistory(into: container.mainContext)
                     HealthService.shared.loadSample()
@@ -52,6 +52,11 @@ struct LaunchOptions {
     var seedSample: Bool { isUITesting && arguments.contains("-seed-sample") }
     /// Also add four weeks of past training (dashboard screenshots).
     var seedHistory: Bool { isUITesting && arguments.contains("-seed-history") }
+    /// Weeks until the sample race (default 12), e.g. `-seed-weeks 40` for a long plan.
+    var seedWeeks: Int? {
+        guard isUITesting, let i = arguments.firstIndex(of: "-seed-weeks"), i + 1 < arguments.count else { return nil }
+        return Int(arguments[i + 1])
+    }
     var forceDark: Bool { isUITesting && arguments.contains("-dark") }
 }
 
