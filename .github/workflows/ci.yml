@@ -83,7 +83,8 @@ jobs:
           # While the tests run, sample the app every 20 s so a hang shows where it's stuck.
           mkdir -p samples
           ( n=0; while true; do sleep 20; n=$((n+1))
-              pid=$(pgrep -f "Kinetix.app/Kinetix$" | head -n 1)
+              pid=$( (pgrep -x Kinetix; pgrep -f "/Kinetix.app/Kinetix") | head -n 1)
+              [ "$n" = 1 ] && ps ax | grep -i kinetix | grep -v grep | cut -c1-200
               [ -n "$pid" ] && sample "$pid" 2 -file "samples/sample-$(printf %03d $n).txt" >/dev/null 2>&1
             done ) &
           SAMPLER=$!
