@@ -28,8 +28,7 @@ struct StrengthSummaryView: View {
                 HStack {
                     KXMetric(label: "Time", value: Units.formatMinutesSeconds(summary.durationSeconds), size: .small)
                     Spacer()
-                    KXMetric(label: "Volume", value: Units.formatWeight(kg: summary.volumeKg, units: units),
-                             unit: Units.weightUnitLabel(units), size: .small)
+                    KXMetric(label: "Volume", value: DisplayFormat(units: units).volume(summary.volumeKg), size: .small)
                     Spacer()
                     KXMetric(label: "Sets", value: "\(summary.completedSets)", size: .small)
                     Spacer()
@@ -76,6 +75,7 @@ struct StrengthSummaryView: View {
                 }
                 .kxCard()
                 }
+                if let log { SaveAsTemplateButton(source: .gym(log)) }
             }
             .padding(KXSpacing.screenMargin)
         }

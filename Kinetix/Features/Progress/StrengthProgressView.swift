@@ -31,9 +31,9 @@ struct StrengthProgressView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: KXSpacing.xl) {
-            WeeklyBarChart(title: "Weekly volume", weeks: weeklyVolume, unitLabel: Units.weightUnitLabel(units),
-                           seriesName: "Lifting", color: KXColor.lift, valueFormatter: { format.weight($0) },
-                           scale: { units == .metric ? $0 : Units.kgToLb($0) })
+            WeeklyBarChart(title: "Weekly volume", weeks: weeklyVolume, unitLabel: format.volumeUnit,
+                           seriesName: "Lifting", color: KXColor.lift, valueFormatter: { format.volume($0) },
+                           scale: { units == .metric ? $0 / 1000 : Units.kgToLb($0) })
             liftsSection
             historyCard
         }
@@ -116,7 +116,7 @@ struct StrengthProgressView: View {
                                         .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
                                 }
                                 Spacer()
-                                Text(format.weight(workout.volumeKg)).font(KXFont.callout.monospacedDigit()).foregroundStyle(KXColor.ink)
+                                Text(format.volume(workout.volumeKg)).font(KXFont.callout.monospacedDigit()).foregroundStyle(KXColor.ink)
                                 Image(systemName: "chevron.right").font(.caption).foregroundStyle(KXColor.inkTertiary).accessibilityHidden(true)
                             }
                             .padding(.vertical, KXSpacing.xxs)
@@ -171,7 +171,7 @@ struct StrengthSessionDetailView: View {
                     Text(log.title.isEmpty ? "Strength" : log.title).font(KXFont.display).foregroundStyle(KXColor.ink)
                 }
                 HStack {
-                    KXMetric(label: "Volume", value: format.weight(log.volumeKg), size: .small)
+                    KXMetric(label: "Volume", value: format.volume(log.volumeKg), size: .small)
                     Spacer()
                     KXMetric(label: "Time", value: Units.formatMinutesSeconds(log.durationSeconds), size: .small)
                     Spacer()
@@ -200,6 +200,7 @@ struct StrengthSessionDetailView: View {
                     exerciseCard(exercise.sets)
                 }
 
+                SaveAsTemplateButton(source: .gym(log))
                 Button(role: .destructive) { confirmDelete = true } label: {
                     Label("Delete session", systemImage: "trash")
                 }

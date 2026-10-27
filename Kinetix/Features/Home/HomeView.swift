@@ -23,6 +23,8 @@ struct HomeView: View {
     @State private var actionSession: PlannedSessionModel?
     @State private var detailSession: PlannedSessionModel?
     @State private var showCalendar = false
+    @State private var openRun: RunLogModel?
+    @State private var openLift: StrengthLogModel?
     /// Which of today's sessions the tile shows (nil: the first not yet done).
     @State private var tileIndex: Int?
     @State private var banner: String?
@@ -46,6 +48,11 @@ struct HomeView: View {
         return sessions
             .filter { !$0.isSoftDeleted && calendar.isDateInToday($0.date) && ($0.plan?.isActive ?? true) }
             .sorted { $0.slot == .morning && $1.slot == .evening }
+    }
+
+    /// Everything finished today, for the Done today card.
+    private var doneToday: [DoneTodayCard.Item] {
+        DoneTodayCard.items(runs: runs, lifts: lifts, external: integrations.loadWorkouts)
     }
 
     private var layout: DashboardLayout { settingsModels.first?.dashboardLayout ?? .default }
@@ -77,6 +84,8 @@ struct HomeView: View {
                 SessionDetailView(session: session)
             }
             .navigationDestination(isPresented: $showCalendar) { TrainingCalendarView() }
+            .navigationDestination(item: $openRun) { RunDetailView(log: $0, units: units) }
+            .navigationDestination(item: $openLift) { StrengthSessionDetailView(log: $0, units: units) }
         }
         .sheet(isPresented: $showEditDashboard) {
             EditDashboardView(layout: layout) { saveLayout($0) }
@@ -234,6 +243,9 @@ struct HomeView: View {
         switch card {
         case .today:
             if profile != nil { todayTiles(data: data, showWeek: layout.visibleCards.contains(.weekStrip)) }
+            if !doneToday.isEmpty {
+                DoneTodayCard(items: doneToday, units: units, onOpenRun: { openRun = $0 }, onOpenLift: { openLift = $0 })
+            }
         case .checkIn:
             // Before it's logged it sits where it's placed; afterwards it's at the bottom.
             if data.todaysCheckIn == nil { checkInCard(data) }

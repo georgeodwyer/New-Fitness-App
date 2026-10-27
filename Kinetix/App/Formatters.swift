@@ -30,6 +30,22 @@ struct DisplayFormat {
         Units.formatWeight(kg: kg, units: units) + " " + Units.weightUnitLabel(units)
     }
 
+    /// Lifting volume (weight × reps added up): tonnes in metric ("6.2 t", "0.85 t"),
+    /// thousands of pounds in imperial ("13.6k lb").
+    func volume(_ kg: Double) -> String {
+        switch units {
+        case .metric:
+            let tonnes = kg / 1000
+            return String(format: tonnes >= 10 ? "%.0f t" : (tonnes >= 1 ? "%.1f t" : "%.2f t"), tonnes)
+        case .imperial:
+            let pounds = Units.kgToLb(kg)
+            return pounds >= 1000 ? String(format: "%.1fk lb", pounds / 1000) : "\(Int(pounds.rounded())) lb"
+        }
+    }
+
+    /// The unit volume charts use: tonnes or pounds.
+    var volumeUnit: String { units == .metric ? "t" : "lb" }
+
     /// A set's weight, or "pick a weight" for a machine they haven't used yet (0).
     func load(_ kg: Double) -> String { kg > 0 ? weight(kg) : "pick a weight" }
 

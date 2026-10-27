@@ -85,4 +85,32 @@ final class CustomRunTests: XCTestCase {
         XCTAssertTrue(events.contains { if case .segmentStarted(0, _, _) = $0 { return true }; return false })
         XCTAssertEqual(engine.snapshot().segment?.kind, .warmUp)
     }
+
+    func testFinishedRunFoldsIntoBlocks() throws {
+        let target = PaceRange(fastest: Pace(secondsPerKm: 235), slowest: Pace(secondsPerKm: 245))
+        var segments = [RunSegment(kind: .warmUp, length: .distance(meters: 2000))]
+        for rep in 1...4 {
+            segments.append(RunSegment(kind: .work, length: .distance(meters: 800), targetPace: target, label: "Rep \(rep) of 4"))
+            if rep < 4 { segments.append(RunSegment(kind: .recovery, length: .duration(seconds: 90))) }
+        }
+        segments.append(RunSegment(kind: .coolDown, length: .distance(meters: 1500)))
+        let workout = CustomRunWorkout(name: "Intervals", type: .intervals, structure: RunStructure(segments: segments))
+        XCTAssertEqual(workout.blocks.count, 3)
+        XCTAssertEqual(workout.blocks[0].steps.map(\.kind), [.warmUp])
+        XCTAssertEqual(workout.blocks[1].repeats, 4)
+        XCTAssertEqual(workout.blocks[1].steps.map(\.kind), [.work, .recovery])
+        XCTAssertEqual(workout.blocks[1].steps[0].target, .range(target))
+        XCTAssertEqual(workout.blocks[2].steps.map(\.kind), [.coolDown])
+
+        // A progression run (no repeats) stays as one block of its steps.
+        let progression = RunStructure(segments: [
+            RunSegment(kind: .steady, length: .distance(meters: 3000)),
+            RunSegment(kind: .steady, length: .distance(meters: 2000), targetPace: target),
+            RunSegment(kind: .work, length: .distance(meters: 1000), targetPace: target)
+        ])
+        let single = CustomRunWorkout(name: "Progression", type: .tempo, structure: progression)
+        XCTAssertEqual(single.blocks.count, 1)
+        XCTAssertEqual(single.blocks[0].steps.count, 3)
+        XCTAssertEqual(RecordRunType(session: .intervals), .intervals)
+    }
 }

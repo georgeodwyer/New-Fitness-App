@@ -132,7 +132,7 @@ extension ShareCardData {
             kind: .strength,
             title: log.title.isEmpty ? "Strength" : log.title,
             subtitle: log.startedAt.formatted(.dateTime.weekday(.wide).day().month(.wide)),
-            metrics: [("Volume", format.weight(log.volumeKg)),
+            metrics: [("Volume", format.volume(log.volumeKg)),
                       ("Time", Units.formatMinutesSeconds(log.durationSeconds)),
                       ("Sets", "\(completed.count)")],
             lines: lines,

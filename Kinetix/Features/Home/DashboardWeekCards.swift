@@ -33,11 +33,7 @@ struct WeekProgressCard: View {
         .kxCard()
     }
 
-    private func compactWeight(_ kg: Double) -> String {
-        let value = units == .metric ? kg : Units.kgToLb(kg)
-        let unit = Units.weightUnitLabel(units)
-        return value >= 1000 ? String(format: "%.1fk %@", value / 1000, unit) : "\(Int(value)) \(unit)"
-    }
+    private func compactWeight(_ kg: Double) -> String { DisplayFormat(units: units).volume(kg) }
 
     private var adherence: some View {
         let a = data.adherence

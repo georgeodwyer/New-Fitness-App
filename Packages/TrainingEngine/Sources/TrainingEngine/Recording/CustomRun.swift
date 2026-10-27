@@ -258,3 +258,72 @@ extension CustomRunWorkout {
         return CustomRunWorkout(name: type.displayName, type: type, blocks: blocks)
     }
 }
+
+extension CustomRunWorkout {
+    /// A saved workout from a run's steps (e.g. a finished planned session), with repeats
+    /// folded back into blocks: warm-up, 6 × (800 m + 90 s jog), cool-down.
+    public init(name: String, type: RecordRunType, structure: RunStructure) {
+        let steps = structure.segments.map { segment in
+            WorkoutStep(kind: segment.kind, length: segment.length, target: segment.targetPace.map(PaceTarget.range))
+        }
+        func same(_ a: WorkoutStep, _ b: WorkoutStep) -> Bool {
+            a.kind == b.kind && a.length == b.length && a.target == b.target
+        }
+        var blocks: [RunBlock] = []
+        var loose: [WorkoutStep] = []
+        func flushLoose() {
+            if !loose.isEmpty { blocks.append(RunBlock(repeats: 1, steps: loose)) }
+            loose = []
+        }
+        var i = 0
+        while i < steps.count {
+            // A repeating pattern of one or two steps (rep, or rep + recovery) starting with work.
+            var found: (length: Int, repeats: Int)?
+            if steps[i].kind == .work {
+                for length in [2, 1] where i + length <= steps.count {
+                    let pattern = Array(steps[i..<(i + length)])
+                    if length == 2 && pattern[1].kind == .work { continue }
+                    var repeats = 1
+                    var next = i + length
+                    while next + length <= steps.count, zip(pattern, steps[next..<(next + length)]).allSatisfy(same) {
+                        repeats += 1
+                        next += length
+                    }
+                    // The last rep often has no recovery after it.
+                    var lastRepAlone = false
+                    if length == 2, next < steps.count, same(steps[next], pattern[0]) {
+                        repeats += 1
+                        lastRepAlone = true
+                    }
+                    if repeats >= 2 {
+                        found = (length, repeats)
+                        i = next + (lastRepAlone ? 1 : 0)
+                        flushLoose()
+                        blocks.append(RunBlock(repeats: repeats, steps: pattern.map { WorkoutStep(kind: $0.kind, length: $0.length, target: $0.target) }))
+                        break
+                    }
+                }
+            }
+            if found == nil {
+                loose.append(steps[i])
+                i += 1
+            }
+        }
+        flushLoose()
+        self.init(name: name, type: type, blocks: blocks)
+    }
+}
+
+extension RecordRunType {
+    /// The saved-workout type for a plan session type.
+    public init(session: RunSessionType?) {
+        switch session {
+        case .easy: self = .easy
+        case .recovery: self = .recovery
+        case .long: self = .long
+        case .tempo: self = .tempo
+        case .intervals: self = .intervals
+        case nil: self = .free
+        }
+    }
+}

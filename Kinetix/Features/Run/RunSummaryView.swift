@@ -48,6 +48,7 @@ struct RunSummaryView: View {
                 if !summary.splits.isEmpty { splitsCard }
                 if let laps = summary.laps, !laps.isEmpty { LapsCard(laps: laps, format: format) }
                 if !summary.segments.isEmpty { PlannedVsActualCard(results: summary.segments, format: format) }
+                if let log, log.isFinished { SaveAsTemplateButton(source: .run(log)) }
             }
             .padding(KXSpacing.screenMargin)
         }

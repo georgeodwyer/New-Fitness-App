@@ -50,7 +50,7 @@ struct ProgressSummaryView: View {
             HStack(alignment: .top) {
                 KXMetric(label: "Running", value: format.distance(meters), detail: "\(weekRuns.count) run\(weekRuns.count == 1 ? "" : "s")", size: .small)
                 Spacer()
-                KXMetric(label: "Gym", value: "\(weekLifts.count)", detail: volume > 0 ? format.weight(volume) : "sessions", size: .small)
+                KXMetric(label: "Gym", value: "\(weekLifts.count)", detail: volume > 0 ? format.volume(volume) : "sessions", size: .small)
                 Spacer()
                 KXMetric(label: "Time", value: Self.hours(seconds), detail: "training", size: .small)
             }

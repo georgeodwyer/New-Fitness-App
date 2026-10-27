@@ -42,6 +42,7 @@ struct RunDetailView: View {
                 if !log.segmentResults.isEmpty { PlannedVsActualCard(results: log.segmentResults, format: format) }
                 if let planned { plannedCard(planned) }
                 destinationsCard
+                SaveAsTemplateButton(source: .run(log))
                 Button(role: .destructive) { confirmDelete = true } label: {
                     Label("Delete run", systemImage: "trash")
                 }
