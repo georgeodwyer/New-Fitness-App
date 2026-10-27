@@ -278,36 +278,47 @@ struct StrengthWorkoutView: View {
         .padding(.vertical, KXSpacing.sm)
     }
 
+    /// Rest countdown: a card inside the screen margins, in the normal card colours so it
+    /// sits right in light and dark mode.
     private var restBanner: some View {
         TimelineView(.periodic(from: .now, by: 0.5)) { context in
             let remaining = max(0, (model.restEndsAt ?? context.date).timeIntervalSince(context.date))
-            HStack(spacing: KXSpacing.md) {
+            HStack(spacing: KXSpacing.sm) {
                 ZStack {
-                    Circle().stroke(KXColor.onInverted.opacity(0.2), lineWidth: 4)
+                    Circle().stroke(KXColor.border, lineWidth: 4)
                     Circle()
                         .trim(from: 0, to: model.restTotalSeconds > 0 ? remaining / model.restTotalSeconds : 0)
                         .stroke(KXColor.accent, style: StrokeStyle(lineWidth: 4, lineCap: .round))
                         .rotationEffect(.degrees(-90))
                 }
                 .frame(width: 36, height: 36)
+                .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 0) {
-                    KXOverline(remaining > 0 ? "Rest" : "Rest done · start when ready", color: KXColor.onInverted.opacity(0.7))
-                    Text(Units.formatMinutesSeconds(remaining))
-                        .font(KXFont.metricSmall)
-                        .foregroundStyle(KXColor.onInverted)
+                    KXOverline(remaining > 0 ? "Rest" : "Rest done", color: KXColor.inkSecondary)
+                    Text(remaining > 0 ? Units.formatMinutesSeconds(remaining) : "Start when ready")
+                        .font(remaining > 0 ? KXFont.metricSmall : KXFont.bodyEmphasis)
+                        .foregroundStyle(KXColor.ink)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                 }
-                Spacer()
+                .layoutPriority(1)
+                Spacer(minLength: KXSpacing.xs)
                 Button("+15s") { model.extendRest(by: 15) }
                     .buttonStyle(.kx(.outlined))
-                    .environment(\.colorScheme, .dark)
+                    .fixedSize()
                 Button("Skip") { model.skipRest() }
                     .buttonStyle(.kx(.primary))
+                    .fixedSize()
             }
             .accessibilityElement(children: .contain)
             .accessibilityLabel("Rest, \(Int(remaining)) seconds remaining")
         }
-        .padding(KXSpacing.md)
-        .background(KXColor.inverted)
+        .padding(.horizontal, KXSpacing.md)
+        .padding(.vertical, KXSpacing.sm)
+        .background(KXColor.surface, in: RoundedRectangle(cornerRadius: KXRadius.md, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: KXRadius.md, style: .continuous).strokeBorder(KXColor.accent.opacity(0.5), lineWidth: 1))
+        .padding(.horizontal, KXSpacing.screenMargin)
+        .padding(.vertical, KXSpacing.xs)
     }
 }
 
