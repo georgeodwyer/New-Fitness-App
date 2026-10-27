@@ -179,6 +179,22 @@ struct StrengthWorkoutView: View {
     /// Start set → Finish set (timed) for the next set; Finish workout once they're all done.
     @ViewBuilder
     private var setButton: some View {
+        HStack(spacing: KXSpacing.sm) {
+            if model.canUndo {
+                Button { model.undoLast() } label: {
+                    Image(systemName: "arrow.uturn.backward").font(.body.weight(.semibold))
+                }
+                .buttonStyle(.kx(.outlined))
+                .fixedSize()
+                .accessibilityLabel(model.undoLabel)
+                .accessibilityIdentifier("gym.undo")
+            }
+            mainSetButton
+        }
+        .padding(KXSpacing.screenMargin)
+    }
+
+    private var mainSetButton: some View {
         VStack(spacing: KXSpacing.xs) {
             if model.totalSets > 0, model.nextSet != nil {
                 if let summary = model.nextSetSummary {
@@ -209,7 +225,6 @@ struct StrengthWorkoutView: View {
                     .disabled(model.totalSets == 0)
             }
         }
-        .padding(KXSpacing.screenMargin)
     }
 
     private var keepTitle: String { model.pendingKeep.map { "Keep \($0.to.name)?" } ?? "" }

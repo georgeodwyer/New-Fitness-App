@@ -46,8 +46,11 @@ enum StrengthService {
         for (order, exercise) in prescription.enumerated() {
             // Use the latest working weight (progression may have moved on since the plan was generated).
             let weight = exercise.weightKg.map { weights[exercise.progressionKey] ?? $0 } ?? 0
+            // Reps climb one at a time from last time (not straight to the top of the range).
+            let previous = GymService.previousSets(exerciseId: exercise.exerciseId, excluding: log, in: context)
             for index in 0..<exercise.sets {
-                let set = SetLogModel(exerciseId: exercise.exerciseId, setIndex: index, targetReps: exercise.repRange.upper, targetWeightKg: weight, now: now)
+                let reps = RepTarget.reps(setIndex: index, range: exercise.repRange, weightKg: weight, previous: previous)
+                let set = SetLogModel(exerciseId: exercise.exerciseId, setIndex: index, targetReps: reps, targetWeightKg: weight, now: now)
                 set.progressionKey = exercise.progressionKey
                 set.exerciseName = exercise.name
                 set.exerciseOrder = order

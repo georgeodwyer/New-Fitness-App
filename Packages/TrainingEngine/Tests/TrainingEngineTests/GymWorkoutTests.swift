@@ -31,6 +31,17 @@ final class GymWorkoutTests: XCTestCase {
                        curl.defaultWeight(for: profile.liftingExperience))
     }
 
+    func testRepTargetsClimbOneAtATime() {
+        let range = RepRange(8, 12)
+        let previous = [PreviousSet(weightKg: 10, reps: 8), PreviousSet(weightKg: 10, reps: 8), PreviousSet(weightKg: 10, reps: 7)]
+        XCTAssertEqual(RepTarget.reps(setIndex: 0, range: range, weightKg: 10, previous: previous), 9, "8 last time → 9, not 12")
+        XCTAssertEqual(RepTarget.reps(setIndex: 2, range: range, weightKg: 10, previous: previous), 8)
+        XCTAssertEqual(RepTarget.reps(setIndex: 3, range: range, weightKg: 10, previous: previous), 8, "Extra sets copy the last one")
+        XCTAssertEqual(RepTarget.reps(setIndex: 0, range: range, weightKg: 10, previous: [PreviousSet(weightKg: 10, reps: 12)]), 12)
+        XCTAssertEqual(RepTarget.reps(setIndex: 0, range: range, weightKg: 12, previous: previous), 8, "Heavier: back to the bottom")
+        XCTAssertEqual(RepTarget.reps(setIndex: 0, range: range, weightKg: 10, previous: []), 8, "First time: the bottom")
+    }
+
     func testAlternativesPreferTheSameMovementAndRespectEquipment() throws {
         let library = TestSupport.bundledTemplates
         let bench = library.alternatives(to: "barbell-bench-press", equipment: .fullGym)

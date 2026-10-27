@@ -124,6 +124,7 @@ final class StrengthWorkoutModel {
         switch command {
         case .startSet: startSet()
         case .finishSet: finishSet()
+        case .undo: undoLast()
         default: break
         }
     }
@@ -244,11 +245,52 @@ final class StrengthWorkoutModel {
     }
 
     /// Starts timing the next set. Any rest still showing ends (rest is a guide, not a gate).
+    /// The last Start set / Finish set, so it can be undone (until the next one).
+    private enum LastAction {
+        case started
+        case finished(setId: UUID, previousStart: Date?, activeSeconds: Double?)
+    }
+    private var lastAction: LastAction?
+    var canUndo: Bool { lastAction != nil }
+    /// "Undo finish" or "Undo start", for the button's label.
+    var undoLabel: String {
+        switch lastAction {
+        case .started?: return "Undo start"
+        case .finished?: return "Undo finish"
+        case nil: return "Undo"
+        }
+    }
+
     func startSet() {
         guard nextSet != nil, setStartedAt == nil else { return }
         if restEndsAt != nil { skipRest() }
         lastFinishedSetId = nil
         setStartedAt = .now
+        lastAction = .started
+        updateLockScreen()
+    }
+
+    /// Takes back the last Start set (back to resting) or Finish set (the set is open
+    /// again and its timer carries on from when it started).
+    func undoLast() {
+        switch lastAction {
+        case .started?:
+            setStartedAt = nil
+        case .finished(let setId, let previousStart, let activeSeconds)?:
+            guard let set = log.orderedSets.first(where: { $0.id == setId }) else { break }
+            log.activeSeconds = max(0, log.activeSeconds - (set.activeSeconds ?? 0))
+            set.activeSeconds = activeSeconds
+            set.completedAt = nil
+            set.touch()
+            log.touch()
+            restEndsAt = nil
+            lastFinishedSetId = nil
+            setStartedAt = previousStart
+            save()
+        case nil:
+            return
+        }
+        lastAction = nil
         updateLockScreen()
     }
 
@@ -256,6 +298,7 @@ final class StrengthWorkoutModel {
     func finishSet() {
         guard let set = nextSet else { return }
         let now = Date()
+        lastAction = .finished(setId: set.id, previousStart: setStartedAt, activeSeconds: set.activeSeconds)
         if let start = setStartedAt {
             let seconds = max(0, now.timeIntervalSince(start))
             set.activeSeconds = seconds

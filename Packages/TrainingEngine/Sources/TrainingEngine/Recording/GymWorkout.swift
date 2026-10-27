@@ -146,6 +146,20 @@ public struct PrefilledSet: Equatable, Sendable {
     public var reps: Int
 }
 
+/// Target reps for a planned set (double progression): one more than last time at the
+/// same weight, up to the top of the range; the bottom of the range after a weight
+/// increase or the first time.
+public enum RepTarget {
+    public static func reps(setIndex: Int, range: RepRange, weightKg: Double, previous: [PreviousSet]) -> Int {
+        guard !previous.isEmpty else { return range.lower }
+        let last = previous[min(setIndex, previous.count - 1)]
+        // Heavier than last time (by more than rounding): start again at the bottom.
+        if weightKg > last.weightKg + 0.01 { return range.lower }
+        let next = last.reps + 1
+        return min(max(next, range.lower), range.upper)
+    }
+}
+
 public enum GymPrefill {
     /// Progression key for sets logged outside the plan, so they never move plan weights.
     public static func freeKey(exerciseId: String) -> String { "\(exerciseId).free" }
