@@ -159,15 +159,15 @@ final class StrainTests: XCTestCase {
     func testTargetFollowsPlanAndRecovery() {
         let hardDay = StrainTarget.make(plannedLoad: 240, everydayLoad: 25, usualDailyLoad: 100, recovery: nil)
         let restDay = StrainTarget.make(plannedLoad: 0, everydayLoad: 25, usualDailyLoad: 100, recovery: nil)
-        XCTAssertGreaterThan(hardDay.middle, restDay.middle + 5)
-        XCTAssertEqual(hardDay.high - hardDay.low, 3, accuracy: 0.001)
+        XCTAssertGreaterThan(hardDay.middle, restDay.middle + 20)
+        XCTAssertEqual(hardDay.high - hardDay.low, 14, accuracy: 0.001)
         let lowRecovery = RecoveryScore(score: 20, parts: [])
         let highRecovery = RecoveryScore(score: 85, parts: [])
         let eased = StrainTarget.make(plannedLoad: 240, everydayLoad: 25, usualDailyLoad: 100, recovery: lowRecovery)
         let pushed = StrainTarget.make(plannedLoad: 240, everydayLoad: 25, usualDailyLoad: 100, recovery: highRecovery)
         XCTAssertLessThan(eased.middle, hardDay.middle)
         XCTAssertGreaterThan(pushed.middle, hardDay.middle)
-        XCTAssertTrue(eased.reason.contains("recovery is low"))
+        XCTAssertTrue(eased.reason.contains("Recovery is 20"))
     }
 
     func testLegsAfterLegDayAndLongRun() {
