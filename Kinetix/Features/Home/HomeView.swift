@@ -81,7 +81,7 @@ struct HomeView: View {
             .background(KXColor.background.ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(item: $detailSession) { session in
-                SessionDetailView(session: session)
+                PlannedSessionDestination(session: session)
             }
             .navigationDestination(isPresented: $showCalendar) { TrainingCalendarView() }
             .navigationDestination(item: $openRun) { RunDetailView(log: $0, units: units) }

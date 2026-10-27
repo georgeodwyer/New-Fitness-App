@@ -147,7 +147,7 @@ struct PlanView: View {
             }
             .navigationDestination(isPresented: $showCalendar) { TrainingCalendarView() }
             .navigationDestination(for: PlannedSessionModel.self) { session in
-                SessionDetailView(session: session)
+                PlannedSessionDestination(session: session)
             }
             .fullScreenCover(isPresented: $showOnboarding, onDismiss: {
                 // Just built a plan: show the app tour once.
@@ -271,18 +271,26 @@ struct PlanView: View {
     }
 
     private func sessionRow(_ session: PlannedSessionModel) -> some View {
-        HStack(spacing: KXSpacing.md) {
-            Image(systemName: session.kind.symbolName)
-                .foregroundStyle(session.kind.tint)
+        let done = session.status == .completed
+        let skipped = session.status == .skipped
+        return HStack(spacing: KXSpacing.md) {
+            Image(systemName: done ? "checkmark.circle.fill" : session.kind.symbolName)
+                .foregroundStyle(done ? KXColor.success : session.kind.tint)
                 .frame(width: 28)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: KXSpacing.xxs) {
-                Text(session.title).font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink)
+                Text(session.title).font(KXFont.bodyEmphasis).foregroundStyle(skipped ? KXColor.inkTertiary : KXColor.ink)
+                    .strikethrough(skipped)
                 Text("\(session.summary) · \(Int(session.plannedDurationMinutes)) min")
                     .font(KXFont.caption)
                     .foregroundStyle(KXColor.inkSecondary)
             }
             Spacer()
+            if done {
+                KXChip(text: "Done", systemImage: "checkmark", variant: .success)
+            } else if skipped {
+                KXChip(text: "Skipped", variant: .outlined)
+            }
             Image(systemName: "chevron.right")
                 .font(.caption)
                 .foregroundStyle(KXColor.inkTertiary)
