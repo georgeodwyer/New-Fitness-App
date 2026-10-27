@@ -73,6 +73,7 @@
 		714C4CF6CA2F0650A2C6E22A /* HealthViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7D04D4055C041D71F46AC5F /* HealthViews.swift */; };
 		72BB11CDF6863C2C39FDA03F /* WorkoutActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C470E8546A565DBFCC3CB74 /* WorkoutActivity.swift */; };
 		75556304FD12FA065E0F81F2 /* RunWorkoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12C1324B1AC05AA177D5BF93 /* RunWorkoutView.swift */; };
+		77489A72C05C50887F2B9E0F /* BarlowCondensed-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0628314AAB0F25B9D1812815 /* BarlowCondensed-SemiBold.ttf */; };
 		7ACA70325602396261B857E8 /* AccountService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27D5D1CA3AE70EB8EF9D18FD /* AccountService.swift */; };
 		7C7C3B1A994523C342761A39 /* LogModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08A053F7F4B39B04FED73E26 /* LogModels.swift */; };
 		7CA88CFE8439E3F9F876A122 /* WatchStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4279740084F6D852D0D6FA4 /* WatchStore.swift */; };
@@ -92,8 +93,11 @@
 		997D9CDDED136526D197815A /* KinetixSync in Frameworks */ = {isa = PBXBuildFile; productRef = 2CA9B1268AB94CE9AE75FDC2 /* KinetixSync */; };
 		99894027FBB2F90E7717BE0D /* SaveAsTemplateButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB543700E16287B81819AF2B /* SaveAsTemplateButton.swift */; };
 		9C9188C072E5E81D7B8839E3 /* KinetixWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = F90D4CAA5435C52D08225A30 /* KinetixWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		9CC7887F47F654851696D89E /* Inter-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9FEF325D88A33F77DC18605A /* Inter-Regular.ttf */; };
 		9F4B9AF3C9674797C22FF1D7 /* GymSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AFFA954318BD83DFBE4F5ED /* GymSetupView.swift */; };
 		9F6D5D7C390529C797D53991 /* UnitPreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A699B6FB1001149DC010A14 /* UnitPreference.swift */; };
+		A125DAE7DFD8901C454AC776 /* BarlowCondensed-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 325D39D3C463CAE911C0A916 /* BarlowCondensed-Bold.ttf */; };
+		A19788111D2249802E071BA9 /* Inter-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 76AA41DAE169FF4021C02273 /* Inter-Medium.ttf */; };
 		A37859534B61490F5D344E6B /* IntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3880708490C8993B63991C6A /* IntegrationTests.swift */; };
 		AAB951D77E1C14D2213A481B /* LaunchSplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEBF6BA7F003C6E83A36A08F /* LaunchSplashView.swift */; };
 		AB990DAD91CD53F0EC663C56 /* HistoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54B7256C957EAF28749C4ECF /* HistoryTests.swift */; };
@@ -102,6 +106,7 @@
 		ACC819641399A2B31747E214 /* StravaImportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 857D65AD8663F006DA098AF7 /* StravaImportTests.swift */; };
 		B29A94D91EADFC17D2BA06B6 /* OnboardingModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53E2CA92347B3217FE2818A5 /* OnboardingModel.swift */; };
 		B3732468744D9B820C1E44A5 /* OnboardingSteps.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71127FE0289D140375A18838 /* OnboardingSteps.swift */; };
+		B5CD32C2CBD37306B9F4B976 /* Inter-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 732E1D886829C20FF7706682 /* Inter-Bold.ttf */; };
 		B7AD8F90B5F92D126482BD26 /* RouteModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6D1D0ED0DB03CD0353CFE18 /* RouteModelTests.swift */; };
 		B86925D4CFEAF0F0AB267E19 /* DesignGalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF24C085F57A681388D5C38D /* DesignGalleryView.swift */; };
 		B9DF27A2A87851CD83A8AA2E /* RoutePlannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6FACB92EC2C6DF95CCBEFF5 /* RoutePlannerView.swift */; };
@@ -128,6 +133,7 @@
 		CE7E1D1D0F5BB1979A48EA1F /* ActivityExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24EE4D4AE4E5EC11003FF81E /* ActivityExportService.swift */; };
 		CF1312B2EEA8C82121C28541 /* LapsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58CC4DBE6FC7ADA3A6C7F4EE /* LapsCard.swift */; };
 		CF88D4090D69C8A456D858FE /* TrainingCalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78058F52816F02AF1FB746E5 /* TrainingCalendarView.swift */; };
+		CFA606BEB9C2629F6B52DC40 /* Inter-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 102EDF5E900EC729A6DFBF37 /* Inter-SemiBold.ttf */; };
 		D01F9F689C654DD47EDC8ED5 /* AccountSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90BA113272970E6AD61E52D1 /* AccountSection.swift */; };
 		D06698D33FC2AC066E0A414A /* KXFont.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09457C53CBC5D758DE02ED68 /* KXFont.swift */; };
 		D11DEB954AE20FA65C016D3A /* GymLiveView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59C34693744398934B3DC293 /* GymLiveView.swift */; };
@@ -135,6 +141,7 @@
 		D1ADD89D851D0A6C48CD30E3 /* TrainingEngine in Frameworks */ = {isa = PBXBuildFile; productRef = 4DE9D951D067C603E67191DB /* TrainingEngine */; };
 		D252CB074F5B2866FB756DB0 /* RunningProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C67A71E900CE4D68CC760BF /* RunningProgressView.swift */; };
 		D39A8D1E0A1E8B229D26C427 /* ShareSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55937FA7CC685D3DBBA76FA0 /* ShareSessionView.swift */; };
+		D426DBC65ECE5FB8AA0355E7 /* BarlowCondensed-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = C180CD94B7829A809CF870A0 /* BarlowCondensed-Medium.ttf */; };
 		D476D771D5426B889C8C62E2 /* KXSessionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20939AE5B582C11C6898982 /* KXSessionCard.swift */; };
 		D53836873E2BCF0B8D71834C /* IntegrationsViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA9718F435F06430788DECB6 /* IntegrationsViews.swift */; };
 		DA069B8EE244D1C28E2ABD3B /* KinetixWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 440A4666F40E86B1CABE7D24 /* KinetixWatchApp.swift */; };
@@ -226,6 +233,7 @@
 /* Begin PBXFileReference section */
 		0147DFFEB3CB167E9DF43A4B /* RunServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunServiceTests.swift; sourceTree = "<group>"; };
 		03230B905B53975A34E0C37E /* Formatters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Formatters.swift; sourceTree = "<group>"; };
+		0628314AAB0F25B9D1812815 /* BarlowCondensed-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "BarlowCondensed-SemiBold.ttf"; sourceTree = "<group>"; };
 		074EA809EFF2571D597D33DA /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 		08A053F7F4B39B04FED73E26 /* LogModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogModels.swift; sourceTree = "<group>"; };
 		09457C53CBC5D758DE02ED68 /* KXFont.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXFont.swift; sourceTree = "<group>"; };
@@ -237,6 +245,7 @@
 		0D792A73A46409ABE2ED5AF2 /* PlanService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanService.swift; sourceTree = "<group>"; };
 		0DC769B996AC6DB47C6612B5 /* App.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = App.xcconfig; sourceTree = "<group>"; };
 		0E4B9C42AA415E0578CF122F /* CoachingSettingsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachingSettingsModel.swift; sourceTree = "<group>"; };
+		102EDF5E900EC729A6DFBF37 /* Inter-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-SemiBold.ttf"; sourceTree = "<group>"; };
 		12C1324B1AC05AA177D5BF93 /* RunWorkoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunWorkoutView.swift; sourceTree = "<group>"; };
 		12C7EAFA6B4C80F5771EBF80 /* RecordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordView.swift; sourceTree = "<group>"; };
 		130A6B35CC5FB984FCCD948F /* HealthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthService.swift; sourceTree = "<group>"; };
@@ -263,6 +272,7 @@
 		2FCE0202A3E975345AA0F2B0 /* KXProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXProgress.swift; sourceTree = "<group>"; };
 		3000B3D5DB9BC4ADD3017915 /* ProgressScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressScreen.swift; sourceTree = "<group>"; };
 		3238845C1F80144B68E1D0D4 /* RouteService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteService.swift; sourceTree = "<group>"; };
+		325D39D3C463CAE911C0A916 /* BarlowCondensed-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "BarlowCondensed-Bold.ttf"; sourceTree = "<group>"; };
 		3880708490C8993B63991C6A /* IntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntegrationTests.swift; sourceTree = "<group>"; };
 		3996EB82CA6A8C8F088B7F7C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		3CB8951AE011CBA263FE6226 /* VoiceCoach.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceCoach.swift; sourceTree = "<group>"; };
@@ -292,6 +302,8 @@
 		71127FE0289D140375A18838 /* OnboardingSteps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingSteps.swift; sourceTree = "<group>"; };
 		71405E462937064340577B61 /* KinetixApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KinetixApp.swift; sourceTree = "<group>"; };
 		72DC83A5774C0DFA7D49CB52 /* KXButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXButton.swift; sourceTree = "<group>"; };
+		732E1D886829C20FF7706682 /* Inter-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Bold.ttf"; sourceTree = "<group>"; };
+		76AA41DAE169FF4021C02273 /* Inter-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Medium.ttf"; sourceTree = "<group>"; };
 		76EC9F0A55E7B2D91BA49545 /* HealthDisclaimerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthDisclaimerView.swift; sourceTree = "<group>"; };
 		78058F52816F02AF1FB746E5 /* TrainingCalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingCalendarView.swift; sourceTree = "<group>"; };
 		79BC49909BB83B41E036C205 /* DashboardService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardService.swift; sourceTree = "<group>"; };
@@ -318,6 +330,7 @@
 		9D4B9D509AC09C29705FCC4B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		9EB4073696B3EE5AFE2200E5 /* StrengthServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrengthServiceTests.swift; sourceTree = "<group>"; };
 		9F0CC62D8E175B3EDF30B986 /* DashboardWeekCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardWeekCards.swift; sourceTree = "<group>"; };
+		9FEF325D88A33F77DC18605A /* Inter-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Regular.ttf"; sourceTree = "<group>"; };
 		A150A73A24DB8D5355ECAE20 /* BalanceServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BalanceServiceTests.swift; sourceTree = "<group>"; };
 		A29407132DCE8269B5454E50 /* RunListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunListView.swift; sourceTree = "<group>"; };
 		A35A3ED64048A8315BCB94E8 /* HeartRateZonesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeartRateZonesView.swift; sourceTree = "<group>"; };
@@ -341,6 +354,7 @@
 		BEBF6BA7F003C6E83A36A08F /* LaunchSplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchSplashView.swift; sourceTree = "<group>"; };
 		C020B6C7BA9E92A91574F16A /* PlannedSessionDestination.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlannedSessionDestination.swift; sourceTree = "<group>"; };
 		C1664E7DAA11627C79DB8265 /* KXEmptyState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXEmptyState.swift; sourceTree = "<group>"; };
+		C180CD94B7829A809CF870A0 /* BarlowCondensed-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "BarlowCondensed-Medium.ttf"; sourceTree = "<group>"; };
 		C29BBA81B297D8EE2CF1FF89 /* SyncTracked.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncTracked.swift; sourceTree = "<group>"; };
 		C35BD4AE3E888CB06C1AD8FA /* ProfileQuestionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileQuestionsView.swift; sourceTree = "<group>"; };
 		C407A14AC9EAA41D7E97C485 /* MiniWorkoutBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniWorkoutBar.swift; sourceTree = "<group>"; };
@@ -645,6 +659,20 @@
 			path = Features;
 			sourceTree = "<group>";
 		};
+		83A70283A963E947FB954514 /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				325D39D3C463CAE911C0A916 /* BarlowCondensed-Bold.ttf */,
+				C180CD94B7829A809CF870A0 /* BarlowCondensed-Medium.ttf */,
+				0628314AAB0F25B9D1812815 /* BarlowCondensed-SemiBold.ttf */,
+				732E1D886829C20FF7706682 /* Inter-Bold.ttf */,
+				76AA41DAE169FF4021C02273 /* Inter-Medium.ttf */,
+				9FEF325D88A33F77DC18605A /* Inter-Regular.ttf */,
+				102EDF5E900EC729A6DFBF37 /* Inter-SemiBold.ttf */,
+			);
+			path = Fonts;
+			sourceTree = "<group>";
+		};
 		8843943330CB9C27C2155A76 /* Kinetix */ = {
 			isa = PBXGroup;
 			children = (
@@ -680,6 +708,7 @@
 			children = (
 				9D4B9D509AC09C29705FCC4B /* Assets.xcassets */,
 				93A1DCAFCD6F85794718DCAA /* PrivacyInfo.xcprivacy */,
+				83A70283A963E947FB954514 /* Fonts */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -990,6 +1019,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				019C4AE040EEE60FFD47B6AF /* Assets.xcassets in Resources */,
+				A125DAE7DFD8901C454AC776 /* BarlowCondensed-Bold.ttf in Resources */,
+				D426DBC65ECE5FB8AA0355E7 /* BarlowCondensed-Medium.ttf in Resources */,
+				77489A72C05C50887F2B9E0F /* BarlowCondensed-SemiBold.ttf in Resources */,
+				B5CD32C2CBD37306B9F4B976 /* Inter-Bold.ttf in Resources */,
+				A19788111D2249802E071BA9 /* Inter-Medium.ttf in Resources */,
+				9CC7887F47F654851696D89E /* Inter-Regular.ttf in Resources */,
+				CFA606BEB9C2629F6B52DC40 /* Inter-SemiBold.ttf in Resources */,
 				5301A43F2906CE8182CCE4F8 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
