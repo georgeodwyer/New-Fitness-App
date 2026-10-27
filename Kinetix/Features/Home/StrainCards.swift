@@ -4,13 +4,14 @@ import TrainingEngine
 
 // MARK: - Strain and recovery
 
-/// Today's exertion ring, recovery and legs, kept to the numbers. Tap for what's behind them.
+/// Today's recovery dial, exertion against today's target, and the readings behind
+/// recovery (HRV, resting heart rate, sleep). Tap for the full breakdown.
 struct StrainCard: View {
     let report: StrainReport
     /// Last night's Health data isn't in yet, so there's no recovery score.
     var isWaitingForLastNight = false
 
-    @ScaledMetric(relativeTo: .largeTitle) private var ringSize: CGFloat = 112
+    @ScaledMetric(relativeTo: .largeTitle) private var dialSize: CGFloat = 206
     @State private var showDetail = false
 
     private var strain: Double { report.today.strain }
@@ -20,32 +21,38 @@ struct StrainCard: View {
         Button {
             showDetail = true
         } label: {
-            VStack(alignment: .leading, spacing: KXSpacing.md) {
-                HStack {
-                    KXSectionHeader("Exertion", subtitle: "Target \(TodayFormat.one(target.low))–\(TodayFormat.one(target.high))")
+            VStack(alignment: .leading, spacing: KXSpacing.lg) {
+                RecoveryDial(recovery: report.recovery, isWaitingForLastNight: isWaitingForLastNight)
+                    .frame(width: dialSize, height: dialSize * 0.86)
+                    .frame(maxWidth: .infinity)
+                    .accessibilityIdentifier("dashboard.recoveryBreakdown")
+                exertion
+                if let recovery = report.recovery {
+                    let readings = RecoveryReading.readings(recovery)
+                    if !readings.isEmpty {
+                        HStack(alignment: .top, spacing: KXSpacing.md) {
+                            ForEach(readings) { reading in
+                                reading.view.frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                        }
+                    }
+                }
+                HStack(spacing: KXSpacing.sm) {
+                    KXOverline("Legs")
+                    KXStatusPill(level: TodayFormat.legsLevel(report.legs.status), text: report.legs.status.title)
+                    Spacer(minLength: 0)
                     Image(systemName: "chevron.right")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(KXColor.inkTertiary)
                         .accessibilityHidden(true)
                 }
-                HStack(alignment: .center, spacing: KXSpacing.lg) {
-                    StrainRing(strain: strain, target: target)
-                        .frame(width: ringSize, height: ringSize)
-                    VStack(alignment: .leading, spacing: KXSpacing.md) {
-                        recovery
-                        legs
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                Text(TodayFormat.status(strain: strain, target: target))
-                    .font(KXFont.callout)
-                    .foregroundStyle(KXColor.inkSecondary)
+                .accessibilityElement(children: .combine)
             }
             .kxCard()
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityHint("Shows what's behind your exertion and recovery")
+        .accessibilityHint("Shows what's behind your recovery and exertion")
         .accessibilityIdentifier("dashboard.exertion")
         .sheet(isPresented: $showDetail) {
             TodayBodyDetailView(report: report, isWaitingForLastNight: isWaitingForLastNight)
@@ -53,38 +60,195 @@ struct StrainCard: View {
         }
     }
 
-    private var recovery: some View {
-        VStack(alignment: .leading, spacing: KXSpacing.xxs) {
-            KXOverline("Recovery")
-            if let recovery = report.recovery {
-                HStack(alignment: .firstTextBaseline, spacing: KXSpacing.xs) {
-                    Text("\(Int(recovery.score))")
-                        .font(KXFont.metricSmall)
-                        .foregroundStyle(KXColor.ink)
-                    // The colour is on a dot; the word stays in dark text so it's always readable.
-                    Circle().fill(TodayFormat.color(recovery.band)).frame(width: 8, height: 8)
-                        .accessibilityHidden(true)
-                    Text(recovery.band.title)
-                        .font(KXFont.captionEmphasis)
-                        .foregroundStyle(KXColor.ink)
-                }
-                .accessibilityIdentifier("dashboard.recoveryBreakdown")
-            } else {
-                Text(isWaitingForLastNight ? "Waiting for last night's sleep" : "Not yet")
-                    .font(KXFont.caption)
-                    .foregroundStyle(KXColor.inkSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+    private var exertion: some View {
+        VStack(alignment: .leading, spacing: KXSpacing.sm) {
+            HStack(alignment: .firstTextBaseline) {
+                KXOverline("Exertion today")
+                Spacer(minLength: KXSpacing.sm)
+                (Text(TodayFormat.one(strain)).font(KXFont.custom(.bold, 13, relativeTo: .caption)).foregroundColor(KXColor.ink)
+                    + Text(" · target \(TodayFormat.one(target.low))–\(TodayFormat.one(target.high))")
+                    .font(KXFont.caption).foregroundColor(KXColor.inkSecondary))
             }
+            ExertionBar(strain: strain, target: target)
+                .frame(height: 10)
+            Text(TodayFormat.status(strain: strain, target: target))
+                .font(KXFont.caption)
+                .foregroundStyle(KXColor.inkSecondary)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Exertion today \(TodayFormat.one(strain)) of 100")
+        .accessibilityValue("Target \(TodayFormat.one(target.low)) to \(TodayFormat.one(target.high)). \(TodayFormat.status(strain: strain, target: target))")
+    }
+}
+
+/// A 270° dial for today's recovery: red to amber to green, a marker at the score and the
+/// score itself in plain text.
+struct RecoveryDial: View {
+    let recovery: RecoveryScore?
+    var isWaitingForLastNight = false
+
+    private static let sweep = 0.75
+    private static let startAngle = 135.0
+
+    var body: some View {
+        GeometryReader { geo in
+            let size = min(geo.size.width, geo.size.height / 0.86)
+            let line = size * 0.075
+            let radius = (size - line) / 2 - 4
+            let center = CGPoint(x: geo.size.width / 2, y: size / 2)
+            let share = min(max((recovery?.score ?? 0) / 100, 0), 1)
+            let gradient = AngularGradient(colors: [KXColor.danger, KXColor.warning, KXColor.success],
+                                           center: .center, startAngle: .degrees(0), endAngle: .degrees(360 * Self.sweep))
+            ZStack {
+                Circle()
+                    .trim(from: 0, to: Self.sweep)
+                    .stroke(KXColor.border, style: StrokeStyle(lineWidth: line, lineCap: .round))
+                    .rotationEffect(.degrees(Self.startAngle))
+                    .frame(width: radius * 2, height: radius * 2)
+                    .position(center)
+                if recovery != nil {
+                    // A soft glow under the coloured part.
+                    Circle()
+                        .trim(from: 0, to: Self.sweep * share)
+                        .stroke(gradient, style: StrokeStyle(lineWidth: line, lineCap: .round))
+                        .rotationEffect(.degrees(Self.startAngle))
+                        .frame(width: radius * 2, height: radius * 2)
+                        .position(center)
+                        .blur(radius: line * 0.6)
+                        .opacity(0.5)
+                    Circle()
+                        .trim(from: 0, to: Self.sweep * share)
+                        .stroke(gradient, style: StrokeStyle(lineWidth: line, lineCap: .round))
+                        .rotationEffect(.degrees(Self.startAngle))
+                        .frame(width: radius * 2, height: radius * 2)
+                        .position(center)
+                    let angle = (Self.startAngle + 360 * Self.sweep * share) * .pi / 180
+                    Circle()
+                        .fill(KXColor.surface)
+                        .overlay(Circle().stroke(KXColor.ink, lineWidth: line * 0.3))
+                        .frame(width: line * 1.15, height: line * 1.15)
+                        .position(x: center.x + radius * cos(angle), y: center.y + radius * sin(angle))
+                }
+                VStack(spacing: 2) {
+                    KXOverline("Recovery")
+                    if let recovery {
+                        Text("\(Int(recovery.score))")
+                            .font(KXFont.number(size * 0.3, relativeTo: .largeTitle))
+                            .foregroundStyle(KXColor.ink)
+                        Text(TodayFormat.headline(recovery.band))
+                            .font(KXFont.captionEmphasis)
+                            .foregroundStyle(TodayFormat.color(recovery.band))
+                    } else {
+                        Text("–")
+                            .font(KXFont.number(size * 0.3, relativeTo: .largeTitle))
+                            .foregroundStyle(KXColor.inkTertiary)
+                        Text(isWaitingForLastNight ? "Waiting for last night's sleep" : "Not yet")
+                            .font(KXFont.caption)
+                            .foregroundStyle(KXColor.inkSecondary)
+                            .multilineTextAlignment(.center)
+                    }
+                }
+                .frame(width: radius * 1.5)
+                .position(center)
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(recovery.map { "Recovery \(Int($0.score)), \(TodayFormat.headline($0.band))" }
+                            ?? (isWaitingForLastNight ? "Recovery: waiting for last night's sleep" : "Recovery not yet available"))
+    }
+}
+
+/// Today's exertion (0–100) on a bar, with today's target range drawn as a dashed box.
+struct ExertionBar: View {
+    let strain: Double
+    let target: StrainTarget
+    @Environment(\.colorScheme) private var scheme
+
+    private func share(_ value: Double) -> CGFloat { CGFloat(min(max(value / Strain.maximum, 0), 1)) }
+
+    var body: some View {
+        GeometryReader { geo in
+            let width = geo.size.width, height = geo.size.height
+            ZStack(alignment: .leading) {
+                Capsule().fill(KXColor.surfaceTint)
+                Capsule()
+                    .fill(strain > target.high
+                          ? AnyShapeStyle(KXColor.warning)
+                          : scheme == .dark ? AnyShapeStyle(LinearGradient(colors: [KXColor.run, KXColor.accent], startPoint: .leading, endPoint: .trailing))
+                                            : AnyShapeStyle(KXColor.accent))
+                    .frame(width: max(height, width * share(strain)))
+                    .opacity(strain > 0 ? 1 : 0)
+                Capsule()
+                    .strokeBorder(KXColor.inkSecondary, style: StrokeStyle(lineWidth: 1.5, dash: [3, 3]))
+                    .frame(width: max(height, width * (share(target.high) - share(target.low))), height: height + 8)
+                    .offset(x: width * share(target.low))
+            }
+        }
+    }
+}
+
+/// One reading behind recovery for the row under the dial: "61 ms · ▲ 4% vs usual".
+struct RecoveryReading: Identifiable {
+    let label: String
+    let value: String
+    let unit: String
+    let note: String
+    let noteColor: Color
+    var id: String { label }
+
+    var view: some View {
+        VStack(alignment: .leading, spacing: 1) {
+            KXOverline(label)
+            (Text(value).font(KXFont.number(24, relativeTo: .title3)).foregroundColor(KXColor.ink)
+                + Text(unit.isEmpty ? "" : " " + unit).font(KXFont.caption).foregroundColor(KXColor.inkSecondary))
+            Text(note)
+                .font(KXFont.captionEmphasis)
+                .foregroundStyle(noteColor)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
         }
         .accessibilityElement(children: .combine)
     }
 
-    private var legs: some View {
-        VStack(alignment: .leading, spacing: KXSpacing.xxs) {
-            KXOverline("Legs")
-            KXStatusPill(level: TodayFormat.legsLevel(report.legs.status), text: report.legs.status.title)
+    /// Up to three readings (HRV, resting heart rate, sleep, then your score) from the
+    /// recovery breakdown.
+    static func readings(_ recovery: RecoveryScore) -> [RecoveryReading] {
+        recovery.parts.compactMap(reading).prefix(3).map { $0 }
+    }
+
+    private static func firstInt(_ pattern: String, in text: String) -> Int? {
+        guard let regex = try? NSRegularExpression(pattern: pattern),
+              let match = regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)),
+              match.numberOfRanges > 1, let range = Range(match.range(at: 1), in: text) else { return nil }
+        return Int(text[range])
+    }
+
+    private static func reading(_ part: RecoveryScore.Part) -> RecoveryReading? {
+        let detail = part.detail
+        switch part.name {
+        case "HRV":
+            guard let ms = firstInt("(\\d+) ms", in: detail) else { return nil }
+            let percent = firstInt("(\\d+)% (?:above|below)", in: detail) ?? 0
+            let up = detail.contains("% above")
+            return RecoveryReading(label: "HRV", value: "\(ms)", unit: "ms",
+                                   note: percent == 0 ? "Your usual" : "\(up ? "▲" : "▼") \(percent)% vs usual",
+                                   noteColor: percent == 0 ? KXColor.inkSecondary : (up ? KXColor.success : KXColor.warning))
+        case "Resting HR":
+            guard let bpm = firstInt("(\\d+) bpm", in: detail) else { return nil }
+            let delta = firstInt("(\\d+) (?:above|below)", in: detail) ?? 0
+            let below = detail.contains("below")
+            return RecoveryReading(label: "Resting HR", value: "\(bpm)", unit: "bpm",
+                                   note: delta == 0 ? "Your usual" : "\(below ? "▼" : "▲") \(delta) bpm",
+                                   noteColor: delta == 0 ? KXColor.inkSecondary : (below ? KXColor.success : KXColor.warning))
+        case "Sleep":
+            let asleep = detail.components(separatedBy: " asleep").first ?? detail
+            let aim = detail.components(separatedBy: "aim ").dropFirst().first?.components(separatedBy: " (").first
+            return RecoveryReading(label: "Sleep", value: asleep, unit: "",
+                                   note: aim.map { "aim \($0)" } ?? "last night", noteColor: KXColor.inkSecondary)
+        default:
+            return RecoveryReading(label: part.name, value: "\(Int(part.score.rounded()))", unit: "",
+                                   note: "check-in", noteColor: KXColor.inkSecondary)
         }
-        .accessibilityElement(children: .combine)
     }
 }
 
@@ -97,6 +261,16 @@ enum TodayFormat {
         if strain > target.high { return "Above today's target" }
         if strain >= target.low { return "In today's target" }
         return "\(one(target.low - strain)) to go today"
+    }
+
+    /// "Good · ready to push" under the recovery score.
+    static func headline(_ band: RecoveryScore.Band) -> String {
+        switch band {
+        case .low: return "Low · take it easier"
+        case .fair: return "Fair · go steady"
+        case .good: return "Good · ready to push"
+        case .great: return "Great · ready to push"
+        }
     }
 
     static func color(_ band: RecoveryScore.Band) -> Color {

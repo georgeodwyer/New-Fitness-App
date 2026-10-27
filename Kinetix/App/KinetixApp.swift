@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import SwiftData
 
 @main
@@ -7,6 +8,7 @@ struct KinetixApp: App {
     private let launch = LaunchOptions()
 
     init() {
+        KXFont.configureNavigationBars()
         do {
             container = try Persistence.makeContainer(inMemory: launch.isUITesting)
         } catch {
@@ -65,6 +67,8 @@ enum AppearanceChoice: String, CaseIterable, Identifiable {
     case system, light, dark
 
     static let storageKey = "appearance"
+    /// Dark until someone picks otherwise in Settings.
+    static let defaultChoice = AppearanceChoice.dark
 
     var id: String { rawValue }
     var title: String {
@@ -85,9 +89,26 @@ enum AppearanceChoice: String, CaseIterable, Identifiable {
 
 private struct AppearanceModifier: ViewModifier {
     let forceDark: Bool
-    @AppStorage(AppearanceChoice.storageKey) private var appearance = AppearanceChoice.system.rawValue
+    @AppStorage(AppearanceChoice.storageKey) private var appearance = AppearanceChoice.defaultChoice.rawValue
 
     func body(content: Content) -> some View {
-        content.preferredColorScheme(forceDark ? .dark : (AppearanceChoice(rawValue: appearance) ?? .system).colorScheme)
+        content
+            .font(KXFont.body)
+            .preferredColorScheme(forceDark ? .dark : (AppearanceChoice(rawValue: appearance) ?? .defaultChoice).colorScheme)
+    }
+}
+
+extension KXFont {
+    /// Navigation bars use the same faces as the screens.
+    static func configureNavigationBars() {
+        let titleSize = UIFontMetrics(forTextStyle: .headline).scaledValue(for: 20)
+        let largeSize = UIFontMetrics(forTextStyle: .largeTitle).scaledValue(for: 34)
+        let appearance = UINavigationBar.appearance()
+        if let font = UIFont(name: KXFont.Face.condensedBold.rawValue, size: titleSize) {
+            appearance.titleTextAttributes = [.font: font]
+        }
+        if let font = UIFont(name: KXFont.Face.condensedBold.rawValue, size: largeSize) {
+            appearance.largeTitleTextAttributes = [.font: font]
+        }
     }
 }

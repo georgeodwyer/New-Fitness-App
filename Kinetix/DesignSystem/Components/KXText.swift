@@ -13,7 +13,7 @@ struct KXOverline: View {
     var body: some View {
         Text(text.uppercased())
             .font(KXFont.overline)
-            .tracking(0.8)
+            .tracking(1)
             .foregroundStyle(color)
     }
 }

@@ -169,7 +169,7 @@ struct ShareCardView: View {
                 if let badge = data.badge {
                     Text(badge).font(.system(size: 10, weight: .bold))
                         .padding(.horizontal, 6).padding(.vertical, 2)
-                        .background(KXColor.accent, in: Capsule()).foregroundStyle(.white)
+                        .background(KXColor.accent, in: Capsule()).foregroundStyle(KXColor.onAccent)
                 }
             }
             Text(data.title).font(.system(size: 26, weight: .heavy)).lineLimit(2)

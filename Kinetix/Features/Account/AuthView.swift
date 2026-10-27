@@ -89,7 +89,7 @@ struct AuthView: View {
                         Button {
                             Task { await submit() }
                         } label: {
-                            if working { ProgressView().tint(.white) } else { Text(mode.rawValue) }
+                            if working { ProgressView().tint(KXColor.onAccent) } else { Text(mode.rawValue) }
                         }
                         .buttonStyle(.kx(.primary, fullWidth: true))
                         .disabled(!canSubmit || working)

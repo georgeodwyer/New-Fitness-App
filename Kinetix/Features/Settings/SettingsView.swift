@@ -10,7 +10,7 @@ struct SettingsView: View {
     @Query(filter: #Predicate<CoachingSettingsModel> { $0.deletedAt == nil }) private var coachingSettings: [CoachingSettingsModel]
     @AppStorage(DeveloperSettings.simulateGPSKey) private var simulateGPS = false
     @AppStorage(DeveloperSettings.simulationSpeedKey) private var simulationSpeed = 10.0
-    @AppStorage(AppearanceChoice.storageKey) private var appearance = AppearanceChoice.system.rawValue
+    @AppStorage(AppearanceChoice.storageKey) private var appearance = AppearanceChoice.defaultChoice.rawValue
     @AppStorage(UnitPreference.key) private var storedUnits = UnitPreference.defaultForRegion.rawValue
     @Environment(AppRouter.self) private var router
 
@@ -210,9 +210,9 @@ struct SettingsView: View {
     private func settingsRow(_ title: String, detail: String?, symbol: String, tint: Color) -> some View {
         HStack(spacing: KXSpacing.md) {
             Image(systemName: symbol)
-                .foregroundStyle(.white)
+                .foregroundStyle(tint)
                 .frame(width: 30, height: 30)
-                .background(tint, in: RoundedRectangle(cornerRadius: 7))
+                .background(tint.opacity(0.16), in: RoundedRectangle(cornerRadius: 8))
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).foregroundStyle(KXColor.ink)

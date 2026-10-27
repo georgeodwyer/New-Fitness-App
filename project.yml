@@ -57,6 +57,15 @@ targets:
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         UILaunchScreen:
           UIColorName: LaunchBackground
+        # Barlow Condensed (headings, numbers) and Inter (text), SIL Open Font License: docs/licenses.
+        UIAppFonts:
+          - BarlowCondensed-Medium.ttf
+          - BarlowCondensed-SemiBold.ttf
+          - BarlowCondensed-Bold.ttf
+          - Inter-Regular.ttf
+          - Inter-Medium.ttf
+          - Inter-SemiBold.ttf
+          - Inter-Bold.ttf
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         UIBackgroundModes: [location, audio, bluetooth-central]
         NSLocationWhenInUseUsageDescription: "Kinetix uses your location during runs to measure distance and pace and draw your route, and to centre the map when you plan a route."

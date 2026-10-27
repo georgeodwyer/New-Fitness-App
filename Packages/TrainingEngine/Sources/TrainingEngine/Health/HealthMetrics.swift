@@ -316,7 +316,7 @@ public enum SleepScore {
 public enum DashboardCard: String, Codable, CaseIterable, Sendable {
     case today, checkIn, body, load, dailyLoad, week, weekStrip, goal, records
 
-    public static let defaultOrder: [DashboardCard] = [.today, .checkIn, .body, .load, .dailyLoad, .week, .weekStrip, .goal, .records]
+    public static let defaultOrder: [DashboardCard] = [.load, .today, .checkIn, .body, .dailyLoad, .week, .weekStrip, .goal, .records]
 
     public var displayName: String {
         switch self {

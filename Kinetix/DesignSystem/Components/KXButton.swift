@@ -9,7 +9,9 @@ struct KXButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(KXFont.bodyEmphasis)
+            .font(KXFont.custom(.condensedBold, 17, relativeTo: .body))
+            .textCase(.uppercase)
+            .tracking(1)
             .foregroundStyle(foreground)
             .padding(.horizontal, KXSpacing.xl)
             .padding(.vertical, KXSpacing.md)

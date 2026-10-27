@@ -132,7 +132,7 @@ struct WeekStripCard: View {
                 .frame(width: 26, height: 26)
             Image(systemName: statusSymbol(session))
                 .font(.system(size: 11, weight: .bold))
-                .foregroundStyle(session.status == .skipped ? KXColor.inkTertiary : .white)
+                .foregroundStyle(session.status == .skipped ? KXColor.inkTertiary : KXColor.onInverted)
         }
     }
 

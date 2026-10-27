@@ -80,9 +80,9 @@ private struct IntegrationRow: View {
     var body: some View {
         HStack(spacing: KXSpacing.md) {
             Image(systemName: symbol)
-                .foregroundStyle(.white)
+                .foregroundStyle(tint)
                 .frame(width: 30, height: 30)
-                .background(tint, in: RoundedRectangle(cornerRadius: 7))
+                .background(tint.opacity(0.16), in: RoundedRectangle(cornerRadius: 8))
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).foregroundStyle(KXColor.ink)
@@ -571,9 +571,9 @@ private struct IntegrationHeader: View {
         VStack(alignment: .leading, spacing: KXSpacing.sm) {
             Image(systemName: symbol)
                 .font(.title2)
-                .foregroundStyle(.white)
+                .foregroundStyle(tint)
                 .frame(width: 48, height: 48)
-                .background(tint, in: RoundedRectangle(cornerRadius: 12))
+                .background(tint.opacity(0.16), in: RoundedRectangle(cornerRadius: 12))
                 .accessibilityHidden(true)
             Text(title).font(KXFont.title).foregroundStyle(KXColor.ink)
             Text(text).font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)

@@ -189,9 +189,9 @@ struct RecordView: View {
             HStack {
                 Image(systemName: symbol)
                     .font(.title2.weight(.semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(tint)
                     .frame(width: 52, height: 52)
-                    .background(tint, in: Circle())
+                    .background(tint.opacity(0.16), in: Circle())
                 Spacer()
                 if let badge { KXChip(text: badge, variant: .outlined) }
             }

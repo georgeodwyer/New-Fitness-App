@@ -14,13 +14,14 @@ enum KXSpacing {
 }
 
 enum KXRadius {
-    static let sm: CGFloat = 10
-    static let md: CGFloat = 16
-    static let lg: CGFloat = 24
+    static let sm: CGFloat = 12
+    static let md: CGFloat = 20
+    static let lg: CGFloat = 26
 }
 
 enum KXShadow {
-    static let color = Color.black.opacity(0.06)
-    static let radius: CGFloat = 12
+    /// Only in light mode: dark cards sit flat on black.
+    static let color = KXColor.shadow
+    static let radius: CGFloat = 14
     static let y: CGFloat = 4
 }
