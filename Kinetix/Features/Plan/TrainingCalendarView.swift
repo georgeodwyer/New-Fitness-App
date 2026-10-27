@@ -165,14 +165,18 @@ struct TrainingCalendarView: View {
         let columns = Array(repeating: GridItem(.flexible(), spacing: 2), count: 7)
         let cells = monthCells
         return VStack(spacing: KXSpacing.xs) {
-            LazyVGrid(columns: columns, spacing: 2) {
-                ForEach(["M", "T", "W", "T", "F", "S", "S"].indices, id: \.self) { index in
-                    Text(["M", "T", "W", "T", "F", "S", "S"][index])
+            // Weekday letters in their own row: sharing the grid with the days gave two
+            // items the same id, which crashes a lazy grid.
+            HStack(spacing: 2) {
+                ForEach(Array(["M", "T", "W", "T", "F", "S", "S"].enumerated()), id: \.offset) { _, letter in
+                    Text(letter)
                         .font(KXFont.caption)
                         .foregroundStyle(KXColor.inkTertiary)
                         .frame(maxWidth: .infinity)
-                        .accessibilityHidden(true)
                 }
+            }
+            .accessibilityHidden(true)
+            LazyVGrid(columns: columns, spacing: 2) {
                 ForEach(cells.indices, id: \.self) { index in
                     if let day = cells[index] {
                         dayCell(day, entries: days[day] ?? [])
@@ -305,7 +309,7 @@ struct TrainingCalendarView: View {
                     .foregroundStyle(KXColor.inkSecondary)
                     .kxCard(.tinted)
             }
-            ForEach(entries) { entry in row(entry) }
+            ForEach(Array(entries.enumerated()), id: \.offset) { _, entry in row(entry) }
         }
     }
 
