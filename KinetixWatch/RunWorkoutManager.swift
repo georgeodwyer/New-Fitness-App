@@ -41,6 +41,8 @@ final class RunWorkoutManager: NSObject {
     private(set) var mirrorUnits: UnitSystem?
     @ObservationIgnored private var mirrorRunId: UUID?
     @ObservationIgnored private var lastFrameAt: Date?
+    @ObservationIgnored private var lastSyncAsk = Date.distantPast
+    @ObservationIgnored private var remirrorAttempts = 0
     /// Phone runs that have finished, so a late frame doesn't bring one back.
     @ObservationIgnored private var endedMirrorRuns: Set<UUID> = []
 
@@ -530,7 +532,14 @@ final class RunWorkoutManager: NSObject {
     private func mirrorTick() {
         guard isMirroring, let lastFrameAt else { return }
         let silence = Date().timeIntervalSince(lastFrameAt)
-        isPhoneLinkStale = silence > 15
+        // A gym session changes rarely and the phone often sits locked on a bench, so allow
+        // longer before saying the phone's gone; runs update every second.
+        isPhoneLinkStale = silence > (isGym ? 45 : 15)
+        // Quiet for a while: ask the phone to send the latest again (every 8 seconds).
+        if silence > 8, Date().timeIntervalSince(lastSyncAsk) > 8 {
+            lastSyncAsk = Date()
+            sendToPhone(.command(.sync))
+        }
         // The phone has gone quiet for a long time (its app was closed): stop showing the run.
         if silence > 600 {
             Task { await finishMirroring(notice: isGym ? "Lost touch with your iPhone. Check your gym session there."
@@ -573,6 +582,28 @@ final class RunWorkoutManager: NSObject {
     }
 
     func clearNotice() { notice = nil }
+
+    /// The direct link to the phone dropped mid-workout: try again a few times, waiting a
+    /// little longer each time (messages use WatchConnectivity meanwhile).
+    private func reconnectToPhone() {
+        guard let session, session.state == .running || session.state == .paused, remirrorAttempts < 6 else { return }
+        remirrorAttempts += 1
+        let wait = Double(remirrorAttempts) * 5
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(wait))
+            guard let session = self.session, session.state == .running || session.state == .paused else { return }
+            session.startMirroringToCompanionDevice { success, _ in
+                Task { @MainActor in
+                    if success {
+                        self.remirrorAttempts = 0
+                        self.sendToPhone(.command(.sync))
+                    } else {
+                        self.reconnectToPhone()
+                    }
+                }
+            }
+        }
+    }
 
     private func sendToPhone(_ message: MirrorMessage) {
         let data = message.encoded()
@@ -651,7 +682,8 @@ extension RunWorkoutManager: HKWorkoutSessionDelegate, HKLiveWorkoutBuilderDeleg
     }
 
     nonisolated func workoutSession(_ workoutSession: HKWorkoutSession, didDisconnectFromRemoteDeviceWithError error: Error?) {
-        // Messages carry on through WatchConnectivity.
+        // Messages carry on through WatchConnectivity meanwhile; try to bring the direct link back.
+        Task { @MainActor in self.reconnectToPhone() }
     }
 
     nonisolated func workoutBuilderDidCollectEvent(_ workoutBuilder: HKLiveWorkoutBuilder) {}

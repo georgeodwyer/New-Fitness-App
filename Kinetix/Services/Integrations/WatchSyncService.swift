@@ -136,6 +136,12 @@ extension WatchSyncService: WCSessionDelegate {
 
     nonisolated func sessionDidBecomeInactive(_ session: WCSession) {}
 
+    /// The watch is reachable again: bring a mirrored run or gym session up to date.
+    nonisolated func sessionReachabilityDidChange(_ session: WCSession) {
+        guard session.isReachable else { return }
+        Task { @MainActor in WatchMirrorService.shared.resendLast() }
+    }
+
     nonisolated func sessionDidDeactivate(_ session: WCSession) {
         // Switching to another watch: reconnect.
         session.activate()

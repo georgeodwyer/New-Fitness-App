@@ -364,7 +364,7 @@ final class RunWorkoutModel {
         case .skipStep: skipSegment()
         case .lap: markLap()
         case .undo: undoLastControl()
-        case .startSet, .finishSet: break // gym only
+        case .startSet, .finishSet, .sync: break // gym only / handled by the mirror link
         case .end: watchEndRequests += 1
         }
     }

@@ -112,10 +112,30 @@ final class WatchMirrorService: NSObject {
         session.delegate = self
         mirroredSession = session
         handlers?.watchStatus(true)
+        // Reconnected: bring the watch up to date straight away.
+        resendLast()
+    }
+
+    /// The latest run or gym frame, sent again when the link comes back or the watch asks.
+    private var lastFrame: Data?
+
+    /// Sends the latest frame again (the link came back, the app reopened or the watch asked).
+    func resendLast() {
+        guard runId != nil, let lastFrame else { return }
+        sendData(lastFrame)
     }
 
     private func send(_ message: MirrorMessage) {
         let data = message.encoded()
+        switch message {
+        case .frame, .gymFrame: lastFrame = data
+        case .ended: lastFrame = nil
+        default: break
+        }
+        sendData(data)
+    }
+
+    private func sendData(_ data: Data) {
         if let mirroredSession {
             mirroredSession.sendToRemoteWorkoutSession(data: data) { success, _ in
                 guard !success else { return }
@@ -135,6 +155,8 @@ final class WatchMirrorService: NSObject {
     func receive(_ data: Data) {
         guard let message = MirrorMessage.decode(data) else { return }
         switch message {
+        case .command(.sync):
+            if handlers != nil { resendLast() } else { send(.ended(runId: nil, saved: false)) }
         case .command(let command):
             if let handlers { handlers.command(command) } else { send(.ended(runId: nil, saved: false)) }
         case .heartRate(let bpm, let date):

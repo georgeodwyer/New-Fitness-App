@@ -33,6 +33,8 @@ public enum MirrorCommand: String, Codable, Sendable {
     case undo
     /// Gym: start timing the next set / log it.
     case startSet, finishSet
+    /// The watch hasn't heard from the phone for a while: send the latest again.
+    case sync
 }
 
 /// What the watch should tap the wrist for.

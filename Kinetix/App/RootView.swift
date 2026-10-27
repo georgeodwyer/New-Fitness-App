@@ -70,6 +70,8 @@ struct RootView: View {
         .onChange(of: scenePhase, initial: true) { _, phase in
             // Keep detailed sessions generated about two weeks ahead.
             if phase == .active {
+                // Back in the app mid-workout: bring the watch up to date.
+                WatchMirrorService.shared.resendLast()
                 if router.activeSession == nil, interruptedRun == nil {
                     interruptedRun = RunService.interrupted(in: context, excluding: router.runModel?.log?.id)
                 }
