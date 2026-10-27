@@ -120,6 +120,35 @@ enum PlanService {
         return weeks
     }
 
+    /// The last previews built, so opening the calendar or Plan tab again is instant.
+    private static var previewCache: (key: String, weeks: [Int: GeneratedWeek])?
+
+    /// The same as `previewWeeks`, built away from the main thread (a long plan takes
+    /// seconds) and kept until the plan, its built weeks, the profile or the day change.
+    static func previewWeeksInBackground(for plan: TrainingPlanModel, profile: AthleteProfile, in context: ModelContext,
+                                         now: Date = .now) async -> [Int: GeneratedWeek] {
+        guard showsWholePlan, let outline = plan.outline, plan.generatedWeekCount < outline.weeks.count else { return [:] }
+        let profileData = (try? JSONEncoder().encode(profile)) ?? Data()
+        let day = Calendar.kinetix.startOfDay(for: now).timeIntervalSince1970
+        let weights = workingWeights(in: context)
+        let key = "\(plan.id)-\(plan.generatedWeekCount)-\(profileData.hashValue)-\(day)-\(weights.count)"
+        if let cached = previewCache, cached.key == key { return cached.weeks }
+        let generator = generator
+        let start = plan.generatedWeekCount
+        let notBefore = generator.firstSessionDay(from: now, requested: profile.planStartDate)
+        let weeks = await Task.detached(priority: .userInitiated) { () -> [Int: GeneratedWeek] in
+            var result: [Int: GeneratedWeek] = [:]
+            for index in start..<outline.weeks.count {
+                if let week = generator.generateWeek(index, outline: outline, profile: profile, workingWeights: weights, notBefore: notBefore) {
+                    result[index] = week
+                }
+            }
+            return result
+        }.value
+        previewCache = (key, weeks)
+        return weeks
+    }
+
     /// Tops up the active plan's horizon (call on launch / foreground).
     static func refresh(in context: ModelContext, now: Date = .now) {
         guard let profileModel = try? context.fetch(FetchDescriptor<UserProfileModel>()).first(where: { !$0.isSoftDeleted }),

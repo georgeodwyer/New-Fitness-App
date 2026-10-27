@@ -107,12 +107,12 @@ struct PlanView: View {
         return "\(plan.id)-\(plan.generatedWeekCount)-\(profiles.first?.updatedAt.timeIntervalSince1970 ?? 0)"
     }
 
-    private func loadPreviews() {
+    private func loadPreviews() async {
         guard let plan = plans.first, let profile = profiles.first?.profile else {
             previews = [:]
             return
         }
-        previews = PlanService.previewWeeks(for: plan, profile: profile, in: context)
+        previews = await PlanService.previewWeeksInBackground(for: plan, profile: profile, in: context)
     }
 
     var body: some View {
@@ -138,7 +138,7 @@ struct PlanView: View {
                 .padding(KXSpacing.screenMargin)
             }
             .background(KXColor.background.ignoresSafeArea())
-            .task(id: previewKey) { loadPreviews() }
+            .task(id: previewKey) { await loadPreviews() }
             .onChange(of: weeks.first?.index, initial: true) { _, first in
                 // Open the current week once; after that, what's open is up to the runner.
                 guard !openedCurrentWeek, let first else { return }

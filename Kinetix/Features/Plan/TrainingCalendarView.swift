@@ -105,7 +105,7 @@ struct TrainingCalendarView: View {
             }
         }
         .tint(KXColor.accent)
-        .task(id: plans.first.map { "\($0.id)-\($0.generatedWeekCount)" } ?? "none") { loadPreviews() }
+        .task(id: plans.first.map { "\($0.id)-\($0.generatedWeekCount)" } ?? "none") { await loadPreviews() }
         .navigationDestination(item: $openSession) { SessionDetailView(session: $0) }
         .navigationDestination(item: $openRun) { RunDetailView(log: $0, units: units) }
         .navigationDestination(item: $openLift) { StrengthSessionDetailView(log: $0, units: units) }
@@ -120,9 +120,9 @@ struct TrainingCalendarView: View {
         }
     }
 
-    private func loadPreviews() {
+    private func loadPreviews() async {
         guard let plan = plans.first, let profile = profiles.first?.profile else { previews = [:]; return }
-        previews = PlanService.previewWeeks(for: plan, profile: profile, in: context)
+        previews = await PlanService.previewWeeksInBackground(for: plan, profile: profile, in: context)
     }
 
     private func step(_ months: Int) {
