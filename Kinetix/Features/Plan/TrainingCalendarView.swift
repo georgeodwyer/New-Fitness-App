@@ -4,7 +4,8 @@ import TrainingEngine
 
 /// A month calendar of the plan and what you've done: dots for each session, the race day
 /// flagged, and the chosen day's sessions underneath (tap to open, ••• to move, swap or
-/// skip). Goes back two years and forward three.
+/// skip). Goes back two years and forward three. Shown as a sheet with its own navigation
+/// (`CalendarSheet`): pushed onto Today's or the Plan tab's stack it looped forever.
 struct TrainingCalendarView: View {
     @Query(sort: \PlannedSessionModel.date) private var sessions: [PlannedSessionModel]
     @Query(filter: #Predicate<TrainingPlanModel> { $0.isActive }) private var plans: [TrainingPlanModel]
@@ -13,6 +14,7 @@ struct TrainingCalendarView: View {
     @Query(filter: #Predicate<StrengthLogModel> { $0.isFinished && $0.deletedAt == nil }) private var lifts: [StrengthLogModel]
     @Environment(\.modelContext) private var context
     @Environment(AppRouter.self) private var router
+    @Environment(\.dismiss) private var dismiss
 
     @State private var month = Calendar.kinetix.startOfMonth(for: .now)
     @State private var selected = Calendar.kinetix.startOfDay(for: .now)
@@ -27,7 +29,6 @@ struct TrainingCalendarView: View {
     private var units: UnitSystem { profiles.first?.units ?? UnitPreference.stored }
     private var format: DisplayFormat { DisplayFormat(units: units) }
     private var outline: PlanOutline? { plans.first?.outline }
-    private var eventDay: Date? { outline?.eventDate.map { calendar.startOfDay(for: $0) } }
 
     private var firstMonth: Date { calendar.date(byAdding: .month, value: -24, to: calendar.startOfMonth(for: .now)) ?? month }
     private var lastMonth: Date { calendar.date(byAdding: .month, value: 36, to: calendar.startOfMonth(for: .now)) ?? month }
@@ -75,10 +76,12 @@ struct TrainingCalendarView: View {
 
     var body: some View {
         let days = byDay
+        let outline = outline
+        let eventDay = outline?.eventDate.map { calendar.startOfDay(for: $0) }
         ScrollView {
             VStack(alignment: .leading, spacing: KXSpacing.lg) {
-                monthHeader
-                monthGrid(days)
+                monthHeader(eventDay: eventDay)
+                monthGrid(days, outline: outline, eventDay: eventDay)
                     .gesture(DragGesture(minimumDistance: 30).onEnded { value in
                         if value.translation.width < -50 { step(1) } else if value.translation.width > 50 { step(-1) }
                     })
@@ -89,7 +92,7 @@ struct TrainingCalendarView: View {
                         .foregroundStyle(KXColor.inkSecondary)
                         .kxCard(.tinted)
                 }
-                dayList(days[selected] ?? [])
+                dayList(days[selected] ?? [], outline: outline, eventDay: eventDay)
             }
             .padding(KXSpacing.screenMargin)
         }
@@ -97,6 +100,9 @@ struct TrainingCalendarView: View {
         .navigationTitle("Calendar")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button("Done") { dismiss() }
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Today") {
                     month = calendar.startOfMonth(for: .now)
@@ -132,7 +138,7 @@ struct TrainingCalendarView: View {
 
     // MARK: Month
 
-    private var monthHeader: some View {
+    private func monthHeader(eventDay: Date?) -> some View {
         HStack {
             Button { step(-1) } label: { Image(systemName: "chevron.left").frame(width: 44, height: 44) }
                 .disabled(month <= firstMonth)
@@ -161,7 +167,7 @@ struct TrainingCalendarView: View {
         }
     }
 
-    private func monthGrid(_ days: [Date: [Entry]]) -> some View {
+    private func monthGrid(_ days: [Date: [Entry]], outline: PlanOutline?, eventDay: Date?) -> some View {
         let columns = Array(repeating: GridItem(.flexible(), spacing: 2), count: 7)
         let cells = monthCells
         return VStack(spacing: KXSpacing.xs) {
@@ -179,7 +185,7 @@ struct TrainingCalendarView: View {
             LazyVGrid(columns: columns, spacing: 2) {
                 ForEach(cells.indices, id: \.self) { index in
                     if let day = cells[index] {
-                        dayCell(day, entries: days[day] ?? [])
+                        dayCell(day, entries: days[day] ?? [], outline: outline, eventDay: eventDay)
                     } else {
                         Color.clear.frame(height: 52)
                     }
@@ -198,11 +204,11 @@ struct TrainingCalendarView: View {
         return Array(repeating: nil, count: leading) + days.map(Optional.some)
     }
 
-    private func dayCell(_ day: Date, entries: [Entry]) -> some View {
+    private func dayCell(_ day: Date, entries: [Entry], outline: PlanOutline?, eventDay: Date?) -> some View {
         let isToday = calendar.isDateInToday(day)
         let isSelected = calendar.isDate(day, inSameDayAs: selected)
         let isRace = eventDay.map { calendar.isDate($0, inSameDayAs: day) } ?? false
-        let phase = phaseColor(for: day)
+        let phase = phaseColor(for: day, outline: outline)
         return Button { selected = day } label: {
             VStack(spacing: 3) {
                 ZStack {
@@ -238,7 +244,7 @@ struct TrainingCalendarView: View {
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
-    private func phaseColor(for day: Date) -> Color? {
+    private func phaseColor(for day: Date, outline: PlanOutline?) -> Color? {
         guard let outline, let index = outline.weekIndex(containing: day, calendar: calendar) else { return nil }
         return KXColor.phase(TrainingPhase.allCases.firstIndex(of: outline.weeks[index].phase) ?? 0)
     }
@@ -287,13 +293,13 @@ struct TrainingCalendarView: View {
 
     // MARK: Day list
 
-    private func dayList(_ entries: [Entry]) -> some View {
+    private func dayList(_ entries: [Entry], outline: PlanOutline?, eventDay: Date?) -> some View {
         VStack(alignment: .leading, spacing: KXSpacing.sm) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(selected.formatted(.dateTime.weekday(.wide).day().month(.wide).year()))
                     .font(KXFont.headline)
                     .foregroundStyle(KXColor.ink)
-                if let weekText = weekText(for: selected) {
+                if let weekText = weekText(for: selected, outline: outline) {
                     Text(weekText).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
                 }
             }
@@ -314,7 +320,7 @@ struct TrainingCalendarView: View {
     }
 
     /// "Week 3 of 12 · Build" when the day is in the plan.
-    private func weekText(for day: Date) -> String? {
+    private func weekText(for day: Date, outline: PlanOutline?) -> String? {
         guard let outline, let index = outline.weekIndex(containing: day, calendar: calendar) else { return nil }
         let week = outline.weeks[index]
         return "Week \(index + 1) of \(outline.weeks.count) · \(week.phase.displayName)\(week.isRecoveryWeek ? " · easier week" : "")"
@@ -384,6 +390,7 @@ struct TrainingCalendarView: View {
                     Button { openSession = session } label: { Label("Details", systemImage: "info.circle") }
                     if calendar.isDateInToday(session.date) {
                         Button {
+                            dismiss()
                             router.startPlanned(session, in: context)
                         } label: { Label("Start", systemImage: "play.fill") }
                     }
@@ -428,6 +435,13 @@ struct TrainingCalendarView: View {
         case .run(let run): openRun = run
         case .lift(let lift): openLift = lift
         }
+    }
+}
+
+/// The calendar in a sheet with its own navigation, opened from Today and the Plan tab.
+struct CalendarSheet: View {
+    var body: some View {
+        NavigationStack { TrainingCalendarView() }
     }
 }
 

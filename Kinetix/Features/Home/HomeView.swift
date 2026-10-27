@@ -83,10 +83,10 @@ struct HomeView: View {
             .navigationDestination(item: $detailSession) { session in
                 PlannedSessionDestination(session: session)
             }
-            .navigationDestination(isPresented: $showCalendar) { TrainingCalendarView() }
-            .navigationDestination(item: $openRun) { RunDetailView(log: $0, units: units) }
+                        .navigationDestination(item: $openRun) { RunDetailView(log: $0, units: units) }
             .navigationDestination(item: $openLift) { StrengthSessionDetailView(log: $0, units: units) }
         }
+        .sheet(isPresented: $showCalendar) { CalendarSheet() }
         .sheet(isPresented: $showEditDashboard) {
             EditDashboardView(layout: layout) { saveLayout($0) }
         }

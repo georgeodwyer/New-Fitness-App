@@ -49,7 +49,8 @@ final class CalendarTests: XCTestCase {
         if race.exists { race.tap() }
         app.navigationBars["Calendar"].buttons["Today"].tap()
         XCTAssertEqual(app.state, .runningForeground, "App stopped while using the calendar")
-        app.navigationBars.buttons.firstMatch.tap()
+        app.navigationBars["Calendar"].buttons["Done"].tap()
+        XCTAssertTrue(app.tabBars.buttons["Today"].waitForExistence(timeout: 10), "Calendar didn't close")
         XCTAssertEqual(app.state, .runningForeground)
     }
 }

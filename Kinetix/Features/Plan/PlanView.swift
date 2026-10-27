@@ -145,7 +145,7 @@ struct PlanView: View {
                 expanded.insert(first)
                 openedCurrentWeek = true
             }
-            .navigationDestination(isPresented: $showCalendar) { TrainingCalendarView() }
+            .sheet(isPresented: $showCalendar) { CalendarSheet() }
             .navigationDestination(for: PlannedSessionModel.self) { session in
                 PlannedSessionDestination(session: session)
             }
