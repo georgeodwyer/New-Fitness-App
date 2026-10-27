@@ -29,7 +29,8 @@ final class StrengthServiceTests: XCTestCase {
         let log = StrengthService.startOrResume(session, in: context, now: monday)
         let expectedSets = session.strengthPrescription!.exercises.reduce(0) { $0 + $1.sets }
         XCTAssertEqual(log.sets.count, expectedSets)
-        XCTAssertTrue(log.sets.allSatisfy { $0.actualReps == $0.repRangeUpper && !$0.isCompleted })
+        // First time: the bottom of the range (reps then climb one at a time).
+        XCTAssertTrue(log.sets.allSatisfy { $0.actualReps == $0.repRangeLower && !$0.isCompleted })
 
         let resumed = StrengthService.startOrResume(session, in: context, now: monday)
         XCTAssertEqual(resumed.id, log.id, "An unfinished workout is resumed, not duplicated")
@@ -40,7 +41,8 @@ final class StrengthServiceTests: XCTestCase {
         let sessions = try strengthSessions(in: context)
         let session = try XCTUnwrap(sessions.first)
         let log = StrengthService.startOrResume(session, in: context, now: monday)
-        for set in log.sets { set.completedAt = monday; set.rpe = 8 }
+        // Every set done at the top of its range.
+        for set in log.sets { set.actualReps = set.repRangeUpper; set.completedAt = monday; set.rpe = 8 }
 
         let main = try XCTUnwrap(log.orderedSets.first { !$0.isBodyweight && $0.progressionKey.hasSuffix(".main") })
         let before = main.actualWeightKg
