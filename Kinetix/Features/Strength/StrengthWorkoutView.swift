@@ -841,6 +841,7 @@ private struct GymHeartRatePage: View {
         switch model.heartRateSource {
         case .strap?: return "From your chest strap"
         case .watch?: return "From Kinetix on your Apple Watch"
+        case .health?: return "From Apple Health (may lag a little)"
         case nil:
             if model.watchNeedsOpening { return "Open Kinetix on your Apple Watch to see your heart rate" }
             return model.isOnWatch ? "Waiting for your Apple Watch…" : "Wear your Apple Watch with Kinetix on it, or pair a chest strap in Settings"

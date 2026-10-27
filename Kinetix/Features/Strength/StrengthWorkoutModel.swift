@@ -51,7 +51,10 @@ final class StrengthWorkoutModel {
 
     // MARK: Heart rate and Apple Watch
 
-    enum HeartRateSource { case watch, strap }
+    /// Where heart rate comes from: live from the watch app or a strap, or (as a fallback)
+    /// the latest reading your Apple Watch saved to Health (every few seconds in a workout,
+    /// every few minutes otherwise).
+    enum HeartRateSource { case watch, strap, health }
 
     /// The runner's heart-rate zones (age, their own settings or what their runs show).
     let zones: HeartRateZones
@@ -66,6 +69,33 @@ final class StrengthWorkoutModel {
     private(set) var watchNeedsOpening = false
     @ObservationIgnored private var watchTimer: Timer?
     @ObservationIgnored private var lastStrapAt: Date?
+    @ObservationIgnored private var lastLiveAt: Date?
+    @ObservationIgnored private let healthStore = HKHealthStore()
+    @ObservationIgnored private var healthQuery: HKAnchoredObjectQuery?
+
+    /// Heart rate saved to Health since shortly before the session, as it arrives.
+    private func startHealthHeartRate() {
+        guard HKHealthStore.isHealthDataAvailable(), healthQuery == nil else { return }
+        let predicate = HKQuery.predicateForSamples(withStart: log.startedAt.addingTimeInterval(-300), end: nil, options: [])
+        let handler: (HKAnchoredObjectQuery, [HKSample]?, [HKDeletedObject]?, HKQueryAnchor?, Error?) -> Void = { [weak self] _, samples, _, _, _ in
+            guard let latest = (samples as? [HKQuantitySample])?.max(by: { $0.endDate < $1.endDate }) else { return }
+            let bpm = latest.quantity.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))
+            let at = latest.endDate
+            Task { @MainActor in self?.receiveHealthHeartRate(bpm, at: at) }
+        }
+        let query = HKAnchoredObjectQuery(type: HKQuantityType(.heartRate), predicate: predicate, anchor: nil,
+                                          limit: HKObjectQueryNoLimit, resultsHandler: handler)
+        query.updateHandler = handler
+        healthStore.execute(query)
+        healthQuery = query
+    }
+
+    private func receiveHealthHeartRate(_ bpm: Double, at sampleDate: Date) {
+        // Only when nothing live has arrived lately, and only recent readings.
+        if let live = lastLiveAt, Date().timeIntervalSince(live) < 15 { return }
+        guard Date().timeIntervalSince(sampleDate) < 180 else { return }
+        receiveHeartRate(bpm, from: .health)
+    }
 
     private func startHeartRateAndWatch() {
         let monitor = HeartRateMonitor.shared
@@ -73,6 +103,7 @@ final class StrengthWorkoutModel {
             MainActor.assumeIsolated { self?.receiveHeartRate(bpm, from: .strap) }
         }
         monitor.connectToSaved()
+        startHealthHeartRate()
         let handlers = WatchMirrorService.Handlers(
             command: { [weak self] command in self?.handleWatch(command) },
             heartRate: { [weak self] bpm, _ in self?.receiveHeartRate(bpm, from: .watch) },
@@ -98,6 +129,8 @@ final class StrengthWorkoutModel {
         }
         HeartRateMonitor.shared.onHeartRate = nil
         HeartRateMonitor.shared.disconnect()
+        if let healthQuery { healthStore.stop(healthQuery) }
+        healthQuery = nil
     }
 
     /// A chest strap, when one's connected, wins over the watch.
@@ -106,6 +139,7 @@ final class StrengthWorkoutModel {
         let now = Date()
         if source == .watch, let strap = lastStrapAt, now.timeIntervalSince(strap) < 10 { return }
         if source == .strap { lastStrapAt = now }
+        if source != .health { lastLiveAt = now }
         if let previous = heartRate, let at = heartRateAt {
             secondsInZone[zones.zone(for: previous)] += min(10, max(0, now.timeIntervalSince(at)))
         }
@@ -116,7 +150,8 @@ final class StrengthWorkoutModel {
 
     /// No reading for 20 seconds: show it as gone rather than stale.
     func currentHeartRate(at now: Date) -> Double? {
-        guard let heartRateAt, now.timeIntervalSince(heartRateAt) < 20 else { return nil }
+        let limit: TimeInterval = heartRateSource == .health ? 180 : 20
+        guard let heartRateAt, now.timeIntervalSince(heartRateAt) < limit else { return nil }
         return heartRate
     }
 

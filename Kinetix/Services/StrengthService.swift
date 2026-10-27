@@ -111,8 +111,16 @@ enum StrengthService {
             // Progression (plan sessions only; your own workouts pre-fill from last time instead).
             if !log.isRecorded {
                 let stateModel = exerciseState(for: key, first: first, in: context)
-                let state = ProgressionState(workingWeightKg: stateModel?.workingWeightKg ?? first.targetWeightKg,
+                var state = ProgressionState(workingWeightKg: stateModel?.workingWeightKg ?? first.targetWeightKg,
                                              stallCount: stateModel?.stallCount ?? 0)
+                // They lifted a different weight from the plan (e.g. 78.5 kg against 55): carry on
+                // from what they actually did, then progress from there as usual.
+                var adopted = false
+                if state.workingWeightKg > 0, !first.isBodyweight, let used = Self.mostUsedWeight(exerciseSets),
+                   abs(used - state.workingWeightKg) >= StrengthMath.increment(for: definition?.loading ?? .barbell) {
+                    state = ProgressionState(workingWeightKg: used, stallCount: 0)
+                    adopted = true
+                }
                 if state.workingWeightKg <= 0, !first.isBodyweight {
                     // First time on a machine with no default: what they lifted becomes the working weight.
                     if let used = exerciseSets.filter({ $0.isCompleted && $0.actualWeightKg > 0 }).map(\.actualWeightKg).max(), let stateModel {
@@ -142,6 +150,13 @@ enum StrengthService {
                         stateModel.lastChangedAt = now
                         stateModel.touch(now: now)
                         newWeights[key] = decision.newState.workingWeightKg
+                    } else if adopted, let stateModel {
+                        stateModel.workingWeightKg = state.workingWeightKg
+                        stateModel.stallCount = 0
+                        stateModel.lastChangeReason = "Carrying on from the weight you lifted"
+                        stateModel.lastChangedAt = now
+                        stateModel.touch(now: now)
+                        newWeights[key] = state.workingWeightKg
                     }
                     if results.contains(where: \.completed) {
                         changes.append(ExerciseChange(exerciseName: first.exerciseName, change: decision.change, reason: decision.reason))
@@ -203,6 +218,14 @@ enum StrengthService {
     }
 
     // MARK: - Helpers
+
+    /// The weight used on most of the finished sets (the heavier one on a tie).
+    static func mostUsedWeight(_ sets: [SetLogModel]) -> Double? {
+        let weights = sets.filter { $0.isCompleted && $0.actualWeightKg > 0 }.map(\.actualWeightKg)
+        guard !weights.isEmpty else { return nil }
+        let counts = Dictionary(weights.map { ($0, 1) }, uniquingKeysWith: +)
+        return counts.max { a, b in a.value != b.value ? a.value < b.value : a.key < b.key }?.key
+    }
 
     private static func exerciseState(for key: String, first: SetLogModel, in context: ModelContext) -> ExerciseStateModel? {
         let descriptor = FetchDescriptor<ExerciseStateModel>(predicate: #Predicate { $0.progressionKey == key })
