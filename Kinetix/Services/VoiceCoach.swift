@@ -28,12 +28,35 @@ final class VoiceCoach: NSObject, AVSpeechSynthesizerDelegate {
         deactivateTask?.cancel()
         try? AVAudioSession.sharedInstance().setActive(true)
         let utterance = AVSpeechUtterance(string: text)
-        utterance.voice = voiceIdentifier.flatMap { AVSpeechSynthesisVoice(identifier: $0) }
-            ?? AVSpeechSynthesisVoice(language: AVSpeechSynthesisVoice.currentLanguageCode())
+        utterance.voice = voiceIdentifier.flatMap { AVSpeechSynthesisVoice(identifier: $0) } ?? Self.bestVoice()
         utterance.volume = volume
         utterance.rate = AVSpeechUtteranceDefaultSpeechRate
         utterance.postUtteranceDelay = 0.2
         synthesizer.speak(utterance)
+    }
+
+    /// Voices in the phone's language that sound like a person (no novelty voices), best first:
+    /// Premium, then Enhanced, then the basic ones; the phone's exact accent before others.
+    static func naturalVoices() -> [AVSpeechSynthesisVoice] {
+        let code = AVSpeechSynthesisVoice.currentLanguageCode()
+        let language = String(code.prefix(2))
+        return AVSpeechSynthesisVoice.speechVoices()
+            .filter { $0.language.hasPrefix(language) && !$0.voiceTraits.contains(.isNoveltyVoice) && !$0.voiceTraits.contains(.isPersonalVoice) }
+            .sorted { a, b in
+                let rankA = (a.quality.rawValue, a.language == code ? 1 : 0)
+                let rankB = (b.quality.rawValue, b.language == code ? 1 : 0)
+                return rankA != rankB ? rankA > rankB : a.name < b.name
+            }
+    }
+
+    /// The most natural voice installed for the phone's language.
+    static func bestVoice() -> AVSpeechSynthesisVoice? {
+        naturalVoices().first ?? AVSpeechSynthesisVoice(language: AVSpeechSynthesisVoice.currentLanguageCode())
+    }
+
+    /// True when only the basic (robotic-sounding) voices are installed.
+    static var onlyBasicVoices: Bool {
+        !naturalVoices().contains { $0.quality == .enhanced || $0.quality == .premium }
     }
 
     func stop() {

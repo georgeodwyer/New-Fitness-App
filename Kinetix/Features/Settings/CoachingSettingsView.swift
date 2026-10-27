@@ -10,12 +10,7 @@ struct CoachingSettingsView: View {
 
     @State private var voice = VoiceCoach()
 
-    private var voices: [AVSpeechSynthesisVoice] {
-        let language = String(AVSpeechSynthesisVoice.currentLanguageCode().prefix(2))
-        return AVSpeechSynthesisVoice.speechVoices()
-            .filter { $0.language.hasPrefix(language) }
-            .sorted { ($0.quality.rawValue, $0.name) > ($1.quality.rawValue, $1.name) }
-    }
+    private var voices: [AVSpeechSynthesisVoice] { VoiceCoach.naturalVoices() }
 
     /// Tolerance shown per km or per mile.
     static func toleranceText(_ secondsPerKm: Double, units: UnitSystem) -> String {
@@ -65,7 +60,7 @@ struct CoachingSettingsView: View {
             Section {
                 Picker("Voice", selection: Binding(get: { settings.voiceIdentifier ?? "" },
                                                    set: { settings.voiceIdentifier = $0.isEmpty ? nil : $0 })) {
-                    Text("System default").tag("")
+                    Text(VoiceCoach.bestVoice().map { "Automatic · \($0.name)" } ?? "Automatic").tag("")
                     ForEach(voices, id: \.identifier) { voice in
                         Text(voiceName(voice)).tag(voice.identifier)
                     }
@@ -84,10 +79,19 @@ struct CoachingSettingsView: View {
                 } label: {
                     Label("Play a sample cue", systemImage: "speaker.wave.2.fill")
                 }
+                if VoiceCoach.onlyBasicVoices {
+                    VStack(alignment: .leading, spacing: KXSpacing.xs) {
+                        Label("Get a more natural voice", systemImage: "waveform").font(KXFont.bodyEmphasis)
+                        Text("Your iPhone only has the basic voices. For a much more human-sounding coach, open iPhone Settings › Accessibility › Spoken Content › Voices › English, pick a voice marked Enhanced or Premium and download it (Wi-Fi recommended). Kinetix uses it automatically.")
+                            .font(KXFont.caption)
+                            .foregroundStyle(KXColor.inkSecondary)
+                    }
+                    .padding(.vertical, KXSpacing.xxs)
+                }
             } header: {
                 Text("Voice")
             } footer: {
-                Text("Your music is lowered while Kinetix speaks, then comes back. Download higher-quality voices in iPhone Settings › Accessibility › Spoken Content › Voices.")
+                Text("Automatic uses the most natural voice on your iPhone (Premium, then Enhanced). Your music is lowered while Kinetix speaks, then comes back. More voices: iPhone Settings › Accessibility › Spoken Content › Voices.")
             }
         }
         .navigationTitle("Audio coaching")
@@ -106,12 +110,12 @@ struct CoachingSettingsView: View {
     private func voiceName(_ voice: AVSpeechSynthesisVoice) -> String {
         let quality: String
         switch voice.quality {
-        case .premium: quality = " (premium)"
-        case .enhanced: quality = " (enhanced)"
-        default: quality = ""
+        case .premium: quality = " · Premium"
+        case .enhanced: quality = " · Enhanced"
+        default: quality = " · Basic"
         }
         let region = Locale.current.localizedString(forIdentifier: voice.language) ?? voice.language
-        return "\(voice.name) · \(region)\(quality)"
+        return "\(voice.name) (\(region))\(quality)"
     }
 
     private func preview() {
