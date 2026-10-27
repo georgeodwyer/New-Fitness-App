@@ -4,6 +4,7 @@ import TrainingEngine
 
 /// Saves a finished session to reuse from the Record tab: a gym session's exercises and sets
 /// (weights fill in from last time), or a run's steps and pace targets.
+@MainActor
 enum TemplateService {
     @discardableResult
     static func saveGym(_ log: StrengthLogModel, in context: ModelContext, now: Date = .now) -> String? {

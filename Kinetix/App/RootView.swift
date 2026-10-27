@@ -106,6 +106,7 @@ extension RootView {
 
 struct MainTabView: View {
     @Environment(AppRouter.self) private var router
+    @Environment(\.modelContext) private var context
 
     var body: some View {
         @Bindable var router = router
