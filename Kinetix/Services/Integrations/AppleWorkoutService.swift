@@ -121,7 +121,7 @@ final class AppleWorkoutService {
                              cooldown: grouped.coolDown.map(step(for:)))
     }
 
-    private static func step(for segment: RunSegment) -> WorkoutStep {
+    private static func step(for segment: RunSegment) -> WorkoutKit.WorkoutStep {
         let goal: WorkoutGoal
         switch segment.length {
         case .distance(let meters): goal = .distance(meters, .meters)
@@ -130,12 +130,12 @@ final class AppleWorkoutService {
         // Pace range as a speed alert (the Workout app shows it as pace); none for runs by feel.
         guard let target = segment.targetPace, segment.paceIsGuide != true,
               target.slowest.secondsPerKm > 0, target.fastest.secondsPerKm > 0 else {
-            return WorkoutStep(goal: goal)
+            return WorkoutKit.WorkoutStep(goal: goal)
         }
         let low = Measurement(value: 1000 / target.slowest.secondsPerKm, unit: UnitSpeed.metersPerSecond)
         let high = Measurement(value: 1000 / max(target.fastest.secondsPerKm, 1), unit: UnitSpeed.metersPerSecond)
-        guard low.value < high.value else { return WorkoutStep(goal: goal) }
-        return WorkoutStep(goal: goal, alert: SpeedRangeAlert(target: low...high, metric: .current))
+        guard low.value < high.value else { return WorkoutKit.WorkoutStep(goal: goal) }
+        return WorkoutKit.WorkoutStep(goal: goal, alert: SpeedRangeAlert(target: low...high, metric: .current))
     }
     #endif
 }
