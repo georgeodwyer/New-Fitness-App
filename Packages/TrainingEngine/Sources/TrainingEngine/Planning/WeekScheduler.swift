@@ -42,8 +42,12 @@ public enum WeekScheduler {
         doubleDays: Int,
         runs: [RunSessionType],
         lifts: [StrengthSessionTemplate],
-        prioritiseLifts: Bool = false
+        prioritiseLifts: Bool = false,
+        keepLegSessions: Bool? = nil
     ) -> Result {
+        // When a leg session fits nowhere, ease a hard run to keep it (lifting goals, Hyrox),
+        // or drop the leg session (running goals).
+        let easeRunsForLegs = keepLegSessions ?? prioritiseLifts
         var state = State(days: days.sorted(), doubleDays: doubleDays)
         var notes: [String] = []
 
@@ -113,7 +117,7 @@ public enum WeekScheduler {
                 }
                 if let day = best {
                     state.addLift(lift, on: day)
-                } else if lift.focus.loadsLowerBody, let room = state.roomByEasingHardRun(for: lift) {
+                } else if easeRunsForLegs, lift.focus.loadsLowerBody, let room = state.roomByEasingHardRun(for: lift) {
                     // Keep the leg session: one of several hard runs becomes easy instead.
                     let eased = state.runs[room.eased] ?? .intervals
                     state.addRun(.easy, on: room.eased)

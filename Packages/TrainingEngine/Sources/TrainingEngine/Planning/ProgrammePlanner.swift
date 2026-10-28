@@ -257,7 +257,7 @@ enum ProgrammePlanner {
         let liftCount = strengthEmphasis == "none" ? 0 : max(0, min(weekCounts.lifts, slots - runs.count))
         let lifts = templates.liftTemplates(for: profile, count: liftCount)
         let schedule = WeekScheduler.schedule(days: mix.days, doubleDays: mix.doubles, runs: runs.map(\.session.runType), lifts: lifts,
-                                              prioritiseLifts: false)
+                                              prioritiseLifts: false, keepLegSessions: profile.goal == .hyrox)
         notes += schedule.notes
 
         var pool = runs
