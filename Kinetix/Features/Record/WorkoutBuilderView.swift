@@ -336,13 +336,24 @@ struct DurationPicker: View {
 
     private var total: Int { Int(seconds.rounded()) }
 
+    private static let minuteOptions = Array(0...180)
+    private static let secondOptions = Array(stride(from: 0, to: 60, by: 5))
+
+    private var minutes: Binding<Int> {
+        Binding(get: { total / 60 }, set: { (value: Int) in seconds = Double(value * 60 + total % 60) })
+    }
+
+    private var wholeSeconds: Binding<Int> {
+        Binding(get: { (total % 60) / 5 * 5 }, set: { (value: Int) in seconds = Double((total / 60) * 60 + value) })
+    }
+
     var body: some View {
         HStack(spacing: 0) {
-            Picker("Minutes", selection: Binding(get: { total / 60 }, set: { seconds = Double($0 * 60 + total % 60) })) {
-                ForEach(0...180, id: \.self) { Text("\($0) min").tag($0) }
+            Picker("Minutes", selection: minutes) {
+                ForEach(Self.minuteOptions, id: \.self) { (value: Int) in Text("\(value) min").tag(value) }
             }
-            Picker("Seconds", selection: Binding(get: { (total % 60) / 5 * 5 }, set: { seconds = Double((total / 60) * 60 + $0) })) {
-                ForEach(Array(stride(from: 0, to: 60, by: 5)), id: \.self) { Text(String(format: "%02d s", $0)).tag($0) }
+            Picker("Seconds", selection: wholeSeconds) {
+                ForEach(Self.secondOptions, id: \.self) { (value: Int) in Text(String(format: "%02d s", value)).tag(value) }
             }
         }
         .pickerStyle(.wheel)
