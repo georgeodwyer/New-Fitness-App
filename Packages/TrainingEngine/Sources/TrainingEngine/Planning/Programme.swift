@@ -241,6 +241,14 @@ public struct GoalSettings: Codable, Equatable, Sendable {
     public var liftsMax: Int
     /// The split suggested in onboarding (a `WorkbookSplit.code`).
     public var defaultSplit: String?
+    /// Other splits marked "Suggested" when the runner picks their number of days.
+    public var alsoSuggested: [String]? = nil
+
+    /// True for the default split and any "also suggested" one.
+    public func suggests(_ code: String?) -> Bool {
+        guard let code else { return false }
+        return code == defaultSplit || (alsoSuggested ?? []).contains(code)
+    }
 }
 
 /// The workbook's gym splits and sets/reps by goal.

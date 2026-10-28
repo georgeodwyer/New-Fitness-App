@@ -401,7 +401,9 @@ struct GymWeekStep: View {
     @Bindable var model: OnboardingModel
 
     private var strength: WorkbookStrength? { PlanService.templates.programmes.strength }
-    private var suggested: String? { model.goal.flatMap { PlanService.templates.programmes.settings(for: $0)?.defaultSplit } }
+    private var settings: GoalSettings? { model.goal.flatMap { PlanService.templates.programmes.settings(for: $0) } }
+    private var suggested: String? { settings?.defaultSplit }
+    private func isSuggested(_ code: String) -> Bool { settings?.suggests(code) ?? false }
     private var offered: [WorkbookSplit] { strength?.offered(sessions: model.liftSessionsPerWeek) ?? [] }
 
     var body: some View {
@@ -418,7 +420,7 @@ struct GymWeekStep: View {
         } else {
             VStack(spacing: KXSpacing.md) {
                 ForEach(offered) { split in
-                    KXOptionCard(title: split.code == suggested ? "\(split.name) · Suggested" : split.name,
+                    KXOptionCard(title: isSuggested(split.code) ? "\(split.name) · Suggested" : split.name,
                                  detail: days(of: split) + (split.suits.isEmpty ? "" : "\n" + split.suits),
                                  systemImage: "dumbbell",
                                  isSelected: model.splitCode == split.code) {
@@ -452,7 +454,7 @@ struct GymWeekStep: View {
     /// Keeps a split selected that fits the number of sessions.
     private func pickSplitIfNeeded() {
         guard model.liftSessionsPerWeek > 0, !offered.contains(where: { $0.code == model.splitCode }) else { return }
-        model.splitCode = offered.first(where: { $0.code == suggested })?.code ?? offered.first?.code
+        model.splitCode = offered.first(where: { isSuggested($0.code) })?.code ?? offered.first?.code
     }
 }
 

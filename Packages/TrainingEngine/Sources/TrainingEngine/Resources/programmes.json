@@ -125,63 +125,74 @@
    "runsMax": 4,
    "liftsMin": 1,
    "liftsMax": 2,
-   "defaultSplit": "fullBody2"
+   "defaultSplit": "fullBody2",
+   "alsoSuggested": []
   },
   "faster5k": {
    "runsMin": 3,
    "runsMax": 5,
    "liftsMin": 1,
    "liftsMax": 2,
-   "defaultSplit": "fullBody2"
+   "defaultSplit": "fullBody2",
+   "alsoSuggested": []
   },
   "faster10k": {
    "runsMin": 3,
    "runsMax": 5,
    "liftsMin": 1,
    "liftsMax": 5,
-   "defaultSplit": "fullBody2"
+   "defaultSplit": "fullBody2",
+   "alsoSuggested": []
   },
   "halfMarathon": {
    "runsMin": 3,
    "runsMax": 5,
    "liftsMin": 1,
    "liftsMax": 2,
-   "defaultSplit": "fullBody2"
+   "defaultSplit": "fullBody2",
+   "alsoSuggested": []
   },
   "marathon": {
    "runsMin": 4,
    "runsMax": 6,
    "liftsMin": 1,
    "liftsMax": 2,
-   "defaultSplit": "fullBody2"
+   "defaultSplit": "fullBody2",
+   "alsoSuggested": []
   },
   "buildStrength": {
    "runsMin": 1,
    "runsMax": 3,
    "liftsMin": 2,
    "liftsMax": 4,
-   "defaultSplit": "upperLower"
+   "defaultSplit": "upperLower",
+   "alsoSuggested": []
   },
   "buildMuscle": {
    "runsMin": 1,
    "runsMax": 3,
    "liftsMin": 3,
    "liftsMax": 5,
-   "defaultSplit": "ppl"
+   "defaultSplit": "ppl",
+   "alsoSuggested": [
+    "pplUpper"
+   ]
   },
   "balancedHybrid": {
    "runsMin": 2,
    "runsMax": 4,
    "liftsMin": 2,
    "liftsMax": 3,
-   "defaultSplit": "fullBody3"
+   "defaultSplit": "fullBody3",
+   "alsoSuggested": []
   },
   "hyrox": {
    "runsMin": 3,
    "runsMax": 5,
    "liftsMin": 2,
    "liftsMax": 3,
-   "defaultSplit": "hyroxHybrid3"
+   "defaultSplit": "hyroxHybrid3",
+   "alsoSuggested": []
   }
  },
  "strength": {
@@ -1581,6 +1592,272 @@
        {
         "role": "accessory",
         "pattern": "antiRotation"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "code": "pplUpper",
+    "name": "Push / Pull / Legs / Upper",
+    "suits": "4 lifting days, muscle focus: push, pull and legs, plus an upper day for extra chest, back and arms.",
+    "shown": true,
+    "days": [
+     {
+      "name": "Push",
+      "focus": "push",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "named",
+        "exerciseName": "Barbell Bench Press",
+        "sets": 2,
+        "repsLow": 6,
+        "repsHigh": 8,
+        "restSeconds": 150
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Chest Press Machine",
+        "sets": 3,
+        "repsLow": 8,
+        "repsHigh": 12,
+        "restSeconds": 90
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Dumbbell Lateral Raise",
+        "sets": 3,
+        "repsLow": 8,
+        "repsHigh": 12,
+        "restSeconds": 90
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Cable Fly",
+        "sets": 3,
+        "repsLow": 8,
+        "repsHigh": 12,
+        "restSeconds": 90
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Triceps Pushdown",
+        "sets": 3,
+        "repsLow": 8,
+        "repsHigh": 12,
+        "restSeconds": 90
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Overhead Triceps Extension",
+        "sets": 3,
+        "repsLow": 8,
+        "repsHigh": 12,
+        "restSeconds": 90
+       }
+      ]
+     },
+     {
+      "name": "Pull",
+      "focus": "pull",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "named",
+        "exerciseName": "Lat Pulldown",
+        "sets": 2,
+        "repsLow": 6,
+        "repsHigh": 8,
+        "restSeconds": 150
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Rear Delt Fly",
+        "sets": 3,
+        "repsLow": 8,
+        "repsHigh": 12,
+        "restSeconds": 90
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Dumbbell Curl",
+        "sets": 3,
+        "repsLow": 8,
+        "repsHigh": 12,
+        "restSeconds": 90
+       },
+       {
+        "role": "main",
+        "pattern": "named",
+        "exerciseName": "Seated Cable Row",
+        "sets": 3,
+        "repsLow": 6,
+        "repsHigh": 8,
+        "restSeconds": 150
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Preacher Curl",
+        "sets": 3,
+        "repsLow": 8,
+        "repsHigh": 12,
+        "restSeconds": 90
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Face Pull",
+        "sets": 3,
+        "repsLow": 8,
+        "repsHigh": 12,
+        "restSeconds": 90
+       }
+      ]
+     },
+     {
+      "name": "Legs",
+      "focus": "legs",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "named",
+        "exerciseName": "Barbell Back Squat",
+        "sets": 3,
+        "repsLow": 6,
+        "repsHigh": 8,
+        "restSeconds": 150
+       },
+       {
+        "role": "main",
+        "pattern": "named",
+        "exerciseName": "Romanian Deadlift",
+        "sets": 3,
+        "repsLow": 6,
+        "repsHigh": 8,
+        "restSeconds": 150
+       },
+       {
+        "role": "main",
+        "pattern": "named",
+        "exerciseName": "Leg Press",
+        "sets": 3,
+        "repsLow": 6,
+        "repsHigh": 8,
+        "restSeconds": 150
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Hanging Leg Raise",
+        "sets": 3,
+        "repsLow": 8,
+        "repsHigh": 12,
+        "restSeconds": 90
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Cable Crunch",
+        "sets": 3,
+        "repsLow": 8,
+        "repsHigh": 12,
+        "restSeconds": 90
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Leg Extension",
+        "sets": 3,
+        "repsLow": 8,
+        "repsHigh": 12,
+        "restSeconds": 90
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Leg Curl",
+        "sets": 3,
+        "repsLow": 8,
+        "repsHigh": 12,
+        "restSeconds": 90
+       }
+      ]
+     },
+     {
+      "name": "Upper",
+      "focus": "upper",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "named",
+        "exerciseName": "Incline Dumbbell Press",
+        "sets": 2,
+        "repsLow": 8,
+        "repsHigh": 12,
+        "restSeconds": 150
+       },
+       {
+        "role": "main",
+        "pattern": "named",
+        "exerciseName": "Barbell Row",
+        "sets": 2,
+        "repsLow": 6,
+        "repsHigh": 8,
+        "restSeconds": 150
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Hammer Curl",
+        "sets": 3,
+        "repsLow": 8,
+        "repsHigh": 12,
+        "restSeconds": 90
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Chest Press Machine",
+        "sets": 3,
+        "repsLow": 8,
+        "repsHigh": 12,
+        "restSeconds": 90
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Lat Pulldown",
+        "sets": 3,
+        "repsLow": 8,
+        "repsHigh": 12,
+        "restSeconds": 90
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Dips",
+        "sets": 3,
+        "repsLow": 8,
+        "repsHigh": 12,
+        "restSeconds": 90
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Overhead Triceps Extension",
+        "sets": 3,
+        "repsLow": 8,
+        "repsHigh": 12,
+        "restSeconds": 90
        }
       ]
      }

@@ -70,10 +70,12 @@ marathon for three example runners and prints a week-by-week preview (lines star
 ## Gym splits
 
 The workbook's gym tabs hold every split (Full body ×1/×2/×3, Upper / Lower, Push / Pull /
-Legs, PPL ×6, Upper / Lower / Full, PPL + Upper / Lower): each day's exercises, with
+Legs, Push / Pull / Legs / Upper, PPL ×6, Upper / Lower / Full, PPL + Upper / Lower): each day's exercises, with
 optional sets, reps, rest and a note per row (blank = the goal's default from the
 sets/reps table). In onboarding (and Settings) the runner picks how many gym sessions a week
-(0–6) and a split with that many days; the goal's default split is marked "Suggested". If
+(0–6) and a split with that many days; the goal's default split is marked "Suggested", as are
+any splits in the Programmes tab's **Also suggested** column (e.g. Build muscle suggests
+Push / Pull / Legs / Upper when they pick four gym days). If
 their runs and gym sessions don't fit their training days and doubles, they're told and the
 plan keeps the runs the goal needs first. A named exercise their equipment can't do is swapped
 for one with the same movement pattern.

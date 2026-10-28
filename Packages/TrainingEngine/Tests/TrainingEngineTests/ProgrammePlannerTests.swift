@@ -168,6 +168,12 @@ final class ProgrammePlannerTests: XCTestCase {
         XCTAssertEqual(Set(strength.offered(sessions: 2).map(\.code)), ["fullBody2", "upperLower", "hyroxStations2"])
         XCTAssertEqual(Set(strength.offered(sessions: 3).map(\.code)), ["fullBody3", "ppl", "upperLowerFull", "hyroxHybrid3"])
         XCTAssertEqual(strength.offered(sessions: 6).map(\.code), ["ppl6"])
+        XCTAssertEqual(Set(strength.offered(sessions: 4).map(\.code)), ["upperLower", "pplUpper"])
+        XCTAssertEqual(strength.split("pplUpper")?.days.map(\.name), ["Push", "Pull", "Legs", "Upper"])
+        let muscle = try! XCTUnwrap(TestSupport.bundledTemplates.programmes.settings(for: .buildMuscle))
+        XCTAssertTrue(muscle.suggests("ppl"))
+        XCTAssertTrue(muscle.suggests("pplUpper"), "Suggested when Build muscle picks 4 gym days")
+        XCTAssertFalse(muscle.suggests("upperLower"))
 
         var runner = profile(runners[1], days: Weekday.allCases, doubles: 2)
         runner.liftSessionsPerWeek = 3

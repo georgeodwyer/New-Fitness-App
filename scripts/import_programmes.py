@@ -50,6 +50,7 @@ SPLITS = {
     "full body ×1": "fullBody1", "full body ×2": "fullBody2", "full body ×3": "fullBody3", "upper / lower": "upperLower",
     "push / pull / legs": "ppl", "push / pull / legs ×2": "ppl6", "upper / lower / full": "upperLowerFull",
     "ppl + upper / lower": "pplUpperLower", "ppl + upper + shoulders & arms": "pplUpperArms",
+    "push / pull / legs / upper": "pplUpper",
     "hyrox: stations ×2": "hyroxStations2", "hyrox: strength + stations": "hyroxHybrid3",
 }
 PATTERNS = {
@@ -289,6 +290,21 @@ def number(value, what):
         raise ParseError(f"{what} should be a number, not '{value}'")
 
 
+def also_suggested(v, row, fail):
+    """Codes of the 'Also suggested' splits (comma-separated names)."""
+    text = next((v[k] for k in v if k and str(k).startswith("Also suggested")), None)
+    codes = []
+    for name in str(text or "").split(","):
+        name = name.strip().lower()
+        if not name:
+            continue
+        if name not in SPLITS:
+            fail("Programmes", row, f"'Also suggested' names an unknown split: {name}")
+            continue
+        codes.append(SPLITS[name])
+    return codes
+
+
 def day_focus(name):
     """Push / Pull / Legs / Upper / Lower days; anything else is full body."""
     n = name.lower()
@@ -431,6 +447,7 @@ def convert(path):
                 "liftsMin": int(number(v.get("Lifts per week (min)"), "Lifts per week (min)")),
                 "liftsMax": int(number(v.get("Lifts per week (max)"), "Lifts per week (max)")),
                 "defaultSplit": SPLITS.get(str(v.get("Default split") or "").strip().lower()),
+                "alsoSuggested": also_suggested(v, row, fail),
             }
         except ParseError as e:
             fail("Programmes", row, str(e))
