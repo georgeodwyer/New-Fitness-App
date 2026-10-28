@@ -40,6 +40,10 @@ final class UserProfileModel: SyncTracked {
     var exerciseSwapsData: Data?
     /// The day they chose to start their plan (nil = as soon as sensible).
     var planStartDate: Date?
+    /// Target time for the goal race, in seconds.
+    var goalTimeSeconds: Double?
+    /// Training all 7 days: the day that's an easy recovery run.
+    var recoveryRunDayRaw: Int?
 
     init(profile: AthleteProfile, id: UUID = UUID(), now: Date = .now) {
         self.id = id
@@ -69,6 +73,8 @@ final class UserProfileModel: SyncTracked {
         self.hyroxDivisionRaw = profile.hyroxDivision?.rawValue
         self.exerciseSwapsData = profile.exerciseSwaps.map { StoredJSON.encode($0) }
         self.planStartDate = profile.planStartDate
+        self.goalTimeSeconds = profile.goalTimeSeconds
+        self.recoveryRunDayRaw = profile.recoveryRunDay?.rawValue
     }
 
     /// The engine's view of this profile.
@@ -96,7 +102,9 @@ final class UserProfileModel: SyncTracked {
                 heartRateZones: StoredJSON.decode(HeartRateZoneSettings.self, from: heartRateZonesData),
                 hyroxDivision: hyroxDivisionRaw.flatMap(HyroxDivision.init(rawValue:)),
                 exerciseSwaps: StoredJSON.decode([String: String].self, from: exerciseSwapsData),
-                planStartDate: planStartDate
+                planStartDate: planStartDate,
+                goalTimeSeconds: goalTimeSeconds,
+                recoveryRunDay: recoveryRunDayRaw.flatMap(Weekday.init(rawValue:))
             )
         }
         set {
@@ -122,6 +130,8 @@ final class UserProfileModel: SyncTracked {
             hyroxDivisionRaw = newValue.hyroxDivision?.rawValue
             exerciseSwapsData = newValue.exerciseSwaps.map { StoredJSON.encode($0) }
             planStartDate = newValue.planStartDate
+            goalTimeSeconds = newValue.goalTimeSeconds
+            recoveryRunDayRaw = newValue.recoveryRunDay?.rawValue
             touch()
         }
     }

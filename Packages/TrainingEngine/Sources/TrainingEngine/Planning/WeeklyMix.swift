@@ -10,18 +10,20 @@ public struct WeeklyMix: Equatable, Sendable {
 }
 
 enum MixBuilder {
-    /// Training days with a guaranteed rest day (7 days → Friday off).
-    static func effectiveDays(_ days: [Weekday]) -> (days: [Weekday], note: String?) {
+    /// The days the main sessions go on. Training all 7 days: the recovery run day is left
+    /// out here (it gets only an easy recovery run, added after the week is built).
+    static func effectiveDays(_ days: [Weekday], recoveryDay: Weekday = .friday) -> (days: [Weekday], note: String?) {
         let unique = Array(Set(days)).sorted()
         if unique.count >= 7 {
-            return (unique.filter { $0 != .friday }, "Friday is a rest day: at least one full rest day a week helps you absorb training.")
+            return (unique.filter { $0 != recoveryDay },
+                    "\(recoveryDay.fullName) is an easy recovery run: short and gentle, so you absorb the rest of the week's training.")
         }
         return (unique, nil)
     }
 
     static func sessionCounts(profile: AthleteProfile, rules: PlanRules) -> (runs: Int, lifts: Int, days: [Weekday], doubles: Int, notes: [String]) {
         var notes: [String] = []
-        let (days, note) = effectiveDays(profile.trainingDays)
+        let (days, note) = effectiveDays(profile.trainingDays, recoveryDay: profile.effectiveRecoveryRunDay)
         if let note { notes.append(note) }
         let doubles = min(max(profile.doubleSessionDays, 0), days.count)
         let slots = days.count + doubles

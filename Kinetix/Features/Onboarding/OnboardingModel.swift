@@ -80,6 +80,8 @@ final class OnboardingModel {
     var goalSeconds = 0
     var eventDate: Date = Calendar.current.date(byAdding: .weekOfYear, value: 12, to: .now) ?? .now
     var trainingDays: Set<Weekday> = [.monday, .tuesday, .thursday, .saturday]
+    /// Training all 7 days: the day that's an easy recovery run.
+    var recoveryRunDay: Weekday = .friday
     /// Gym sessions a week and the split (set on the gym week screen; until then the plan
     /// decides, as for profiles made before the question existed).
     var liftSessionsPerWeek = 2
@@ -186,7 +188,8 @@ final class OnboardingModel {
             hyroxDivision: goal == .hyrox ? hyroxDivision : nil,
             exerciseSwaps: exerciseSwaps,
             planStartDate: planStartDate,
-            goalTimeSeconds: asksGoalTime && hasGoalTime && goalTimeSeconds >= 600 ? goalTimeSeconds : nil
+            goalTimeSeconds: asksGoalTime && hasGoalTime && goalTimeSeconds >= 600 ? goalTimeSeconds : nil,
+            recoveryRunDay: trainingDays.count >= 7 ? recoveryRunDay : nil
         )
     }
 
@@ -250,6 +253,7 @@ final class OnboardingModel {
             goalSeconds = total % 60
         }
         trainingDays = Set(profile.trainingDays)
+        recoveryRunDay = profile.effectiveRecoveryRunDay
         doubleSessionDays = profile.doubleSessionDays
         equipment = profile.equipment
     }

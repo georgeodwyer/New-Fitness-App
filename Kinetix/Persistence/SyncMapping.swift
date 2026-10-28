@@ -88,6 +88,8 @@ extension UserProfileModel: SyncableModel {
         hyroxDivisionRaw = p.hyroxDivision?.rawValue
         exerciseSwapsData = p.exerciseSwaps.map { StoredJSON.encode($0) }
         planStartDate = p.planStartDate
+        goalTimeSeconds = p.goalTimeSeconds
+        recoveryRunDayRaw = p.recoveryRunDay?.rawValue
         createdAt = payload.createdAt
     }
 

@@ -106,6 +106,50 @@ public struct PlanGenerator: Sendable {
         workingWeights: [String: Double] = [:],
         notBefore: Date? = nil
     ) -> GeneratedWeek? {
+        guard var generated = generateMainSessions(index, outline: outline, profile: profile,
+                                                   workingWeights: workingWeights, notBefore: notBefore) else { return nil }
+        addRecoveryRun(to: &generated, week: outline.weeks[index], profile: profile, notBefore: notBefore)
+        return generated
+    }
+
+    /// Training all 7 days: an easy 25-minute recovery run on their chosen day (not race day).
+    private func addRecoveryRun(to generated: inout GeneratedWeek, week: WeekTarget, profile: AthleteProfile, notBefore: Date?) {
+        guard profile.hasRecoveryRunDay else { return }
+        let date = calendar.date(for: profile.effectiveRecoveryRunDay, inWeekStarting: week.startDate)
+        if let notBefore, date < calendar.startOfDay(for: notBefore) { return }
+        if let event = profile.eventDate, calendar.isDate(event, inSameDayAs: date) { return }
+        guard !generated.sessions.contains(where: { calendar.isDate($0.date, inSameDayAs: date) }) else { return }
+        let zones = PaceZones(profile: profile)
+        let minutes = 25.0
+        let range = zones.range(for: .easy)
+        let meters = RunBuilder.tidy(minutes * 60 / (range.slowest.secondsPerKm + 15) * 1000)
+        let structure = RunBuilder.steady(.recovery, distanceMeters: meters, zones: zones)
+        let estimate = structure.estimate(zones: zones)
+        generated.sessions.append(GeneratedSession(
+            date: date,
+            slot: .morning,
+            kind: .run(.recovery),
+            isKey: false,
+            title: SessionKind.run(.recovery).displayName,
+            summary: String(format: "%.1f", Units.distance(meters: estimate.distanceMeters, in: profile.units))
+                + " " + Units.distanceUnitLabel(profile.units) + " very easy",
+            plannedDurationMinutes: max(5, (estimate.durationSeconds / 60 / 5).rounded() * 5),
+            plannedEffort: 2,
+            estimatedDistanceMeters: estimate.distanceMeters,
+            runStructure: structure,
+            strength: nil
+        ))
+        generated.sessions.sort { $0.date < $1.date }
+        generated.plannedRunMeters += estimate.distanceMeters
+    }
+
+    private func generateMainSessions(
+        _ index: Int,
+        outline: PlanOutline,
+        profile: AthleteProfile,
+        workingWeights: [String: Double],
+        notBefore: Date?
+    ) -> GeneratedWeek? {
         guard outline.weeks.indices.contains(index) else { return nil }
         if let goal = outline.programmeGoal, let programme = templates.programmes.programme(for: goal) {
             return ProgrammePlanner.generateWeek(index, outline: outline, programme: programme, profile: profile, templates: templates,

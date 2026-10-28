@@ -97,7 +97,7 @@ struct RunLiveView: View {
                             .frame(width: proxy.size.width * min(max(snapshot?.segmentProgress ?? 0, 0), 1))
                     }
                 }
-                .frame(height: 5)
+                .frame(height: 10)
                 HStack(alignment: .firstTextBaseline, spacing: 3) {
                     Text(snapshot?.currentPace.map { Units.formatPace($0, units: workout.units) } ?? "–:––")
                         .font(WatchFont.number(58))

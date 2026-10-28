@@ -155,7 +155,7 @@ struct GymLiveView: View {
                 Capsule()
                     .fill(index < frame.setsDone ? WatchColor.lift
                           : index == frame.setsDone ? WatchColor.lift.opacity(0.4) : WatchColor.surface2)
-                    .frame(height: 5)
+                    .frame(height: 9)
             }
         }
         .accessibilityLabel("\(frame.setsDone) of \(frame.setsTotal) sets done")

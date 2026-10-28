@@ -15,6 +15,22 @@ final class PersistenceTests: XCTestCase {
         XCTAssertEqual(stored.profile, SampleData.profile)
     }
 
+    func testProfileKeepsTargetTimeAndRecoveryDay() throws {
+        let container = try Persistence.makeContainer(inMemory: true)
+        let context = container.mainContext
+        var profile = SampleData.profile
+        profile.goalTimeSeconds = 50 * 60
+        profile.trainingDays = Weekday.allCases
+        profile.recoveryRunDay = .wednesday
+        context.insert(UserProfileModel(profile: profile))
+        try context.save()
+
+        let stored = try XCTUnwrap(context.fetch(FetchDescriptor<UserProfileModel>()).first)
+        XCTAssertEqual(stored.profile.goalTimeSeconds, 50 * 60)
+        XCTAssertEqual(stored.profile.recoveryRunDay, .wednesday)
+        XCTAssertEqual(stored.profile, profile)
+    }
+
     func testEditingMarksRecordForSync() throws {
         let model = UserProfileModel(profile: SampleData.profile, now: Date(timeIntervalSince1970: 0))
         model.needsSync = false

@@ -147,6 +147,8 @@ public struct AthleteProfile: Codable, Equatable, Sendable {
     public var planStartDate: Date?
     /// Their target time for the goal race, in seconds (nil = none; paces follow current fitness).
     public var goalTimeSeconds: Double?
+    /// Training all 7 days: the day that's an easy recovery run (nil = Friday).
+    public var recoveryRunDay: Weekday?
 
     public static func swapKey(day: String, exerciseId: String) -> String { "\(day)|\(exerciseId)" }
 
@@ -173,7 +175,8 @@ public struct AthleteProfile: Codable, Equatable, Sendable {
         hyroxDivision: HyroxDivision? = nil,
         exerciseSwaps: [String: String]? = nil,
         planStartDate: Date? = nil,
-        goalTimeSeconds: Double? = nil
+        goalTimeSeconds: Double? = nil,
+        recoveryRunDay: Weekday? = nil
     ) {
         self.runningExperience = runningExperience
         self.recentRace = recentRace
@@ -198,7 +201,12 @@ public struct AthleteProfile: Codable, Equatable, Sendable {
         self.exerciseSwaps = exerciseSwaps
         self.planStartDate = planStartDate
         self.goalTimeSeconds = goalTimeSeconds
+        self.recoveryRunDay = recoveryRunDay
     }
+
+    /// Training every day: one of them is an easy recovery run, planned around the rest.
+    public var hasRecoveryRunDay: Bool { Set(trainingDays).count >= 7 }
+    public var effectiveRecoveryRunDay: Weekday { recoveryRunDay ?? .friday }
 
     /// Age this year (nil when not given).
     public func age(on date: Date = .now, calendar: Calendar = .current) -> Int? {
@@ -232,6 +240,7 @@ extension AthleteProfile {
         if liftSessionsPerWeek != other.liftSessionsPerWeek || splitCode != other.splitCode { changes.append("gym week") }
         if hyroxDivision != other.hyroxDivision { changes.append("Hyrox division") }
         if goalTimeSeconds.map({ Int($0) }) != other.goalTimeSeconds.map({ Int($0) }) { changes.append("target time") }
+        if hasRecoveryRunDay && effectiveRecoveryRunDay != other.effectiveRecoveryRunDay { changes.append("recovery run day") }
         return changes
     }
 }

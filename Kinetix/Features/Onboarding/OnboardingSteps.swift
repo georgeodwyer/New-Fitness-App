@@ -511,13 +511,29 @@ struct TrainingDaysStep: View {
                 .foregroundStyle(model.trainingDays.count < 2 ? KXColor.danger : KXColor.inkSecondary)
         }
         .kxCard()
+        if model.trainingDays.count >= 7 {
+            VStack(alignment: .leading, spacing: KXSpacing.sm) {
+                KXOverline("Recovery run day")
+                Text("One day is a short, very easy recovery run (about 25 minutes), so the rest of your week counts. Which day?")
+                    .font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 64), spacing: KXSpacing.sm)], spacing: KXSpacing.sm) {
+                    ForEach(Weekday.allCases, id: \.self) { day in
+                        KXSelectableChip(text: day.shortName, isSelected: model.recoveryRunDay == day) {
+                            model.recoveryRunDay = day
+                        }
+                        .accessibilityIdentifier("onboarding.recoveryDay.\(day.rawValue)")
+                    }
+                }
+            }
+            .kxCard()
+        }
         ScheduleFitWarning(model: model)
     }
 
     private var daysCaption: String {
         switch model.trainingDays.count {
         case 0, 1: return "Choose at least two days."
-        case 7: return "7 days selected. We'll still keep one full rest day so you can recover."
+        case 7: return "7 days selected. One of them will be an easy recovery run."
         default: return "\(model.trainingDays.count) days a week."
         }
     }
