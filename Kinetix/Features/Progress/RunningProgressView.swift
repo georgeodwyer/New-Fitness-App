@@ -9,6 +9,7 @@ struct RunningProgressView: View {
 
     @Query(sort: \RunLogModel.startedAt, order: .reverse) private var runs: [RunLogModel]
     @Query(sort: \PlannedSessionModel.date) private var sessions: [PlannedSessionModel]
+    @Query(filter: #Predicate<UserProfileModel> { $0.deletedAt == nil }) private var profiles: [UserProfileModel]
     @State private var filter: RunFilter = .all
     @State private var bests: [BestEffortRow] = []
 
@@ -45,6 +46,9 @@ struct RunningProgressView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: KXSpacing.xl) {
+            if let profile = profiles.first?.profile {
+                YourPacesCard(profile: profile, profileModel: profiles.first, format: format)
+            }
             totalsCard
             WeeklyBarChart(title: "Weekly distance", weeks: weeklyDistance, unitLabel: Units.distanceUnitLabel(units),
                            seriesName: "Run", color: KXColor.run, valueFormatter: { format.distance($0) },

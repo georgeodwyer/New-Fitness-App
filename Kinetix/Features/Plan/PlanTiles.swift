@@ -1,127 +1,6 @@
 import SwiftUI
 import TrainingEngine
 
-/// About square on an iPhone with two tiles side by side (matches the Today tiles).
-private let planTileMinHeight: CGFloat = 172
-
-/// Top of the Plan tab: where you are in the block, and your paces. Two squares side by
-/// side, stacked at the largest text sizes.
-struct PlanTopTiles: View {
-    let outline: PlanOutline
-    let profile: AthleteProfile?
-    let profileModel: UserProfileModel?
-    let format: DisplayFormat
-
-    @Environment(\.dynamicTypeSize) private var typeSize
-    @State private var showBlock = false
-    @State private var showPaces = false
-
-    var body: some View {
-        let layout = typeSize.isAccessibilitySize
-            ? AnyLayout(VStackLayout(alignment: .leading, spacing: KXSpacing.md))
-            : AnyLayout(HStackLayout(alignment: .top, spacing: KXSpacing.md))
-        layout {
-            Button { showBlock = true } label: { BlockTile(outline: outline) }
-                .buttonStyle(.plain)
-                .frame(maxHeight: .infinity)
-                .accessibilityHint("Shows every phase of your plan")
-            if let profile {
-                Button { showPaces = true } label: { PacesTile(profile: profile, format: format) }
-                    .buttonStyle(.plain)
-                    .frame(maxHeight: .infinity)
-                    .accessibilityHint("Shows all your pace zones")
-            }
-        }
-        .fixedSize(horizontal: false, vertical: true)
-        .sheet(isPresented: $showBlock) { PlanPhasesView(outline: outline) }
-        .sheet(isPresented: $showPaces) {
-            if let profile { PaceZonesView(profile: profile, profileModel: profileModel, format: format) }
-        }
-    }
-}
-
-// MARK: - Block
-
-/// "Week 3 of 12 · Build", what the phase is for, and what's next.
-private struct BlockTile: View {
-    let outline: PlanOutline
-
-    private var calendar: Calendar { .kinetix }
-    private var currentIndex: Int? { outline.weekIndex(containing: .now, calendar: calendar) }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: KXSpacing.sm) {
-            KXOverline(outline.eventDate == nil ? "Your block" : "Road to race", color: KXColor.accent)
-            if let index = currentIndex {
-                let week = outline.weeks[index]
-                HStack(alignment: .center, spacing: KXSpacing.sm) {
-                    progressRing(done: index + 1, of: outline.weeks.count, phase: week.phase)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Week \(index + 1) of \(outline.weeks.count)")
-                            .font(KXFont.headline)
-                            .foregroundStyle(KXColor.ink)
-                            .minimumScaleFactor(0.8)
-                        Text(week.isRecoveryWeek ? "\(week.phase.displayName) · easier week" : week.phase.displayName)
-                            .font(KXFont.captionEmphasis)
-                            .foregroundStyle(KXColor.phase(TrainingPhase.allCases.firstIndex(of: week.phase) ?? 0))
-                    }
-                }
-                Text(week.phase.explanation)
-                    .font(KXFont.caption)
-                    .foregroundStyle(KXColor.inkSecondary)
-                    .lineLimit(3)
-                    .fixedSize(horizontal: false, vertical: true)
-            } else {
-                Text("Starts \(outline.startDate.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated)))")
-                    .font(KXFont.headline)
-                    .foregroundStyle(KXColor.ink)
-                if let first = outline.weeks.first {
-                    Text(first.phase.explanation)
-                        .font(KXFont.caption)
-                        .foregroundStyle(KXColor.inkSecondary)
-                        .lineLimit(3)
-                }
-            }
-            Spacer(minLength: 0)
-            if let next = nextText {
-                Label(next, systemImage: "arrow.right.circle")
-                    .font(KXFont.caption)
-                    .foregroundStyle(KXColor.inkSecondary)
-                    .lineLimit(2)
-            }
-        }
-        .frame(maxWidth: .infinity, minHeight: planTileMinHeight, alignment: .topLeading)
-        .kxCard(padding: KXSpacing.md)
-        .accessibilityElement(children: .combine)
-    }
-
-    /// "Peak from 9 Nov", "Race on 7 Dec", or when a rolling block renews.
-    private var nextText: String? {
-        let day: (Date) -> String = { $0.formatted(.dateTime.day().month(.abbreviated)) }
-        let current = currentIndex ?? -1
-        if let next = outline.blocks.first(where: { $0.firstWeek > current }), outline.weeks.indices.contains(next.firstWeek) {
-            return "\(next.phase.displayName) from \(day(outline.weeks[next.firstWeek].startDate))"
-        }
-        if let event = outline.eventDate { return "Race on \(day(event))" }
-        guard let last = outline.weeks.last,
-              let renews = calendar.date(byAdding: .day, value: 7, to: last.startDate) else { return nil }
-        return "New block from \(day(renews))"
-    }
-
-    private func progressRing(done: Int, of total: Int, phase: TrainingPhase) -> some View {
-        let color = KXColor.phase(TrainingPhase.allCases.firstIndex(of: phase) ?? 0)
-        return ZStack {
-            Circle().stroke(KXColor.surfaceTint, lineWidth: 5)
-            Circle()
-                .trim(from: 0, to: total > 0 ? CGFloat(done) / CGFloat(total) : 0)
-                .stroke(color, style: StrokeStyle(lineWidth: 5, lineCap: .round))
-                .rotationEffect(.degrees(-90))
-        }
-        .frame(width: 34, height: 34)
-        .accessibilityHidden(true)
-    }
-}
-
 /// Every phase of the plan, with dates and what each is for.
 struct PlanPhasesView: View {
     let outline: PlanOutline
@@ -229,66 +108,21 @@ extension PaceZone {
 }
 
 /// Where the paces come from: their race time, or an estimate.
-private func paceSource(_ profile: AthleteProfile, format: DisplayFormat) -> String {
+func paceSource(_ profile: AthleteProfile, format: DisplayFormat) -> String {
     guard let race = profile.recentRace, race.distanceMeters > 0, race.timeSeconds > 0 else {
         return "Estimated from your experience"
     }
     return "From your \(format.distance(race.distanceMeters)) in \(Units.formatMinutesSeconds(race.timeSeconds))"
 }
 
-/// Easy, a goal pace, tempo and intervals, per km (or mile).
-private struct PacesTile: View {
-    let profile: AthleteProfile
-    let format: DisplayFormat
-
-    private var zones: PaceZones { PaceZones(profile: profile) }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: KXSpacing.sm) {
-            HStack {
-                KXOverline("Your paces", color: KXColor.accent)
-                Spacer(minLength: 0)
-                Text("per \(Units.distanceUnitLabel(format.units))")
-                    .font(KXFont.caption)
-                    .foregroundStyle(KXColor.inkTertiary)
-            }
-            VStack(alignment: .leading, spacing: KXSpacing.xs) {
-                ForEach(PaceZone.tileZones(for: profile.goal), id: \.self) { zone in
-                    let range = zones.range(for: zone)
-                    HStack(alignment: .firstTextBaseline, spacing: KXSpacing.xs) {
-                        Text(zone.tileName)
-                            .font(KXFont.caption)
-                            .foregroundStyle(KXColor.inkSecondary)
-                            .lineLimit(1)
-                        Spacer(minLength: KXSpacing.xxs)
-                        Text("\(Units.formatPace(range.fastest, units: format.units))–\(Units.formatPace(range.slowest, units: format.units))")
-                            .font(KXFont.captionEmphasis.monospacedDigit())
-                            .foregroundStyle(KXColor.ink)
-                            .lineLimit(1)
-                    }
-                    .minimumScaleFactor(0.75)
-                    .accessibilityElement(children: .combine)
-                }
-            }
-            Spacer(minLength: 0)
-            Text(paceSource(profile, format: format))
-                .font(KXFont.caption)
-                .foregroundStyle(KXColor.inkTertiary)
-                .lineLimit(2)
-        }
-        .frame(maxWidth: .infinity, minHeight: planTileMinHeight, alignment: .topLeading)
-        .kxCard(padding: KXSpacing.md)
-    }
-}
-
 /// Every pace zone, what it's for, and a way to make them more accurate.
-private struct PaceZonesView: View {
+struct PaceZonesView: View {
     let profile: AthleteProfile
     let profileModel: UserProfileModel?
     let format: DisplayFormat
     @Environment(\.dismiss) private var dismiss
 
-    private static let order: [PaceZone] = [.easy, .steady, .marathon, .halfMarathon, .tenK, .fiveK, .threshold, .interval, .repetition]
+    static let order: [PaceZone] = [.easy, .steady, .marathon, .halfMarathon, .tenK, .fiveK, .threshold, .interval, .repetition]
 
     var body: some View {
         let zones = PaceZones(profile: profile)
