@@ -99,13 +99,24 @@ struct HealthStatusContent: View {
 /// One metric: value, unit and how it compares with usual.
 struct HealthTile: View {
     let trend: HealthTrend
+    @State private var health = HealthService.shared
+
+    /// The last week of readings, for the small line.
+    private var recent: [Double] {
+        Array((health.metricDays[trend.metric] ?? []).sorted { $0.date < $1.date }.suffix(7).map(\.value))
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: KXSpacing.xs) {
-            Label(trend.metric.displayName, systemImage: trend.metric.symbol)
-                .font(KXFont.captionEmphasis)
-                .foregroundStyle(KXColor.inkSecondary)
-                .lineLimit(1)
+            HStack {
+                KXOverline(trend.metric.displayName)
+                    .lineLimit(1)
+                Spacer(minLength: 0)
+                if recent.count >= 3 {
+                    Sparkline(values: recent, color: KXColor.run)
+                        .frame(width: 52, height: 20)
+                }
+            }
             HStack(alignment: .firstTextBaseline, spacing: 3) {
                 Text(trend.metric.format(trend.latest.value))
                     .font(KXFont.metricSmall)
