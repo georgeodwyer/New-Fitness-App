@@ -49,7 +49,11 @@ struct RecordView: View {
                     }
 
                     VStack(alignment: .leading, spacing: KXSpacing.md) {
-                        KXSectionHeader("My run workouts", subtitle: templates.isEmpty ? nil : "Tap to start or edit")
+                        HStack {
+                            KXOverline("My run workouts")
+                            Spacer()
+                            if !templates.isEmpty { Text("tap to start or edit").font(KXFont.caption).foregroundStyle(KXColor.inkSecondary) }
+                        }
                         if sortedTemplates.isEmpty {
                             KXEmptyState(symbol: "bookmark", title: "No saved workouts yet",
                                          message: "Build a run (say 2 × 10 min at threshold) and tap \u{201C}Save as template\u{201D} to reuse it.")
@@ -93,7 +97,11 @@ struct RecordView: View {
 
     private var routesSection: some View {
         VStack(alignment: .leading, spacing: KXSpacing.md) {
-            KXSectionHeader("My routes", subtitle: routes.isEmpty ? nil : "Tap to view, edit or run")
+            HStack {
+                KXOverline("My routes")
+                Spacer()
+                if !routes.isEmpty { Text("tap to view, edit or run").font(KXFont.caption).foregroundStyle(KXColor.inkSecondary) }
+            }
             if routes.isEmpty {
                 KXEmptyState(symbol: "map", title: "No routes yet",
                              message: "Plan one on the map (it follows roads and paths), make a loop of any distance, or import a GPX file.")
@@ -143,11 +151,8 @@ struct RecordView: View {
 
     private func routeRow(_ route: RouteModel) -> some View {
         HStack(spacing: KXSpacing.md) {
-            Image(systemName: "map")
-                .foregroundStyle(KXColor.teal)
-                .frame(width: 36, height: 36)
-                .background(KXColor.teal.opacity(0.12), in: Circle())
-                .accessibilityHidden(true)
+            RouteShapeThumbnail(path: route.route.path)
+                .frame(width: 64, height: 48)
             VStack(alignment: .leading, spacing: 2) {
                 Text(route.name).font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink)
                 Text(DisplayFormat(units: units).distance(route.distanceMeters)
@@ -190,38 +195,72 @@ struct RecordView: View {
                 Image(systemName: symbol)
                     .font(.title2.weight(.semibold))
                     .foregroundStyle(tint)
-                    .frame(width: 52, height: 52)
-                    .background(tint.opacity(0.16), in: Circle())
+                    .frame(width: 50, height: 50)
+                    .background(tint.opacity(0.16), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                 Spacer()
                 if let badge { KXChip(text: badge, variant: .outlined) }
             }
-            Text(title).font(KXFont.title).foregroundStyle(KXColor.ink)
+            Spacer(minLength: KXSpacing.sm)
+            Text(title)
+                .font(KXFont.custom(.condensedBold, 30, relativeTo: .title))
+                .textCase(.uppercase)
+                .foregroundStyle(KXColor.ink)
             Text(detail).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
                 .fixedSize(horizontal: false, vertical: true)
-            Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity, minHeight: 180, alignment: .topLeading)
-        .kxCard()
+        .frame(maxWidth: .infinity, minHeight: 176, alignment: .topLeading)
+        .padding(KXSpacing.lg)
+        .background {
+            RoundedRectangle(cornerRadius: KXRadius.md, style: .continuous)
+                .fill(LinearGradient(colors: [tint.opacity(0.18), KXColor.surface], startPoint: .topLeading, endPoint: .center))
+                .background(KXColor.surface, in: RoundedRectangle(cornerRadius: KXRadius.md, style: .continuous))
+        }
+        .shadow(color: KXShadow.color, radius: KXShadow.radius, y: KXShadow.y)
         .accessibilityElement(children: .combine)
     }
 
     private func templateRow(_ template: RunTemplateModel) -> some View {
         let workout = template.workout
-        return HStack(spacing: KXSpacing.md) {
-            Image(systemName: "figure.run")
-                .foregroundStyle(KXColor.run)
-                .frame(width: 36, height: 36)
-                .background(KXColor.run.opacity(0.12), in: Circle())
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(workout.name).font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink)
-                Text(workout.summary(units: units)).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary).lineLimit(2)
+        return VStack(alignment: .leading, spacing: KXSpacing.sm) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(workout.name).font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink).lineLimit(1)
+                Spacer()
+                Image(systemName: "chevron.right").font(.caption).foregroundStyle(KXColor.inkTertiary).accessibilityHidden(true)
             }
-            Spacer()
-            Image(systemName: "chevron.right").font(.caption).foregroundStyle(KXColor.inkTertiary).accessibilityHidden(true)
+            if let structure = workout.structure, structure.segments.count > 1 {
+                SessionStructureBar(structure: structure).frame(height: 8)
+            }
+            Text(workout.summary(units: units)).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary).lineLimit(2)
         }
-        .padding(.vertical, KXSpacing.xxs)
+        .padding(.vertical, KXSpacing.xs)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
+    }
+}
+
+/// A route's outline, scaled to fit: a small picture of the shape.
+struct RouteShapeThumbnail: View {
+    let path: [RouteCoordinate]
+
+    var body: some View {
+        GeometryReader { geo in
+            let lats = path.map(\.latitude), lons = path.map(\.longitude)
+            let minLat = lats.min() ?? 0, maxLat = lats.max() ?? 1
+            let minLon = lons.min() ?? 0, maxLon = lons.max() ?? 1
+            let span = max(maxLat - minLat, (maxLon - minLon) * 0.65, 0.00001)
+            let inset: CGFloat = 8
+            let size = min(geo.size.width, geo.size.height) - inset * 2
+            Path { line in
+                for (index, point) in path.enumerated() {
+                    let x = inset + (geo.size.width - size) / 2 - inset + CGFloat((point.longitude - minLon) * 0.65 / span) * size
+                    let y = inset + (geo.size.height - size) / 2 - inset + CGFloat((maxLat - point.latitude) / span) * size
+                    let p = CGPoint(x: x, y: y)
+                    if index == 0 { line.move(to: p) } else { line.addLine(to: p) }
+                }
+            }
+            .stroke(KXColor.accent, style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
+        }
+        .background(KXColor.surfaceTint, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .accessibilityHidden(true)
     }
 }

@@ -63,6 +63,7 @@ struct KXAccentHeadline: View {
 
     var body: some View {
         (Text(plain + " ").foregroundStyle(KXColor.ink) + Text(accented).foregroundStyle(KXColor.accent))
-            .font(KXFont.display)
+            .font(KXFont.custom(.condensedBold, 38, relativeTo: .largeTitle))
+            .textCase(.uppercase)
     }
 }

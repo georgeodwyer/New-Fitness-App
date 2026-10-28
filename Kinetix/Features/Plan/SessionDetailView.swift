@@ -23,14 +23,24 @@ struct SessionDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: KXSpacing.xl) {
                 VStack(alignment: .leading, spacing: KXSpacing.xs) {
-                    KXOverline(session.date.formatted(.dateTime.weekday(.wide).day().month()), color: KXColor.accent)
-                    Text(session.title).font(KXFont.display).foregroundStyle(KXColor.ink)
+                    KXOverline(session.date.formatted(.dateTime.weekday(.wide).day().month()), color: session.kind.tint)
+                    Text(session.title).font(KXFont.display).textCase(.uppercase).foregroundStyle(KXColor.ink)
                     Text(session.summary).font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
                 }
-                HStack(spacing: KXSpacing.xl) {
-                    KXMetric(label: "Duration", value: "\(Int(session.plannedDurationMinutes))", unit: "min", size: .small)
-                    KXMetric(label: "Effort", value: "\(Int(session.plannedEffort))", unit: "/10", size: .small)
+                VStack(alignment: .leading, spacing: KXSpacing.md) {
+                    HStack(alignment: .top, spacing: KXSpacing.xl) {
+                        if let meters = session.estimatedDistanceMeters, meters > 0 {
+                            KXMetric(label: "Distance", value: format.distance(meters), size: .small)
+                        }
+                        KXMetric(label: "Time", value: "\(Int(session.plannedDurationMinutes))", unit: "min", size: .small)
+                        KXMetric(label: "Effort", value: "\(Int(session.plannedEffort))", unit: "/10", size: .small)
+                        Spacer(minLength: 0)
+                    }
+                    if let structure = session.runStructure, structure.segments.count > 1 {
+                        SessionStructureBar(structure: structure).frame(height: 12)
+                    }
                 }
+                .kxCard()
                 if let reason = lastChange ?? session.changeReason {
                     NavigationLink {
                         PlanChangesView(changes: sessionChanges)
@@ -71,8 +81,10 @@ struct SessionDetailView: View {
         .safeAreaInset(edge: .bottom) {
             if session.status == .planned || session.status == .swapped,
                session.kind.discipline == .run || session.kind.discipline == .strength {
-                Button("Start session") {
+                Button {
                     router.startPlanned(session, in: context)
+                } label: {
+                    Label(session.kind.discipline == .run ? "Start run" : "Start session", systemImage: "play.fill")
                 }
                 .buttonStyle(.kx(.primary, fullWidth: true))
                 .padding(KXSpacing.screenMargin)
@@ -92,35 +104,48 @@ struct SessionDetailView: View {
         }
     }
 
+    /// Every part of the run with a bar in its colour, what it's for and its pace.
     private func runCard(_ structure: RunStructure) -> some View {
-        VStack(alignment: .leading, spacing: KXSpacing.md) {
-            KXSectionHeader("Structure", subtitle: "\(structure.segments.count) segment\(structure.segments.count == 1 ? "" : "s")")
-            ForEach(Array(structure.segments.enumerated()), id: \.offset) { _, segment in
-                HStack(alignment: .firstTextBaseline) {
-                    Circle()
-                        .fill(segment.kind == .work ? KXColor.accent : KXColor.teal)
-                        .frame(width: 8, height: 8)
+        VStack(alignment: .leading, spacing: KXSpacing.sm) {
+            KXOverline("Part by part")
+            ForEach(Array(structure.segments.enumerated()), id: \.offset) { index, segment in
+                if index > 0 { Divider().overlay(KXColor.border) }
+                HStack(spacing: KXSpacing.md) {
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(color(segment.kind))
+                        .frame(width: 4, height: 34)
                         .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: KXSpacing.xxs) {
                         Text(segment.label ?? segment.kind.displayName).font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink)
-                        Text(format.segmentLength(segment.length)).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+                        if let target = segment.targetPace {
+                            Text((segment.paceIsGuide == true ? "About " : "") + format.paceRange(target))
+                                .font(KXFont.caption.monospacedDigit())
+                                .foregroundStyle(KXColor.inkSecondary)
+                        }
                     }
                     Spacer()
-                    if let target = segment.targetPace {
-                        Text(format.paceRange(target))
-                            .font(KXFont.callout.monospacedDigit())
-                            .foregroundStyle(segment.kind == .work ? KXColor.accent : KXColor.inkSecondary)
-                    }
+                    Text(format.segmentLength(segment.length))
+                        .font(KXFont.number(18, relativeTo: .body))
+                        .foregroundStyle(KXColor.ink)
                 }
+                .padding(.vertical, KXSpacing.xxs)
                 .accessibilityElement(children: .combine)
             }
         }
         .kxCard()
     }
 
+    private func color(_ kind: SegmentKind) -> Color {
+        switch kind {
+        case .work: return KXColor.warning
+        case .recovery: return KXColor.other
+        case .warmUp, .coolDown, .steady: return KXColor.run
+        }
+    }
+
     private func strengthCard(_ prescription: StrengthPrescription) -> some View {
         VStack(alignment: .leading, spacing: KXSpacing.md) {
-            KXSectionHeader("Exercises")
+            KXOverline("Exercises")
             ForEach(Array(prescription.exercises.enumerated()), id: \.offset) { _, exercise in
                 HStack(alignment: .firstTextBaseline) {
                     VStack(alignment: .leading, spacing: KXSpacing.xxs) {

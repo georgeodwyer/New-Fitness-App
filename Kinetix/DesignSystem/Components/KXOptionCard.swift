@@ -21,7 +21,8 @@ struct KXOptionCard: View {
                 }
                 VStack(alignment: .leading, spacing: KXSpacing.xs) {
                     Text(title)
-                        .font(KXFont.headline)
+                        .font(KXFont.custom(.condensedBold, 20, relativeTo: .headline))
+                        .textCase(.uppercase)
                         .foregroundStyle(KXColor.ink)
                     if let detail {
                         Text(detail)
@@ -40,7 +41,7 @@ struct KXOptionCard: View {
             .kxCard(isSelected ? .accent : .raised)
             .overlay {
                 RoundedRectangle(cornerRadius: KXRadius.md, style: .continuous)
-                    .strokeBorder(isSelected ? KXColor.accent : .clear, lineWidth: 1.5)
+                    .strokeBorder(isSelected ? KXColor.accent : .clear, lineWidth: 2)
             }
         }
         .buttonStyle(.plain)

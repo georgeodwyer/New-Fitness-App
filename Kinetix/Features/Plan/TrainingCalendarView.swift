@@ -146,7 +146,8 @@ struct TrainingCalendarView: View {
             Spacer()
             VStack(spacing: 2) {
                 Text(month.formatted(.dateTime.month(.wide).year()))
-                    .font(KXFont.headline)
+                    .font(KXFont.custom(.condensedBold, 24, relativeTo: .title2))
+                    .textCase(.uppercase)
                     .foregroundStyle(KXColor.ink)
                 if let event = eventDay {
                     let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: .now), to: event).day ?? 0
@@ -155,7 +156,11 @@ struct TrainingCalendarView: View {
                         selected = event
                     } label: {
                         Label(days > 0 ? "Race in \(days) days" : (days == 0 ? "Race day today" : "Race day"), systemImage: "flag.checkered")
-                            .font(KXFont.caption)
+                            .font(KXFont.captionEmphasis)
+                            .foregroundStyle(KXColor.ink)
+                            .padding(.horizontal, KXSpacing.md)
+                            .padding(.vertical, KXSpacing.xs)
+                            .background(KXColor.surfaceTint, in: Capsule())
                     }
                     .accessibilityHint("Shows race day")
                 }
@@ -296,8 +301,9 @@ struct TrainingCalendarView: View {
     private func dayList(_ entries: [Entry], outline: PlanOutline?, eventDay: Date?) -> some View {
         VStack(alignment: .leading, spacing: KXSpacing.sm) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(selected.formatted(.dateTime.weekday(.wide).day().month(.wide).year()))
-                    .font(KXFont.headline)
+                Text(selected.formatted(.dateTime.weekday(.wide).day().month(.wide)))
+                    .font(KXFont.custom(.condensedBold, 22, relativeTo: .title3))
+                    .textCase(.uppercase)
                     .foregroundStyle(KXColor.ink)
                 if let weekText = weekText(for: selected, outline: outline) {
                     Text(weekText).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
@@ -370,7 +376,7 @@ struct TrainingCalendarView: View {
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(tint)
                         .frame(width: 36, height: 36)
-                        .background(KXColor.surfaceTint, in: Circle())
+                        .background(tint.opacity(0.14), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                         .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(title(entry)).font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink)

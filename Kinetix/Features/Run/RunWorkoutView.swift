@@ -15,6 +15,27 @@ struct RunWorkoutView: View {
     @State private var showLeave = false
     @State private var saved = false
     @State private var askHeartRate = false
+    /// Which number is shown big while running; tap it to switch.
+    @AppStorage("run.bigNumber") private var bigNumberRaw = BigNumber.pace.rawValue
+
+    /// The figure shown largest on the live screen.
+    enum BigNumber: String, CaseIterable {
+        case pace, distance, time, heartRate
+
+        var label: String {
+            switch self {
+            case .pace: return "Current pace"
+            case .distance: return "Distance"
+            case .time: return "Time"
+            case .heartRate: return "Heart rate"
+            }
+        }
+
+        var next: BigNumber {
+            let all = Self.allCases
+            return all[(all.firstIndex(of: self)! + 1) % all.count]
+        }
+    }
 
     init(model: RunWorkoutModel, onClose: @escaping () -> Void, onMinimise: (() -> Void)? = nil) {
         _model = State(initialValue: model)
@@ -149,7 +170,7 @@ struct RunWorkoutView: View {
         VStack(spacing: 0) {
             header(trailing: AnyView(
                 Text(Units.formatMinutesSeconds(model.snapshot.elapsedSeconds))
-                    .font(KXFont.bodyEmphasis.monospacedDigit())
+                    .font(KXFont.number(24, relativeTo: .title3))
                     .foregroundStyle(KXColor.ink)
                     .accessibilityLabel("Elapsed \(Units.formatMinutesSeconds(model.snapshot.elapsedSeconds))")
             ))
@@ -257,8 +278,8 @@ struct RunWorkoutView: View {
                 if model.phase == .ready { onClose() } else { showLeave = true }
             }
             VStack(alignment: .leading, spacing: 0) {
-                KXOverline("Running Trainer", color: KXColor.accent)
-                Text(model.title).font(KXFont.headline).foregroundStyle(KXColor.ink).lineLimit(1)
+                KXOverline(model.phase == .ready ? "Run" : "Run · live", color: KXColor.run)
+                Text(model.title).font(KXFont.headline).textCase(.uppercase).foregroundStyle(KXColor.ink).lineLimit(1)
             }
             Spacer()
             trailing
@@ -273,24 +294,28 @@ struct RunWorkoutView: View {
 
     private var segmentCard: some View {
         let snapshot = model.snapshot
+        let tint = snapshot.segment.map { $0.kind == .work ? KXColor.warning : $0.kind == .recovery ? KXColor.other : KXColor.run } ?? KXColor.success
         return VStack(alignment: .leading, spacing: KXSpacing.sm) {
             if let segment = snapshot.segment {
-                HStack {
-                    KXOverline(segment.kind.displayName + (segment.label.map { " · \($0)" } ?? ""), color: KXColor.accent)
+                HStack(alignment: .firstTextBaseline) {
+                    KXOverline(segment.label ?? segment.kind.displayName, color: tint)
                     Spacer()
-                    if let remaining = snapshot.segmentRemaining {
-                        Text("\(format.segmentLength(remaining)) left")
-                            .font(KXFont.captionEmphasis.monospacedDigit())
-                            .foregroundStyle(KXColor.ink)
+                    if let next = snapshot.nextSegment {
+                        Text("Next: \(next.label ?? next.kind.displayName) · \(format.segmentLength(next.length))")
+                            .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
                     }
                 }
-                KXProgressBar(value: snapshot.segmentProgress)
+                if let remaining = snapshot.segmentRemaining {
+                    HStack(alignment: .firstTextBaseline, spacing: KXSpacing.xs) {
+                        Text(format.segmentLength(remaining))
+                            .font(KXFont.number(40, relativeTo: .largeTitle))
+                            .foregroundStyle(KXColor.ink)
+                        Text("left").font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
+                    }
+                }
+                KXProgressBar(value: snapshot.segmentProgress, tint: tint)
                 if let target = segment.targetPace {
                     Text("\(segment.paceIsGuide == true ? "By effort, about" : "Target") \(format.paceRange(target))")
-                        .font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
-                }
-                if let next = snapshot.nextSegment {
-                    Text("Next: \(next.label ?? next.kind.displayName) · \(format.segmentLength(next.length))")
                         .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
                 }
             } else {
@@ -298,15 +323,37 @@ struct RunWorkoutView: View {
                 Text("Keep going to cool down, or finish your run.").font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
             }
         }
-        .kxCard()
+        .padding(KXSpacing.lg)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            RoundedRectangle(cornerRadius: KXRadius.md, style: .continuous)
+                .fill(LinearGradient(colors: [tint.opacity(0.16), KXColor.surface], startPoint: .topLeading, endPoint: .center))
+                .background(KXColor.surface, in: RoundedRectangle(cornerRadius: KXRadius.md, style: .continuous))
+        }
         .accessibilityElement(children: .combine)
     }
 
+    private var bigNumber: BigNumber { BigNumber(rawValue: bigNumberRaw) ?? .pace }
+
+    private func value(_ number: BigNumber) -> (value: String, unit: String) {
+        let snapshot = model.snapshot
+        switch number {
+        case .pace: return (snapshot.currentPace.map { Units.formatPace($0, units: model.units) } ?? "--:--", Units.paceUnitLabel(model.units))
+        case .distance: return (Units.formatDistance(meters: snapshot.distanceMeters, units: model.units), Units.distanceUnitLabel(model.units))
+        case .time: return (Units.formatMinutesSeconds(snapshot.elapsedSeconds), "")
+        case .heartRate: return (snapshot.heartRate.map { "\(Int($0))" } ?? "--", "bpm")
+        }
+    }
+
+    /// One figure very large (tap to switch between pace, distance, time and heart rate), where
+    /// the pace sits in the target, then the other figures small.
     private var telemetryCard: some View {
         let snapshot = model.snapshot
-        return VStack(alignment: .leading, spacing: KXSpacing.md) {
+        let big = bigNumber
+        let shown = value(big)
+        return VStack(spacing: KXSpacing.md) {
             HStack {
-                KXOverline("Live telemetry")
+                KXOverline(big.label)
                 Spacer()
                 if snapshot.isPaused { KXChip(text: "Paused", variant: .warning) }
                 else if !snapshot.gpsAvailable { KXChip(text: "Weak GPS", systemImage: "location.slash", variant: .warning) }
@@ -314,31 +361,40 @@ struct RunWorkoutView: View {
                     KXChip(text: "Open Kinetix on your watch", systemImage: "applewatch", variant: .warning)
                 } else if model.isMirroringToWatch { KXChip(text: "On Apple Watch", systemImage: "applewatch") }
             }
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: KXSpacing.xs) {
-                    KXOverline("Current pace")
-                    HStack(alignment: .firstTextBaseline, spacing: 2) {
-                        Text(snapshot.currentPace.map { Units.formatPace($0, units: model.units) } ?? "--:--")
-                            .font(KXFont.metric)
-                            .foregroundStyle(paceColor(snapshot.paceStatus))
-                        Text(Units.paceUnitLabel(model.units)).font(KXFont.captionEmphasis).foregroundStyle(KXColor.inkSecondary)
-                    }
-                    Text(statusText(snapshot.paceStatus)).font(KXFont.captionEmphasis).foregroundStyle(paceColor(snapshot.paceStatus))
+            Button {
+                withAnimation(.easeInOut(duration: 0.15)) { bigNumberRaw = big.next.rawValue }
+            } label: {
+                VStack(spacing: 2) {
+                    Text(shown.value)
+                        .font(KXFont.number(96, relativeTo: .largeTitle))
+                        .foregroundStyle(big == .pace ? paceColor(snapshot.paceStatus) : KXColor.ink)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.5)
+                    Text([shown.unit, big == .pace ? statusText(snapshot.paceStatus) : "tap to switch"].filter { !$0.isEmpty }.joined(separator: " · "))
+                        .font(KXFont.captionEmphasis)
+                        .foregroundStyle(big == .pace ? paceColor(snapshot.paceStatus) : KXColor.inkSecondary)
                 }
-                .accessibilityElement(children: .combine)
-                Spacer()
-                KXMetric(label: "Distance", value: Units.formatDistance(meters: snapshot.distanceMeters, units: model.units),
-                         unit: Units.distanceUnitLabel(model.units))
+                .frame(maxWidth: .infinity)
+                .contentShape(Rectangle())
             }
-            Divider()
-            HStack {
-                KXMetric(label: "Avg pace", value: snapshot.averagePace.map { Units.formatPace($0, units: model.units) } ?? "--:--",
-                         unit: Units.paceUnitLabel(model.units), size: .small)
-                Spacer()
-                KXMetric(label: "Heart rate", value: snapshot.heartRate.map { "\(Int($0))" } ?? "--", unit: "bpm", size: .small)
-                Spacer()
+            .buttonStyle(.plain)
+            .accessibilityLabel("\(big.label) \(shown.value) \(shown.unit)")
+            .accessibilityHint("Shows \(big.next.label.lowercased()) instead")
+            .accessibilityIdentifier("run.bigNumber")
+            if let target = snapshot.segment?.targetPace, snapshot.segment?.paceIsGuide != true {
+                TargetPaceBar(target: target, current: snapshot.currentPace, status: snapshot.paceStatus)
+                    .frame(height: 40)
+            }
+            Divider().overlay(KXColor.border)
+            HStack(alignment: .top) {
+                ForEach(BigNumber.allCases.filter { $0 != big }, id: \.self) { number in
+                    let small = value(number)
+                    KXMetric(label: number == .pace ? "Pace" : number.label, value: small.value, unit: small.unit.isEmpty ? nil : small.unit, size: .small)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
                 KXMetric(label: "On target", value: snapshot.targetedSeconds > 0 ? "\(Int(snapshot.timeInTargetSeconds / snapshot.targetedSeconds * 100))" : "--",
                          unit: "%", size: .small)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .kxCard()
@@ -513,5 +569,57 @@ struct EffortSheet: View {
         case 9: return "Very hard"
         default: return "Maximal"
         }
+    }
+}
+
+/// Where the current pace sits against the target: the target as a green band in the middle,
+/// slower to the left, faster to the right, and a dot for now.
+struct TargetPaceBar: View {
+    let target: PaceRange
+    let current: Pace?
+    let status: PaceRange.Position?
+
+    var body: some View {
+        VStack(spacing: 4) {
+            GeometryReader { geo in
+                let width = geo.size.width
+                // The band takes the middle third; a band's width either side covers slower/faster.
+                let low = target.fastest.secondsPerKm, high = target.slowest.secondsPerKm
+                let bandSpan = max(high - low, 1)
+                let x: CGFloat = {
+                    guard let current else { return width / 2 }
+                    let position = (high + bandSpan - current.secondsPerKm) / (bandSpan * 3)
+                    return width * min(max(position, 0.02), 0.98)
+                }()
+                ZStack(alignment: .leading) {
+                    Capsule().fill(KXColor.surfaceTint).frame(height: 8)
+                    Capsule()
+                        .fill(KXColor.success.opacity(0.22))
+                        .overlay(Capsule().strokeBorder(KXColor.success, lineWidth: 1.5))
+                        .frame(width: width / 3, height: 16)
+                        .offset(x: width / 3)
+                    if current != nil {
+                        Circle()
+                            .fill(status == .onTarget ? KXColor.success : status == .tooFast ? KXColor.accent : KXColor.slate)
+                            .overlay(Circle().stroke(KXColor.surface, lineWidth: 4))
+                            .frame(width: 24, height: 24)
+                            .offset(x: x - 12)
+                    }
+                }
+                .frame(height: 24)
+            }
+            .frame(height: 24)
+            HStack {
+                Text("slower")
+                Spacer()
+                Text(status == .onTarget ? "on target" : "target").foregroundStyle(status == .onTarget ? KXColor.success : KXColor.inkTertiary)
+                Spacer()
+                Text("faster")
+            }
+            .font(KXFont.caption)
+            .foregroundStyle(KXColor.inkTertiary)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(status == .onTarget ? "On target" : status == .tooFast ? "Faster than target" : status == .tooSlow ? "Slower than target" : "Target pace")
     }
 }

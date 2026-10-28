@@ -26,6 +26,24 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
+                // Profile card and the look of the app.
+                Section {
+                    profileCard
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                }
+                Section {
+                    Picker("Appearance", selection: $appearance) {
+                        Text("Dark").tag(AppearanceChoice.dark.rawValue)
+                        Text("Light").tag(AppearanceChoice.light.rawValue)
+                        Text("Match iPhone").tag(AppearanceChoice.system.rawValue)
+                    }
+                    .pickerStyle(.segmented)
+                    .accessibilityIdentifier("settings.appearance")
+                } header: {
+                    Text("Appearance")
+                }
+
                 // Training: what the plan is built from.
                 Section {
                     if let profileModel {
@@ -111,12 +129,6 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    Picker(selection: $appearance) {
-                        ForEach(AppearanceChoice.allCases) { Text($0.title).tag($0.rawValue) }
-                    } label: {
-                        Label("Appearance", systemImage: "circle.lefthalf.filled")
-                    }
-                    .accessibilityIdentifier("settings.appearance")
                     Button {
                         showWalkthrough = true
                     } label: {
@@ -172,6 +184,8 @@ struct SettingsView: View {
                 #endif
             }
             .navigationTitle("Settings")
+            .scrollContentBackground(.hidden)
+            .background(KXColor.background.ignoresSafeArea())
             .tint(KXColor.accent)
             .fullScreenCover(isPresented: $showWalkthrough) {
                 WalkthroughView { openToday in
@@ -224,6 +238,49 @@ struct SettingsView: View {
     private func coachingSummary(_ settings: CoachingSettingsModel, units: UnitSystem) -> String {
         guard settings.paceCuesEnabled else { return "Pace cues off" }
         return "Cue after \(Int(settings.paceCueDelaySeconds)) s · ±\(CoachingSettingsView.toleranceText(settings.paceToleranceSecondsPerKm, units: units))"
+    }
+
+    /// Initials (from the account email) or the logo letter, the goal and the training summary.
+    /// Tap to change the training profile.
+    @ViewBuilder private var profileCard: some View {
+        let email = AuthService.shared.email
+        let initials = email.flatMap { $0.first.map { String($0).uppercased() } } ?? "K"
+        let content = HStack(spacing: KXSpacing.md) {
+            Text(initials)
+                .font(KXFont.number(24, relativeTo: .title2))
+                .foregroundStyle(KXColor.onAccent)
+                .frame(width: 54, height: 54)
+                .background(KXColor.accent, in: Circle())
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(profileModel.map { $0.profile.goal.displayName } ?? "No plan yet")
+                    .font(KXFont.custom(.condensedBold, 22, relativeTo: .title3))
+                    .textCase(.uppercase)
+                    .foregroundStyle(KXColor.ink)
+                Text(profileModel.map { trainingSummary($0.profile) } ?? "Build a plan around your goal")
+                    .font(KXFont.caption)
+                    .foregroundStyle(KXColor.inkSecondary)
+                if let email {
+                    Text(email).font(KXFont.caption).foregroundStyle(KXColor.inkTertiary).lineLimit(1)
+                }
+            }
+            Spacer(minLength: KXSpacing.sm)
+            Text(profileModel == nil ? "Start" : "Edit")
+                .font(KXFont.captionEmphasis)
+                .foregroundStyle(KXColor.ink)
+                .padding(.horizontal, KXSpacing.md)
+                .padding(.vertical, KXSpacing.xs)
+                .background(KXColor.surfaceTint, in: Capsule())
+        }
+        .kxCard()
+        if let profileModel {
+            NavigationLink { TrainingProfileView(profileModel: profileModel) } label: { content }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("settings.profileCard")
+        } else {
+            Button { router.selectedTab = .plan } label: { content }
+                .buttonStyle(.plain)
+        }
     }
 
     private func trainingSummary(_ profile: AthleteProfile) -> String {

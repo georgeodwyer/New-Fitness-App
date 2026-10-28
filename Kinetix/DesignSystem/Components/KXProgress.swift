@@ -62,16 +62,20 @@ struct KXStepProgress: View {
             if let onBack {
                 KXIconButton(systemImage: "chevron.left", accessibilityLabel: "Back", size: 36, action: onBack)
             }
-            Text("Step \(step) of \(total)")
-                .font(KXFont.captionEmphasis)
-                .foregroundStyle(KXColor.ink)
-            HStack(spacing: KXSpacing.xs) {
-                ForEach(1...max(total, 1), id: \.self) { index in
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(KXColor.surfaceTint)
                     Capsule()
-                        .fill(index <= step ? KXColor.accent : KXColor.surfaceTint)
-                        .frame(height: 6)
+                        .fill(KXColor.accent)
+                        .frame(width: geo.size.width * CGFloat(min(max(step, 0), max(total, 1))) / CGFloat(max(total, 1)))
                 }
             }
+            .frame(height: 6)
+            .accessibilityHidden(true)
+            Text("\(step) / \(total)")
+                .font(KXFont.number(15, relativeTo: .caption))
+                .foregroundStyle(KXColor.inkSecondary)
+                .accessibilityLabel("Step \(step) of \(total)")
         }
         .accessibilityElement(children: .combine)
     }
