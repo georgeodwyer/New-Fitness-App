@@ -73,6 +73,11 @@ final class OnboardingModel {
     /// Hyrox race category, asked when the goal is Hyrox.
     var hyroxDivision: HyroxDivision?
     var hasEvent = false
+    /// A target time for the goal race (asked on the race day screen for goals with a race).
+    var hasGoalTime = false
+    var goalHours = 1
+    var goalMinutes = 45
+    var goalSeconds = 0
     var eventDate: Date = Calendar.current.date(byAdding: .weekOfYear, value: 12, to: .now) ?? .now
     var trainingDays: Set<Weekday> = [.monday, .tuesday, .thursday, .saturday]
     /// Gym sessions a week and the split (set on the gym week screen; until then the plan
@@ -98,7 +103,7 @@ final class OnboardingModel {
         case .liftingExperience: return liftingExperience != nil
         case .liftEstimates: return true
         case .goal: return goal != nil && (goal != .hyrox || hyroxDivision != nil)
-        case .eventDate: return !hasEvent || eventDate > .now
+        case .eventDate: return (!hasEvent || eventDate > .now) && (!asksGoalTime || !hasGoalTime || goalTimeSeconds >= 600)
         case .gymWeek: return liftSessionsPerWeek == 0 || splitCode != nil
         case .trainingDays: return (2...7).contains(trainingDays.count)
         case .doubleSessions: return true
@@ -111,6 +116,13 @@ final class OnboardingModel {
     var isOptional: Bool {
         [.age, .raceTime, .currentRunning, .liftEstimates, .eventDate].contains(step)
     }
+
+    var goalTimeSeconds: Double {
+        Double(goalHours * 3600 + goalMinutes * 60 + goalSeconds)
+    }
+
+    /// Only goals that end in a race have a target time.
+    var asksGoalTime: Bool { goal?.raceDistanceMeters != nil }
 
     var raceTimeSeconds: Double {
         Double(raceHours * 3600 + raceMinutes * 60 + raceSeconds)
@@ -140,7 +152,9 @@ final class OnboardingModel {
         case .currentRunning: knowsCurrentRunning = false
         case .liftEstimates:
             for index in liftEntries.indices { liftEntries[index].isKnown = false }
-        case .eventDate: hasEvent = false
+        case .eventDate:
+            hasEvent = false
+            hasGoalTime = false
         default: break
         }
     }
@@ -171,7 +185,8 @@ final class OnboardingModel {
             heartRateZones: heartRateZones,
             hyroxDivision: goal == .hyrox ? hyroxDivision : nil,
             exerciseSwaps: exerciseSwaps,
-            planStartDate: planStartDate
+            planStartDate: planStartDate,
+            goalTimeSeconds: asksGoalTime && hasGoalTime && goalTimeSeconds >= 600 ? goalTimeSeconds : nil
         )
     }
 
@@ -227,6 +242,13 @@ final class OnboardingModel {
         hyroxDivision = profile.hyroxDivision
         hasEvent = profile.eventDate != nil
         if let event = profile.eventDate { eventDate = event }
+        if let goalTime = profile.goalTimeSeconds {
+            hasGoalTime = true
+            let total = Int(goalTime.rounded())
+            goalHours = total / 3600
+            goalMinutes = (total % 3600) / 60
+            goalSeconds = total % 60
+        }
         trainingDays = Set(profile.trainingDays)
         doubleSessionDays = profile.doubleSessionDays
         equipment = profile.equipment

@@ -32,15 +32,15 @@ final class WeekSchedulerTests: XCTestCase {
         XCTAssertNotNil(lowerDay)
     }
 
-    func testHardDaysHardWhenDoublesAllowed() {
-        // With a double available, the lower-body lift pairs with the quality run (after it).
+    func testLegDaysNeverShareADayWithAHardRun() {
+        // Even with a double available, the lower-body lift stays off the intervals day.
         let days: [Weekday] = [.monday, .tuesday, .thursday, .saturday, .sunday]
-        let result = WeekScheduler.schedule(days: days, doubleDays: 1, runs: [.long, .intervals, .easy, .easy], lifts: [lower])
-        let intervals = result.placements.first { $0.item == .run(.intervals) }
-        let lift = result.placements.first { $0.loadsLowerBody }
-        XCTAssertEqual(intervals?.weekday, lift?.weekday)
-        XCTAssertEqual(intervals?.slot, .morning)
-        XCTAssertEqual(lift?.slot, .evening)
+        let result = WeekScheduler.schedule(days: days, doubleDays: 1, runs: [.long, .intervals, .tempo, .easy], lifts: [lower])
+        let hardDays = Set(result.placements.filter(\.isHardRun).map(\.weekday))
+        let liftDay = result.placements.first { $0.loadsLowerBody }?.weekday
+        XCTAssertNotNil(liftDay)
+        XCTAssertFalse(hardDays.contains(liftDay!))
+        XCTAssertEqual(WeekScheduler.violations(result.placements, days: days, doubleDays: 1), [])
     }
 
     func testUnplaceableLowerLiftIsDroppedWithExplanation() {

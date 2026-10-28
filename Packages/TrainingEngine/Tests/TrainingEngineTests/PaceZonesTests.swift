@@ -53,4 +53,38 @@ final class PaceZonesTests: XCTestCase {
         // Daniels equivalent 10k for VDOT ~50 is ~41:30.
         XCTAssertEqual(zones.predictedTime(distanceMeters: 10000), 41.5 * 60, accuracy: 45)
     }
+
+    private func halfProfile(race: Double, goal: Double?) -> AthleteProfile {
+        AthleteProfile(runningExperience: .intermediate, recentRace: RaceResult(distanceMeters: 5000, timeSeconds: race),
+                       liftingExperience: .intermediate, goal: .halfMarathon, trainingDays: [.monday, .wednesday, .saturday],
+                       equipment: .fullGym, goalTimeSeconds: goal)
+    }
+
+    func testGoalTimeSetsRacePaceAndIntervals() {
+        // Goal 1:40:00 for the half: 4:44 /km. Intervals about 5% faster: ~4:30 /km.
+        let zones = PaceZones(profile: halfProfile(race: 22 * 60 + 30, goal: 100 * 60))
+        let goalPerKm = 6000 / 21.0975
+        let race = zones.range(for: .halfMarathon)
+        XCTAssertEqual((race.fastest.secondsPerKm + race.slowest.secondsPerKm) / 2, goalPerKm, accuracy: 0.5)
+        let interval = zones.range(for: .interval)
+        XCTAssertEqual((interval.fastest.secondsPerKm + interval.slowest.secondsPerKm) / 2, goalPerKm * 0.95, accuracy: 0.5)
+        // Easy pace still comes from current fitness.
+        XCTAssertEqual(zones.range(for: .easy), PaceZones.fitness(halfProfile(race: 22 * 60 + 30, goal: nil)).range(for: .easy))
+    }
+
+    func testNoGoalTimeKeepsFitnessPaces() {
+        let profile = halfProfile(race: 22 * 60 + 30, goal: nil)
+        XCTAssertEqual(PaceZones(profile: profile), PaceZones.fitness(profile))
+        XCTAssertNil(GoalTime(profile: profile))
+    }
+
+    func testOptimisticGoalIsFlagged() {
+        let predicted = PaceZones.fitness(halfProfile(race: 22 * 60 + 30, goal: nil)).predictedTime(distanceMeters: 21097.5)
+        let realistic = GoalTime(profile: halfProfile(race: 22 * 60 + 30, goal: predicted * 0.97))!
+        XCTAssertFalse(realistic.isTooOptimistic)
+        let optimistic = GoalTime(profile: halfProfile(race: 22 * 60 + 30, goal: predicted * 0.92))!
+        XCTAssertTrue(optimistic.isTooOptimistic)
+        XCTAssertEqual(optimistic.fasterThanPredicted, 0.08, accuracy: 0.001)
+        XCTAssertEqual(optimistic.realisticRange.upperBound, predicted, accuracy: 0.01)
+    }
 }

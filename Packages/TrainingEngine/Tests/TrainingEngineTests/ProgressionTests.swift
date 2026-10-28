@@ -51,9 +51,12 @@ final class ProgressionTests: XCTestCase {
         XCTAssertEqual(decision.newState, ProgressionState(workingWeightKg: 100, stallCount: 1))
     }
 
-    func testMissingASetCountsAsMissedReps() {
-        let decision = evaluate(sets: sets([8, 8]))
-        XCTAssertEqual(decision.newState.stallCount, 1)
+    func testFinishingEarlyHoldsWithoutCountingAsStall() {
+        // Two of three sets, both good: a session cut short, not a failure.
+        let decision = evaluate(state: ProgressionState(workingWeightKg: 100, stallCount: 1), sets: sets([8, 8]))
+        XCTAssertEqual(decision.change, .hold)
+        XCTAssertEqual(decision.newState, ProgressionState(workingWeightKg: 100, stallCount: 1))
+        XCTAssertTrue(decision.reason.contains("2 of 3 sets"))
     }
 
     func testRepeatedStallsTriggerDeload() {

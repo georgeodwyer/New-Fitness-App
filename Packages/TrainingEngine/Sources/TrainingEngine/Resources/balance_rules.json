@@ -3,7 +3,8 @@
   "scheduling": {
     "noLowerBodyLiftDayBeforeHardRun": true,
     "noLowerBodyLiftOnLongRunDay": true,
-    "pairLowerBodyLiftsWithHardRuns": true
+    "pairLowerBodyLiftsWithHardRuns": false,
+    "noLowerBodyLiftOnHardRunDay": true
   },
   "load": {
     "optimalRatioLow": 0.8,

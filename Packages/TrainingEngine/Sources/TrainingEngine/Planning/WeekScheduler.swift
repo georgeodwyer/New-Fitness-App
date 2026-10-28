@@ -80,6 +80,8 @@ public enum WeekScheduler {
                         && state.hasCapacity(on: day)
                         && !(BalanceRules.current.scheduling.noLowerBodyLiftDayBeforeHardRun
                              && (state.lifts[day.previous]?.focus.loadsLowerBody ?? false))
+                        && !(BalanceRules.current.scheduling.noLowerBodyLiftOnHardRunDay
+                             && (state.lifts[day]?.focus.loadsLowerBody ?? false))
                 }
                 let best = candidates.max { a, b in
                     let sa = state.hardRunSpacing(for: a), sb = state.hardRunSpacing(for: b)
@@ -170,6 +172,9 @@ public enum WeekScheduler {
                 if rules.noLowerBodyLiftOnLongRunDay, items.contains(where: { $0.item == .run(.long) }) {
                     problems.append("lower-body lift on the long-run day")
                 }
+                if rules.noLowerBodyLiftOnHardRunDay, items.contains(where: { $0.isHardRun }) {
+                    problems.append("lower-body lift on a hard-run day (\(day.shortName))")
+                }
             }
         }
         if doubles > doubleDays { problems.append("too many double days") }
@@ -218,6 +223,7 @@ public enum WeekScheduler {
                 let rules = BalanceRules.current.scheduling
                 if rules.noLowerBodyLiftDayBeforeHardRun && isHardRunDay(day.next) { return false }
                 if rules.noLowerBodyLiftOnLongRunDay && runs[day] == .long { return false }
+                if rules.noLowerBodyLiftOnHardRunDay && isHardRunDay(day) { return false }
             }
             return true
         }

@@ -145,6 +145,8 @@ public struct AthleteProfile: Codable, Equatable, Sendable {
     /// The day they chose to start their plan (nil = as soon as sensible: this Monday if it's
     /// early in the week, else next Monday).
     public var planStartDate: Date?
+    /// Their target time for the goal race, in seconds (nil = none; paces follow current fitness).
+    public var goalTimeSeconds: Double?
 
     public static func swapKey(day: String, exerciseId: String) -> String { "\(day)|\(exerciseId)" }
 
@@ -170,7 +172,8 @@ public struct AthleteProfile: Codable, Equatable, Sendable {
         heartRateZones: HeartRateZoneSettings? = nil,
         hyroxDivision: HyroxDivision? = nil,
         exerciseSwaps: [String: String]? = nil,
-        planStartDate: Date? = nil
+        planStartDate: Date? = nil,
+        goalTimeSeconds: Double? = nil
     ) {
         self.runningExperience = runningExperience
         self.recentRace = recentRace
@@ -194,6 +197,7 @@ public struct AthleteProfile: Codable, Equatable, Sendable {
         self.hyroxDivision = hyroxDivision
         self.exerciseSwaps = exerciseSwaps
         self.planStartDate = planStartDate
+        self.goalTimeSeconds = goalTimeSeconds
     }
 
     /// Age this year (nil when not given).
@@ -227,6 +231,20 @@ extension AthleteProfile {
         if racedRecently != other.racedRecently || easyFirstWeek != other.easyFirstWeek { changes.append("recent race") }
         if liftSessionsPerWeek != other.liftSessionsPerWeek || splitCode != other.splitCode { changes.append("gym week") }
         if hyroxDivision != other.hyroxDivision { changes.append("Hyrox division") }
+        if goalTimeSeconds.map({ Int($0) }) != other.goalTimeSeconds.map({ Int($0) }) { changes.append("target time") }
         return changes
+    }
+}
+
+extension TrainingGoal {
+    /// The race at the end of a running goal (nil for goals without one).
+    public var raceDistanceMeters: Double? {
+        switch self {
+        case .first5k, .faster5k: return 5000
+        case .faster10k: return 10000
+        case .halfMarathon: return 21097.5
+        case .marathon: return 42195
+        default: return nil
+        }
     }
 }

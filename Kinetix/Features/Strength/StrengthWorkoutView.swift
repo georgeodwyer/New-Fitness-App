@@ -219,6 +219,14 @@ struct StrengthWorkoutView: View {
                         .buttonStyle(.kx(.primary, fullWidth: true))
                         .accessibilityIdentifier("gym.startSet")
                 }
+                // Short on time: save what's done; the sets left count as missed.
+                if model.completedSets > 0 {
+                    Button("Finish early · \(model.completedSets) of \(model.totalSets) sets done") { showFinish = true }
+                        .font(KXFont.captionEmphasis)
+                        .foregroundStyle(KXColor.inkSecondary)
+                        .padding(.top, KXSpacing.xxs)
+                        .accessibilityIdentifier("gym.finishEarly")
+                }
             } else {
                 Button("Finish workout") { showFinish = true }
                     .buttonStyle(.kx(.primary, fullWidth: true))
@@ -682,7 +690,7 @@ private struct FinishWorkoutSheet: View {
                     .accessibilityValue("\(Int(effort)) out of 10, \(Self.label(for: effort))")
             }
             if completedSets < totalSets {
-                Label("\(totalSets - completedSets) set\(totalSets - completedSets == 1 ? "" : "s") not ticked off. They'll count as missed.",
+                Label("\(totalSets - completedSets) set\(totalSets - completedSets == 1 ? "" : "s") not done. They're left out of your volume and weights only progress on what you finished.",
                       systemImage: "exclamationmark.circle")
                     .font(KXFont.caption)
                     .foregroundStyle(KXColor.warning)

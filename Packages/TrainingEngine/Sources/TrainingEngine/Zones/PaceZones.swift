@@ -90,13 +90,36 @@ public struct PaceZones: Codable, Equatable, Sendable {
     }
 
     /// Zones from the profile's race time, or a sensible default for the experience level.
+    /// With a goal time for the goal race, race-pace work follows the goal pace and intervals
+    /// run about 5% faster than it.
     public init(profile: AthleteProfile) {
-        if let race = profile.recentRace, race.distanceMeters > 0, race.timeSeconds > 0 {
-            self.init(race: race)
-        } else {
-            let seconds = Self.default5kSeconds[profile.runningExperience] ?? 30 * 60
-            self.init(race: RaceResult(distanceMeters: 5000, timeSeconds: seconds))
+        let fitness = Self.fitness(profile)
+        guard let goal = GoalTime(profile: profile) else {
+            self.init(vdot: fitness.vdot, ranges: fitness.ranges)
+            return
         }
+        var ranges = PaceZone.allCases.reduce(into: [PaceZone: PaceRange]()) { $0[$1] = fitness.range(for: $1) }
+        let perKm = goal.goalPace.secondsPerKm
+        if let raceZone = goal.raceZone {
+            ranges[raceZone] = PaceRange(fastest: Pace(secondsPerKm: perKm - 3), slowest: Pace(secondsPerKm: perKm + 3))
+        }
+        let interval = perKm * (1 - GoalTime.intervalFaster)
+        ranges[.interval] = PaceRange(fastest: Pace(secondsPerKm: interval - 4), slowest: Pace(secondsPerKm: interval + 4))
+        self.init(vdot: fitness.vdot, ranges: ranges)
+    }
+
+    /// Zones from current fitness only (race time or experience), ignoring any goal time.
+    public static func fitness(_ profile: AthleteProfile) -> PaceZones {
+        if let race = profile.recentRace, race.distanceMeters > 0, race.timeSeconds > 0 {
+            return PaceZones(race: race)
+        }
+        let seconds = default5kSeconds[profile.runningExperience] ?? 30 * 60
+        return PaceZones(race: RaceResult(distanceMeters: 5000, timeSeconds: seconds))
+    }
+
+    private init(vdot: Double, ranges: [PaceZone: PaceRange]) {
+        self.vdot = vdot
+        self.ranges = ranges
     }
 
     public func range(for zone: PaceZone) -> PaceRange {
@@ -137,5 +160,50 @@ public struct PaceZones: Codable, Equatable, Sendable {
             if v > vdot { low = mid } else { high = mid }
         }
         return (low + high) / 2
+    }
+}
+
+/// A target time for the goal race, set against what current fitness predicts.
+public struct GoalTime: Equatable, Sendable {
+    /// Intervals run this much faster than goal race pace.
+    public static let intervalFaster = 0.05
+    /// A goal more than this much faster than predicted counts as too optimistic.
+    public static let optimisticBeyond = 0.05
+
+    public let distanceMeters: Double
+    public let goalSeconds: Double
+    /// What current fitness predicts for the distance.
+    public let predictedSeconds: Double
+
+    public init?(profile: AthleteProfile) {
+        guard let seconds = profile.goalTimeSeconds, seconds > 0, let distance = profile.goal.raceDistanceMeters else { return nil }
+        self.init(distanceMeters: distance, goalSeconds: seconds, predictedSeconds: PaceZones.fitness(profile).predictedTime(distanceMeters: distance))
+    }
+
+    public init(distanceMeters: Double, goalSeconds: Double, predictedSeconds: Double) {
+        self.distanceMeters = distanceMeters
+        self.goalSeconds = goalSeconds
+        self.predictedSeconds = predictedSeconds
+    }
+
+    public var goalPace: Pace { Pace(secondsPerKm: goalSeconds / (distanceMeters / 1000)) }
+
+    /// How much faster than predicted the goal is (0.04 = 4% faster; negative = slower).
+    public var fasterThanPredicted: Double { (predictedSeconds - goalSeconds) / predictedSeconds }
+
+    public var isTooOptimistic: Bool { fasterThanPredicted > Self.optimisticBeyond }
+
+    /// A realistic target: from predicted down to 5% faster than predicted.
+    public var realisticRange: ClosedRange<Double> { (predictedSeconds * (1 - Self.optimisticBeyond))...predictedSeconds }
+
+    /// The race-pace zone for the distance, if there is one.
+    public var raceZone: PaceZone? {
+        switch distanceMeters {
+        case 5000: return .fiveK
+        case 10000: return .tenK
+        case 21097.5: return .halfMarathon
+        case 42195: return .marathon
+        default: return nil
+        }
     }
 }

@@ -86,6 +86,9 @@ struct TrainingProfileView: View {
                     row("Hyrox division", value: model.hyroxDivision?.displayName ?? "Not set", step: .goal)
                 }
                 row("Event date", value: model.hasEvent ? model.eventDate.formatted(.dateTime.day().month().year()) : "None", step: .eventDate)
+                if model.asksGoalTime {
+                    row("Target time", value: model.hasGoalTime ? Duration.seconds(model.goalTimeSeconds).formatted(.time(pattern: .hourMinuteSecond)) : "None", step: .eventDate)
+                }
             }
             Section("Schedule") {
                 row("Training days", value: Weekday.allCases.filter { model.trainingDays.contains($0) }.map(\.shortName).joined(separator: " "),
@@ -158,7 +161,11 @@ struct TrainingProfileView: View {
             loaded = true
         }
         .confirmationDialog("Update your plan?", isPresented: $showRegenerate, titleVisibility: .visible) {
-            Button("Rebuild my plan") {
+            Button("Rebuild from today, keep my progress") {
+                PlanService.rebuildRemainder(for: profileModel.profile, in: context)
+                dismiss()
+            }
+            Button("Start over from week 1") {
                 PlanService.createPlan(for: profileModel.profile, in: context)
                 dismiss()
             }

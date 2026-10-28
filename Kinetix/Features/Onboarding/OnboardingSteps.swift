@@ -317,7 +317,7 @@ struct EventDateStep: View {
 
     var body: some View {
         OnboardingQuestion(plain: "Training for", accented: "an event?",
-                           detail: "Optional. With a date, your plan builds through base, build and peak phases, then tapers so you arrive fresh.")
+                           detail: "Optional. With a date, your plan builds through base, build and peak phases, then tapers so you arrive fresh. A target time sets your race-pace and interval sessions.")
         Toggle("I have a target date", isOn: $model.hasEvent)
             .font(KXFont.bodyEmphasis)
             .tint(KXColor.accent)
@@ -333,6 +333,67 @@ struct EventDateStep: View {
             .tint(KXColor.accent)
             .kxCard()
         }
+        if model.asksGoalTime {
+            Toggle("I have a target time", isOn: $model.hasGoalTime)
+                .font(KXFont.bodyEmphasis)
+                .tint(KXColor.accent)
+                .kxCard()
+            if model.hasGoalTime {
+                VStack(alignment: .leading, spacing: KXSpacing.md) {
+                    KXOverline("Target time")
+                    HStack(spacing: 0) {
+                        timeWheel("Hours", selection: $model.goalHours, range: 0...6)
+                        timeWheel("Minutes", selection: $model.goalMinutes, range: 0...59)
+                        timeWheel("Seconds", selection: $model.goalSeconds, range: 0...59)
+                    }
+                    .frame(height: 150)
+                    goalCheck
+                }
+                .kxCard()
+            }
+        }
+    }
+
+    /// What current fitness predicts, the paces the goal sets, and a warning when it's a stretch.
+    @ViewBuilder private var goalCheck: some View {
+        let profile = model.profile
+        if model.goalTimeSeconds >= 600, let check = GoalTime(profile: profile) {
+            let zones = PaceZones(profile: profile)
+            let predicted = Units.formatMinutesSeconds(check.predictedSeconds)
+            if check.isTooOptimistic {
+                Label {
+                    Text("That's \(Int((check.fasterThanPredicted * 100).rounded()))% faster than your current fitness predicts (\(predicted)). A realistic target is \(Units.formatMinutesSeconds(check.realisticRange.lowerBound))–\(predicted). You can keep it; your race-pace and interval sessions will be set from it, so they'll feel hard.")
+                } icon: {
+                    Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(KXColor.warning)
+                }
+                .font(KXFont.callout)
+                .foregroundStyle(KXColor.ink)
+                .fixedSize(horizontal: false, vertical: true)
+            } else {
+                Text("Your current fitness predicts \(predicted).")
+                    .font(KXFont.callout)
+                    .foregroundStyle(KXColor.inkSecondary)
+            }
+            Text("Race pace \(paceText(check.goalPace)), intervals about \(paceText(zones.typicalPace(for: .interval))).")
+                .font(KXFont.callout)
+                .foregroundStyle(KXColor.inkSecondary)
+        }
+    }
+
+    private func paceText(_ pace: Pace) -> String {
+        Units.formatPace(pace, units: model.units) + Units.paceUnitLabel(model.units)
+    }
+
+    private func timeWheel(_ label: String, selection: Binding<Int>, range: ClosedRange<Int>) -> some View {
+        Picker(label, selection: selection) {
+            ForEach(Array(range), id: \.self) { value in
+                Text("\(value) \(label.prefix(1).lowercased())").tag(value)
+            }
+        }
+        .pickerStyle(.wheel)
+        .frame(maxWidth: .infinity)
+        .clipped()
+        .accessibilityLabel(label)
     }
 }
 

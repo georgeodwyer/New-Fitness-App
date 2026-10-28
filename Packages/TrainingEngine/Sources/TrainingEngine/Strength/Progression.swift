@@ -104,7 +104,8 @@ public enum Progression {
         let averageRPE = rpes.isEmpty ? nil : rpes.reduce(0, +) / Double(rpes.count)
         let allSetsDone = done.count >= prescribedSets
         let hitTop = allSetsDone && done.allSatisfy { $0.reps >= repRange.upper }
-        let missed = !allSetsDone || done.contains { $0.reps < repRange.lower }
+        // Only failed reps count against you. Sets not done (a session cut short) just hold the weight.
+        let missed = done.contains { $0.reps < repRange.lower }
         let effortOK = averageRPE.map { $0 <= rules.maxRPEForIncrease } ?? true
         let weightText = { (kg: Double) in Units.formatWeight(kg: kg, units: units) + " " + Units.weightUnitLabel(units) }
         let setsText = "\(done.count)×\(repRange.upper)"
@@ -142,6 +143,14 @@ public enum Progression {
                 newState: ProgressionState(workingWeightKg: base, stallCount: stalls),
                 change: .hold,
                 reason: "\(exerciseName): staying at \(weightText(base)). Some reps fell short of \(repRange.lower), so have another go."
+            )
+        }
+
+        if !allSetsDone {
+            return ProgressionDecision(
+                newState: ProgressionState(workingWeightKg: base, stallCount: state.stallCount),
+                change: .hold,
+                reason: "\(exerciseName): staying at \(weightText(base)). You did \(done.count) of \(prescribedSets) sets, so finish them all to earn an increase."
             )
         }
 
