@@ -122,7 +122,7 @@
  "goals": {
   "first5k": {
    "runsMin": 3,
-   "runsMax": 4,
+   "runsMax": 3,
    "liftsMin": 1,
    "liftsMax": 2,
    "defaultSplit": "fullBody2",
@@ -1994,6 +1994,868 @@
   }
  },
  "programmes": [
+  {
+   "goal": "first5k",
+   "name": "First 5K",
+   "description": "Build up to running 5K comfortably, then race it.",
+   "lengthWeeks": 8,
+   "afterLastWeek": "repeat",
+   "runsPerWeekMin": 3,
+   "runsPerWeekMax": 3,
+   "longRunCapMeters": 8000.0,
+   "weeklyCapMeters": 25000.0,
+   "taperWeeks": 1,
+   "raceReadyMeters": {
+    "beginner": 15000.0
+   },
+   "weeks": [
+    {
+     "week": 1,
+     "phase": "base",
+     "isDeload": false,
+     "isRaceWeek": false,
+     "volume": 0.6,
+     "longRun": {
+      "kind": "auto"
+     },
+     "strength": "normal",
+     "note": "Run/walk: short runs with walking breaks. Easy enough to chat throughout."
+    },
+    {
+     "week": 2,
+     "phase": "base",
+     "isDeload": false,
+     "isRaceWeek": false,
+     "volume": 0.7,
+     "longRun": {
+      "kind": "auto"
+     },
+     "strength": "normal",
+     "note": null
+    },
+    {
+     "week": 3,
+     "phase": "base",
+     "isDeload": false,
+     "isRaceWeek": false,
+     "volume": 0.8,
+     "longRun": {
+      "kind": "auto"
+     },
+     "strength": "normal",
+     "note": null
+    },
+    {
+     "week": 4,
+     "phase": "base",
+     "isDeload": false,
+     "isRaceWeek": false,
+     "volume": 0.85,
+     "longRun": {
+      "kind": "auto"
+     },
+     "strength": "light",
+     "note": "Longer runs, fewer walks."
+    },
+    {
+     "week": 5,
+     "phase": "build",
+     "isDeload": false,
+     "isRaceWeek": false,
+     "volume": 0.9,
+     "longRun": {
+      "kind": "auto"
+     },
+     "strength": "normal",
+     "note": "A few short pick-ups to wake the legs up."
+    },
+    {
+     "week": 6,
+     "phase": "build",
+     "isDeload": false,
+     "isRaceWeek": false,
+     "volume": 1.0,
+     "longRun": {
+      "kind": "auto"
+     },
+     "strength": "normal",
+     "note": "Your first 20 minutes without stopping."
+    },
+    {
+     "week": 7,
+     "phase": "peak",
+     "isDeload": false,
+     "isRaceWeek": false,
+     "volume": 1.1,
+     "longRun": {
+      "kind": "auto"
+     },
+     "strength": "normal",
+     "note": "25 minutes non-stop: you're nearly there."
+    },
+    {
+     "week": 8,
+     "phase": "taper",
+     "isDeload": false,
+     "isRaceWeek": true,
+     "volume": 0.8,
+     "longRun": {
+      "kind": "race"
+     },
+     "strength": "none",
+     "note": "Race day! Run it comfortably and finish strong."
+    }
+   ],
+   "sessions": [
+    {
+     "week": 1,
+     "order": 1,
+     "name": "Easy run",
+     "type": "easy",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 8,
+       "steps": [
+        {
+         "seconds": 60.0,
+         "zone": "easy",
+         "effort": true
+        }
+       ],
+       "recovery": {
+        "seconds": 90.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Walk"
+       }
+      }
+     ],
+     "text": "8 x 1 min @ E effort, 90 s walk between",
+     "note": null
+    },
+    {
+     "week": 1,
+     "order": 2,
+     "name": "Easy run",
+     "type": "easy",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 8,
+       "steps": [
+        {
+         "seconds": 60.0,
+         "zone": "easy",
+         "effort": true
+        }
+       ],
+       "recovery": {
+        "seconds": 90.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Walk"
+       }
+      }
+     ],
+     "text": "8 x 1 min @ E effort, 90 s walk between",
+     "note": null
+    },
+    {
+     "week": 1,
+     "order": 3,
+     "name": "Long run",
+     "type": "long",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 8,
+       "steps": [
+        {
+         "seconds": 60.0,
+         "zone": "easy",
+         "effort": true
+        }
+       ],
+       "recovery": {
+        "seconds": 90.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Walk"
+       }
+      }
+     ],
+     "text": "8 x 1 min @ E effort, 90 s walk between",
+     "note": null
+    },
+    {
+     "week": 2,
+     "order": 1,
+     "name": "Easy run",
+     "type": "easy",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 6,
+       "steps": [
+        {
+         "seconds": 120.0,
+         "zone": "easy",
+         "effort": true
+        }
+       ],
+       "recovery": {
+        "seconds": 120.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Walk"
+       }
+      }
+     ],
+     "text": "6 x 2 min @ E effort, 2 min walk between",
+     "note": null
+    },
+    {
+     "week": 2,
+     "order": 2,
+     "name": "Easy run",
+     "type": "easy",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 6,
+       "steps": [
+        {
+         "seconds": 120.0,
+         "zone": "easy",
+         "effort": true
+        }
+       ],
+       "recovery": {
+        "seconds": 90.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Walk"
+       }
+      }
+     ],
+     "text": "6 x 2 min @ E effort, 90 s walk between",
+     "note": null
+    },
+    {
+     "week": 2,
+     "order": 3,
+     "name": "Long run",
+     "type": "long",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 5,
+       "steps": [
+        {
+         "seconds": 180.0,
+         "zone": "easy",
+         "effort": true
+        }
+       ],
+       "recovery": {
+        "seconds": 120.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Walk"
+       }
+      }
+     ],
+     "text": "5 x 3 min @ E effort, 2 min walk between",
+     "note": null
+    },
+    {
+     "week": 3,
+     "order": 1,
+     "name": "Easy run",
+     "type": "easy",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 5,
+       "steps": [
+        {
+         "seconds": 180.0,
+         "zone": "easy",
+         "effort": true
+        }
+       ],
+       "recovery": {
+        "seconds": 90.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Walk"
+       }
+      }
+     ],
+     "text": "5 x 3 min @ E effort, 90 s walk between",
+     "note": null
+    },
+    {
+     "week": 3,
+     "order": 2,
+     "name": "Easy run",
+     "type": "easy",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 4,
+       "steps": [
+        {
+         "seconds": 240.0,
+         "zone": "easy",
+         "effort": true
+        }
+       ],
+       "recovery": {
+        "seconds": 90.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Walk"
+       }
+      }
+     ],
+     "text": "4 x 4 min @ E effort, 90 s walk between",
+     "note": null
+    },
+    {
+     "week": 3,
+     "order": 3,
+     "name": "Long run",
+     "type": "long",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 4,
+       "steps": [
+        {
+         "seconds": 300.0,
+         "zone": "easy",
+         "effort": true
+        }
+       ],
+       "recovery": {
+        "seconds": 120.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Walk"
+       }
+      }
+     ],
+     "text": "4 x 5 min @ E effort, 2 min walk between",
+     "note": null
+    },
+    {
+     "week": 4,
+     "order": 1,
+     "name": "Easy run",
+     "type": "easy",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 3,
+       "steps": [
+        {
+         "seconds": 360.0,
+         "zone": "easy",
+         "effort": true
+        }
+       ],
+       "recovery": {
+        "seconds": 120.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Walk"
+       }
+      }
+     ],
+     "text": "3 x 6 min @ E effort, 2 min walk between",
+     "note": null
+    },
+    {
+     "week": 4,
+     "order": 2,
+     "name": "Easy run",
+     "type": "easy",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 3,
+       "steps": [
+        {
+         "seconds": 420.0,
+         "zone": "easy",
+         "effort": true
+        }
+       ],
+       "recovery": {
+        "seconds": 90.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Walk"
+       }
+      }
+     ],
+     "text": "3 x 7 min @ E effort, 90 s walk between",
+     "note": null
+    },
+    {
+     "week": 4,
+     "order": 3,
+     "name": "Long run",
+     "type": "long",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 2,
+       "steps": [
+        {
+         "seconds": 600.0,
+         "zone": "easy",
+         "effort": true
+        }
+       ],
+       "recovery": {
+        "seconds": 120.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Walk"
+       }
+      }
+     ],
+     "text": "2 x 10 min @ E effort, 2 min walk between",
+     "note": null
+    },
+    {
+     "week": 5,
+     "order": 1,
+     "name": "Easy run",
+     "type": "easy",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 2,
+       "steps": [
+        {
+         "seconds": 600.0,
+         "zone": "easy",
+         "effort": true
+        }
+       ],
+       "recovery": {
+        "seconds": 90.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Walk"
+       }
+      }
+     ],
+     "text": "2 x 10 min @ E effort, 90 s walk between",
+     "note": null
+    },
+    {
+     "week": 5,
+     "order": 2,
+     "name": "Fartlek",
+     "type": "intervals",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 5,
+       "steps": [
+        {
+         "seconds": 180.0,
+         "zone": "easy",
+         "effort": true
+        },
+        {
+         "seconds": 30.0,
+         "zone": "fiveK",
+         "effort": true
+        },
+        {
+         "seconds": 90.0,
+         "zone": "easy",
+         "effort": false,
+         "label": "Walk",
+         "recovery": true
+        }
+       ],
+       "recovery": null
+      }
+     ],
+     "text": "5 x (3 min @ E effort / 30 s @ 5K effort / 90 s walk)",
+     "note": null
+    },
+    {
+     "week": 5,
+     "order": 3,
+     "name": "Long run",
+     "type": "long",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 2,
+       "steps": [
+        {
+         "seconds": 720.0,
+         "zone": "easy",
+         "effort": true
+        }
+       ],
+       "recovery": {
+        "seconds": 90.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Walk"
+       }
+      }
+     ],
+     "text": "2 x 12 min @ E effort, 90 s walk between",
+     "note": null
+    },
+    {
+     "week": 6,
+     "order": 1,
+     "name": "Easy run",
+     "type": "easy",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 2,
+       "steps": [
+        {
+         "seconds": 720.0,
+         "zone": "easy",
+         "effort": true
+        }
+       ],
+       "recovery": {
+        "seconds": 90.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Walk"
+       }
+      }
+     ],
+     "text": "2 x 12 min @ E effort, 90 s walk between",
+     "note": null
+    },
+    {
+     "week": 6,
+     "order": 2,
+     "name": "Fartlek",
+     "type": "intervals",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 6,
+       "steps": [
+        {
+         "seconds": 180.0,
+         "zone": "easy",
+         "effort": true
+        },
+        {
+         "seconds": 30.0,
+         "zone": "fiveK",
+         "effort": true
+        },
+        {
+         "seconds": 90.0,
+         "zone": "easy",
+         "effort": false,
+         "label": "Walk",
+         "recovery": true
+        }
+       ],
+       "recovery": null
+      }
+     ],
+     "text": "6 x (3 min @ E effort / 30 s @ 5K effort / 90 s walk)",
+     "note": null
+    },
+    {
+     "week": 6,
+     "order": 3,
+     "name": "Long run",
+     "type": "long",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 1,
+       "steps": [
+        {
+         "seconds": 1200.0,
+         "zone": "easy",
+         "effort": true
+        }
+       ],
+       "recovery": {
+        "seconds": 120.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Walk"
+       }
+      }
+     ],
+     "text": "1 x 20 min @ E effort, 2 min walk between",
+     "note": null
+    },
+    {
+     "week": 7,
+     "order": 1,
+     "name": "Easy run",
+     "type": "easy",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 1,
+       "steps": [
+        {
+         "seconds": 1200.0,
+         "zone": "easy",
+         "effort": true
+        }
+       ],
+       "recovery": {
+        "seconds": 120.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Walk"
+       }
+      }
+     ],
+     "text": "1 x 20 min @ E effort, 2 min walk between",
+     "note": null
+    },
+    {
+     "week": 7,
+     "order": 2,
+     "name": "Fartlek",
+     "type": "intervals",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 6,
+       "steps": [
+        {
+         "seconds": 240.0,
+         "zone": "easy",
+         "effort": true
+        },
+        {
+         "seconds": 30.0,
+         "zone": "fiveK",
+         "effort": true
+        },
+        {
+         "seconds": 60.0,
+         "zone": "easy",
+         "effort": false,
+         "label": "Walk",
+         "recovery": true
+        }
+       ],
+       "recovery": null
+      }
+     ],
+     "text": "6 x (4 min @ E effort / 30 s @ 5K effort / 60 s walk)",
+     "note": null
+    },
+    {
+     "week": 7,
+     "order": 3,
+     "name": "Long run",
+     "type": "long",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 1,
+       "steps": [
+        {
+         "seconds": 1500.0,
+         "zone": "easy",
+         "effort": true
+        }
+       ],
+       "recovery": {
+        "seconds": 120.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Walk"
+       }
+      }
+     ],
+     "text": "1 x 25 min @ E effort, 2 min walk between",
+     "note": null
+    },
+    {
+     "week": 8,
+     "order": 1,
+     "name": "Easy run",
+     "type": "easy",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 1,
+       "steps": [
+        {
+         "seconds": 900.0,
+         "zone": "easy",
+         "effort": true
+        }
+       ],
+       "recovery": {
+        "seconds": 120.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Walk"
+       }
+      }
+     ],
+     "text": "1 x 15 min @ E effort, 2 min walk between",
+     "note": null
+    },
+    {
+     "week": 8,
+     "order": 2,
+     "name": "Easy run",
+     "type": "easy",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 1,
+       "steps": [
+        {
+         "seconds": 600.0,
+         "zone": "easy",
+         "effort": true
+        }
+       ],
+       "recovery": {
+        "seconds": 120.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Walk"
+       }
+      }
+     ],
+     "text": "1 x 10 min @ E effort, 2 min walk between",
+     "note": null
+    },
+    {
+     "week": 8,
+     "order": 3,
+     "name": "Race day",
+     "type": "race",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "race"
+      }
+     ],
+     "text": "5K – run it comfortably and finish strong",
+     "note": null
+    }
+   ]
+  },
   {
    "goal": "faster5k",
    "name": "Faster 5K",

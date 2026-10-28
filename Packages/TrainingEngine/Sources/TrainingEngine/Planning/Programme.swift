@@ -192,8 +192,16 @@ public struct ProgrammeSession: Codable, Equatable, Sendable {
 
     /// Has reps or a set block of hard running (gets a warm-up and cool-down).
     var isStructured: Bool {
-        parts.contains { part in
+        !isRunWalk && parts.contains { part in
             part.kind == "reps" && (part.steps ?? []).contains { !$0.isRecovery && $0.label != "Stride" }
+        }
+    }
+
+    /// Running with walk breaks (e.g. '8 x 1 min @ E, 90 s walk between'): kept exactly as
+    /// written, with a brisk walk either side instead of a jogged warm-up.
+    var isRunWalk: Bool {
+        parts.contains { part in
+            part.kind == "reps" && (part.recovery?.label == "Walk" || (part.steps ?? []).contains { $0.label == "Walk" })
         }
     }
 }

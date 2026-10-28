@@ -57,7 +57,12 @@ marathon for three example runners and prints a week-by-week preview (lines star
   easy run when there's a free day.
 - **Run days:** fewer days than sessions → recovery runs go first, then easy runs, then
   shakeouts; more days → easy runs are added.
-- **Race:** its full distance on race day, at race pace, not counted in the week's %. No
+- **Run/walk:** a workout with walk breaks (e.g. `8 x 1 min @ E effort, 90 s walk between`)
+  is kept exactly as written, with five minutes of brisk walking either side instead of a
+  jogged warm-up; walks have no pace target. First 5K uses these until runners can run 20–25
+  minutes non-stop.
+- **Race:** its full distance on race day, at race pace (First 5K: by feel, easy-to-steady, unless they set a goal time), not counted
+  in the week's %. No
   lifting in race week if strength is "None", and never on race day or the day before.
 - **Race date:** the programme is lined up so its last week is race week. If the race is
   sooner, the early weeks are skipped; if it's further away, the base weeks are repeated

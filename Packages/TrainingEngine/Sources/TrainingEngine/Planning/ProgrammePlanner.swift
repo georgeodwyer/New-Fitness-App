@@ -243,6 +243,7 @@ enum ProgrammePlanner {
         let context = WeekContext(weekMeters: weekMeters, shortest: shortest, longestRun: rules.longestRunMeters,
                                   longShare: rules.longRunShare, longCap: longCap, longSpec: programmeWeek?.longRun ?? .auto,
                                   raceMeters: programme.raceDistanceMeters ?? 21097.5, raceZone: programme.racePaceZone,
+                                  raceIsEffort: programme.goal == .first5k && profile.goalTimeSeconds == nil,
                                   raceLabel: hasEventThisWeek ? "race" : "time trial", programmeName: programme.name, zones: zones,
                                   rules: rules)
         var runs = allocate(sessions, context: context)
@@ -362,6 +363,8 @@ enum ProgrammePlanner {
         var longSpec: ProgrammeDistance
         var raceMeters: Double
         var raceZone: PaceZone
+        /// Run the race by feel (a first 5K without a goal time): easy-to-steady, pace as a guide.
+        var raceIsEffort: Bool
         var raceLabel: String
         var programmeName: String
         var zones: PaceZones
@@ -382,10 +385,17 @@ enum ProgrammePlanner {
             if session.isRace {
                 runs[i].meters = c.raceMeters
                 runs[i].structure = RunStructure(segments: [
-                    RunSegment(kind: .work, length: .distance(meters: c.raceMeters), targetPace: c.zones.range(for: c.raceZone),
-                               label: c.raceLabel == "race" ? "Race" : "Time trial")
+                    RunSegment(kind: .work, length: .distance(meters: c.raceMeters),
+                               targetPace: c.raceIsEffort ? range(for: "steady", zones: c.zones) : c.zones.range(for: c.raceZone),
+                               label: c.raceLabel == "race" ? "Race" : "Time trial", paceIsGuide: c.raceIsEffort ? true : nil)
                 ])
-                runs[i].summary = "\(c.programmeName) \(c.raceLabel)"
+                runs[i].summary = c.raceIsEffort ? "\(c.programmeName) \(c.raceLabel) · run it comfortably and finish strong"
+                    : "\(c.programmeName) \(c.raceLabel)"
+            } else if session.isRunWalk {
+                let built = runWalk(session, zones: c.zones)
+                runs[i].structure = built.structure
+                runs[i].meters = built.structure.estimate(zones: c.zones).distanceMeters
+                runs[i].summary = built.summary
             } else if session.runType == .long {
                 let spec = session.distance.kind == "auto" ? c.longSpec : session.distance
                 var meters: Double
@@ -401,7 +411,7 @@ enum ProgrammePlanner {
         }
 
         func isFlexible(_ run: PlannedRun) -> Bool {
-            !run.session.isRace && run.session.runType != .long && !run.session.isStructured
+            !run.session.isRace && run.session.runType != .long && !run.session.isStructured && !run.session.isRunWalk
         }
         let flexibleAuto = runs.filter { isFlexible($0) && $0.session.distance.kind == "auto" }.count
 
@@ -469,6 +479,7 @@ enum ProgrammePlanner {
     /// Which runs go first when there are fewer run days (nil = never dropped).
     static func dropPriority(_ session: ProgrammeSession) -> Int? {
         if session.isRace || session.runType == .long { return nil }
+        if session.isRunWalk { return 3 }
         if session.type == "recovery" { return 0 }
         if session.type == "easy" { return session.name == "Shakeout" ? 2 : 1 }
         return session.isStructured ? 4 : 3
@@ -626,8 +637,10 @@ enum ProgrammePlanner {
     private static func segment(_ step: WorkoutStepSpec, kind: SegmentKind, label: String, zones: PaceZones) -> RunSegment {
         let length: SegmentLength = step.meters.map { .distance(meters: $0) } ?? .duration(seconds: step.seconds ?? 60)
         let isGuide = step.effort == true && step.zone != "hill"
-        return RunSegment(kind: kind, length: length, targetPace: range(for: step.zone, zones: zones), label: label,
-                          paceIsGuide: isGuide ? true : nil)
+        // Walking has no pace target.
+        let pace = step.label == "Walk" ? nil : range(for: step.zone, zones: zones)
+        return RunSegment(kind: kind, length: length, targetPace: pace, label: label,
+                          paceIsGuide: isGuide && pace != nil ? true : nil)
     }
 
     /// The segments of a block of reps, and a short description ("6 × 800 m I").
@@ -671,6 +684,19 @@ enum ProgrammePlanner {
             summary = "\(repeats) × (\(lengths))"
         }
         return (segments, summary)
+    }
+
+    /// Run/walk reps exactly as written, between five minutes of brisk walking.
+    private static func runWalk(_ session: ProgrammeSession, zones: PaceZones) -> (structure: RunStructure, summary: String) {
+        var segments = [RunSegment(kind: .warmUp, length: .duration(seconds: 300), label: "Brisk walk")]
+        var summaries: [String] = []
+        for part in session.parts where part.kind == "reps" {
+            let block = expand(part, repeats: max(part.repeats ?? 1, 1), zones: zones)
+            segments += block.segments
+            summaries.append(block.summary)
+        }
+        segments.append(RunSegment(kind: .coolDown, length: .duration(seconds: 300), label: "Walk to cool down"))
+        return (RunStructure(segments: segments), summaries.joined(separator: " + ") + " run/walk")
     }
 
     /// A rep or tempo session with an easy warm-up and cool-down.

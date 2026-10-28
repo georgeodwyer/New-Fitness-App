@@ -118,6 +118,8 @@ def step(text, recovery=False):
         result.update(zone=zone_code(zm.group(1)), effort=effort)
     elif re.search(r"\b(jog|walk|rest)\b", rest, re.I) or not rest:
         result.update(zone="easy", effort=False)
+        if re.search(r"\bwalk\b", rest, re.I):
+            result["label"] = "Walk"
     else:
         raise ParseError(f"no pace in '{text}'")
     if result["zone"] == "easy" or recovery:

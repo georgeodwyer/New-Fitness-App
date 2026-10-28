@@ -207,6 +207,22 @@ final class ProgrammePlannerTests: XCTestCase {
         XCTAssertLessThanOrEqual(longest, marathon.longRunCapMeters + 600)
     }
 
+    func testFirst5KRunWalk() throws {
+        var runner = profile(Runner(name: "new runner", level: .beginner, weeklyKm: 0, longestKm: 0, fiveK: 40 * 60),
+                             days: [.monday, .wednesday, .saturday], doubles: 0)
+        runner.goal = .first5k
+        runner.recentRace = nil
+        let (_, weeks) = plan(runner)
+        let first = try XCTUnwrap(runs(weeks[0]).first)
+        let segments = try XCTUnwrap(first.runStructure?.segments)
+        XCTAssertEqual(segments.first?.label, "Brisk walk", "Run/walk starts with a walk, not a jogged warm-up")
+        XCTAssertEqual(segments.filter { $0.kind == .work }.count, 8, "8 × 1 min run, as written")
+        XCTAssertTrue(segments.filter { $0.label == "Walk" }.allSatisfy { $0.targetPace == nil }, "Walks have no pace target")
+        // Race: run by feel without a goal time.
+        let race = try XCTUnwrap(weeks.flatMap(runs).last { $0.title == "Race day" })
+        XCTAssertEqual(race.runStructure?.segments.first?.paceIsGuide, true)
+    }
+
     func testHyroxPlan() throws {
         let hyrox = try XCTUnwrap(TestSupport.bundledTemplates.programmes.programme(for: .hyrox))
         XCTAssertEqual(hyrox.weeks.count, 12)
