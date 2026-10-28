@@ -120,7 +120,8 @@ struct WalkthroughPage: Sendable {
             points: [
                 ("arrow.down.right", "Low recovery: today's hard sessions are eased for you."),
                 ("hand.raised", "Fair recovery: you're offered a lighter version. Your choice."),
-                ("calendar.badge.clock", "Busy day? Move a session to another day from its menu."),
+                ("calendar.badge.clock", "Busy day? Open a session and tap Move, swap or skip: move it, or trade days with another session."),
+                ("checkmark.circle", "Did a session without the app, or on a treadmill? Tap Mark as done on it."),
                 ("arrow.uturn.backward", "Every change shows why it happened, and you can undo it."),
             ],
             illustration: .adapts),
