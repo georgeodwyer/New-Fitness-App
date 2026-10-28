@@ -156,11 +156,14 @@ final class ProgrammePlannerTests: XCTestCase {
             XCTAssertTrue(file.isGoal(.faster5k, availableTo: level))
             XCTAssertTrue(file.isGoal(.marathon, availableTo: level))
         }
-        // Build strength has no programme written yet, so it uses the rule-based planner.
+        // A goal without a programme uses the rule-based planner.
+        var library = TestSupport.bundledTemplates
+        library.programmes.programmes.removeAll { $0.goal == .buildStrength }
+        let ruleBased = PlanGenerator(templates: library, calendar: calendar)
         let runner = TestSupport.profile(running: .intermediate, goal: .buildStrength)
-        let outline = generator.makeOutline(for: runner, startingOn: monday)
+        let outline = ruleBased.makeOutline(for: runner, startingOn: monday)
         XCTAssertNil(outline.programmeGoal)
-        XCTAssertFalse(generator.generateWeek(0, outline: outline, profile: runner)?.sessions.isEmpty ?? true)
+        XCTAssertFalse(ruleBased.generateWeek(0, outline: outline, profile: runner)?.sessions.isEmpty ?? true)
     }
 
     func testChosenGymSplit() {

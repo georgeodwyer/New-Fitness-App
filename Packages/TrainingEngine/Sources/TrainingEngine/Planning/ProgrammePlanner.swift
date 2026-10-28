@@ -260,8 +260,10 @@ enum ProgrammePlanner {
         let slots = mix.days.count + mix.doubles
         let liftCount = strengthEmphasis == "none" ? 0 : max(0, min(weekCounts.lifts, slots - runs.count))
         let lifts = templates.liftTemplates(for: profile, count: liftCount)
+        // Build strength and Build muscle place their gym days first.
+        let liftingGoal = profile.goal == .buildStrength || profile.goal == .buildMuscle
         let schedule = WeekScheduler.schedule(days: mix.days, doubleDays: mix.doubles, runs: runs.map(\.session.runType), lifts: lifts,
-                                              prioritiseLifts: false, keepLegSessions: profile.goal == .hyrox)
+                                              prioritiseLifts: liftingGoal, keepLegSessions: liftingGoal || profile.goal == .hyrox)
         notes += schedule.notes
 
         var pool = runs
