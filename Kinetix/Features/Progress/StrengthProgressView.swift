@@ -112,7 +112,7 @@ struct StrengthProgressView: View {
                                 .foregroundStyle(KXColor.ink)
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(workout.title.isEmpty ? "Strength" : workout.title).font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink)
-                                    Text("\(workout.orderedSets.filter(\.isCompleted).count) sets · \(Int((workout.durationSeconds / 60).rounded())) min\(workout.isRecorded ? " · Recorded" : "")")
+                                    Text("\(workout.orderedSets.filter(\.isCompleted).count) sets · \(Int((workout.durationSeconds / 60).rounded())) min\(workout.isManual ? " · Logged by hand" : workout.isRecorded ? " · Recorded" : "")")
                                         .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
                                 }
                                 Spacer()

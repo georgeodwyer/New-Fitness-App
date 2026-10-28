@@ -85,6 +85,8 @@ final class StrengthLogModel: SyncTracked {
     var warmUpSeconds: Double?
     /// The saved gym workout it was started from (Record tab), if any.
     var templateId: UUID?
+    /// Marked as done by hand (not tracked in Kinetix): counted, never exported.
+    var isManual: Bool = false
 
     @Relationship(deleteRule: .cascade, inverse: \SetLogModel.session)
     var sets: [SetLogModel] = []

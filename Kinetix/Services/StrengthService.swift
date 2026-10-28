@@ -66,6 +66,29 @@ enum StrengthService {
         return log
     }
 
+    /// A planned gym session done without tracking it in Kinetix. "All sets as planned" ticks
+    /// every set at its target (so weights progress as usual); otherwise nothing is ticked and
+    /// weights hold. Never sent to Health or Strava.
+    @discardableResult
+    static func logManual(for session: PlannedSessionModel, allSetsDone: Bool, startedAt: Date, durationSeconds: Double,
+                          effort: Double, units: UnitSystem, in context: ModelContext) -> Summary {
+        let log = startOrResume(session, in: context, now: startedAt)
+        log.startedAt = startedAt
+        log.isManual = true
+        let finishedAt = startedAt.addingTimeInterval(max(durationSeconds, 60))
+        for set in log.orderedSets {
+            if allSetsDone {
+                set.actualReps = set.targetReps
+                set.actualWeightKg = set.targetWeightKg
+                set.completedAt = finishedAt
+            } else {
+                set.completedAt = nil
+            }
+            set.touch(now: finishedAt)
+        }
+        return finish(log, planned: session, effort: effort, units: units, in: context, now: finishedAt)
+    }
+
     /// Adds one more set to an exercise, copying the previous set's targets.
     static func addSet(after last: SetLogModel, to log: StrengthLogModel, in context: ModelContext) {
         let set = SetLogModel(exerciseId: last.exerciseId, setIndex: last.setIndex + 1, targetReps: last.targetReps, targetWeightKg: last.actualWeightKg)

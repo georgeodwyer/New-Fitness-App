@@ -83,6 +83,31 @@ enum RunService {
         ActivityExportService.runFinished(log, in: context)
     }
 
+    /// A planned run done without recording it in Kinetix (forgot the app, a treadmill…):
+    /// saved with what they enter, counted for load and the plan, never sent to Health or
+    /// Strava (it may well be there already).
+    @discardableResult
+    static func logManual(for planned: PlannedSessionModel, startedAt: Date, durationSeconds: Double, distanceMeters: Double,
+                          effort: Double, averageHeartRate: Double? = nil, in context: ModelContext, now: Date = .now) -> RunLogModel {
+        let log = RunLogModel(plannedSessionId: planned.id, startedAt: startedAt, now: now)
+        log.title = planned.title
+        if case .run(let type) = planned.kind { log.runTypeRaw = type.rawValue }
+        log.importSourceRaw = RunLogModel.manualSource
+        log.durationSeconds = max(durationSeconds, 0)
+        log.distanceMeters = max(distanceMeters, 0)
+        log.averageHeartRate = averageHeartRate
+        log.effort = effort
+        log.load = SessionLoad.srpe(durationSeconds: log.durationSeconds, effort: effort)
+        log.isFinished = true
+        log.finishedAt = startedAt.addingTimeInterval(log.durationSeconds)
+        context.insert(log)
+        planned.status = .completed
+        planned.touch(now: now)
+        try? context.save()
+        SyncService.shared.requestSync()
+        return log
+    }
+
     static func discard(_ log: RunLogModel, in context: ModelContext) {
         context.delete(log)
         try? context.save()
@@ -118,6 +143,7 @@ extension RunLogModel {
     var sourceTag: String? {
         if isImportedFromStrava { return "From Strava" }
         if isFromGarmin { return "Garmin" }
+        if isLoggedByHand { return "Logged by hand" }
         if recordTypeRaw != nil { return "Recorded" }
         return plannedSessionId != nil ? "Planned" : nil
     }
@@ -126,6 +152,9 @@ extension RunLogModel {
     /// Recorded on the Kinetix Garmin app: Garmin Connect already has it (and sends it on to
     /// Strava and Health if you've linked them), so Kinetix doesn't upload it again.
     var isFromGarmin: Bool { importSourceRaw == "garmin" }
+    static let manualSource = "manual"
+    /// Marked as done by hand (not recorded in Kinetix): no route, never exported.
+    var isLoggedByHand: Bool { importSourceRaw == Self.manualSource }
     /// Simulated GPS runs are practice data: shown, but left out of totals and best efforts.
     var countsTowardsHistory: Bool { isFinished && !isSoftDeleted && !usedSimulatedGPS }
     var route: [RoutePoint] { StoredJSON.decode([RoutePoint].self, from: routeData) ?? [] }

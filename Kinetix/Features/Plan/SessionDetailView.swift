@@ -10,6 +10,7 @@ struct SessionDetailView: View {
     @Environment(AppRouter.self) private var router
     @Environment(\.modelContext) private var context
     @State private var showActions = false
+    @State private var showMarkDone = false
     @State private var lastChange: String?
     @Query(sort: \PlanChangeModel.createdAt, order: .reverse) private var allChanges: [PlanChangeModel]
 
@@ -81,18 +82,38 @@ struct SessionDetailView: View {
         .safeAreaInset(edge: .bottom) {
             if session.status == .planned || session.status == .swapped,
                session.kind.discipline == .run || session.kind.discipline == .strength {
-                Button {
-                    router.startPlanned(session, in: context)
-                } label: {
-                    Label(session.kind.discipline == .run ? "Start run" : "Start session", systemImage: "play.fill")
+                VStack(spacing: KXSpacing.sm) {
+                    Button {
+                        router.startPlanned(session, in: context)
+                    } label: {
+                        Label(session.kind.discipline == .run ? "Start run" : "Start session", systemImage: "play.fill")
+                    }
+                    .buttonStyle(.kx(.primary, fullWidth: true))
+                    // Done without Kinetix (forgot the app, a treadmill…): today or the last week.
+                    if session.canMarkDone() {
+                        Button {
+                            showMarkDone = true
+                        } label: {
+                            Label("Mark as done", systemImage: "checkmark")
+                        }
+                        .buttonStyle(.kx(.outlined, fullWidth: true))
+                        .accessibilityIdentifier("session.markDone")
+                    }
                 }
-                .buttonStyle(.kx(.primary, fullWidth: true))
                 .padding(KXSpacing.screenMargin)
                 .background(KXColor.background)
             }
         }
         .background(KXColor.background.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showMarkDone) {
+            let units = profiles.first?.units ?? UnitPreference.stored
+            if session.kind.discipline == .run {
+                MarkDoneRunSheet(session: session, units: units) { showMarkDone = false }
+            } else {
+                MarkDoneGymSheet(session: session, units: units) { showMarkDone = false }
+            }
+        }
         .sheet(isPresented: $showActions) {
             if let profile = profiles.first?.profile {
                 SessionActionsSheet(session: session, profile: profile) { explanations in

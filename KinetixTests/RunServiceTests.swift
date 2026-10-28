@@ -44,4 +44,37 @@ final class RunServiceTests: XCTestCase {
         RunService.discard(log, in: context)
         XCTAssertTrue(try context.fetch(FetchDescriptor<RunLogModel>()).isEmpty)
     }
+
+    func testMarkingARunDoneCountsItWithoutRecording() throws {
+        let container = try Persistence.makeContainer(inMemory: true)
+        let context = container.mainContext
+        let start = Date(timeIntervalSince1970: 2_000_000)
+        let planned = PlannedSessionModel(date: start, slot: .morning, kind: .run(.easy), isKey: false,
+                                          plannedDurationMinutes: 30, plannedEffort: 3, runStructure: nil)
+        context.insert(planned)
+
+        let log = RunService.logManual(for: planned, startedAt: start, durationSeconds: 1800, distanceMeters: 5000,
+                                       effort: 4, averageHeartRate: 140, in: context)
+
+        XCTAssertEqual(planned.status, .completed)
+        XCTAssertTrue(log.isFinished)
+        XCTAssertTrue(log.isLoggedByHand)
+        XCTAssertEqual(log.sourceTag, "Logged by hand")
+        XCTAssertEqual(log.plannedSessionId, planned.id)
+        XCTAssertEqual(log.load, 30 * 4, accuracy: 0.01)
+        XCTAssertEqual(log.finishedAt, start.addingTimeInterval(1800))
+        XCTAssertTrue(log.route.isEmpty)
+    }
+
+    func testCanMarkDoneOnlyForTheLastWeek() {
+        let now = Date(timeIntervalSince1970: 2_000_000)
+        func session(daysAgo: Int) -> PlannedSessionModel {
+            PlannedSessionModel(date: now.addingTimeInterval(Double(-daysAgo) * 86_400), slot: .morning, kind: .run(.easy),
+                                isKey: false, plannedDurationMinutes: 30, plannedEffort: 3, runStructure: nil)
+        }
+        XCTAssertTrue(session(daysAgo: 0).canMarkDone(now: now))
+        XCTAssertTrue(session(daysAgo: 7).canMarkDone(now: now))
+        XCTAssertFalse(session(daysAgo: 8).canMarkDone(now: now))
+        XCTAssertFalse(session(daysAgo: -1).canMarkDone(now: now), "Not future sessions")
+    }
 }

@@ -39,7 +39,8 @@ enum ActivityExportService {
     static func export(run log: RunLogModel, in context: ModelContext, settings: IntegrationSettings = .shared) async {
         // Simulated GPS runs are practice data, and runs imported from Strava came from
         // another app: keep both out of Health and Strava.
-        guard log.isFinished, !log.isSoftDeleted, !log.usedSimulatedGPS, !log.isImportedFromStrava, !log.isFromGarmin, !inFlight.contains(log.id) else { return }
+        guard log.isFinished, !log.isSoftDeleted, !log.usedSimulatedGPS, !log.isImportedFromStrava, !log.isFromGarmin, !log.isLoggedByHand,
+              !inFlight.contains(log.id) else { return }
         inFlight.insert(log.id)
         defer { inFlight.remove(log.id) }
         var changed = false
@@ -66,7 +67,7 @@ enum ActivityExportService {
     }
 
     static func export(strength log: StrengthLogModel, units: UnitSystem, in context: ModelContext, settings: IntegrationSettings = .shared) async {
-        guard log.isFinished, !log.isSoftDeleted, !inFlight.contains(log.id) else { return }
+        guard log.isFinished, !log.isSoftDeleted, !log.isManual, !inFlight.contains(log.id) else { return }
         inFlight.insert(log.id)
         defer { inFlight.remove(log.id) }
         var changed = false
@@ -104,11 +105,12 @@ enum ActivityExportService {
         guard anyEnabled else { return }
         let since = now.addingTimeInterval(-retryWindow)
         let runs = (try? context.fetch(FetchDescriptor<RunLogModel>(predicate: #Predicate { $0.isFinished && $0.startedAt >= since }))) ?? []
-        for run in runs where !run.isImportedFromStrava && !run.isFromGarmin && (run.healthKitWorkoutId == nil || run.stravaActivityId == nil) {
+        for run in runs where !run.isImportedFromStrava && !run.isFromGarmin && !run.isLoggedByHand
+            && (run.healthKitWorkoutId == nil || run.stravaActivityId == nil) {
             await export(run: run, in: context)
         }
         let lifts = (try? context.fetch(FetchDescriptor<StrengthLogModel>(predicate: #Predicate { $0.isFinished && $0.startedAt >= since }))) ?? []
-        for lift in lifts where lift.healthKitWorkoutId == nil || lift.stravaActivityId == nil {
+        for lift in lifts where !lift.isManual && (lift.healthKitWorkoutId == nil || lift.stravaActivityId == nil) {
             await export(strength: lift, units: units, in: context)
         }
     }

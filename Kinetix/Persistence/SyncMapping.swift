@@ -333,13 +333,14 @@ extension StrengthLogModel: SyncableModel {
         var activeSeconds: Double?
         var warmUpSeconds: Double?
         var templateId: UUID?
+        var isManual: Bool?
     }
     static var syncType: String { "strengthLog" }
     var syncPayload: Payload {
         Payload(plannedSessionId: plannedSessionId, startedAt: startedAt, durationSeconds: durationSeconds, effort: effort,
                 load: load, title: title, isFinished: isFinished, finishedAt: finishedAt, healthKitWorkoutId: healthKitWorkoutId,
                 stravaActivityId: stravaActivityId, isRecorded: isRecorded, activeSeconds: activeSeconds, warmUpSeconds: warmUpSeconds,
-                templateId: templateId)
+                templateId: templateId, isManual: isManual)
     }
     func applySync(_ p: Payload, context: ModelContext) {
         plannedSessionId = p.plannedSessionId
@@ -356,6 +357,7 @@ extension StrengthLogModel: SyncableModel {
         activeSeconds = p.activeSeconds ?? 0
         warmUpSeconds = p.warmUpSeconds
         templateId = p.templateId
+        isManual = p.isManual ?? false
     }
     static func makeForSync(id: UUID) -> StrengthLogModel { StrengthLogModel(plannedSessionId: nil, startedAt: .now, id: id) }
 }

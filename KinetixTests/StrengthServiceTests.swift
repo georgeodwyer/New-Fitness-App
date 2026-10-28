@@ -94,4 +94,28 @@ final class StrengthServiceTests: XCTestCase {
         XCTAssertTrue(try context.fetch(FetchDescriptor<StrengthLogModel>()).isEmpty)
         XCTAssertTrue(try context.fetch(FetchDescriptor<SetLogModel>()).isEmpty)
     }
+
+    func testMarkedDoneAsPlannedCountsLikeAFullSession() throws {
+        let context = try makeContext()
+        let session = try XCTUnwrap(strengthSessions(in: context).first)
+        let summary = StrengthService.logManual(for: session, allSetsDone: true, startedAt: monday, durationSeconds: 3600,
+                                                effort: 7, units: .metric, in: context)
+        let log = try XCTUnwrap(context.fetch(FetchDescriptor<StrengthLogModel>()).first)
+        XCTAssertTrue(log.isManual)
+        XCTAssertTrue(log.isFinished)
+        XCTAssertEqual(session.status, .completed)
+        XCTAssertEqual(log.load, 420, accuracy: 0.01, "60 min × effort 7")
+        XCTAssertTrue(log.sets.allSatisfy { $0.isCompleted && $0.actualReps == $0.targetReps })
+        XCTAssertFalse(summary.changes.isEmpty, "Progression runs as for a tracked session")
+    }
+
+    func testMarkedDoneNotAllOfItHoldsWeights() throws {
+        let context = try makeContext()
+        let session = try XCTUnwrap(strengthSessions(in: context).first)
+        let before = PlanService.workingWeights(in: context)
+        StrengthService.logManual(for: session, allSetsDone: false, startedAt: monday, durationSeconds: 1800,
+                                  effort: 6, units: .metric, in: context)
+        XCTAssertEqual(session.status, .completed)
+        XCTAssertEqual(PlanService.workingWeights(in: context), before, "Weights stay the same")
+    }
 }
