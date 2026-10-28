@@ -200,7 +200,7 @@ private struct SummaryTable: View {
         return HStack(alignment: .firstTextBaseline, spacing: KXSpacing.sm) {
             Text(recoveries.count > 1 ? "\(name) ×\(recoveries.count)" : name)
                 .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
-            Spacer(minLength: KXSpacing.xs)
+            miniBar(target: recoveries.first?.segment.targetPace, pace: pace)
             Text(pace.map { "avg " + format.pace($0) } ?? "—")
                 .font(KXFont.caption.monospacedDigit()).foregroundStyle(KXColor.inkSecondary)
             verdict(gap, guide: recoveries.first?.segment.paceIsGuide == true)
@@ -229,7 +229,7 @@ private struct SummaryTable: View {
                 Text(title).font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink).lineLimit(1)
             }
             Text(detail).font(KXFont.caption.monospacedDigit()).foregroundStyle(KXColor.inkSecondary).lineLimit(1)
-            Spacer(minLength: KXSpacing.xs)
+            miniBar(target: done ? result.segment.targetPace : nil, pace: result.averagePace)
             Text(done ? (result.averagePace.map { format.pace($0) } ?? "--") : "—")
                 .font(KXFont.bodyEmphasis.monospacedDigit())
                 .foregroundStyle(done ? KXColor.ink : KXColor.inkTertiary)
@@ -238,6 +238,21 @@ private struct SummaryTable: View {
         }
         .frame(minHeight: 26)
         .accessibilityElement(children: .combine)
+    }
+
+    /// The small target band with a dot where they ran, filling the gap before the pace.
+    @ViewBuilder private func miniBar(target: PaceRange?, pace: Pace?) -> some View {
+        if let target, let pace {
+            PaceRangeBar(target: target, pace: pace,
+                         inRange: PaceGap(target: target, pace: pace, units: units).isInRange, compact: true)
+                .frame(minWidth: 40, maxWidth: .infinity)
+                .frame(height: 12)
+                .padding(.horizontal, KXSpacing.xs)
+                .alignmentGuide(.firstTextBaseline) { $0[VerticalAlignment.center] + 4 }
+                .accessibilityHidden(true)
+        } else {
+            Spacer(minLength: KXSpacing.xs)
+        }
     }
 
     @ViewBuilder private func verdict(_ gap: PaceGap?, guide: Bool) -> some View {
@@ -383,8 +398,13 @@ private struct PaceRangeBar: View {
     let target: PaceRange
     let pace: Pace
     let inRange: Bool
+    /// Smaller track, band and dot for the summary table.
+    var compact = false
 
     var body: some View {
+        let track: CGFloat = compact ? 3 : 4
+        let band: CGFloat = compact ? 6 : 8
+        let dot: CGFloat = compact ? 9 : 14
         GeometryReader { proxy in
             let fast = target.fastest.secondsPerKm, slow = target.slowest.secondsPerKm
             let margin = max(slow - fast, 10)
@@ -394,16 +414,16 @@ private struct PaceRangeBar: View {
             }
             let mid = proxy.size.height / 2
             ZStack(alignment: .leading) {
-                Capsule().fill(KXColor.inkTertiary.opacity(0.25)).frame(height: 4)
+                Capsule().fill(KXColor.inkTertiary.opacity(0.25)).frame(height: track)
                 Capsule()
                     .fill(KXColor.success.opacity(0.45))
-                    .frame(width: max(x(slow) - x(fast), 4), height: 8)
+                    .frame(width: max(x(slow) - x(fast), 4), height: band)
                     .offset(x: x(fast))
                 Circle()
                     .fill(inRange ? KXColor.success : KXColor.warning)
-                    .overlay(Circle().stroke(KXColor.background, lineWidth: 2))
-                    .frame(width: 14, height: 14)
-                    .offset(x: x(pace.secondsPerKm) - 7)
+                    .overlay(Circle().stroke(KXColor.background, lineWidth: compact ? 1.5 : 2))
+                    .frame(width: dot, height: dot)
+                    .offset(x: x(pace.secondsPerKm) - dot / 2)
             }
             .frame(height: proxy.size.height)
             .position(x: proxy.size.width / 2, y: mid)
