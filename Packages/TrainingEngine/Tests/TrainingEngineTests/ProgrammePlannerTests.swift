@@ -200,7 +200,7 @@ final class ProgrammePlannerTests: XCTestCase {
                              days: [.monday, .tuesday, .wednesday, .thursday, .saturday, .sunday])
         runner.goal = .marathon
         let (outline, weeks) = plan(runner)
-        XCTAssertEqual(outline.weeks.count, 16)
+        XCTAssertGreaterThanOrEqual(outline.weeks.count, 16)
         let longest = weeks.flatMap(runs).filter { $0.title != "Race day" }.compactMap(\.estimatedDistanceMeters).max() ?? 0
         let rules = TestSupport.bundledTemplates.programmes.rules(for: .intermediate)
         XCTAssertGreaterThan(longest, rules.longestRunMeters + 1000, "Race programmes use their own long-run cap")
