@@ -231,8 +231,11 @@ enum ProgrammePlanner {
         let weekMeters = week.runVolumeMeters
         let shortest = rules.shortestRunMeters
 
-        // Long run cap: the programme, the Rules tab and, early on, their longest recent run.
-        var longCap = min(programme.longRunCapMeters, rules.longestRunMeters)
+        // Long run cap: the programme (race programmes set their own; others also the Rules tab)
+        // and, early on, their longest recent run.
+        var longCap = programme.raceDistanceMeters != nil
+            ? programme.longRunCapMeters
+            : min(programme.longRunCapMeters, rules.longestRunMeters)
         if let longest = profile.longestRecentRunMeters, longest > 0, (week.programmeCycle ?? 1) == 1 {
             longCap = min(longCap, max(longest * pow(1.1, Double(index + 1)), shortest))
         }

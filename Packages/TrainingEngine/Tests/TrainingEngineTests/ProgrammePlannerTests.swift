@@ -193,6 +193,20 @@ final class ProgrammePlannerTests: XCTestCase {
         XCTAssertFalse(bodyweightPull?.strength?.exercises.isEmpty ?? true)
     }
 
+    func testMarathonLongRunsPassTheRulesCap() throws {
+        let marathon = try XCTUnwrap(TestSupport.bundledTemplates.programmes.programme(for: .marathon))
+        XCTAssertEqual(marathon.weeks.count, 16)
+        var runner = profile(Runner(name: "60 km/week", level: .intermediate, weeklyKm: 60, longestKm: 24, fiveK: 21 * 60),
+                             days: [.monday, .tuesday, .wednesday, .thursday, .saturday, .sunday])
+        runner.goal = .marathon
+        let (outline, weeks) = plan(runner)
+        XCTAssertEqual(outline.weeks.count, 16)
+        let longest = weeks.flatMap(runs).filter { $0.title != "Race day" }.compactMap(\.estimatedDistanceMeters).max() ?? 0
+        let rules = TestSupport.bundledTemplates.programmes.rules(for: .intermediate)
+        XCTAssertGreaterThan(longest, rules.longestRunMeters + 1000, "Race programmes use their own long-run cap")
+        XCTAssertLessThanOrEqual(longest, marathon.longRunCapMeters + 600)
+    }
+
     func testHyroxPlan() throws {
         let hyrox = try XCTUnwrap(TestSupport.bundledTemplates.programmes.programme(for: .hyrox))
         XCTAssertEqual(hyrox.weeks.count, 12)
@@ -288,7 +302,7 @@ final class ProgrammePlannerTests: XCTestCase {
                 let weekRuns = runs(week)
                 XCTAssertFalse(weekRuns.isEmpty, label)
                 for run in weekRuns where run.title != "Race day" {
-                    XCTAssertLessThanOrEqual(run.estimatedDistanceMeters ?? 0, min(22000, rules.longestRunMeters) + 600, "\(label): \(run.title)")
+                    XCTAssertLessThanOrEqual(run.estimatedDistanceMeters ?? 0, (run.kind == .run(.long) ? 22000 : rules.longestRunMeters) + 600, "\(label): \(run.title)")
                     XCTAssertGreaterThanOrEqual(run.estimatedDistanceMeters ?? 0, rules.shortestRunMeters - 600, "\(label): \(run.title)")
                 }
                 if target.programmeWeek != 12 {

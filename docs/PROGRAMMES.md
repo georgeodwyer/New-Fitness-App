@@ -44,7 +44,8 @@ marathon for three example runners and prints a week-by-week preview (lines star
   With a race date it comes out of the time before the race.
 - **Safety:** a week is never more than the Rules tab's max increase above the biggest of
   the last three weeks; no run is longer than the Rules' longest run or the programme's
-  long-run cap; early long runs stay close to their longest recent run.
+  long-run cap (race programmes use only their own long-run cap, so a marathon can reach
+  32 km); early long runs stay close to their longest recent run.
 - **Long run:** `auto` is the Rules share of the week.
 - **Rep sessions** keep their rep lengths. Lower-volume runners get fewer reps so hard
   running stays a sensible share of the week (Rules tab: fast reps ≤ 10% of the week,
