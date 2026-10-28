@@ -51,8 +51,10 @@ final class ProgrammePlannerTests: XCTestCase {
         XCTAssertEqual(programme.sessions.count, 48)
         XCTAssertTrue(programme.sessions.allSatisfy { !$0.parts.isEmpty })
         XCTAssertEqual(programme.sessions.filter(\.isRace).count, 1)
-        // Goals without a programme keep the rule-based planner.
-        XCTAssertNil(TestSupport.bundledTemplates.programmes.programme(for: .buildMuscle))
+        // Every goal now has a programme.
+        for goal in TrainingGoal.allCases {
+            XCTAssertNotNil(TestSupport.bundledTemplates.programmes.programme(for: goal), "\(goal)")
+        }
     }
 
     // MARK: Outline
