@@ -43,6 +43,7 @@
 		31ED552C55B36D3CBDB1CD53 /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCB45CC899A400282E14A651 /* Persistence.swift */; };
 		3312F6FAC1B80A1BF812DE48 /* KXText.swift in Sources */ = {isa = PBXBuildFile; fileRef = E266EDCEE7A3C5533B50F72F /* KXText.swift */; };
 		3475818B671B0DE68253CA00 /* RouteService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3238845C1F80144B68E1D0D4 /* RouteService.swift */; };
+		3BA7B0D8E3246A972E9AC7EC /* AppleWorkoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 439D2C302B82261D65FFCAFE /* AppleWorkoutView.swift */; };
 		3C6F7C2B9C73500FAB98611A /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 802622121BE8CA378EC34BEB /* SettingsView.swift */; };
 		3C7556B959F1D015AAC35685 /* HomeWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09F31049BEE6448D25F4EED4 /* HomeWidgets.swift */; };
 		3FA853E7300E79023E932CCF /* RunServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0147DFFEB3CB167E9DF43A4B /* RunServiceTests.swift */; };
@@ -138,6 +139,7 @@
 		CC10A9C2CC822EB196D4001A /* WatchSyncTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD08ED26A91FB4B4953B85A1 /* WatchSyncTests.swift */; };
 		CCA12A2320F014BD6DA03CF3 /* RunWorkoutModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B488A5C64C09276C346F5B82 /* RunWorkoutModel.swift */; };
 		CD0413479485C96BC3B7F758 /* OnboardingFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D249250D5897255E15EBCE32 /* OnboardingFlowView.swift */; };
+		CD4EBC5B50DCBDA1BED4BE88 /* AppleWorkoutService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 921341771D7AEFE3BABC75C5 /* AppleWorkoutService.swift */; };
 		CDA1CB42056E07E388219316 /* RunExtras.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8252D916F30894BA6725F91E /* RunExtras.swift */; };
 		CE7E1D1D0F5BB1979A48EA1F /* ActivityExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24EE4D4AE4E5EC11003FF81E /* ActivityExportService.swift */; };
 		CF1312B2EEA8C82121C28541 /* LapsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58CC4DBE6FC7ADA3A6C7F4EE /* LapsCard.swift */; };
@@ -292,6 +294,7 @@
 		3E9AE388F264F792830FE28E /* WorkoutActivityController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutActivityController.swift; sourceTree = "<group>"; };
 		411F91EB9B9E2B27AB0C454F /* EditDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditDashboardView.swift; sourceTree = "<group>"; };
 		41DD740D22466B22510031CB /* StravaService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StravaService.swift; sourceTree = "<group>"; };
+		439D2C302B82261D65FFCAFE /* AppleWorkoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleWorkoutView.swift; sourceTree = "<group>"; };
 		440A4666F40E86B1CABE7D24 /* KinetixWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KinetixWatchApp.swift; sourceTree = "<group>"; };
 		475052F0B9186B8B9943453A /* TodaySessionCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodaySessionCards.swift; sourceTree = "<group>"; };
 		496B3A47CBAC67D049C956DF /* ShareCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareCards.swift; sourceTree = "<group>"; };
@@ -340,6 +343,7 @@
 		8696410FC6193358A919F22E /* SyncServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncServiceTests.swift; sourceTree = "<group>"; };
 		8A699B6FB1001149DC010A14 /* UnitPreference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnitPreference.swift; sourceTree = "<group>"; };
 		90BA113272970E6AD61E52D1 /* AccountSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountSection.swift; sourceTree = "<group>"; };
+		921341771D7AEFE3BABC75C5 /* AppleWorkoutService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleWorkoutService.swift; sourceTree = "<group>"; };
 		930E52AE7C1C57B4F3D6836B /* WorkoutLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutLiveActivity.swift; sourceTree = "<group>"; };
 		9379EA201DE82CD3ADB9493E /* PlanChangesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanChangesView.swift; sourceTree = "<group>"; };
 		93A1DCAFCD6F85794718DCAA /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
@@ -571,6 +575,7 @@
 		3528D4A7E6EEADE70767D2FA /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				439D2C302B82261D65FFCAFE /* AppleWorkoutView.swift */,
 				C45C2DEC18638987AEE83DF7 /* CoachingSettingsView.swift */,
 				CF24C085F57A681388D5C38D /* DesignGalleryView.swift */,
 				4FE0936484F36B69A2CADB66 /* GarminView.swift */,
@@ -804,6 +809,7 @@
 			isa = PBXGroup;
 			children = (
 				24EE4D4AE4E5EC11003FF81E /* ActivityExportService.swift */,
+				921341771D7AEFE3BABC75C5 /* AppleWorkoutService.swift */,
 				B99B3456A48D48299CDD2873 /* GarminService.swift */,
 				130A6B35CC5FB984FCCD948F /* HealthService.swift */,
 				6DCA983868F3800CCDF25C8B /* HeartRateMonitor.swift */,
@@ -1086,6 +1092,8 @@
 				7ACA70325602396261B857E8 /* AccountService.swift in Sources */,
 				CE7E1D1D0F5BB1979A48EA1F /* ActivityExportService.swift in Sources */,
 				23D4F39B01462EFBBA9B2DD3 /* AppRouter.swift in Sources */,
+				CD4EBC5B50DCBDA1BED4BE88 /* AppleWorkoutService.swift in Sources */,
+				3BA7B0D8E3246A972E9AC7EC /* AppleWorkoutView.swift in Sources */,
 				E18D623A542EBD8663A3226F /* AuthService.swift in Sources */,
 				137D60F69C32B7B5FEA6B601 /* AuthView.swift in Sources */,
 				6F2333E9AC60E44595804758 /* BalanceService.swift in Sources */,
