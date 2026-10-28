@@ -30,6 +30,7 @@ struct IntegrationsSection: View {
         .accessibilityIdentifier("settings.heartRate")
         if includeWatch {
             AppleWatchRow()
+            AppleWorkoutRow()
             GarminRow()
         }
         NavigationLink {

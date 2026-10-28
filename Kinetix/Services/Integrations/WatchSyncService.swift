@@ -32,6 +32,10 @@ final class WatchSyncService: NSObject {
     func sendPlan(now: Date = .now) {
         // Garmin watches get the same runs (it checks for changes itself).
         GarminService.shared.sendPlan(now: now)
+        // And Apple's Workout app, for those who've turned it on.
+        if let context = container?.mainContext, AppleWorkoutService.shared.isEnabled {
+            Task { await AppleWorkoutService.shared.sync(in: context, now: now) }
+        }
         guard canSend, let context = container?.mainContext else { return }
         let plan = Self.makePlan(in: context, now: now)
         // Compare without the timestamp, which always differs.
