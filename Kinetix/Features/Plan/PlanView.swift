@@ -143,7 +143,6 @@ struct PlanView: View {
                     if let outline {
                         RaceCountdownCard(outline: outline, profile: profiles.first?.profile)
                         WeeklyDistanceCard(outline: outline, runs: runs, format: format)
-                        PlanTopTiles(outline: outline, profile: profiles.first?.profile, profileModel: profiles.first, format: format)
                     }
                     if weeks.isEmpty && !profiles.isEmpty {
                         Text("No sessions planned yet.")
