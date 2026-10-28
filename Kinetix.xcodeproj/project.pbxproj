@@ -117,6 +117,7 @@
 		BDC6DDDC3E501DEEBDC63BE6 /* UserProfileModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4869AF91B0E573C72D5565D /* UserProfileModel.swift */; };
 		BE28D01A78FC0916106786A8 /* KXProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FCE0202A3E975345AA0F2B0 /* KXProgress.swift */; };
 		BFA529069514CFA98ADFAF18 /* PlanService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D792A73A46409ABE2ED5AF2 /* PlanService.swift */; };
+		BFF696695FD4E5208229BF4C /* TodaySessionCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 475052F0B9186B8B9943453A /* TodaySessionCards.swift */; };
 		C0203DD2B337FE851DF31654 /* DoneTodayCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0B148FD2061C24465AF19AE /* DoneTodayCard.swift */; };
 		C34EAB3E216D85D3BD92BA60 /* SyncServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8696410FC6193358A919F22E /* SyncServiceTests.swift */; };
 		C575D31A531D7DA5CD6DFE99 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 074EA809EFF2571D597D33DA /* NotificationService.swift */; };
@@ -283,6 +284,7 @@
 		411F91EB9B9E2B27AB0C454F /* EditDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditDashboardView.swift; sourceTree = "<group>"; };
 		41DD740D22466B22510031CB /* StravaService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StravaService.swift; sourceTree = "<group>"; };
 		440A4666F40E86B1CABE7D24 /* KinetixWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KinetixWatchApp.swift; sourceTree = "<group>"; };
+		475052F0B9186B8B9943453A /* TodaySessionCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodaySessionCards.swift; sourceTree = "<group>"; };
 		496B3A47CBAC67D049C956DF /* ShareCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareCards.swift; sourceTree = "<group>"; };
 		4999561CDF8222C282BCAEDC /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		4C2E983D74F526A10F2CFA2B /* KXEditableNumber.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXEditableNumber.swift; sourceTree = "<group>"; };
@@ -863,6 +865,7 @@
 				411F91EB9B9E2B27AB0C454F /* EditDashboardView.swift */,
 				1D0A8758A0E38811D70F3371 /* HomeView.swift */,
 				20FB067B24E854B00EC36D31 /* StrainCards.swift */,
+				475052F0B9186B8B9943453A /* TodaySessionCards.swift */,
 				1B3E42DCF57077752A8EC424 /* TodayTiles.swift */,
 			);
 			path = Home;
@@ -1162,6 +1165,7 @@
 				D187078BA75A613B810BDEEE /* SyncService.swift in Sources */,
 				7069554845EABC54FCA85309 /* SyncTracked.swift in Sources */,
 				2669CC2AEC3FF0570E2E0F51 /* TemplateModels.swift in Sources */,
+				BFF696695FD4E5208229BF4C /* TodaySessionCards.swift in Sources */,
 				10361C5AE9F4FEB5A830686F /* TodayTiles.swift in Sources */,
 				CF88D4090D69C8A456D858FE /* TrainingCalendarView.swift in Sources */,
 				6138BDF777275FD7654DA4D4 /* TrainingProfileView.swift in Sources */,
