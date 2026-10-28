@@ -11,13 +11,27 @@ struct PlannedVsActualCard: View {
     private var units: UnitSystem { format.units }
     private var workIndexes: [Int] { results.indices.filter { results[$0].segment.kind == .work } }
 
+    @State private var showDetail = false
+
     var body: some View {
         VStack(alignment: .leading, spacing: KXSpacing.md) {
             KXSectionHeader("Part by part", subtitle: "What was planned against what you ran")
-            ForEach(Array(results.enumerated()), id: \.offset) { position, result in
-                PartRow(result: result, title: title(at: position), format: format)
-                if workIndexes.count > 1, position == workIndexes.last {
-                    repsSummary
+            if results.count > 1 {
+                Picker("View", selection: $showDetail) {
+                    Text("Summary").tag(false)
+                    Text("Part by part").tag(true)
+                }
+                .pickerStyle(.segmented)
+                .accessibilityIdentifier("parts.view")
+            }
+            if results.count > 1 && !showDetail {
+                SummaryTable(results: results, workIndexes: workIndexes, format: format)
+            } else {
+                ForEach(Array(results.enumerated()), id: \.offset) { position, result in
+                    PartRow(result: result, title: title(at: position), format: format)
+                    if workIndexes.count > 1, position == workIndexes.last {
+                        repsSummary
+                    }
                 }
             }
         }
@@ -35,28 +49,10 @@ struct PlannedVsActualCard: View {
 
     /// Average, fastest and slowest rep, and how many were in range.
     @ViewBuilder private var repsSummary: some View {
-        let reps = workIndexes.map { results[$0] }.filter { $0.durationSeconds >= 1 }
-        let paces = reps.compactMap(\.averagePace)
-        let meters = reps.reduce(0) { $0 + $1.distanceMeters }
-        let seconds = reps.reduce(0) { $0 + $1.durationSeconds }
-        if !paces.isEmpty {
-            let average = meters > 0 ? Pace(secondsPerKm: seconds / meters * 1000) : nil
-            let judged = reps.filter { $0.segment.targetPace != nil && $0.averagePace != nil }
-            let inRange = judged.filter { PaceGap(result: $0, units: units)?.isInRange == true }.count
+        if let stats = RepStats(results: workIndexes.map { results[$0] }, units: units) {
             VStack(alignment: .leading, spacing: KXSpacing.xs) {
                 Text("Reps").font(KXFont.captionEmphasis).foregroundStyle(KXColor.accent)
-                HStack {
-                    summaryMetric("Average", average.map { format.pace($0) } ?? "--")
-                    Spacer()
-                    summaryMetric("Fastest", paces.min().map { format.pace($0) } ?? "--")
-                    Spacer()
-                    summaryMetric("Slowest", paces.max().map { format.pace($0) } ?? "--")
-                }
-                if !judged.isEmpty {
-                    Text("\(inRange) of \(judged.count) reps in your target range")
-                        .font(KXFont.caption)
-                        .foregroundStyle(KXColor.inkSecondary)
-                }
+                RepStatsView(stats: stats, format: format)
             }
             .padding(KXSpacing.md)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -64,11 +60,199 @@ struct PlannedVsActualCard: View {
             .accessibilityElement(children: .combine)
         }
     }
+}
 
-    private func summaryMetric(_ label: String, _ value: String) -> some View {
+/// Average, fastest and slowest rep, and how many were in their target range.
+struct RepStats: Equatable {
+    let average: Pace?
+    let fastest: Pace
+    let slowest: Pace
+    let inRange: Int
+    let judged: Int
+
+    /// nil when no rep has a pace.
+    init?(results: [SegmentResult], units: UnitSystem) {
+        let reps = results.filter { $0.durationSeconds >= 1 }
+        let paces = reps.compactMap(\.averagePace)
+        guard let fastest = paces.min(), let slowest = paces.max() else { return nil }
+        let meters = reps.reduce(0) { $0 + $1.distanceMeters }
+        let seconds = reps.reduce(0) { $0 + $1.durationSeconds }
+        average = meters > 0 ? Pace(secondsPerKm: seconds / meters * 1000) : nil
+        self.fastest = fastest
+        self.slowest = slowest
+        let judgedReps = reps.filter { $0.segment.targetPace != nil && $0.averagePace != nil }
+        judged = judgedReps.count
+        inRange = judgedReps.filter { PaceGap(result: $0, units: units)?.isInRange == true }.count
+    }
+}
+
+private struct RepStatsView: View {
+    let stats: RepStats
+    let format: DisplayFormat
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: KXSpacing.xs) {
+            HStack {
+                metric("Average", stats.average.map { format.pace($0) } ?? "--")
+                Spacer()
+                metric("Fastest", format.pace(stats.fastest))
+                Spacer()
+                metric("Slowest", format.pace(stats.slowest))
+            }
+            if stats.judged > 0 {
+                Text("\(stats.inRange) of \(stats.judged) reps in your target range")
+                    .font(KXFont.caption)
+                    .foregroundStyle(KXColor.inkSecondary)
+            }
+        }
+    }
+
+    private func metric(_ label: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(label).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
             Text(value).font(KXFont.bodyEmphasis.monospacedDigit()).foregroundStyle(KXColor.ink)
+        }
+    }
+}
+
+/// The whole run on one screen: a line per part, a line per rep, the recoveries as one line.
+private struct SummaryTable: View {
+    let results: [SegmentResult]
+    let workIndexes: [Int]
+    let format: DisplayFormat
+
+    private var units: UnitSystem { format.units }
+    private var hasReps: Bool { workIndexes.count > 1 }
+    private var firstRep: Int { workIndexes.first ?? 0 }
+    private var lastRep: Int { workIndexes.last ?? 0 }
+
+    /// Parts before the first rep, and after the last one (recoveries between reps are folded).
+    private var before: [SegmentResult] {
+        hasReps ? Array(results[..<firstRep]) : results
+    }
+    private var after: [SegmentResult] {
+        hasReps && lastRep + 1 < results.count ? Array(results[(lastRep + 1)...]) : []
+    }
+    private var recoveries: [SegmentResult] {
+        guard hasReps else { return [] }
+        return results[firstRep...lastRep].filter { $0.segment.kind != .work }
+    }
+    private var reps: [SegmentResult] { workIndexes.map { results[$0] } }
+    /// One target for all reps (shown once in the header), else nil.
+    private var sharedRepTarget: PaceRange? {
+        let targets = reps.map(\.segment.targetPace)
+        guard let first = targets.first, let target = first, targets.allSatisfy({ $0 == target }) else { return nil }
+        return target
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: KXSpacing.xs) {
+            ForEach(Array(before.enumerated()), id: \.offset) { _, result in partLine(result) }
+            if hasReps {
+                Divider().overlay(KXColor.border)
+                repsBlock
+                if !recoveries.isEmpty { recoveryLine }
+                Divider().overlay(KXColor.border)
+            }
+            ForEach(Array(after.enumerated()), id: \.offset) { _, result in partLine(result) }
+            if hasReps, let stats = RepStats(results: reps, units: units) {
+                RepStatsView(stats: stats, format: format)
+                    .padding(KXSpacing.sm)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(KXColor.surfaceTint, in: RoundedRectangle(cornerRadius: KXRadius.md, style: .continuous))
+                    .padding(.top, KXSpacing.xs)
+            }
+        }
+    }
+
+    // MARK: Lines
+
+    /// "Warm-up · 2 km      6:08/km  ✓"
+    private func partLine(_ result: SegmentResult) -> some View {
+        row(title: result.segment.label ?? result.segment.kind.displayName,
+            detail: format.segmentLength(result.segment.length),
+            result: result)
+    }
+
+    @ViewBuilder private var repsBlock: some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text("Reps").font(KXFont.captionEmphasis).foregroundStyle(KXColor.accent)
+            Spacer()
+            if let target = sharedRepTarget {
+                Text("\(reps.first?.segment.paceIsGuide == true ? "Guide" : "Target") \(format.paceRange(target))")
+                    .font(KXFont.caption.monospacedDigit())
+                    .foregroundStyle(KXColor.inkSecondary)
+            }
+        }
+        ForEach(Array(reps.enumerated()), id: \.offset) { number, result in
+            row(title: "\(number + 1)", detail: repDetail(result), result: result, narrowTitle: true)
+        }
+    }
+
+    /// All the easy jogs between reps as one line, with their distance-weighted average pace.
+    private var recoveryLine: some View {
+        let done = recoveries.filter { $0.durationSeconds >= 1 }
+        let meters = done.reduce(0) { $0 + $1.distanceMeters }
+        let seconds = done.reduce(0) { $0 + $1.durationSeconds }
+        let pace = meters > 0 ? Pace(secondsPerKm: seconds / meters * 1000) : nil
+        let gap = pace.flatMap { pace in recoveries.first?.segment.targetPace.map { PaceGap(target: $0, pace: pace, units: units) } }
+        let name = recoveries.first?.segment.label ?? "Recoveries"
+        return HStack(alignment: .firstTextBaseline, spacing: KXSpacing.sm) {
+            Text(recoveries.count > 1 ? "\(name) ×\(recoveries.count)" : name)
+                .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+            Spacer(minLength: KXSpacing.xs)
+            Text(pace.map { "avg " + format.pace($0) } ?? "—")
+                .font(KXFont.caption.monospacedDigit()).foregroundStyle(KXColor.inkSecondary)
+            verdict(gap, guide: recoveries.first?.segment.paceIsGuide == true)
+                .frame(width: 64, alignment: .trailing)
+        }
+        .frame(minHeight: 24)
+        .accessibilityElement(children: .combine)
+    }
+
+    /// Distance for reps planned by time, time for reps planned by distance.
+    private func repDetail(_ result: SegmentResult) -> String {
+        guard result.durationSeconds >= 1 else { return "" }
+        switch result.segment.length {
+        case .distance: return Units.formatMinutesSeconds(result.durationSeconds)
+        case .duration: return format.distance(result.distanceMeters, decimals: 2)
+        }
+    }
+
+    private func row(title: String, detail: String, result: SegmentResult, narrowTitle: Bool = false) -> some View {
+        let done = result.durationSeconds >= 1
+        return HStack(alignment: .firstTextBaseline, spacing: KXSpacing.sm) {
+            if narrowTitle {
+                Text(title).font(KXFont.bodyEmphasis.monospacedDigit()).foregroundStyle(KXColor.ink)
+                    .frame(width: 24, alignment: .leading)
+            } else {
+                Text(title).font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink).lineLimit(1)
+            }
+            Text(detail).font(KXFont.caption.monospacedDigit()).foregroundStyle(KXColor.inkSecondary).lineLimit(1)
+            Spacer(minLength: KXSpacing.xs)
+            Text(done ? (result.averagePace.map { format.pace($0) } ?? "--") : "—")
+                .font(KXFont.bodyEmphasis.monospacedDigit())
+                .foregroundStyle(done ? KXColor.ink : KXColor.inkTertiary)
+            verdict(done ? PaceGap(result: result, units: units) : nil, guide: result.segment.paceIsGuide == true)
+                .frame(width: 64, alignment: .trailing)
+        }
+        .frame(minHeight: 26)
+        .accessibilityElement(children: .combine)
+    }
+
+    @ViewBuilder private func verdict(_ gap: PaceGap?, guide: Bool) -> some View {
+        if let gap {
+            if gap.isInRange {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(KXColor.success)
+                    .accessibilityLabel("On target")
+            } else {
+                Text(gap.shortText)
+                    .font(KXFont.captionEmphasis.monospacedDigit())
+                    .foregroundStyle(guide ? KXColor.inkSecondary : KXColor.warning)
+            }
+        } else {
+            Text(" ")
         }
     }
 }
@@ -82,6 +266,10 @@ struct PaceGap {
 
     init?(result: SegmentResult, units: UnitSystem) {
         guard let target = result.segment.targetPace, let pace = result.averagePace else { return nil }
+        self.init(target: target, pace: pace, units: units)
+    }
+
+    init(target: PaceRange, pace: Pace, units: UnitSystem) {
         let perUnit = units == .metric ? 1.0 : 1.609344
         let gap: Double
         if pace.secondsPerKm > target.slowest.secondsPerKm {
@@ -92,6 +280,11 @@ struct PaceGap {
             gap = 0
         }
         seconds = Int((gap * perUnit).rounded())
+    }
+
+    /// "−13 s" / "+18 s" for the summary table.
+    var shortText: String {
+        seconds > 0 ? "+\(seconds) s" : "\(seconds) s".replacingOccurrences(of: "-", with: "−")
     }
 
     var text: String {
