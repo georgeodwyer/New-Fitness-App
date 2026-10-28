@@ -11,7 +11,9 @@ on:
 jobs:
   upload:
     name: Build and upload to TestFlight
-    runs-on: macos-latest
+    # Intel Mac while GitHub's Apple-silicon Macs are short of capacity (jobs were waiting
+    # 15 minutes and being cancelled). Switch back to macos-latest once that clears.
+    runs-on: macos-15-intel
     env:
       TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}

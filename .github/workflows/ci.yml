@@ -27,7 +27,9 @@ jobs:
 
   ios:
     name: iOS app build & tests
-    runs-on: macos-latest
+    # Intel Mac while GitHub's Apple-silicon Macs are short of capacity (jobs were waiting
+    # 15 minutes and being cancelled). Switch back to macos-latest once that clears.
+    runs-on: macos-15-intel
     permissions:
       contents: write
     steps:
