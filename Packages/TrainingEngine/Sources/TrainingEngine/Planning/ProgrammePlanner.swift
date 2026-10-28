@@ -263,10 +263,20 @@ enum ProgrammePlanner {
         var pool = runs
         var assigned: [(placement: Placement, run: PlannedRun)] = []
         var liftPlacements: [Placement] = []
-        for placement in schedule.placements.sorted(by: { $0.weekday < $1.weekday }) {
+        // Hard placements first, so the session that gets eased (if any) is the least specific one:
+        // a Hyrox compromised run keeps its hard slot ahead of plain intervals.
+        let ordered = schedule.placements.sorted { a, b in
+            if a.isHardRun != b.isHardRun { return a.isHardRun }
+            return a.weekday < b.weekday
+        }
+        func match(_ type: RunSessionType) -> Int? {
+            let same = pool.indices.filter { pool[$0].session.runType == type }
+            return same.first { pool[$0].session.hasStationWork } ?? same.first
+        }
+        for placement in ordered {
             switch placement.item {
             case .run(let type):
-                if let i = pool.firstIndex(where: { $0.session.runType == type }) {
+                if let i = match(type) {
                     assigned.append((placement, pool.remove(at: i)))
                 } else if !pool.isEmpty {
                     // The scheduler turned a hard run into an easy one to keep it away from lifting.
@@ -281,6 +291,8 @@ enum ProgrammePlanner {
                 liftPlacements.append(placement)
             }
         }
+        assigned.sort { $0.placement.weekday < $1.placement.weekday }
+        liftPlacements.sort { $0.weekday < $1.weekday }
         if hasEventThisWeek, let event = outline.eventDate, let raceIndex = assigned.firstIndex(where: { $0.run.session.isRace }) {
             let raceDay = calendar.weekday(of: event)
             let current = assigned[raceIndex].placement.weekday

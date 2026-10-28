@@ -113,6 +113,12 @@ public enum WeekScheduler {
                 }
                 if let day = best {
                     state.addLift(lift, on: day)
+                } else if lift.focus.loadsLowerBody, let room = state.roomByEasingHardRun(for: lift) {
+                    // Keep the leg session: one of several hard runs becomes easy instead.
+                    let eased = state.runs[room.eased] ?? .intervals
+                    state.addRun(.easy, on: room.eased)
+                    state.addLift(lift, on: room.day)
+                    notes.append("Your \(SessionKind.run(eased).displayName.lowercased()) became an easy run this week to make room for \(lift.name), so your legs aren't worked on a hard-run day.")
                 } else {
                     notes.append("\(lift.name) was left out this week: there was no day that wouldn't tire your legs before a hard run or long run.")
                 }
@@ -262,6 +268,23 @@ public enum WeekScheduler {
             // Easy running the day after a hard day aids recovery.
             if isHardRunDay(day.previous) { score += 0.5 }
             return score
+        }
+
+        /// When a lower-body lift fits nowhere, the hard run (not the long run) whose easing frees the
+        /// best day. Only offered when another tempo or intervals run stays hard that week.
+        func roomByEasingHardRun(for lift: StrengthSessionTemplate) -> (day: Weekday, eased: Weekday)? {
+            let workouts = days.filter { runs[$0] == .tempo || runs[$0] == .intervals }
+            guard workouts.count >= 2 else { return nil }
+            var best: (day: Weekday, eased: Weekday, score: Double)?
+            for eased in workouts {
+                var trial = self
+                trial.runs[eased] = .easy
+                for day in days where trial.canPlaceLift(lift, on: day) {
+                    let score = trial.liftScore(lift, on: day)
+                    if best == nil || score > best!.score { best = (day, eased, score) }
+                }
+            }
+            return best.map { ($0.day, $0.eased) }
         }
 
         mutating func addRun(_ type: RunSessionType, on day: Weekday) { runs[day] = type }

@@ -179,6 +179,9 @@ public struct ProgrammeSession: Codable, Equatable, Sendable {
 
     var isRace: Bool { type == "race" }
 
+    /// Running mixed with station work (a Hyrox compromised run).
+    var hasStationWork: Bool { parts.contains { $0.recovery?.label == "Station work" } }
+
     /// How the scheduler and training load treat the session.
     var runType: RunSessionType {
         switch type {
