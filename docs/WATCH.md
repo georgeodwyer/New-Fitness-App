@@ -67,3 +67,16 @@ Apple may need the watch app's ID set up by hand, as with the widgets. At
 <https://developer.apple.com/account/resources/identifiers>: find
 `com.georgeodwyer.kinetix.watchkitapp` (create it if missing: App IDs → App), tick
 **HealthKit**, save, then ask for a new build.
+
+## Custom run screens
+
+On the iPhone, Settings → Integrations → Apple Watch → Watch screens. Each screen has a
+layout (1 big, 1 big + 2, 1 big + 4, 3 rows, 6 small) and a metric per slot, from pace,
+heart rate, workout and extras (cadence, climb, calories, exertion so far, time of day).
+Turn screens on or off and drag to reorder; they're sent to the watch with the plan
+(`WatchPlan.screens`, along with the heart-rate zones for zone colours and exertion).
+During a run the watch shows the controls, then (structured runs) the current rep, then
+the screens in order. Standard set: Pace & distance and Heart rate on; Laps and Everything
+off. The definitions and how each value is worked out are in the engine
+(`Watch/WatchScreens.swift`, tested by `WatchScreensTests`). Cadence, climb and calories
+are measured on the watch (`RunExtras`).

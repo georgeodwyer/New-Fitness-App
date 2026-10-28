@@ -160,15 +160,30 @@ public struct WatchPlan: Codable, Equatable, Sendable {
     public var runs: [WatchRunOption]
     /// Gesture settings (nil from older phones: the watch uses the standard settings).
     public var controls: WatchControlSettings?
+    /// The runner's custom run screens (nil from older phones: the standard set).
+    public var screens: WatchScreenSettings?
+    /// Heart-rate zone starts (bpm, zones 1–5) and max, for zone colours and exertion.
+    public var zoneStarts: [Double]?
+    public var maxHeartRate: Double?
 
     public init(generatedAt: Date, units: UnitSystem, coaching: CoachingConfig, runs: [WatchRunOption],
-                controls: WatchControlSettings? = nil) {
+                controls: WatchControlSettings? = nil, screens: WatchScreenSettings? = nil,
+                zoneStarts: [Double]? = nil, maxHeartRate: Double? = nil) {
         self.version = Self.currentVersion
         self.generatedAt = generatedAt
         self.units = units
         self.coaching = coaching
         self.runs = runs
         self.controls = controls
+        self.screens = screens
+        self.zoneStarts = zoneStarts
+        self.maxHeartRate = maxHeartRate
+    }
+
+    /// The runner's zones, when the phone sent them.
+    public var heartRateZones: HeartRateZones? {
+        guard let starts = zoneStarts, starts.count == 5, let max = maxHeartRate else { return nil }
+        return HeartRateZones(maxHeartRate: max, maxSource: .custom, starts: starts, isCustom: false)
     }
 
     public static let empty = WatchPlan(generatedAt: .distantPast, units: .metric, coaching: CoachingConfig(), runs: [])

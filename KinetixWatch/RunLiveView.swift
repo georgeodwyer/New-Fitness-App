@@ -28,11 +28,11 @@ struct RunLiveView: View {
     var body: some View {
         TabView(selection: $page) {
             controls.tag(0)
-            if isStructured {
+            if showsRepPage {
                 repPage.tag(1)
-                wholeRunPage.tag(2)
-            } else {
-                wholeRunPage.tag(1)
+            }
+            ForEach(Array(screens.enumerated()), id: \.element.id) { index, screen in
+                customPage(screen).tag(index + (showsRepPage ? 2 : 1))
             }
         }
         .tabViewStyle(.page)
@@ -52,44 +52,80 @@ struct RunLiveView: View {
         }
     }
 
+    // MARK: Pages
+
+    /// The runner's screens from their phone (the standard set if none are on).
+    private var screens: [WatchScreen] {
+        let enabled = (WatchStore.shared.plan.screens ?? .standard).enabledScreens
+        return enabled.isEmpty ? Array(WatchScreenSettings.standard.enabledScreens.prefix(1)) : enabled
+    }
+
+    private var showsRepPage: Bool { isStructured && (WatchStore.shared.plan.screens?.showRepPage ?? true) }
+
+    private var title: String { workout.option?.title ?? "Run" }
+
+    private func customPage(_ screen: WatchScreen) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            WatchOverline(title, color: WatchColor.run)
+            CustomScreenView(screen: screen, input: workout.metricInputs)
+            status(workout.snapshot)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
     // MARK: Current rep (main page for structured runs)
 
     private var repPage: some View {
         let snapshot = workout.snapshot
-        return VStack(alignment: .leading, spacing: 1) {
+        return VStack(alignment: .leading, spacing: 3) {
             if let segment = snapshot?.segment {
+                let isWork = segment.kind == .work
                 HStack(alignment: .firstTextBaseline) {
-                    Text(segment.label ?? segment.kind.displayName)
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(segment.kind == .work ? WatchColor.accent : .teal)
-                        .lineLimit(1)
-                    Spacer()
+                    WatchOverline(segment.label ?? segment.kind.displayName, color: isWork ? WatchColor.accent : WatchColor.run)
+                    Spacer(minLength: 4)
                     if let remaining = snapshot?.segmentRemaining {
-                        Text("\(format.segmentLength(remaining)) left")
-                            .font(.system(.footnote, design: .rounded).monospacedDigit().weight(.semibold))
+                        HStack(alignment: .firstTextBaseline, spacing: 2) {
+                            Text(format.segmentLength(remaining)).font(WatchFont.number(17))
+                            Text("LEFT").font(WatchFont.unit).foregroundStyle(WatchColor.inkSecondary)
+                        }
                     }
                 }
-                ProgressView(value: snapshot?.segmentProgress ?? 0)
-                    .tint(segment.kind == .work ? WatchColor.accent : .teal)
-                paceLine(snapshot)
-                if let target = segment.targetPace {
-                    Text("\(segment.paceIsGuide == true ? "effort ~" : "target ")\(Units.formatPace(target.fastest, units: workout.units))–\(Units.formatPace(target.slowest, units: workout.units))\(Units.paceUnitLabel(workout.units))")
-                        .font(.caption2).foregroundStyle(.secondary)
-                } else {
-                    Text(Units.paceUnitLabel(workout.units)).font(.caption2).foregroundStyle(.secondary)
+                GeometryReader { proxy in
+                    ZStack(alignment: .leading) {
+                        Capsule().fill(WatchColor.surface2)
+                        Capsule().fill(isWork ? WatchColor.accent : WatchColor.run)
+                            .frame(width: proxy.size.width * min(max(snapshot?.segmentProgress ?? 0, 0), 1))
+                    }
                 }
-                HStack {
-                    heartRate(snapshot)
-                    Spacer()
+                .frame(height: 5)
+                HStack(alignment: .firstTextBaseline, spacing: 3) {
+                    Text(snapshot?.currentPace.map { Units.formatPace($0, units: workout.units) } ?? "–:––")
+                        .font(WatchFont.number(58))
+                        .foregroundStyle(WatchColor.pace(snapshot?.paceStatus))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                    Text(Units.paceUnitLabel(workout.units).uppercased()).font(WatchFont.unit).foregroundStyle(WatchColor.inkSecondary)
+                }
+                if let target = segment.targetPace {
+                    TargetBand(target: target, pace: snapshot?.currentPace, status: snapshot?.paceStatus,
+                               isGuide: segment.paceIsGuide == true, units: workout.units)
+                }
+                Spacer(minLength: 0)
+                HStack(alignment: .lastTextBaseline) {
+                    heartRateReading
+                    Spacer(minLength: 4)
                     if let next = snapshot?.nextSegment {
-                        Text("Next: \(next.label ?? next.kind.displayName)")
-                            .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                        VStack(alignment: .trailing, spacing: 0) {
+                            Text("NEXT").font(WatchFont.unit).foregroundStyle(WatchColor.inkSecondary)
+                            Text(next.label ?? next.kind.displayName).font(WatchFont.title(13)).lineLimit(1)
+                        }
                     }
                 }
             } else {
-                Text(snapshot?.isStructureComplete == true ? "Workout complete" : "Starting…").font(.headline)
-                paceLine(snapshot)
-                Text("Keep running or end when you're ready.").font(.caption2).foregroundStyle(.secondary)
+                WatchOverline(snapshot?.isStructureComplete == true ? "Workout complete" : "Starting…", color: WatchColor.accent)
+                Text(snapshot?.currentPace.map { Units.formatPace($0, units: workout.units) } ?? "–:––")
+                    .font(WatchFont.number(58))
+                Text("Keep running or end when you're ready.").font(.caption2).foregroundStyle(WatchColor.inkSecondary)
             }
             status(snapshot)
         }
@@ -97,39 +133,13 @@ struct RunLiveView: View {
         .accessibilityElement(children: .combine)
     }
 
-    // MARK: Whole run
-
-    private var wholeRunPage: some View {
-        let snapshot = workout.snapshot
-        return VStack(alignment: .leading, spacing: 2) {
-            Text(Units.formatMinutesSeconds(snapshot?.elapsedSeconds ?? 0))
-                .font(.system(.title3, design: .rounded).monospacedDigit())
-                .foregroundStyle(WatchColor.accent)
-            Text(format.distance(snapshot?.distanceMeters ?? 0, decimals: 2))
-                .font(.system(size: 34, weight: .semibold, design: .rounded).monospacedDigit())
-                .minimumScaleFactor(0.6)
-                .lineLimit(1)
-            if isStructured {
-                // The rep page has the live pace; here the whole run's average.
-                Text("\(snapshot?.averagePace.map { Units.formatPace($0, units: workout.units) } ?? "–:––")\(Units.paceUnitLabel(workout.units)) avg")
-                    .font(.system(.title3, design: .rounded).monospacedDigit())
-            } else {
-                paceLine(snapshot)
-                Text("\(snapshot?.averagePace.map { Units.formatPace($0, units: workout.units) } ?? "–:––")\(Units.paceUnitLabel(workout.units)) avg")
-                    .font(.caption2).foregroundStyle(.secondary)
-            }
-            HStack {
-                heartRate(snapshot)
-                Spacer()
-                if let lap = snapshot?.lapNumber {
-                    Text("Lap \(lap) · \(Units.formatMinutesSeconds(snapshot?.lapElapsedSeconds ?? 0))")
-                        .font(.caption2.monospacedDigit()).foregroundStyle(.teal)
-                }
-            }
-            status(snapshot)
+    /// "168 BPM · Z4", coloured by zone.
+    private var heartRateReading: some View {
+        let reading = WatchMetric.heartRate.reading(workout.metricInputs)
+        return HStack(alignment: .firstTextBaseline, spacing: 3) {
+            Text(reading.value).font(WatchFont.number(22)).foregroundStyle(WatchColor.tone(reading.tone))
+            Text(reading.zone.map { "BPM · Z\($0)" } ?? "BPM").font(WatchFont.unit).foregroundStyle(WatchColor.inkSecondary)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .accessibilityElement(children: .combine)
     }
 
     // MARK: Pieces
@@ -162,30 +172,28 @@ struct RunLiveView: View {
     // MARK: Controls
 
     private var controls: some View {
-        VStack(spacing: 8) {
-            HStack(spacing: 8) {
-                controlButton(workout.isPaused ? "Resume" : "Pause", symbol: workout.isPaused ? "play.fill" : "pause.fill",
-                              tint: WatchColor.offPace) {
-                    workout.togglePause()
-                    page = 1
-                }
-                controlButton("End", symbol: "xmark", tint: .red) { confirmEnd = true }
+        let columns = [GridItem(.flexible(), spacing: 6), GridItem(.flexible(), spacing: 6)]
+        return LazyVGrid(columns: columns, spacing: 6) {
+            controlButton(workout.isPaused ? "Resume" : "Pause", symbol: workout.isPaused ? "play.fill" : "pause.fill",
+                          tint: WatchColor.warning) {
+                workout.togglePause()
+                page = 1
             }
-            HStack(spacing: 8) {
-                controlButton(workout.nextOrLapLabel, symbol: workout.nextOrLapLabel == "Lap" ? "flag.fill" : "forward.end.fill",
-                              tint: .teal) {
-                    workout.nextOrLap()
-                    page = 1
-                }
-                if !workout.isMirroring {
-                    // On a mirrored run the iPhone does the talking.
-                    controlButton(workout.voiceEnabled ? "Voice on" : "Voice off",
-                                  symbol: workout.voiceEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill", tint: .gray) {
-                        workout.voiceEnabled.toggle()
-                    }
+            controlButton(workout.nextOrLapLabel, symbol: workout.nextOrLapLabel == "Lap" ? "flag.fill" : "forward.end.fill",
+                          tint: WatchColor.run) {
+                workout.nextOrLap()
+                page = 1
+            }
+            if !workout.isMirroring {
+                // On a mirrored run the iPhone does the talking.
+                controlButton(workout.voiceEnabled ? "Voice on" : "Voice off",
+                              symbol: workout.voiceEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill", tint: .white) {
+                    workout.voiceEnabled.toggle()
                 }
             }
+            controlButton("End", symbol: "stop.fill", tint: WatchColor.bad) { confirmEnd = true }
         }
+        .frame(maxHeight: .infinity)
     }
 
     // MARK: Gestures
@@ -294,13 +302,76 @@ struct RunLiveView: View {
 
     private func controlButton(_ title: String, symbol: String, tint: Color, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            VStack(spacing: 2) {
-                Image(systemName: symbol).font(.title3)
-                Text(title).font(.caption2)
+            VStack(spacing: 4) {
+                Image(systemName: symbol)
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(.black)
+                    .frame(width: 32, height: 32)
+                    .background(tint, in: Circle())
+                Text(title.uppercased()).font(WatchFont.title(13)).tracking(0.8).foregroundStyle(tint).lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }
-            .frame(maxWidth: .infinity, minHeight: 56)
+            .frame(maxWidth: .infinity, minHeight: 72)
+            .background(tint.opacity(0.16), in: RoundedRectangle(cornerRadius: 18))
         }
-        .tint(tint)
+        .buttonStyle(.plain)
+        .accessibilityLabel(title)
+    }
+}
+
+/// Where the current pace sits against the target range: a band with a marker.
+private struct TargetBand: View {
+    let target: PaceRange
+    let pace: Pace?
+    let status: PaceRange.Position?
+    let isGuide: Bool
+    let units: UnitSystem
+
+    var body: some View {
+        let fast = target.fastest.secondsPerKm, slow = target.slowest.secondsPerKm
+        let pad = max(slow - fast, 10) * 0.75
+        let low = fast - pad, high = slow + pad
+        let color = isGuide ? WatchColor.inkSecondary : WatchColor.pace(status)
+        VStack(spacing: 1) {
+            GeometryReader { proxy in
+                let width = proxy.size.width
+                let x = { (value: Double) in CGFloat(min(max((value - low) / (high - low), 0), 1)) * width }
+                ZStack(alignment: .leading) {
+                    Capsule().fill(WatchColor.surface2).frame(height: 4)
+                    RoundedRectangle(cornerRadius: 4).fill(color.opacity(0.3))
+                        .overlay(RoundedRectangle(cornerRadius: 4).stroke(color, lineWidth: 1))
+                        .frame(width: x(slow) - x(fast), height: 9)
+                        .offset(x: x(fast))
+                    if let pace {
+                        RoundedRectangle(cornerRadius: 1.5).fill(.white)
+                            .frame(width: 3, height: 14)
+                            .offset(x: x(pace.secondsPerKm) - 1.5)
+                    }
+                }
+                .frame(maxHeight: .infinity)
+            }
+            .frame(height: 14)
+            HStack {
+                Text(Units.formatPace(target.fastest, units: units))
+                Spacer()
+                Text(isGuide ? "EFFORT GUIDE" : statusText).foregroundStyle(color)
+                Spacer()
+                Text(Units.formatPace(target.slowest, units: units))
+            }
+            .font(WatchFont.unit)
+            .foregroundStyle(WatchColor.inkSecondary)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Target \(Units.formatPace(target.fastest, units: units)) to \(Units.formatPace(target.slowest, units: units)), \(statusText)")
+    }
+
+    private var statusText: String {
+        switch status {
+        case .onTarget?: return "ON TARGET"
+        case .tooFast?: return "TOO FAST"
+        case .tooSlow?: return "TOO SLOW"
+        case nil: return "TARGET"
+        }
     }
 }
 
@@ -315,42 +386,38 @@ struct RunFinishedView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 6) {
-                Text(workout.option?.title ?? "Run").font(.headline)
+                WatchOverline(workout.option?.title ?? "Run", color: WatchColor.run)
+                Label("Run complete", systemImage: "checkmark")
+                    .font(WatchFont.overline).foregroundStyle(WatchColor.good).textCase(.uppercase)
                 if let summary = workout.summary {
-                    Text(format.distance(summary.distanceMeters, decimals: 2))
-                        .font(.system(.title2, design: .rounded).monospacedDigit())
-                    Text(Units.formatMinutesSeconds(summary.durationSeconds))
-                        .font(.system(.body, design: .rounded).monospacedDigit())
-                    if let pace = summary.averagePace {
-                        Text("\(format.pace(pace)) average").font(.caption).foregroundStyle(.secondary)
+                    HStack(alignment: .firstTextBaseline, spacing: 3) {
+                        Text(String(format: "%.2f", Units.distance(meters: summary.distanceMeters, in: workout.units)))
+                            .font(WatchFont.number(52))
+                        Text(Units.distanceUnitLabel(workout.units).uppercased()).font(WatchFont.unit).foregroundStyle(WatchColor.inkSecondary)
                     }
-                    if let heartRate = summary.averageHeartRate {
-                        Label("\(Int(heartRate.rounded())) bpm average", systemImage: "heart.fill")
-                            .font(.caption).foregroundStyle(WatchColor.heart)
-                    }
-                    if let fraction = summary.timeInTargetFraction {
-                        Text("\(Int((fraction * 100).rounded()))% on target pace").font(.caption)
+                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 5), GridItem(.flexible(), spacing: 5)], spacing: 5) {
+                        stat("Time", Units.formatMinutesSeconds(summary.durationSeconds))
+                        stat("Avg pace", summary.averagePace.map { Units.formatPace($0, units: workout.units) } ?? "–:––")
+                        stat("Avg HR", summary.averageHeartRate.map { "\(Int($0.rounded()))" } ?? "–", color: WatchColor.warning)
+                        stat("On target", summary.timeInTargetFraction.map { "\(Int(($0 * 100).rounded()))%" } ?? "–",
+                             color: WatchColor.good)
                     }
                 }
-                Divider()
-                Text("How hard was that?").font(.headline)
-                Text("\(Int(effort)) / 10")
-                    .font(.system(.title, design: .rounded).monospacedDigit())
-                    .foregroundStyle(WatchColor.accent)
-                    .focusable()
-                    .digitalCrownRotation($effort, from: 1, through: 10, by: 1, sensitivity: .low, isContinuous: false,
-                                          isHapticFeedbackEnabled: true)
-                    .accessibilityLabel("Effort \(Int(effort)) out of 10. Turn the Digital Crown to change.")
-                Text("Turn the Digital Crown").font(.caption2).foregroundStyle(.secondary)
-                Button {
-                    workout.save(effort: effort)
-                } label: {
-                    Label("Save", systemImage: "checkmark").frame(maxWidth: .infinity)
+                WatchOverline("How hard was that?").padding(.top, 6)
+                HStack(alignment: .firstTextBaseline, spacing: 3) {
+                    Text("\(Int(effort))").font(WatchFont.number(40)).foregroundStyle(WatchColor.accent)
+                    Text("/ 10").font(WatchFont.unit).foregroundStyle(WatchColor.inkSecondary)
                 }
-                .tint(WatchColor.accent)
+                .focusable()
+                .digitalCrownRotation($effort, from: 1, through: 10, by: 1, sensitivity: .low, isContinuous: false,
+                                      isHapticFeedbackEnabled: true)
+                .accessibilityLabel("Effort \(Int(effort)) out of 10. Turn the Digital Crown to change.")
+                Text("Turn the Digital Crown").font(.caption2).foregroundStyle(WatchColor.inkSecondary)
+                Button("Save") { workout.save(effort: effort) }
+                    .buttonStyle(WatchFilledButtonStyle())
                 Button("Discard", role: .destructive) { confirmDiscard = true }
                 Text("Saved to Apple Health. It's added to Kinetix next time your iPhone is nearby.")
-                    .font(.caption2).foregroundStyle(.secondary)
+                    .font(.caption2).foregroundStyle(WatchColor.inkSecondary)
             }
         }
         .onAppear { effort = workout.option?.typicalEffort ?? 5 }
@@ -358,6 +425,16 @@ struct RunFinishedView: View {
             Button("Discard", role: .destructive) { workout.discard() }
             Button("Keep", role: .cancel) {}
         }
+    }
+
+    private func stat(_ label: String, _ value: String, color: Color = .white) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            WatchOverline(label)
+            Text(value).font(WatchFont.number(22)).foregroundStyle(color).lineLimit(1).minimumScaleFactor(0.6)
+        }
+        .padding(.horizontal, 7).padding(.vertical, 4)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(WatchColor.surface, in: RoundedRectangle(cornerRadius: 12))
     }
 }
 

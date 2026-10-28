@@ -122,6 +122,10 @@ targets:
     sources:
       - path: KinetixWatch
       - path: Kinetix/App/Formatters.swift
+      - path: Kinetix/Resources/Fonts/BarlowCondensed-SemiBold.ttf
+        buildPhase: resources
+      - path: Kinetix/Resources/Fonts/BarlowCondensed-Bold.ttf
+        buildPhase: resources
     dependencies:
       - package: TrainingEngine
         product: TrainingEngine
@@ -143,6 +147,10 @@ targets:
         WKCompanionAppBundleIdentifier: com.georgeodwyer.kinetix
         WKBackgroundModes: [workout-processing]
         UIBackgroundModes: [location]
+        NSMotionUsageDescription: Kinetix reads your step rate during runs to show your cadence.
+        UIAppFonts:
+          - BarlowCondensed-SemiBold.ttf
+          - BarlowCondensed-Bold.ttf
         NSLocationWhenInUseUsageDescription: "Kinetix uses your watch's GPS during runs to measure distance and pace and draw your route."
         NSHealthShareUsageDescription: "Kinetix reads your heart rate during workouts to show it live and judge your effort."
         NSHealthUpdateUsageDescription: "Kinetix saves the runs you record on your watch to Apple Health."

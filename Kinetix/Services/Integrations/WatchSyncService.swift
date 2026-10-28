@@ -84,8 +84,11 @@ final class WatchSyncService: NSObject {
             cuesDuringWarmUpCoolDown: settings?.cuesDuringWarmUpCoolDown ?? false,
             units: units
         )
+        let runs = (try? context.fetch(FetchDescriptor<RunLogModel>())) ?? []
+        let zones = StrainService.zones(profile: profile?.profile, runs: runs, now: now)
         return WatchPlan(generatedAt: now, units: units, coaching: coaching, runs: planned + Array(templates),
-                         controls: WatchControlsStore.settings)
+                         controls: WatchControlsStore.settings, screens: WatchControlsStore.screens,
+                         zoneStarts: zones.starts, maxHeartRate: zones.maxHeartRate)
     }
 
     // MARK: Watch → runs

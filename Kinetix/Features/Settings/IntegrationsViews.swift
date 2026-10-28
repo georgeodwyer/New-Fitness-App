@@ -114,6 +114,16 @@ struct AppleWatchView: View {
                       systemImage: "figure.run")
                     .font(KXFont.callout)
             }
+            Section {
+                NavigationLink {
+                    WatchScreensView()
+                } label: {
+                    Label("Watch screens", systemImage: "applewatch")
+                }
+                .accessibilityIdentifier("watch.screens")
+            } footer: {
+                Text("Choose what your watch shows during a run: build your own screens and pick the order.")
+            }
             WatchControlsSection()
         }
         .navigationTitle("Apple Watch")

@@ -16,6 +16,17 @@ enum WatchControlsStore {
         }
     }
 
+    static let screensKey = "watch.screens"
+
+    /// The runner's custom run screens.
+    static var screens: WatchScreenSettings {
+        get { WatchScreenSettings.decode(UserDefaults.standard.data(forKey: screensKey)) ?? .standard }
+        set {
+            UserDefaults.standard.set(newValue.encoded(), forKey: screensKey)
+            WatchSyncService.shared.sendPlan()
+        }
+    }
+
     static var device: WatchDeviceInfo? {
         UserDefaults.standard.data(forKey: deviceKey).flatMap(WatchDeviceInfo.decode)
     }

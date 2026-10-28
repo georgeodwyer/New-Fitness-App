@@ -24,6 +24,13 @@
 	<string>Kinetix reads your heart rate during workouts to show it live and judge your effort.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Kinetix saves the runs you record on your watch to Apple Health.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>Kinetix reads your step rate during runs to show your cadence.</string>
+	<key>UIAppFonts</key>
+	<array>
+		<string>BarlowCondensed-SemiBold.ttf</string>
+		<string>BarlowCondensed-Bold.ttf</string>
+	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Kinetix uses your watch's GPS during runs to measure distance and pace and draw your route.</string>
 	<key>UIBackgroundModes</key>

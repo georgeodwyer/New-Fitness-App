@@ -86,7 +86,17 @@ final class RunWorkoutManager: NSObject {
     private(set) var gymFrame: GymMirrorFrame?
     /// The watch's own latest heart rate (shown on the gym screen).
     private(set) var liveHeartRate: Double?
+    /// Heart-rate history, cadence, climb and calories for custom screens.
+    let extras = RunExtras()
     /// The run has steps (so the rep page is shown).
+    /// Everything a custom screen can show, right now.
+    var metricInputs: WatchMetricInputs {
+        WatchMetricInputs(snapshot: snapshot, structure: option?.structure, units: units,
+                          heartRateSamples: extras.heartRateSamples, zones: WatchStore.shared.plan.heartRateZones,
+                          cadence: extras.cadence, elevationGainMeters: extras.elevationGainMeters,
+                          calories: extras.calories, now: Date())
+    }
+
     var isStructured: Bool { isMirroring ? mirrorIsStructured : option?.structure != nil }
 
     // MARK: Permission
@@ -137,6 +147,7 @@ final class RunWorkoutManager: NSObject {
             session.startActivity(with: start)
             try await builder.beginCollection(at: start)
             startedAt = start
+            extras.start(at: start)
             let events = engine.start(at: start)
             self.engine = engine
             handle(events)
@@ -345,6 +356,7 @@ final class RunWorkoutManager: NSObject {
         isGym = false
         gymFrame = nil
         liveHeartRate = nil
+        extras.reset()
         lastFrameAt = nil
         startedAt = nil
         finishedAt = nil
@@ -374,6 +386,7 @@ final class RunWorkoutManager: NSObject {
     }
 
     private func receiveHeartRate(_ bpm: Double, at date: Date) {
+        if phase == .running { extras.addHeartRate(bpm, at: date) }
         if isMirroring {
             guard phase == .running else { return }
             liveHeartRate = bpm
@@ -420,6 +433,7 @@ final class RunWorkoutManager: NSObject {
         option = WatchRunOption(id: UUID(), source: .free, title: isGym ? "Gym on iPhone" : "Run on iPhone")
         let start = Date()
         startedAt = start
+        extras.start(at: start)
         lastFrameAt = start
         let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.mirrorTick() }
@@ -667,6 +681,7 @@ extension RunWorkoutManager: CLLocationManagerDelegate {
         }
         Task { @MainActor in
             self.addRoute(usable)
+            self.extras.addLocations(usable)
             self.receive(samples)
         }
     }
@@ -695,6 +710,11 @@ extension RunWorkoutManager: HKWorkoutSessionDelegate, HKLiveWorkoutBuilderDeleg
     nonisolated func workoutBuilderDidCollectEvent(_ workoutBuilder: HKLiveWorkoutBuilder) {}
 
     nonisolated func workoutBuilder(_ workoutBuilder: HKLiveWorkoutBuilder, didCollectDataOf collectedTypes: Set<HKSampleType>) {
+        let energy = HKQuantityType(.activeEnergyBurned)
+        if collectedTypes.contains(energy), let total = workoutBuilder.statistics(for: energy)?.sumQuantity() {
+            let kcal = total.doubleValue(for: .kilocalorie())
+            Task { @MainActor in self.extras.setCalories(kcal) }
+        }
         let heartRate = HKQuantityType(.heartRate)
         guard collectedTypes.contains(heartRate),
               let quantity = workoutBuilder.statistics(for: heartRate)?.mostRecentQuantity() else { return }

@@ -7,6 +7,8 @@ struct GymLiveView: View {
     @State private var workout = RunWorkoutManager.shared
     @State private var page = 1
     @State private var confirmEnd = false
+    /// When the current rest first showed, for the ring's full length.
+    @State private var restSeenAt: Date?
     // Crown: a firm turn in one go starts or finishes a set (same feel as on runs).
     @State private var crownValue = 0.0
     @State private var lastCrownValue = 0.0
@@ -20,8 +22,6 @@ struct GymLiveView: View {
     /// Crown value per full turn at `.medium` sensitivity (matches the run screen).
     private static let crownUnitsPerTurn = 2.0
 
-    private static let zoneColors: [Color] = [.gray, .teal, .green, .orange, .red]
-
     var body: some View {
         TabView(selection: $page) {
             controls.tag(0)
@@ -34,7 +34,11 @@ struct GymLiveView: View {
         .digitalCrownRotation($crownValue, from: -1_000_000, through: 1_000_000, by: nil, sensitivity: .medium,
                               isContinuous: false, isHapticFeedbackEnabled: false)
         .onChange(of: crownValue) { _, value in crownMoved(to: value) }
-        .onAppear { crownFocused = true }
+        .onAppear {
+            crownFocused = true
+            if frame?.restEndsAt != nil { restSeenAt = Date() }
+        }
+        .onChange(of: frame?.restEndsAt) { _, _ in restSeenAt = Date() }
         .overlay { crownRing }
         .confirmationDialog("Stop showing this session?", isPresented: $confirmEnd) {
             Button("Stop showing") { Task { await workout.end() } }
@@ -94,7 +98,7 @@ struct GymLiveView: View {
             ZStack {
                 Circle().stroke(.white.opacity(0.2), lineWidth: 6)
                 Circle().trim(from: 0, to: crownProgress)
-                    .stroke(starting ? WatchColor.accent : .green, style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                    .stroke(starting ? WatchColor.lift : WatchColor.good, style: StrokeStyle(lineWidth: 6, lineCap: .round))
                     .rotationEffect(.degrees(-90))
                 Image(systemName: starting ? "play.fill" : "checkmark").font(.title2)
             }
@@ -108,46 +112,85 @@ struct GymLiveView: View {
     private var main: some View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
             VStack(alignment: .leading, spacing: 3) {
-                Text(frame?.isComplete == true ? "All sets done" : (frame?.exercise ?? "Waiting for iPhone…"))
-                    .font(.headline)
+                WatchOverline(frame?.title ?? "Gym", color: WatchColor.lift)
+                Text((frame?.isComplete == true ? "All sets done" : (frame?.exercise ?? "Waiting for iPhone…")).uppercased())
+                    .font(WatchFont.title(20))
                     .lineLimit(2)
-                    .minimumScaleFactor(0.8)
+                    .minimumScaleFactor(0.7)
                 if let setText = frame?.setText, frame?.isComplete != true {
-                    Text(setText).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                    Text(setText).font(.caption2).foregroundStyle(WatchColor.inkSecondary).lineLimit(1)
                 }
-                heartRate
-                timer(at: context.date)
+                if let frame, frame.setsTotal > 0 {
+                    setDots(frame)
+                }
+                if let rest = frame?.restEndsAt, rest > context.date, frame?.setStartedAt == nil {
+                    restRing(until: rest, now: context.date)
+                } else {
+                    heartRate
+                    timer(at: context.date)
+                }
                 Spacer(minLength: 0)
                 if let frame, !frame.isComplete {
                     let starting = frame.setStartedAt == nil
                     Button {
                         workout.gymPrimary()
                     } label: {
-                        Label(starting ? "Start set" : "Finish set", systemImage: starting ? "play.fill" : "checkmark")
-                            .frame(maxWidth: .infinity)
+                        Text(starting ? "Start set" : "Finish set")
                     }
-                    .tint(starting ? WatchColor.accent : .green)
+                    .buttonStyle(WatchFilledButtonStyle(color: starting ? WatchColor.lift : WatchColor.good))
                     .modifier(PrimaryDoubleTap())
                 }
                 if workout.isPhoneLinkStale {
-                    Label("Waiting for iPhone…", systemImage: "iphone.slash").font(.caption2).foregroundStyle(WatchColor.offPace)
+                    Label("Waiting for iPhone…", systemImage: "iphone.slash").font(.caption2).foregroundStyle(WatchColor.warning)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
     }
 
+    /// One bar per set: done, in progress, to do.
+    private func setDots(_ frame: GymMirrorFrame) -> some View {
+        HStack(spacing: 3) {
+            ForEach(0..<min(frame.setsTotal, 12), id: \.self) { index in
+                Capsule()
+                    .fill(index < frame.setsDone ? WatchColor.lift
+                          : index == frame.setsDone ? WatchColor.lift.opacity(0.4) : WatchColor.surface2)
+                    .frame(height: 5)
+            }
+        }
+        .accessibilityLabel("\(frame.setsDone) of \(frame.setsTotal) sets done")
+    }
+
+    /// The rest countdown as a ring.
+    private func restRing(until end: Date, now: Date) -> some View {
+        let left = end.timeIntervalSince(now)
+        let total = max(end.timeIntervalSince(restSeenAt ?? now), left, 1)
+        return ZStack {
+            Circle().stroke(WatchColor.surface2, lineWidth: 8)
+            Circle().trim(from: 0, to: left / total)
+                .stroke(WatchColor.accent, style: StrokeStyle(lineWidth: 8, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+            VStack(spacing: 0) {
+                Text(Units.formatMinutesSeconds(left)).font(WatchFont.number(30))
+                Text("REST").font(WatchFont.unit).tracking(1.2).foregroundStyle(WatchColor.inkSecondary)
+            }
+        }
+        .frame(width: 92, height: 92)
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Rest, \(Int(left)) seconds left")
+    }
+
     private var heartRate: some View {
         let bpm = workout.liveHeartRate
         let zone = bpm.flatMap { value in frame.map { $0.zone(for: value) } } ?? 0
-        let color = zone > 0 ? Self.zoneColors[zone - 1] : WatchColor.heart
-        return HStack(alignment: .firstTextBaseline, spacing: 4) {
-            Image(systemName: "heart.fill").foregroundStyle(color)
-            Text(bpm.map { "\(Int($0.rounded()))" } ?? "--")
-                .font(.system(size: 36, weight: .semibold, design: .rounded).monospacedDigit())
-            if zone > 0 {
-                Text("Z\(zone)").font(.caption.weight(.bold)).foregroundStyle(color)
+        let color = zone > 0 ? WatchColor.zone(zone) : WatchColor.bad
+        return VStack(alignment: .leading, spacing: 2) {
+            HStack(alignment: .firstTextBaseline, spacing: 3) {
+                Text(bpm.map { "\(Int($0.rounded()))" } ?? "--").font(WatchFont.number(40)).foregroundStyle(color)
+                Text(zone > 0 ? "BPM · Z\(zone)" : "BPM").font(WatchFont.unit).foregroundStyle(WatchColor.inkSecondary)
             }
+            if zone > 0 { WatchZoneBar(zone: zone) }
         }
         .accessibilityElement(children: .combine)
     }
@@ -155,15 +198,10 @@ struct GymLiveView: View {
     @ViewBuilder
     private func timer(at now: Date) -> some View {
         if let started = frame?.setStartedAt {
-            Text("Set \(Units.formatMinutesSeconds(now.timeIntervalSince(started)))")
-                .font(.system(.body, design: .rounded).monospacedDigit())
-                .foregroundStyle(.green)
-        } else if let rest = frame?.restEndsAt, rest > now {
-            Text("Rest \(Units.formatMinutesSeconds(rest.timeIntervalSince(now)))")
-                .font(.system(.body, design: .rounded).monospacedDigit())
-                .foregroundStyle(WatchColor.offPace)
+            Text("SET \(Units.formatMinutesSeconds(now.timeIntervalSince(started)))")
+                .font(WatchFont.title(15)).foregroundStyle(WatchColor.good)
         } else if let frame, !frame.isComplete {
-            Text("\(frame.setsDone) of \(frame.setsTotal) sets").font(.caption).foregroundStyle(.secondary)
+            Text("\(frame.setsDone) OF \(frame.setsTotal) SETS").font(WatchFont.unit).foregroundStyle(WatchColor.inkSecondary)
         }
     }
 
@@ -172,14 +210,18 @@ struct GymLiveView: View {
             Button {
                 confirmEnd = true
             } label: {
-                VStack(spacing: 2) {
-                    Image(systemName: "xmark").font(.title3)
-                    Text("End").font(.caption2)
+                VStack(spacing: 4) {
+                    Image(systemName: "stop.fill")
+                        .font(.system(size: 15, weight: .bold)).foregroundStyle(.black)
+                        .frame(width: 32, height: 32)
+                        .background(WatchColor.bad, in: Circle())
+                    Text("END").font(WatchFont.title(13)).tracking(0.8).foregroundStyle(WatchColor.bad)
                 }
-                .frame(maxWidth: .infinity, minHeight: 56)
+                .frame(maxWidth: .infinity, minHeight: 80)
+                .background(WatchColor.bad.opacity(0.16), in: RoundedRectangle(cornerRadius: 18))
             }
-            .tint(.red)
-            Text("Finish the session on your iPhone.").font(.caption2).foregroundStyle(.secondary)
+            .buttonStyle(.plain)
+            Text("Finish the session on your iPhone.").font(.caption2).foregroundStyle(WatchColor.inkSecondary)
         }
     }
 }

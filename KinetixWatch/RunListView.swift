@@ -20,8 +20,10 @@ struct RunListView: View {
                 }
                 let today = plan.planned(on: .now, calendar: calendar)
                 if !today.isEmpty {
-                    Section("Today") {
-                        ForEach(today) { option in row(option) }
+                    Section {
+                        ForEach(today) { option in row(option, highlight: true) }
+                    } header: {
+                        WatchOverline("Today · planned")
                     }
                 }
                 Section {
@@ -53,7 +55,7 @@ struct RunListView: View {
                     }
                 }
             }
-            .navigationTitle("Kinetix")
+            .navigationTitle { Text("KINETIX").font(WatchFont.title(16)).foregroundStyle(WatchColor.accent) }
             .navigationDestination(for: WatchRunOption.self) { option in
                 RunReadyView(option: option)
             }
@@ -61,18 +63,59 @@ struct RunListView: View {
         .task { await workout.requestAuthorization() }
     }
 
-    private func row(_ option: WatchRunOption) -> some View {
+    private func row(_ option: WatchRunOption, highlight: Bool = false) -> some View {
         NavigationLink(value: option) {
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 3) {
                 if let date = option.date, !calendar.isDateInToday(date) {
-                    Text(date.formatted(.dateTime.weekday(.abbreviated)))
-                        .font(.caption2).foregroundStyle(WatchColor.accent)
+                    WatchOverline(date.formatted(.dateTime.weekday(.abbreviated)), color: WatchColor.accent)
                 }
-                Text(option.title).font(.headline).lineLimit(2)
+                Text(option.title.uppercased()).font(WatchFont.title(highlight ? 20 : 17)).lineLimit(2)
                 if !option.detail.isEmpty {
-                    Text(option.detail).font(.caption2).foregroundStyle(.secondary).lineLimit(2)
+                    Text(option.detail).font(.caption2).foregroundStyle(WatchColor.inkSecondary).lineLimit(2)
+                }
+                if let segments = option.structure?.segments, segments.count > 1 {
+                    StructureBar(segments: segments)
                 }
             }
+            .padding(.vertical, 2)
+        }
+        .listRowBackground(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(highlight
+                      ? AnyShapeStyle(LinearGradient(colors: [WatchColor.run.opacity(0.3), WatchColor.surface],
+                                                     startPoint: .topLeading, endPoint: .bottomTrailing))
+                      : AnyShapeStyle(WatchColor.surface))
+        )
+    }
+}
+
+/// The run's shape: one block per step, work steps in run blue.
+struct StructureBar: View {
+    let segments: [RunSegment]
+
+    var body: some View {
+        GeometryReader { proxy in
+            let weights = segments.map(Self.weight)
+            let total = max(weights.reduce(0, +), 1)
+            let gap: CGFloat = 2
+            let width = proxy.size.width - gap * CGFloat(segments.count - 1)
+            HStack(spacing: gap) {
+                ForEach(Array(segments.enumerated()), id: \.offset) { index, segment in
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(segment.kind == .work ? WatchColor.run : Color.white.opacity(0.22))
+                        .frame(width: max(width * CGFloat(weights[index] / total), 2))
+                }
+            }
+        }
+        .frame(height: 7)
+        .accessibilityHidden(true)
+    }
+
+    /// Roughly how long a step takes, so the blocks are in proportion.
+    private static func weight(_ segment: RunSegment) -> Double {
+        switch segment.length {
+        case .distance(let meters): return meters / 1000 * 300
+        case .duration(let seconds): return seconds
         }
     }
 }
@@ -91,11 +134,14 @@ struct RunReadyView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 8) {
-                Text(option.title).font(.headline)
+                Text(option.title.uppercased()).font(WatchFont.title(20))
+                if let segments = option.structure?.segments, segments.count > 1 {
+                    StructureBar(segments: segments)
+                }
                 if let segments = option.structure?.segments, !segments.isEmpty {
                     ForEach(Array(segments.enumerated()), id: \.offset) { _, segment in
                         HStack(alignment: .firstTextBaseline) {
-                            Circle().fill(segment.kind == .work ? WatchColor.accent : .teal).frame(width: 6, height: 6)
+                            Circle().fill(segment.kind == .work ? WatchColor.run : WatchColor.inkSecondary).frame(width: 6, height: 6)
                             VStack(alignment: .leading, spacing: 0) {
                                 Text("\(segment.label ?? segment.kind.displayName) · \(format.segmentLength(segment.length))")
                                     .font(.caption)
@@ -115,9 +161,8 @@ struct RunReadyView: View {
                     Task { await workout.start(option) }
                 } label: {
                     Label(workout.phase == .starting ? "Starting…" : "Start", systemImage: "play.fill")
-                        .frame(maxWidth: .infinity)
                 }
-                .tint(WatchColor.accent)
+                .buttonStyle(WatchFilledButtonStyle())
                 .disabled(workout.phase == .starting)
                 if let error = workout.errorText {
                     Text(error).font(.caption2).foregroundStyle(WatchColor.offPace)
