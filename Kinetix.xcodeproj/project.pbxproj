@@ -10,6 +10,7 @@
 		0147D8BEC0DBA6EF2072DCD9 /* KXStepper.swift in Sources */ = {isa = PBXBuildFile; fileRef = D763CB1795460ACC4115555D /* KXStepper.swift */; };
 		019C4AE040EEE60FFD47B6AF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9D4B9D509AC09C29705FCC4B /* Assets.xcassets */; };
 		0256EAD3B08ADE3512154318 /* VoiceCoach.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CB8951AE011CBA263FE6226 /* VoiceCoach.swift */; };
+		05F1AC2F40F88D04EE925BDF /* YourPacesCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1038EB67DEE18F975258A44 /* YourPacesCard.swift */; };
 		067880B384E37AE558D9400B /* KXMetric.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DBA1671E84924F9135EF5C2 /* KXMetric.swift */; };
 		0B0FAE936D97D1E2FFDF2B44 /* KXHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = E29498CEEBE32CAE95B52D85 /* KXHeader.swift */; };
 		0B8EDD2194BD01A7D5D4F63C /* StrengthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE4D2B82E6F373D0D19923E8 /* StrengthService.swift */; };
@@ -348,6 +349,7 @@
 		AB63E4848B35BB437454824E /* RunDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunDetailView.swift; sourceTree = "<group>"; };
 		ABE151BB82821F03C677FAAB /* KinetixTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = KinetixTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AE4D2B82E6F373D0D19923E8 /* StrengthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrengthService.swift; sourceTree = "<group>"; };
+		B1038EB67DEE18F975258A44 /* YourPacesCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YourPacesCard.swift; sourceTree = "<group>"; };
 		B16CC86849C40BB16FD55693 /* WorkoutBuilderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutBuilderView.swift; sourceTree = "<group>"; };
 		B20939AE5B582C11C6898982 /* KXSessionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXSessionCard.swift; sourceTree = "<group>"; };
 		B488A5C64C09276C346F5B82 /* RunWorkoutModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunWorkoutModel.swift; sourceTree = "<group>"; };
@@ -488,6 +490,7 @@
 				AB63E4848B35BB437454824E /* RunDetailView.swift */,
 				7C67A71E900CE4D68CC760BF /* RunningProgressView.swift */,
 				23ED18C901A4AF49BA72E38A /* StrengthProgressView.swift */,
+				B1038EB67DEE18F975258A44 /* YourPacesCard.swift */,
 			);
 			path = Progress;
 			sourceTree = "<group>";
@@ -1180,6 +1183,7 @@
 				6540A069DFA262A340BECB35 /* WorkoutActivityController.swift in Sources */,
 				1682D3131EDEDDCF809DC004 /* WorkoutBuilderView.swift in Sources */,
 				7F6C3F91173E450852BB2B7C /* WorkoutEditService.swift in Sources */,
+				05F1AC2F40F88D04EE925BDF /* YourPacesCard.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
