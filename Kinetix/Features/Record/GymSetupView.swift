@@ -152,12 +152,25 @@ private struct GymStartFlow: ViewModifier {
     @State private var showHealthNotice = false
     @State private var askAboutPlan = false
 
-    /// Planned strength sessions still to do today.
-    private var plannedToday: [PlannedSessionModel] {
-        sessions.filter {
-            !$0.isSoftDeleted && Calendar.kinetix.isDateInToday($0.date) && $0.kind.discipline == .strength
+    /// Gym sessions from this week's plan still to do: today's first, then the rest of the
+    /// week, then any missed earlier in the week (at most three).
+    private var plannedThisWeek: [PlannedSessionModel] {
+        let calendar = Calendar.kinetix
+        let today = calendar.startOfDay(for: .now)
+        guard let week = calendar.dateInterval(of: .weekOfYear, for: today) else { return [] }
+        let open = sessions.filter {
+            !$0.isSoftDeleted && week.contains($0.date) && $0.kind.discipline == .strength
                 && ($0.status == .planned || $0.status == .swapped) && ($0.plan?.isActive ?? true)
         }
+        func rank(_ session: PlannedSessionModel) -> (Int, Date) {
+            let day = calendar.startOfDay(for: session.date)
+            return (day == today ? 0 : day > today ? 1 : 2, session.date)
+        }
+        return Array(open.sorted { rank($0) < rank($1) }.prefix(3))
+    }
+
+    private var plannedToday: PlannedSessionModel? {
+        plannedThisWeek.first.flatMap { Calendar.kinetix.isDateInToday($0.date) ? $0 : nil }
     }
 
     func body(content: Content) -> some View {
@@ -175,32 +188,49 @@ private struct GymStartFlow: ViewModifier {
                 }
             }
             .confirmationDialog(planQuestion, isPresented: $askAboutPlan, titleVisibility: .visible) {
-                if let planned = plannedToday.first {
-                    Button("Yes, count it as my \(planned.title.lowercased())") { start(linking: planned) }
-                    Button("No, it's an extra session") { start(linking: nil) }
+                ForEach(plannedThisWeek) { planned in
+                    Button("Yes, count it as my \(planned.title.lowercased())\(dayLabel(planned))") { start(linking: planned) }
+                }
+                Button("No, it's an extra session") { start(linking: nil) }
+                if let planned = plannedToday {
                     Button("Do the planned \(planned.title.lowercased()) instead") {
                         request = nil
                         router.startPlanned(planned, in: context)
                     }
                 }
             } message: {
-                if let planned = plannedToday.first {
+                if let planned = plannedToday {
                     Text("Your plan has \(planned.title.lowercased()) (\(planned.summary)) today. If this workout replaces it, it's ticked off; if not, both count towards your training load.")
+                } else {
+                    Text("If this workout replaces one of this week's gym sessions, it's ticked off and moved to today. If not, it's an extra session; both count towards your training load.")
                 }
             }
     }
 
+    /// " (Thu)" for a session on another day.
+    private func dayLabel(_ planned: PlannedSessionModel) -> String {
+        Calendar.kinetix.isDateInToday(planned.date) ? "" : " (\(planned.date.formatted(.dateTime.weekday(.abbreviated))))"
+    }
+
     private var planQuestion: String {
-        plannedToday.first.map { "You have \($0.title.lowercased()) planned today. Is this it?" } ?? ""
+        if let planned = plannedToday { return "You have \(planned.title.lowercased()) planned today. Is this it?" }
+        return "Does this count towards your plan?"
     }
 
     private func proceed() {
         guard request != nil else { return }
-        if plannedToday.isEmpty { start(linking: nil) } else { askAboutPlan = true }
+        if plannedThisWeek.isEmpty { start(linking: nil) } else { askAboutPlan = true }
     }
 
     private func start(linking planned: PlannedSessionModel?) {
         guard let request else { return }
+        // A session from another day done today moves to today, so the week shows what happened.
+        if let planned, !Calendar.kinetix.isDateInToday(planned.date) {
+            let calendar = Calendar.kinetix
+            let time = planned.date.timeIntervalSince(calendar.startOfDay(for: planned.date))
+            planned.date = calendar.startOfDay(for: .now).addingTimeInterval(time)
+            planned.touch()
+        }
         if let templateId = request.templateId,
            let template = try? context.fetch(FetchDescriptor<GymTemplateModel>(predicate: #Predicate { $0.id == templateId })).first {
             template.lastUsedAt = .now

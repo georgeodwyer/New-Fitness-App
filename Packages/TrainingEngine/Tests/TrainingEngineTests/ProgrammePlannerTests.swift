@@ -156,8 +156,8 @@ final class ProgrammePlannerTests: XCTestCase {
             XCTAssertTrue(file.isGoal(.faster5k, availableTo: level))
             XCTAssertTrue(file.isGoal(.marathon, availableTo: level))
         }
-        // Faster 5K has no programme written yet, so it uses the rule-based planner.
-        let runner = TestSupport.profile(running: .intermediate, goal: .faster5k)
+        // Build strength has no programme written yet, so it uses the rule-based planner.
+        let runner = TestSupport.profile(running: .intermediate, goal: .buildStrength)
         let outline = generator.makeOutline(for: runner, startingOn: monday)
         XCTAssertNil(outline.programmeGoal)
         XCTAssertFalse(generator.generateWeek(0, outline: outline, profile: runner)?.sessions.isEmpty ?? true)
