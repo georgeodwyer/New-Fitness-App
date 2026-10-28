@@ -98,4 +98,21 @@ final class TrainingHistoryTests: XCTestCase {
         XCTAssertNil(weeks.first?.planned)
         XCTAssertEqual(weeks.last?.weekStart, monday)
     }
+
+    func testElevationGainIgnoresJitter() {
+        func point(_ altitude: Double?, _ t: Double) -> RoutePoint { RoutePoint(latitude: 51, longitude: 0, elapsed: t, altitude: altitude) }
+        // Up 20 m with 1 m wobbles, down 10, up 5.
+        let altitudes: [Double] = [10, 11, 10, 15, 14, 20, 30, 29, 30, 25, 20, 21, 20, 25]
+        let route = altitudes.enumerated().map { point($0.element, Double($0.offset)) }
+        XCTAssertEqual(RunAnalysis.elevationGain(route: route) ?? 0, 25, accuracy: 0.01)
+        XCTAssertNil(RunAnalysis.elevationGain(route: [point(nil, 0), point(nil, 1)]))
+        XCTAssertEqual(RunAnalysis.elevationProfile(route: route, count: 7).count, 7)
+    }
+
+    func testSecondsInZones() {
+        let zones = HeartRateZones(maxHeartRate: 200, maxSource: .custom, starts: [100, 120, 140, 160, 180], isCustom: true)
+        let samples = [HeartRateSample(elapsed: 0, bpm: 110), HeartRateSample(elapsed: 10, bpm: 150),
+                       HeartRateSample(elapsed: 30, bpm: 185), HeartRateSample(elapsed: 35, bpm: 185)]
+        XCTAssertEqual(RunAnalysis.secondsInZones(samples, zones: zones), [10, 0, 20, 0, 5])
+    }
 }

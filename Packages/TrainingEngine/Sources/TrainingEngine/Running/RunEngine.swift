@@ -368,7 +368,7 @@ public struct RunEngine: Sendable {
         lastFixActive = activeSeconds
         smoother.add(time: activeSeconds, distance: distance, speed: sample.speed)
         coachSmoother.add(time: activeSeconds, distance: distance, speed: sample.speed)
-        route.append(RoutePoint(latitude: sample.latitude, longitude: sample.longitude, elapsed: activeSeconds))
+        route.append(RoutePoint(latitude: sample.latitude, longitude: sample.longitude, elapsed: activeSeconds, altitude: sample.altitude))
 
         events += progressSegments()
         events += evaluateCoach()

@@ -66,7 +66,8 @@ final class GPSLocationSource: NSObject, RunLocationSource, CLLocationManagerDel
     nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         let samples = locations.map {
             LocationSample(timestamp: $0.timestamp, latitude: $0.coordinate.latitude, longitude: $0.coordinate.longitude,
-                           horizontalAccuracy: $0.horizontalAccuracy, speed: $0.speed)
+                           horizontalAccuracy: $0.horizontalAccuracy, speed: $0.speed,
+                           altitude: $0.verticalAccuracy > 0 ? $0.altitude : nil)
         }
         MainActor.assumeIsolated {
             for sample in samples { onSample?(sample) }

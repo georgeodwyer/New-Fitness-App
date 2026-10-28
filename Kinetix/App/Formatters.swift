@@ -26,6 +26,14 @@ struct DisplayFormat {
         }
     }
 
+    /// Height climbed: "64 m" / "210 ft".
+    func elevation(_ meters: Double) -> String {
+        switch units {
+        case .metric: return "\(Int(meters.rounded())) m"
+        case .imperial: return "\(Int((meters * 3.28084).rounded())) ft"
+        }
+    }
+
     func weight(_ kg: Double) -> String {
         Units.formatWeight(kg: kg, units: units) + " " + Units.weightUnitLabel(units)
     }

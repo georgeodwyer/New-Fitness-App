@@ -21,8 +21,9 @@ struct ShareImage: Transferable {
 @MainActor
 enum ShareService {
     /// Renders a card (or sticker) at 3× for crisp 1080-pixel-wide images.
-    static func render(_ data: ShareCardData, style: ShareCardStyle, mapImage: UIImage?, photo: UIImage?) -> UIImage? {
-        let renderer = ImageRenderer(content: ShareCardView(data: data, style: style, mapImage: mapImage, photo: photo))
+    static func render(_ data: ShareCardData, style: ShareCardStyle, mapImage: UIImage?, photo: UIImage?,
+                       options: ShareDetailOptions = ShareDetailOptions()) -> UIImage? {
+        let renderer = ImageRenderer(content: ShareCardView(data: data, style: style, mapImage: mapImage, photo: photo, options: options))
         renderer.scale = 3
         renderer.isOpaque = style != .sticker
         return renderer.uiImage
@@ -30,7 +31,7 @@ enum ShareService {
 
     /// A map picture of the route with the line drawn on top. nil without a route or
     /// without a connection (the card then shows the route on its own).
-    static func mapImage(for route: [RoutePoint], size: CGSize = CGSize(width: 360, height: 380)) async -> UIImage? {
+    static func mapImage(for route: [RoutePoint], size: CGSize = CGSize(width: 360, height: 330)) async -> UIImage? {
         guard route.count > 1 else { return nil }
         let coordinates = route.map { CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude) }
         let polyline = MKPolyline(coordinates: coordinates, count: coordinates.count)
@@ -41,7 +42,7 @@ enum ShareService {
         options.size = size
         options.scale = 3
         options.pointOfInterestFilter = .excludingAll
-        options.traitCollection = UITraitCollection(userInterfaceStyle: .light)
+        options.traitCollection = UITraitCollection(userInterfaceStyle: .dark)
         guard let snapshot = try? await MKMapSnapshotter(options: options).start() else { return nil }
         let image = UIGraphicsImageRenderer(size: size, format: { let f = UIGraphicsImageRendererFormat(); f.scale = 3; return f }())
             .image { context in
@@ -54,10 +55,11 @@ enum ShareService {
                 path.lineWidth = 5
                 path.lineCapStyle = .round
                 path.lineJoinStyle = .round
-                UIColor.white.setStroke()
-                path.lineWidth = 8
+                UIColor.black.withAlphaComponent(0.6).setStroke()
+                path.lineWidth = 9
                 path.stroke()
-                UIColor(KXColor.accent).setStroke()
+                // Volt, as in the app's dark theme.
+                UIColor(red: 0xD6 / 255, green: 1, blue: 0x3D / 255, alpha: 1).setStroke()
                 path.lineWidth = 5
                 path.stroke()
                 _ = context
@@ -88,8 +90,8 @@ enum ShareService {
         if let background, let backgroundData = background.pngData() {
             item["com.instagram.sharedSticker.backgroundImage"] = backgroundData
         } else {
-            item["com.instagram.sharedSticker.backgroundTopColor"] = "#1B2521"
-            item["com.instagram.sharedSticker.backgroundBottomColor"] = "#F47B20"
+            item["com.instagram.sharedSticker.backgroundTopColor"] = "#111113"
+            item["com.instagram.sharedSticker.backgroundBottomColor"] = "#050506"
         }
         UIPasteboard.general.setItems([item], options: [.expirationDate: Date.now.addingTimeInterval(300)])
         UIApplication.shared.open(url)
@@ -98,7 +100,8 @@ enum ShareService {
 
 extension ShareCardData {
     @MainActor
-    static func run(_ log: RunLogModel, units: UnitSystem, hideEnds: Bool) -> ShareCardData {
+    static func run(_ log: RunLogModel, units: UnitSystem, hideEnds: Bool, zones: HeartRateZones? = nil,
+                    previousBests: [BestEffortDistance: Double] = [:]) -> ShareCardData {
         let format = DisplayFormat(units: units)
         var metrics: [(label: String, value: String)] = [
             ("Distance", format.distance(log.distanceMeters, decimals: 2)),
@@ -112,7 +115,9 @@ extension ShareCardData {
             subtitle: log.startedAt.formatted(.dateTime.weekday(.wide).day().month(.wide)),
             metrics: metrics,
             badge: log.targetedSeconds > 0 ? "\(Int((log.timeInTargetSeconds / log.targetedSeconds * 100).rounded()))% on pace" : nil,
-            route: hideEnds ? RunAnalysis.privacyTrimmed(route) : route
+            route: hideEnds ? RunAnalysis.privacyTrimmed(route) : route,
+            units: units,
+            details: RunShareDetails(log, units: units, zones: zones, previousBests: previousBests)
         )
     }
 
@@ -136,7 +141,55 @@ extension ShareCardData {
                       ("Time", Units.formatMinutesSeconds(log.durationSeconds)),
                       ("Sets", "\(completed.count)")],
             lines: lines,
-            badge: records > 0 ? "\(records) PR\(records == 1 ? "" : "s")" : nil
+            badge: records > 0 ? "\(records) PR\(records == 1 ? "" : "s")" : nil,
+            units: units
         )
+    }
+}
+
+extension RunShareDetails {
+    /// The charts' numbers for a finished run. `previousBests` are the runner's best times from
+    /// earlier runs (a faster time here is a new best).
+    @MainActor
+    init(_ log: RunLogModel, units: UnitSystem, zones: HeartRateZones?, previousBests: [BestEffortDistance: Double]) {
+        self.init()
+        splits = log.splits.map(\.pace)
+
+        let results = log.segmentResults
+        let work = results.filter { $0.segment.kind == .work && $0.durationSeconds >= 1 }
+        if work.count >= 2 {
+            reps = work.compactMap { result in
+                guard let pace = result.averagePace else { return nil }
+                let inRange = PaceGap(result: result, units: units)?.isInRange ?? false
+                return Rep(pace: pace, target: result.segment.targetPace, inRange: inRange)
+            }
+            let targets = Set(work.compactMap(\.segment.targetPace))
+            if targets.count == 1, let target = targets.first { repTarget = DisplayFormat(units: units).paceRange(target) }
+        }
+
+        averageHeartRate = log.averageHeartRate
+        maxHeartRate = log.maxHeartRate
+        if let zones { zoneSeconds = RunAnalysis.secondsInZones(log.heartRateSamples, zones: zones) }
+
+        let route = log.route
+        efforts = RunAnalysis.bestEfforts(route: route)
+            .sorted { $0.key.meters > $1.key.meters }
+            .map { distance, seconds in
+                Effort(name: Self.shortName(distance), time: Units.formatMinutesSeconds(seconds),
+                       isNewBest: previousBests[distance].map { seconds < $0 } ?? false)
+            }
+        elevationGain = RunAnalysis.elevationGain(route: route)
+        elevationProfile = RunAnalysis.elevationProfile(route: route)
+    }
+
+    static func shortName(_ distance: BestEffortDistance) -> String {
+        switch distance {
+        case .oneKilometre: return "1K"
+        case .oneMile: return "1 mi"
+        case .fiveK: return "5K"
+        case .tenK: return "10K"
+        case .half: return "Half"
+        case .marathon: return "Marathon"
+        }
     }
 }

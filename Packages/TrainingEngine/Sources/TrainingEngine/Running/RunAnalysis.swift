@@ -93,6 +93,58 @@ public enum RunAnalysis {
         return result
     }
 
+    /// Metres climbed, counting only rises of more than `threshold` metres (so GPS altitude
+    /// jitter isn't counted). nil when the run has no altitude.
+    public static func elevationGain(route: [RoutePoint], threshold: Double = 3) -> Double? {
+        let altitudes = route.compactMap(\.altitude)
+        guard altitudes.count >= 2 else { return nil }
+        var gain = 0.0
+        var low = altitudes[0], high = altitudes[0]
+        var climbing = true
+        for altitude in altitudes.dropFirst() {
+            if climbing {
+                if altitude > high { high = altitude }
+                else if high - altitude > threshold {
+                    gain += max(high - low, 0)
+                    climbing = false
+                    low = altitude
+                }
+            } else {
+                if altitude < low { low = altitude }
+                else if altitude - low > threshold {
+                    climbing = true
+                    high = altitude
+                }
+            }
+        }
+        if climbing { gain += max(high - low, 0) }
+        return gain
+    }
+
+    /// Altitude through the run as `count` evenly spaced averages (for a small profile chart).
+    public static func elevationProfile(route: [RoutePoint], count: Int = 40) -> [Double] {
+        let altitudes = route.compactMap(\.altitude)
+        guard altitudes.count >= count, count > 0 else { return altitudes }
+        let size = Double(altitudes.count) / Double(count)
+        return (0..<count).map { index in
+            let slice = altitudes[Int(Double(index) * size)..<max(Int(Double(index + 1) * size), Int(Double(index) * size) + 1)]
+            return slice.reduce(0, +) / Double(slice.count)
+        }
+    }
+
+    /// Seconds spent in zones 1–5 (index 0 = zone 1); time below zone 1 counts as zone 1.
+    public static func secondsInZones(_ samples: [HeartRateSample], zones: HeartRateZones) -> [Double] {
+        var seconds = Array(repeating: 0.0, count: 5)
+        guard samples.count >= 2 else { return seconds }
+        for (previous, next) in zip(samples, samples.dropFirst()) {
+            let gap = next.elapsed - previous.elapsed
+            guard gap > 0, gap < 60 else { continue }
+            let zone = min(max(zones.zone(for: previous.bpm), 1), 5)
+            seconds[zone - 1] += gap
+        }
+        return seconds
+    }
+
     /// Pace (seconds per km) through the run, averaged over windows of `windowSeconds` so GPS
     /// noise doesn't make the chart jagged. Windows with almost no movement are skipped.
     public static func paceSeries(route: [RoutePoint], windowSeconds: Double = 30) -> [RunChartPoint] {

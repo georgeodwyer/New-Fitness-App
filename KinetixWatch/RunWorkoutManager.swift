@@ -677,7 +677,8 @@ extension RunWorkoutManager: CLLocationManagerDelegate {
         let usable = locations.filter { $0.horizontalAccuracy >= 0 && $0.horizontalAccuracy <= 50 }
         let samples = usable.map {
             LocationSample(timestamp: $0.timestamp, latitude: $0.coordinate.latitude, longitude: $0.coordinate.longitude,
-                           horizontalAccuracy: $0.horizontalAccuracy, speed: $0.speed)
+                           horizontalAccuracy: $0.horizontalAccuracy, speed: $0.speed,
+                           altitude: $0.verticalAccuracy > 0 ? $0.altitude : nil)
         }
         Task { @MainActor in
             self.addRoute(usable)

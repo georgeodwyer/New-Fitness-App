@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 import PhotosUI
 import TrainingEngine
 
@@ -14,7 +15,15 @@ struct ShareSessionView: View {
     let units: UnitSystem
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var context
+    @Query(filter: #Predicate<UserProfileModel> { $0.deletedAt == nil }) private var profiles: [UserProfileModel]
     @State private var style: ShareCardStyle = .map
+    @AppStorage("share.details.splits") private var showSplits = true
+    @AppStorage("share.details.pace") private var showPace = true
+    @AppStorage("share.details.heartRate") private var showHeartRate = true
+    @AppStorage("share.details.efforts") private var showEfforts = true
+    @State private var zones: HeartRateZones?
+    @State private var previousBests: [BestEffortDistance: Double] = [:]
     @AppStorage("share.hideRouteEnds") private var hideEnds = true
     @State private var photoItem: PhotosPickerItem?
     @State private var photo: UIImage?
@@ -24,9 +33,15 @@ struct ShareSessionView: View {
 
     private var isRun: Bool { if case .run = source { return true } else { return false } }
 
+    private var options: ShareDetailOptions {
+        ShareDetailOptions(splits: showSplits, pace: showPace, heartRate: showHeartRate, effortsAndElevation: showEfforts)
+    }
+
+    private var styles: [ShareCardStyle] { isRun ? ShareCardStyle.allCases : [.map, .photo, .sticker] }
+
     private var data: ShareCardData {
         switch source {
-        case .run(let log): return .run(log, units: units, hideEnds: hideEnds)
+        case .run(let log): return .run(log, units: units, hideEnds: hideEnds, zones: zones, previousBests: previousBests)
         case .strength(let log, let records): return .strength(log, units: units, records: records)
         }
     }
@@ -36,7 +51,7 @@ struct ShareSessionView: View {
             ScrollView {
                 VStack(spacing: KXSpacing.lg) {
                     Picker("Style", selection: $style) {
-                        ForEach(ShareCardStyle.allCases) { Text($0 == .map && !isRun ? "Card" : $0.rawValue).tag($0) }
+                        ForEach(styles) { Text($0 == .map && !isRun ? "Card" : $0.rawValue).tag($0) }
                     }
                     .pickerStyle(.segmented)
                     .accessibilityIdentifier("share.style")
@@ -49,7 +64,8 @@ struct ShareSessionView: View {
                         }
                         .buttonStyle(.kx(.secondary, fullWidth: true))
                     }
-                    if isRun {
+                    if style == .details { detailToggles }
+                    if isRun && style != .details {
                         Toggle(isOn: $hideEnds) {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Hide start and finish").font(KXFont.bodyEmphasis)
@@ -78,11 +94,13 @@ struct ShareSessionView: View {
         .tint(KXColor.accent)
         .task(id: hideEnds) {
             if case .run(let log) = source {
+                if zones == nil { loadRunContext(for: log) }
                 mapImage = await ShareService.mapImage(for: hideEnds ? RunAnalysis.privacyTrimmed(log.route) : log.route)
             }
             renderCard()
         }
         .onChange(of: style) { renderCard() }
+        .onChange(of: options) { renderCard() }
         .onChange(of: photoItem) { _, item in
             Task {
                 if let data = try? await item?.loadTransferable(type: Data.self), let image = UIImage(data: data) {
@@ -96,8 +114,8 @@ struct ShareSessionView: View {
     private var preview: some View {
         ZStack {
             if style == .sticker {
-                // A checkerboard-free dark backdrop so the white sticker is visible.
-                RoundedRectangle(cornerRadius: KXRadius.md).fill(Color(red: 0.12, green: 0.16, blue: 0.15))
+                // A dark backdrop so the sticker is visible.
+                RoundedRectangle(cornerRadius: KXRadius.md).fill(CardColor.surfaceTint)
             }
             if let rendered {
                 Image(uiImage: rendered).resizable().scaledToFit()
@@ -147,6 +165,49 @@ struct ShareSessionView: View {
     }
 
     private func renderCard() {
-        rendered = ShareService.render(data, style: style, mapImage: mapImage, photo: photo)
+        rendered = ShareService.render(data, style: style, mapImage: mapImage, photo: photo, options: options)
+    }
+
+    /// Ticks for what the Details card shows.
+    private var detailToggles: some View {
+        VStack(alignment: .leading, spacing: KXSpacing.sm) {
+            KXOverline("Share run details")
+            VStack(spacing: 0) {
+                detailToggle("Splits", detail: "Pace for each \(units == .metric ? "km" : "mile"), as bars", isOn: $showSplits)
+                Divider().overlay(KXColor.border)
+                detailToggle("Time on pace", detail: "Each rep against its target", isOn: $showPace)
+                Divider().overlay(KXColor.border)
+                detailToggle("Heart rate", detail: "Average, max and time in zones", isOn: $showHeartRate)
+                Divider().overlay(KXColor.border)
+                detailToggle("Best efforts & elevation", detail: "Your fastest efforts and the climb", isOn: $showEfforts)
+            }
+            .kxCard(padding: 0)
+        }
+    }
+
+    private func detailToggle(_ title: String, detail: String, isOn: Binding<Bool>) -> some View {
+        Toggle(isOn: isOn) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink)
+                Text(detail).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+            }
+        }
+        .padding(.horizontal, KXSpacing.md)
+        .padding(.vertical, KXSpacing.sm)
+    }
+
+    /// Heart-rate zones and the best times from earlier runs (for "new best").
+    private func loadRunContext(for log: RunLogModel) {
+        let runs = ((try? context.fetch(FetchDescriptor<RunLogModel>())) ?? [])
+            .filter { $0.isFinished && !$0.isSoftDeleted }
+        zones = StrainService.zones(profile: profiles.first?.profile, runs: runs)
+        var bests: [BestEffortDistance: Double] = [:]
+        for run in runs where run.id != log.id && run.startedAt < log.startedAt && run.countsTowardsHistory
+            && !run.isImportedFromStrava && run.distanceMeters >= 1000 {
+            for (distance, seconds) in RunAnalysis.bestEfforts(route: run.route) where bests[distance].map({ seconds < $0 }) ?? true {
+                bests[distance] = seconds
+            }
+        }
+        previousBests = bests
     }
 }

@@ -388,7 +388,8 @@ final class RunWorkoutModel {
         // Something happened (new step, cue, split): tell the watch now rather than on the next tick.
         if !pendingAlerts.isEmpty { publishToWatch() }
         if !snapshot.isPaused, route.last.map({ $0.latitude != sample.latitude }) ?? true {
-            route.append(RoutePoint(latitude: sample.latitude, longitude: sample.longitude, elapsed: snapshot.elapsedSeconds))
+            route.append(RoutePoint(latitude: sample.latitude, longitude: sample.longitude, elapsed: snapshot.elapsedSeconds,
+                                     altitude: sample.altitude))
         }
         followRoute(sample)
     }

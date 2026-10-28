@@ -9,13 +9,17 @@ public struct LocationSample: Codable, Equatable, Sendable {
     public var horizontalAccuracy: Double
     /// Metres per second from the GPS chip (Doppler); negative when unavailable.
     public var speed: Double
+    /// Metres above sea level, when the fix has a valid one.
+    public var altitude: Double?
 
-    public init(timestamp: Date, latitude: Double, longitude: Double, horizontalAccuracy: Double = 5, speed: Double = -1) {
+    public init(timestamp: Date, latitude: Double, longitude: Double, horizontalAccuracy: Double = 5, speed: Double = -1,
+                altitude: Double? = nil) {
         self.timestamp = timestamp
         self.latitude = latitude
         self.longitude = longitude
         self.horizontalAccuracy = horizontalAccuracy
         self.speed = speed
+        self.altitude = altitude
     }
 }
 
@@ -25,11 +29,14 @@ public struct RoutePoint: Codable, Equatable, Sendable {
     public var longitude: Double
     /// Seconds of active (unpaused) running when this point was recorded.
     public var elapsed: Double
+    /// Metres above sea level (runs recorded before elevation was kept have none).
+    public var altitude: Double?
 
-    public init(latitude: Double, longitude: Double, elapsed: Double) {
+    public init(latitude: Double, longitude: Double, elapsed: Double, altitude: Double? = nil) {
         self.latitude = latitude
         self.longitude = longitude
         self.elapsed = elapsed
+        self.altitude = altitude
     }
 }
 
