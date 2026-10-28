@@ -34,7 +34,7 @@ final class WeekSchedulerTests: XCTestCase {
 
     func testLegDaysNeverShareADayWithAHardRun() {
         // Even with a double available, the lower-body lift stays off the intervals day.
-        let days: [Weekday] = [.monday, .tuesday, .thursday, .saturday, .sunday]
+        let days: [Weekday] = Weekday.allCases
         let result = WeekScheduler.schedule(days: days, doubleDays: 1, runs: [.long, .intervals, .tempo, .easy], lifts: [lower])
         let hardDays = Set(result.placements.filter(\.isHardRun).map(\.weekday))
         let liftDay = result.placements.first { $0.loadsLowerBody }?.weekday
