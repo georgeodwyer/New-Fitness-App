@@ -167,6 +167,25 @@ final class RebalancerTests: XCTestCase {
         XCTAssertNil(Rebalancer.move(week[3].id, to: date(4), week: full, context: context(today: 0)))
     }
 
+    func testSwapDaysTradesTwoSessions() throws {
+        let week = week()
+        let first = week[1], second = week[3]
+        let swap = try XCTUnwrap(Rebalancer.swapDays(first.id, second.id, week: week, context: context(today: 0)))
+        XCTAssertEqual(swap.adjustments.count, 2)
+        let movedFirst = try XCTUnwrap(swap.adjustments.first { $0.session.id == first.id })
+        let movedSecond = try XCTUnwrap(swap.adjustments.first { $0.session.id == second.id })
+        XCTAssertTrue(calendar.isDate(movedFirst.session.date, inSameDayAs: second.date))
+        XCTAssertTrue(calendar.isDate(movedSecond.session.date, inSameDayAs: first.date))
+        XCTAssertTrue(swap.adjustments.allSatisfy { $0.cause == .moved })
+        XCTAssertTrue(movedFirst.explanation.hasPrefix("You swapped days"))
+
+        // Two sessions on the same day can't trade.
+        var sameDay = week
+        let extra = session(1, .strength(.upper), slot: .evening)
+        sameDay.append(extra)
+        XCTAssertNil(Rebalancer.swapDays(first.id, extra.id, week: sameDay, context: context(today: 0)))
+    }
+
     func testBaseWeekIsValid() {
         XCTAssertTrue(Rebalancer.isValid(week(), calendar: calendar))
     }

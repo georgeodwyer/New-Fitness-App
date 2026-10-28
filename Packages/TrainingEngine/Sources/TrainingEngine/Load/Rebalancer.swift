@@ -549,4 +549,42 @@ public enum Rebalancer {
         }
         return Move(adjustment: Adjustment(session: session, explanation: reason, cause: .moved), warning: warning)
     }
+
+    public struct DaySwap: Equatable, Sendable {
+        public var adjustments: [Adjustment]
+        public var warning: String?
+    }
+
+    /// Two sessions trade days, each keeping its time of day (and taking the other slot if the
+    /// new day's slot is already taken). nil if either isn't in the week, or they're on the same day.
+    public static func swapDays(_ firstId: UUID, _ secondId: UUID, week: [WeekSession], context: Context) -> DaySwap? {
+        guard var first = week.first(where: { $0.id == firstId }),
+              var second = week.first(where: { $0.id == secondId }) else { return nil }
+        let calendar = context.calendar
+        let firstDay = calendar.startOfDay(for: first.date)
+        let secondDay = calendar.startOfDay(for: second.date)
+        guard firstDay != secondDay else { return nil }
+        func moved(_ session: inout WeekSession, to day: Date) {
+            let timeOfDay = session.date.timeIntervalSince(calendar.startOfDay(for: session.date))
+            session.date = day.addingTimeInterval(timeOfDay)
+            let others = week.filter {
+                $0.id != firstId && $0.id != secondId && $0.status == .planned && calendar.isDate($0.date, inSameDayAs: day)
+            }
+            if others.contains(where: { $0.slot == session.slot }) {
+                session.slot = session.slot == .morning ? .evening : .morning
+            }
+        }
+        moved(&first, to: secondDay)
+        moved(&second, to: firstDay)
+        let firstName = calendar.weekday(of: secondDay).fullName
+        let secondName = calendar.weekday(of: firstDay).fullName
+        var after = week.filter { $0.id != firstId && $0.id != secondId }
+        after += [first, second]
+        let warning: String? = isValid(after, calendar: calendar) ? nil
+            : "Heads up: this puts hard sessions close together (or a leg day before a hard run). Fine now and then; keep the easy days easy around it."
+        return DaySwap(adjustments: [
+            Adjustment(session: first, explanation: "You swapped days: your \(first.title.lowercased()) is now on \(firstName).", cause: .moved),
+            Adjustment(session: second, explanation: "You swapped days: your \(second.title.lowercased()) is now on \(secondName).", cause: .moved)
+        ], warning: warning)
+    }
 }

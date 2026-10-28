@@ -61,11 +61,11 @@ struct SessionDetailView: View {
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("session.changes")
                 }
-                if session.status == .planned, profiles.first != nil {
+                if session.status == .planned || session.status == .swapped, profiles.first != nil {
                     Button {
                         showActions = true
                     } label: {
-                        Label("Skip or swap this session", systemImage: "arrow.left.arrow.right")
+                        Label("Move, swap or skip", systemImage: "arrow.left.arrow.right")
                     }
                     .buttonStyle(.kx(.outlined, fullWidth: true))
                 }

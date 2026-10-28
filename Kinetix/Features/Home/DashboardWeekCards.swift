@@ -257,7 +257,7 @@ struct SessionActionsSheet: View {
                 VStack(alignment: .leading, spacing: KXSpacing.xs) {
                     KXOverline("Session", color: KXColor.accent)
                     Text(session.title).font(KXFont.title).foregroundStyle(KXColor.ink)
-                    Text("Not feeling it, or the day doesn't work? Swap for something lighter, move it, or skip. You can undo any change in \"What changed and why\".")
+                    Text("Not feeling it, or the day doesn't work? Swap for something lighter, move it to another day, trade days with another session, or skip. You can undo any change in \"What changed and why\".")
                         .font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
                 }
                 KXOverline("Swap for")
@@ -313,6 +313,41 @@ struct SessionActionsSheet: View {
                         }
                         .buttonStyle(.plain)
                         .accessibilityIdentifier("session.moveDay")
+                    }
+                }
+                let trades = BalanceService.daySwapOptions(for: session, profile: profile, in: context)
+                if !trades.isEmpty {
+                    KXOverline("Swap days with")
+                    ForEach(trades) { option in
+                        Button {
+                            onDone(BalanceService.swapDays(session, with: option.other, profile: profile, in: context))
+                        } label: {
+                            HStack(alignment: .top, spacing: KXSpacing.md) {
+                                Image(systemName: "arrow.left.arrow.right")
+                                    .foregroundStyle(option.other.kind.tint)
+                                    .frame(width: 40, height: 40)
+                                    .background(option.other.kind.tint.opacity(0.15), in: Circle())
+                                    .accessibilityHidden(true)
+                                VStack(alignment: .leading, spacing: KXSpacing.xxs) {
+                                    Text(option.other.title).font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink)
+                                    Text((Calendar.kinetix.isDateInToday(option.other.date) ? "Today"
+                                          : option.other.date.formatted(.dateTime.weekday(.wide).day().month()))
+                                         + " · they trade days")
+                                        .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+                                    if let warning = option.warning {
+                                        Label(warning, systemImage: "exclamationmark.triangle.fill")
+                                            .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+                                            .symbolRenderingMode(.multicolor)
+                                            .fixedSize(horizontal: false, vertical: true)
+                                    }
+                                }
+                                Spacer()
+                                Image(systemName: "chevron.right").font(.caption).foregroundStyle(KXColor.inkTertiary)
+                            }
+                            .kxCard(padding: KXSpacing.md)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("session.swapDays")
                     }
                 }
                 Button(role: .destructive) {
