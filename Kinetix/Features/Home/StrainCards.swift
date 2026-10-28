@@ -456,7 +456,7 @@ struct WeekVsUsualBar: View {
 
     private var caption: String {
         guard let ratio else { return "Your last 7 days against an average week of the last 4, once there's two weeks of training." }
-        if ratio > normal.upperBound { return "A big jump on your usual week. Upcoming sessions are eased to keep you healthy." }
+        if ratio > normal.upperBound { return "A big jump on your usual week. Keep an eye on recovery: if it drops, starting a session offers a lighter version." }
         if ratio < normal.lowerBound { return "Lighter than usual: fine for a recovery week." }
         return "Green is a normal week (\(Int(normal.lowerBound * 100))–\(Int(normal.upperBound * 100))% of your usual)."
     }
@@ -542,7 +542,7 @@ struct DailyStrainChart: View {
     let days: [DayStrain]
     var target: StrainTarget?
     @State private var selected: Date?
-    @AppStorage("dashboard.loadRange") private var range = 30
+    @AppStorage("dashboard.loadRange") private var range = 7
 
     private var shown: [DayStrain] { Array(days.suffix(range)) }
     private var isWeek: Bool { range == 7 }
@@ -555,7 +555,10 @@ struct DailyStrainChart: View {
     var body: some View {
         VStack(alignment: .leading, spacing: KXSpacing.md) {
             HStack(alignment: .firstTextBaseline) {
-                KXSectionHeader("Daily exertion", subtitle: isWeek ? "Last 7 days" : "Last 30 days")
+                VStack(alignment: .leading, spacing: 2) {
+                    KXOverline("Daily exertion")
+                    Text(isWeek ? "Last 7 days" : "Last 30 days").font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+                }
                 Spacer()
                 Picker("Period", selection: $range) {
                     Text("Week").tag(7)
@@ -566,10 +569,15 @@ struct DailyStrainChart: View {
                 .accessibilityIdentifier("dashboard.loadRange")
             }
             Chart {
+                if let target {
+                    // Today's target as a shaded band behind the bars.
+                    RectangleMark(yStart: .value("Low", target.low), yEnd: .value("High", target.high))
+                        .foregroundStyle(KXColor.accent.opacity(0.1))
+                }
                 ForEach(shown) { day in
-                    BarMark(x: .value("Day", day.date, unit: .day), y: .value("Exertion", day.strain), width: .fixed(isWeek ? 22 : 7))
-                        .foregroundStyle(Calendar.kinetix.isDateInToday(day.date) ? KXColor.accent : KXColor.ink.opacity(0.7))
-                        .cornerRadius(3)
+                    BarMark(x: .value("Day", day.date, unit: .day), y: .value("Exertion", day.strain), width: .fixed(isWeek ? 26 : 7))
+                        .foregroundStyle(barColor(day))
+                        .cornerRadius(isWeek ? 6 : 3)
                 }
                 if let target {
                     ForEach([target.low, target.high], id: \.self) { value in
@@ -602,10 +610,17 @@ struct DailyStrainChart: View {
             .chartXSelection(value: $selected)
             .frame(height: 190)
             .accessibilityLabel("Daily exertion, last \(range) days")
-            Text(target == nil ? "Touch and drag across the chart to see each day." : "The dashed lines are today's target. Touch and drag to see each day.")
+            Text(target == nil ? "Touch and drag across the chart to see each day." : "The shaded band is today's target; amber days went over it. Touch and drag to see each day.")
                 .font(.caption2).foregroundStyle(KXColor.inkTertiary)
         }
         .kxCard()
+    }
+
+    /// Today in the accent colour, days over the target in amber, the rest in the run colour.
+    private func barColor(_ day: DayStrain) -> Color {
+        if Calendar.kinetix.isDateInToday(day.date) { return KXColor.accent }
+        if let target, day.strain > target.high { return KXColor.warning }
+        return KXColor.run
     }
 
     private func tooltip(_ day: DayStrain) -> some View {

@@ -175,28 +175,23 @@ struct HomeView: View {
         .kxCard(.accent)
     }
 
-    /// Today's session and this week as two square tiles side by side (this week only when
-    /// its card is on the dashboard), then the lighter-version offer when recovery is fair.
+    /// Today's sessions stacked full width, then this week (when its card is on the dashboard),
+    /// then the note about a lighter version when recovery is below par.
     private func todayTiles(data: DashboardData, showWeek: Bool) -> some View {
         let recovery = data.strain.recovery
         let start = plans.first?.startDate
-        return VStack(alignment: .leading, spacing: KXSpacing.sm) {
-            HStack(alignment: .top, spacing: KXSpacing.md) {
-                TodaySessionTile(
-                    sessions: todaysSessions,
-                    planStart: start.flatMap { $0 > .now ? $0 : nil },
-                    shownIndex: $tileIndex,
-                    onStart: { session in router.startPlanned(session, in: context) },
-                    onDetails: { detailSession = $0 },
-                    onActions: { actionSession = $0 }
-                )
-                .frame(maxHeight: .infinity)
-                if showWeek {
-                    ThisWeekTile(days: data.week) { showCalendar = true }
-                        .frame(maxHeight: .infinity)
-                }
+        return VStack(alignment: .leading, spacing: KXSpacing.md) {
+            TodaySessionCards(
+                sessions: todaysSessions,
+                planStart: start.flatMap { $0 > .now ? $0 : nil },
+                format: DisplayFormat(units: units),
+                onStart: { session in router.startPlanned(session, in: context) },
+                onDetails: { detailSession = $0 },
+                onActions: { actionSession = $0 }
+            )
+            if showWeek {
+                ThisWeekTile(days: data.week) { showCalendar = true }
             }
-            .fixedSize(horizontal: false, vertical: true)
             // On a below-par day, starting a session asks whether to reduce it (see AppRouter).
             if let recovery, let change = recovery.volumeChangeText, recovery.volumeMultiplier < 1 {
                 Label("Recovery \(Int(recovery.score.rounded())): you'll be offered \(change) when you start today's session.",
@@ -245,17 +240,15 @@ struct HomeView: View {
         case .week:
             WeekProgressCard(data: data, units: units)
         case .weekStrip:
-            // Shown as the tile beside today's session; on its own only if Today is hidden.
+            // Shown under today's sessions; on its own only if Today is hidden.
             if profile == nil || !layout.visibleCards.contains(.today) { WeekStripCard(days: data.week) }
         case .goal:
             if let plan = plans.first, let outline = plan.outline {
-                GoalProgressCard(outline: outline, goal: profile?.goal ?? .balancedHybrid)
+                RaceCountdownCard(outline: outline, profile: profile)
             }
         case .records:
-            HStack(alignment: .top, spacing: KXSpacing.md) {
-                RecentRecordsCard(records: Array(records.filter { $0.kindRaw == RecordKind.estimatedOneRepMax.rawValue }.prefix(3)), units: units)
-                if let profile { RaceEstimatesCard(profile: profile) }
-            }
+            RecentRecordsCard(records: Array(records.filter { $0.kindRaw == RecordKind.estimatedOneRepMax.rawValue }.prefix(3)), units: units)
+            if let profile { RacePredictionsCard(profile: profile) }
         }
     }
 

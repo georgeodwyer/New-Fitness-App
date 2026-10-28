@@ -12,7 +12,41 @@ struct WeekProgressCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: KXSpacing.lg) {
-            KXSectionHeader("This week", subtitle: "Done so far against your plan")
+            KXOverline("This week vs plan")
+            HStack(alignment: .center, spacing: KXSpacing.lg) {
+                adherenceRing
+                VStack(alignment: .leading, spacing: KXSpacing.md) {
+                    meters
+                }
+            }
+            Divider().overlay(KXColor.border)
+            adherence
+        }
+        .kxCard()
+    }
+
+    /// Plan adherence as a ring: the share of this week's sessions so far that were done.
+    private var adherenceRing: some View {
+        let percent = data.adherence.percent
+        return ZStack {
+            Circle().stroke(KXColor.surfaceTint, lineWidth: 9)
+            Circle()
+                .trim(from: 0, to: CGFloat(percent ?? 0) / 100)
+                .stroke(KXColor.success, style: StrokeStyle(lineWidth: 9, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+            VStack(spacing: 0) {
+                Text(percent.map { "\($0)%" } ?? "–")
+                    .font(KXFont.number(26, relativeTo: .title2))
+                    .foregroundStyle(KXColor.ink)
+                Text("on plan").font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+            }
+        }
+        .frame(width: 92, height: 92)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Plan adherence \(percent.map { "\($0) percent" } ?? "not yet")")
+    }
+
+    @ViewBuilder private var meters: some View {
             KXMeter(
                 label: "Running distance",
                 valueText: format.distance(data.actualRunMeters),
@@ -27,10 +61,6 @@ struct WeekProgressCard: View {
                 fraction: data.plannedLiftVolumeKg > 0 ? data.actualLiftVolumeKg / data.plannedLiftVolumeKg : 0,
                 color: KXColor.lift
             )
-            Divider()
-            adherence
-        }
-        .kxCard()
     }
 
     private func compactWeight(_ kg: Double) -> String { DisplayFormat(units: units).volume(kg) }
@@ -39,9 +69,9 @@ struct WeekProgressCard: View {
         let a = data.adherence
         return VStack(alignment: .leading, spacing: KXSpacing.sm) {
             HStack(alignment: .firstTextBaseline) {
-                Text("Plan adherence").font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
+                Text("Sessions so far").font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
                 Spacer()
-                Text(a.percent.map { "\($0)%" } ?? "–").font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink)
+                Text("\(a.completed) of \(a.total)").font(KXFont.bodyEmphasis.monospacedDigit()).foregroundStyle(KXColor.ink)
             }
             // Part-to-whole: done / skipped / missed / still to come, with 2 pt gaps.
             GeometryReader { geo in
@@ -166,81 +196,7 @@ struct WeekStripCard: View {
     }
 }
 
-// MARK: - Goal progress
-
-struct GoalProgressCard: View {
-    let outline: PlanOutline
-    let goal: TrainingGoal
-
-    private var calendar: Calendar { .kinetix }
-    private var currentIndex: Int? { outline.weekIndex(containing: .now, calendar: calendar) }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: KXSpacing.md) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: KXSpacing.xxs) {
-                    KXOverline(goal.displayName, color: KXColor.accent)
-                    Text(headline).font(KXFont.headline).foregroundStyle(KXColor.ink)
-                    Text(subline).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
-                }
-                Spacer()
-                if let days = daysToEvent {
-                    VStack(spacing: 0) {
-                        Text("\(days)").font(KXFont.metricSmall).foregroundStyle(KXColor.ink)
-                        Text(days == 1 ? "day to go" : "days to go").font(.caption2).foregroundStyle(KXColor.inkSecondary)
-                    }
-                    .accessibilityElement(children: .combine)
-                }
-            }
-            // Phase bar: one segment per week, ordinal ramp by phase, current week outlined.
-            HStack(spacing: 2) {
-                ForEach(outline.weeks, id: \.index) { week in
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(KXColor.phase(week.phase.index).opacity(isPast(week) || isCurrent(week) ? 1 : 0.45))
-                        .frame(height: isCurrent(week) ? 16 : 10)
-                        .overlay {
-                            if isCurrent(week) {
-                                RoundedRectangle(cornerRadius: 3).stroke(KXColor.ink, lineWidth: 1.5)
-                            }
-                        }
-                }
-            }
-            .frame(height: 16)
-            .accessibilityHidden(true)
-            HStack(spacing: KXSpacing.md) {
-                ForEach(outline.blocks, id: \.firstWeek) { block in
-                    HStack(spacing: 4) {
-                        RoundedRectangle(cornerRadius: 2).fill(KXColor.phase(block.phase.index)).frame(width: 10, height: 10)
-                        Text("\(block.phase.displayName) \(block.weekCount)w").font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
-                    }
-                }
-            }
-        }
-        .kxCard()
-        .accessibilityElement(children: .combine)
-    }
-
-    private func isCurrent(_ week: WeekTarget) -> Bool { week.index == currentIndex }
-    private func isPast(_ week: WeekTarget) -> Bool { (currentIndex ?? -1) > week.index }
-
-    private var headline: String {
-        guard let index = currentIndex else { return "Your plan starts \(outline.startDate.formatted(.dateTime.weekday(.wide).day().month()))" }
-        let week = outline.weeks[index]
-        return "Week \(index + 1) of \(outline.weeks.count) · \(week.phase.displayName)"
-    }
-
-    private var subline: String {
-        if let event = outline.eventDate { return "Event on \(event.formatted(.dateTime.day().month(.wide).year()))" }
-        return "Rolling block: a new one is planned as this finishes"
-    }
-
-    private var daysToEvent: Int? {
-        guard let event = outline.eventDate else { return nil }
-        return max(0, calendar.dateComponents([.day], from: calendar.startOfDay(for: .now), to: calendar.startOfDay(for: event)).day ?? 0)
-    }
-}
-
-// MARK: - Recent PRs and race estimates
+// MARK: - Records
 
 struct RecentRecordsCard: View {
     let records: [PersonalRecordModel]
@@ -248,53 +204,37 @@ struct RecentRecordsCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: KXSpacing.sm) {
-            Label("Recent bests", systemImage: "trophy.fill")
-                .font(KXFont.captionEmphasis)
-                .foregroundStyle(KXColor.ink)
+            HStack {
+                KXOverline("Records")
+                Spacer()
+                Text("best estimated 1-rep max").font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+            }
             if records.isEmpty {
-                Text("Your strength records appear here.").font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+                Text("Your strength records appear here after your first gym sessions.")
+                    .font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
             }
-            ForEach(records) { record in
-                VStack(alignment: .leading, spacing: 0) {
-                    Text(PlanService.templates.exercise(id: record.recordKey)?.name ?? record.recordKey)
-                        .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary).lineLimit(1)
-                    Text(DisplayFormat(units: units).weight(record.value) + " e1RM")
-                        .font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink)
-                }
-                .accessibilityElement(children: .combine)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .topLeading)
-        .kxCard()
-    }
-}
-
-struct RaceEstimatesCard: View {
-    let profile: AthleteProfile
-
-    private struct Race { let meters: Double; let name: String }
-    private static let races = [Race(meters: 5000, name: "5K"), Race(meters: 10000, name: "10K"),
-                                Race(meters: 21097.5, name: "Half"), Race(meters: 42195, name: "Marathon")]
-
-    private var zones: PaceZones { PaceZones(profile: profile) }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: KXSpacing.sm) {
-            Label("Race estimates", systemImage: "stopwatch")
-                .font(KXFont.captionEmphasis)
-                .foregroundStyle(KXColor.ink)
-            ForEach(Self.races, id: \.name) { race in
-                HStack {
-                    Text(race.name).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+            ForEach(Array(records.enumerated()), id: \.element.id) { index, record in
+                if index > 0 { Divider().overlay(KXColor.border) }
+                HStack(spacing: KXSpacing.md) {
+                    Image(systemName: "star.fill")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(KXColor.warning)
+                        .frame(width: 34, height: 34)
+                        .background(KXColor.warning.opacity(0.14), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .accessibilityHidden(true)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(PlanService.templates.exercise(id: record.recordKey)?.name ?? record.recordKey)
+                            .font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink).lineLimit(1)
+                        Text(record.achievedAt.formatted(.dateTime.day().month(.abbreviated)))
+                            .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+                    }
                     Spacer()
-                    Text(Units.formatMinutesSeconds(zones.predictedTime(distanceMeters: race.meters)))
-                        .font(KXFont.callout.weight(.semibold).monospacedDigit())
-                        .foregroundStyle(KXColor.ink)
+                    Text(DisplayFormat(units: units).weight(record.value))
+                        .font(KXFont.number(22, relativeTo: .title3))
+                        .foregroundStyle(KXColor.lift)
                 }
                 .accessibilityElement(children: .combine)
             }
-            Text(profile.recentRace == nil ? "From your experience level" : "From your race time")
-                .font(.caption2).foregroundStyle(KXColor.inkTertiary)
         }
         .frame(maxWidth: .infinity, alignment: .topLeading)
         .kxCard()

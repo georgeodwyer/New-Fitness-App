@@ -106,20 +106,31 @@ struct CheckInCard: View {
         .accessibilityLabel("Resting heart rate \(signal.description)\(signal.isElevated ? ", higher than usual" : "")")
     }
 
+    /// A 1–5 slider with the value beside it and what each end means underneath.
     private func ratingRow(_ title: String, value: Binding<Int>, low: String, high: String, symbol: String) -> some View {
-        VStack(alignment: .leading, spacing: KXSpacing.xs) {
-            HStack {
-                Label(title, systemImage: symbol).font(KXFont.callout).foregroundStyle(KXColor.ink)
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(alignment: .firstTextBaseline) {
+                Label(title, systemImage: symbol).font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink)
                 Spacer()
-                Text("\(low) → \(high)").font(.caption2).foregroundStyle(KXColor.inkTertiary)
+                Text("\(value.wrappedValue)")
+                    .font(KXFont.number(24, relativeTo: .title3))
+                    .foregroundStyle(KXColor.ink)
+                Text("/5").font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
             }
-            HStack(spacing: KXSpacing.xs) {
-                ForEach(1...5, id: \.self) { rating in
-                    KXSelectableChip(text: "\(rating)", isSelected: value.wrappedValue == rating) { value.wrappedValue = rating }
-                        .frame(maxWidth: .infinity)
-                        .accessibilityLabel("\(title) \(rating) of 5")
-                }
+            Slider(value: Binding(get: { Double(value.wrappedValue) },
+                                  set: { value.wrappedValue = Int($0.rounded()) }),
+                   in: 1...5, step: 1)
+                .tint(KXColor.accent)
+                .accessibilityLabel(title)
+                .accessibilityValue("\(value.wrappedValue) of 5")
+            HStack {
+                Text(low)
+                Spacer()
+                Text(high)
             }
+            .font(KXFont.caption)
+            .foregroundStyle(KXColor.inkTertiary)
+            .accessibilityHidden(true)
         }
     }
 }

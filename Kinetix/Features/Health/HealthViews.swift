@@ -11,7 +11,7 @@ struct BodyCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: KXSpacing.md) {
             HStack(alignment: .firstTextBaseline) {
-                KXSectionHeader("Body", subtitle: health.isConnected ? "From Apple Health" : nil)
+                KXOverline(health.isConnected ? "Body · Apple Health" : "Body")
                 Spacer()
                 if health.isConnected && !health.trends.isEmpty {
                     NavigationLink {

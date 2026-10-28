@@ -316,7 +316,7 @@ public enum SleepScore {
 public enum DashboardCard: String, Codable, CaseIterable, Sendable {
     case today, checkIn, body, load, dailyLoad, week, weekStrip, goal, records
 
-    public static let defaultOrder: [DashboardCard] = [.load, .today, .checkIn, .body, .dailyLoad, .week, .weekStrip, .goal, .records]
+    public static let defaultOrder: [DashboardCard] = [.load, .today, .weekStrip, .checkIn, .dailyLoad, .week, .body, .goal, .records]
 
     public var displayName: String {
         switch self {
@@ -358,9 +358,8 @@ public struct DashboardLayout: Codable, Equatable, Sendable {
         self.hidden = hidden.map(\.rawValue).sorted()
     }
 
-    /// What a new dashboard shows: today's sessions, your score, exertion and recovery, and the
-    /// week strip. The rest can be switched on in Edit dashboard.
-    public static let defaultHidden: Set<DashboardCard> = [.body, .dailyLoad, .week, .goal, .records]
+    /// A new dashboard shows every card; any can be hidden in Edit dashboard.
+    public static let defaultHidden: Set<DashboardCard> = []
 
     public static let `default` = DashboardLayout(hidden: defaultHidden)
 

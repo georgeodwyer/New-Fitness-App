@@ -90,7 +90,7 @@ final class HealthMetricsTests: XCTestCase {
 
     func testDashboardLayoutReorderHideAndUpgrade() {
         var layout = DashboardLayout.default
-        XCTAssertEqual(layout.visibleCards, [.load, .today, .checkIn, .weekStrip], "Recovery first, then today; the rest can be switched on")
+        XCTAssertEqual(layout.visibleCards, DashboardCard.defaultOrder, "Everything on, recovery first; any card can be hidden")
         XCTAssertEqual(layout.cards, DashboardCard.defaultOrder)
         layout.setHidden(.records, true)
         XCTAssertFalse(layout.visibleCards.contains(.records))
@@ -102,7 +102,7 @@ final class HealthMetricsTests: XCTestCase {
         let old = DashboardLayout(order: [], hidden: [])
         var saved = old
         saved.order = ["checkIn", "today", "load", "futureCard"]
-        XCTAssertEqual(Array(saved.cards.prefix(3)), [.checkIn, .body, .dailyLoad], "New cards appear after their default neighbour")
+        XCTAssertEqual(Array(saved.cards.prefix(3)), [.checkIn, .dailyLoad, .week], "New cards appear after their default neighbour")
         XCTAssertEqual(saved.cards.count, DashboardCard.allCases.count)
         XCTAssertFalse(saved.cards.map(\.rawValue).contains("futureCard"))
     }
