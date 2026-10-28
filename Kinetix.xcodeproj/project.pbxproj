@@ -19,6 +19,7 @@
 		10361C5AE9F4FEB5A830686F /* TodayTiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B3E42DCF57077752A8EC424 /* TodayTiles.swift */; };
 		10780D608E38466EE72B37BB /* ProgressHighlights.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDEA8E0117067D2B63AEBCEC /* ProgressHighlights.swift */; };
 		1153E095AEC952349F00FE4F /* PlanModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20B9963B730BCD17BDF41812 /* PlanModels.swift */; };
+		12D872ADCBB025ADE604F9BA /* PaceUpdateCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9EF7A413E02C034E532B5F8 /* PaceUpdateCard.swift */; };
 		1369ADE963F649AC955FB2F9 /* KXColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18F5261D8A4C543FC07B8C9C /* KXColor.swift */; };
 		136B1488E02629EB47FE2CCE /* KXFont.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09457C53CBC5D758DE02ED68 /* KXFont.swift */; };
 		137D60F69C32B7B5FEA6B601 /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CCC3286E58148E4A728A4C5 /* AuthView.swift */; };
@@ -407,6 +408,7 @@
 		F327708828E05100B42EDD57 /* TrainingProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingProfileView.swift; sourceTree = "<group>"; };
 		F546C371EF13550E9BC3897E /* ExerciseHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseHistoryView.swift; sourceTree = "<group>"; };
 		F90D4CAA5435C52D08225A30 /* KinetixWidgets.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = KinetixWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		F9EF7A413E02C034E532B5F8 /* PaceUpdateCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaceUpdateCard.swift; sourceTree = "<group>"; };
 		FDEA8E0117067D2B63AEBCEC /* ProgressHighlights.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressHighlights.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -802,6 +804,7 @@
 			isa = PBXGroup;
 			children = (
 				58CC4DBE6FC7ADA3A6C7F4EE /* LapsCard.swift */,
+				F9EF7A413E02C034E532B5F8 /* PaceUpdateCard.swift */,
 				1E0ED981D2B76C4BA7EF7BF8 /* PlannedVsActualCard.swift */,
 				A592700E930BD72DEAAA5BBD /* RunSummaryParts.swift */,
 				C4708069D9CB0D862B6D3765 /* RunSummaryView.swift */,
@@ -1120,6 +1123,7 @@
 				CD0413479485C96BC3B7F758 /* OnboardingFlowView.swift in Sources */,
 				B29A94D91EADFC17D2BA06B6 /* OnboardingModel.swift in Sources */,
 				B3732468744D9B820C1E44A5 /* OnboardingSteps.swift in Sources */,
+				12D872ADCBB025ADE604F9BA /* PaceUpdateCard.swift in Sources */,
 				31ED552C55B36D3CBDB1CD53 /* Persistence.swift in Sources */,
 				581C33227F0ED31F466A2D30 /* PlanChangesView.swift in Sources */,
 				D9A716D65223D1908E24F63B /* PlanHeaderCards.swift in Sources */,
