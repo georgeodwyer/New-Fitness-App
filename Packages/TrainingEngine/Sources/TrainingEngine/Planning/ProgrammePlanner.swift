@@ -242,7 +242,7 @@ enum ProgrammePlanner {
 
         let context = WeekContext(weekMeters: weekMeters, shortest: shortest, longestRun: rules.longestRunMeters,
                                   longShare: rules.longRunShare, longCap: longCap, longSpec: programmeWeek?.longRun ?? .auto,
-                                  raceMeters: programme.raceDistanceMeters ?? 21097.5, raceZone: programme.racePaceZone,
+                                  raceMeters: programme.timeTrialMeters, raceZone: programme.racePaceZone,
                                   raceIsEffort: programme.goal == .first5k && profile.goalTimeSeconds == nil,
                                   raceLabel: hasEventThisWeek ? "race" : "time trial", programmeName: programme.name, zones: zones,
                                   rules: rules)
@@ -389,8 +389,9 @@ enum ProgrammePlanner {
                                targetPace: c.raceIsEffort ? range(for: "steady", zones: c.zones) : c.zones.range(for: c.raceZone),
                                label: c.raceLabel == "race" ? "Race" : "Time trial", paceIsGuide: c.raceIsEffort ? true : nil)
                 ])
-                runs[i].summary = c.raceIsEffort ? "\(c.programmeName) \(c.raceLabel) · run it comfortably and finish strong"
-                    : "\(c.programmeName) \(c.raceLabel)"
+                let name = c.raceMeters == 5000 && c.raceLabel != "race" ? "5K" : c.programmeName
+                runs[i].summary = c.raceIsEffort ? "\(name) \(c.raceLabel) · run it comfortably and finish strong"
+                    : "\(name) \(c.raceLabel)"
             } else if session.isRunWalk {
                 let built = runWalk(session, zones: c.zones)
                 runs[i].structure = built.structure

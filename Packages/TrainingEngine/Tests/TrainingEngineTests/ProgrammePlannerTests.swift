@@ -223,6 +223,15 @@ final class ProgrammePlannerTests: XCTestCase {
         XCTAssertEqual(race.runStructure?.segments.first?.paceIsGuide, true)
     }
 
+    func testBalancedHybridEndsWithA5KTimeTrial() throws {
+        var runner = profile(runners[1], days: [.monday, .tuesday, .thursday, .saturday, .sunday])
+        runner.goal = .balancedHybrid
+        let (_, weeks) = plan(runner)
+        let trial = try XCTUnwrap(runs(weeks[7]).first { $0.title == "Race day" })
+        XCTAssertEqual(trial.summary.hasPrefix("5K time trial"), true, trial.summary)
+        XCTAssertEqual(trial.estimatedDistanceMeters ?? 0, 5000, accuracy: 1)
+    }
+
     func testHyroxPlan() throws {
         let hyrox = try XCTUnwrap(TestSupport.bundledTemplates.programmes.programme(for: .hyrox))
         XCTAssertEqual(hyrox.weeks.count, 12)

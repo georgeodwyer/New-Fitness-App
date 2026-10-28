@@ -132,13 +132,18 @@ public struct Programme: Codable, Equatable, Sendable {
         }
     }
 
+    /// A race or time trial's distance: the goal's race, or a 5K check-in for goals without one.
+    var timeTrialMeters: Double { raceDistanceMeters ?? 5000 }
+
     /// The pace the race is run at.
     var racePaceZone: PaceZone {
         switch goal {
         case .first5k, .faster5k: return .fiveK
         case .faster10k: return .tenK
         case .halfMarathon, .hyrox: return .halfMarathon
-        default: return .marathon
+        case .marathon: return .marathon
+        // Goals without a race: a time trial is a 5K.
+        default: return .fiveK
         }
     }
 }

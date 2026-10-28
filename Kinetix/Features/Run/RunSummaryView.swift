@@ -39,6 +39,7 @@ struct RunSummaryView: View {
                 }
                 stravaStatus
                 totals
+                if let log, log.isFinished, !simulated { PaceUpdateCard(log: log) }
                 if !summary.segments.isEmpty { PlannedVsActualCard(results: summary.segments, format: format) }
                 targetCard
                 if summary.heartRateSamples.count >= 3 { HeartRateZonesCard(samples: summary.heartRateSamples) }

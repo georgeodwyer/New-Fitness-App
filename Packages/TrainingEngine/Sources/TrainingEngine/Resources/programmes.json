@@ -180,7 +180,7 @@
   },
   "balancedHybrid": {
    "runsMin": 2,
-   "runsMax": 4,
+   "runsMax": 3,
    "liftsMin": 2,
    "liftsMax": 3,
    "defaultSplit": "fullBody3",
@@ -8942,6 +8942,638 @@
       }
      ],
      "text": "MARATHON – race at goal M pace",
+     "note": null
+    }
+   ]
+  },
+  {
+   "goal": "balancedHybrid",
+   "name": "Balanced hybrid",
+   "description": "Run and lift in balance: get faster and stronger together.",
+   "lengthWeeks": 8,
+   "afterLastWeek": "repeat",
+   "runsPerWeekMin": 2,
+   "runsPerWeekMax": 3,
+   "longRunCapMeters": 16000.0,
+   "weeklyCapMeters": 35000.0,
+   "taperWeeks": 0,
+   "raceReadyMeters": {
+    "beginner": 15000.0,
+    "intermediate": 25000.0,
+    "advanced": 40000.0
+   },
+   "weeks": [
+    {
+     "week": 1,
+     "phase": "base",
+     "isDeload": false,
+     "isRaceWeek": false,
+     "volume": 1.0,
+     "longRun": {
+      "kind": "auto"
+     },
+     "strength": "normal",
+     "note": "Settle in: one quality run, the rest easy, and full-body lifting."
+    },
+    {
+     "week": 2,
+     "phase": "base",
+     "isDeload": false,
+     "isRaceWeek": false,
+     "volume": 1.05,
+     "longRun": {
+      "kind": "auto"
+     },
+     "strength": "normal",
+     "note": null
+    },
+    {
+     "week": 3,
+     "phase": "build",
+     "isDeload": false,
+     "isRaceWeek": false,
+     "volume": 1.1,
+     "longRun": {
+      "kind": "auto"
+     },
+     "strength": "heavy",
+     "note": null
+    },
+    {
+     "week": 4,
+     "phase": "build",
+     "isDeload": true,
+     "isRaceWeek": false,
+     "volume": 0.85,
+     "longRun": {
+      "kind": "auto"
+     },
+     "strength": "light",
+     "note": "Lighter week for running and lifting."
+    },
+    {
+     "week": 5,
+     "phase": "build",
+     "isDeload": false,
+     "isRaceWeek": false,
+     "volume": 1.1,
+     "longRun": {
+      "kind": "auto"
+     },
+     "strength": "normal",
+     "note": null
+    },
+    {
+     "week": 6,
+     "phase": "build",
+     "isDeload": false,
+     "isRaceWeek": false,
+     "volume": 1.15,
+     "longRun": {
+      "kind": "auto"
+     },
+     "strength": "heavy",
+     "note": null
+    },
+    {
+     "week": 7,
+     "phase": "peak",
+     "isDeload": false,
+     "isRaceWeek": false,
+     "volume": 1.2,
+     "longRun": {
+      "kind": "auto"
+     },
+     "strength": "normal",
+     "note": "Biggest week of the block."
+    },
+    {
+     "week": 8,
+     "phase": "peak",
+     "isDeload": true,
+     "isRaceWeek": false,
+     "volume": 0.85,
+     "longRun": {
+      "kind": "auto"
+     },
+     "strength": "light",
+     "note": "Lighter week with a 5K time trial: your result can update your paces for the next block."
+    }
+   ],
+   "sessions": [
+    {
+     "week": 1,
+     "order": 1,
+     "name": "Intervals",
+     "type": "intervals",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 6,
+       "steps": [
+        {
+         "meters": 800.0,
+         "zone": "interval",
+         "effort": false
+        }
+       ],
+       "recovery": {
+        "seconds": 90.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Recovery jog"
+       }
+      }
+     ],
+     "text": "6 x 800 m @ I, 90 s jog between",
+     "note": null
+    },
+    {
+     "week": 1,
+     "order": 2,
+     "name": "Easy run",
+     "type": "easy",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "E continuous run",
+     "note": null
+    },
+    {
+     "week": 1,
+     "order": 3,
+     "name": "Long run",
+     "type": "long",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "Long run, conversational throughout",
+     "note": null
+    },
+    {
+     "week": 2,
+     "order": 1,
+     "name": "Tempo run",
+     "type": "tempo",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 2,
+       "steps": [
+        {
+         "seconds": 600.0,
+         "zone": "threshold",
+         "effort": false
+        }
+       ],
+       "recovery": {
+        "seconds": 120.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Recovery jog"
+       }
+      }
+     ],
+     "text": "2 x 10 min @ T, 2 min jog between",
+     "note": null
+    },
+    {
+     "week": 2,
+     "order": 2,
+     "name": "Easy run",
+     "type": "easy",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "E continuous run",
+     "note": null
+    },
+    {
+     "week": 2,
+     "order": 3,
+     "name": "Long run",
+     "type": "long",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "Long run, conversational throughout",
+     "note": null
+    },
+    {
+     "week": 3,
+     "order": 1,
+     "name": "Intervals",
+     "type": "intervals",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 5,
+       "steps": [
+        {
+         "meters": 1000.0,
+         "zone": "interval",
+         "effort": false
+        }
+       ],
+       "recovery": {
+        "seconds": 120.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Recovery jog"
+       }
+      }
+     ],
+     "text": "5 x 1 km @ I, 2 min jog between",
+     "note": null
+    },
+    {
+     "week": 3,
+     "order": 2,
+     "name": "Easy run",
+     "type": "easy",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "E continuous run",
+     "note": null
+    },
+    {
+     "week": 3,
+     "order": 3,
+     "name": "Long run",
+     "type": "long",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "Long run, conversational throughout",
+     "note": null
+    },
+    {
+     "week": 4,
+     "order": 1,
+     "name": "Tempo run",
+     "type": "tempo",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 1,
+       "steps": [
+        {
+         "seconds": 900.0,
+         "zone": "threshold",
+         "effort": false
+        }
+       ],
+       "recovery": null
+      }
+     ],
+     "text": "15 min continuous @ T",
+     "note": null
+    },
+    {
+     "week": 4,
+     "order": 2,
+     "name": "Easy run",
+     "type": "easy",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "E continuous run",
+     "note": null
+    },
+    {
+     "week": 4,
+     "order": 3,
+     "name": "Long run",
+     "type": "long",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "Shorter long run, E",
+     "note": null
+    },
+    {
+     "week": 5,
+     "order": 1,
+     "name": "Intervals",
+     "type": "intervals",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 8,
+       "steps": [
+        {
+         "meters": 600.0,
+         "zone": "interval",
+         "effort": false
+        }
+       ],
+       "recovery": {
+        "seconds": 75.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Recovery jog"
+       }
+      }
+     ],
+     "text": "8 x 600 m @ I, 75 s jog between",
+     "note": null
+    },
+    {
+     "week": 5,
+     "order": 2,
+     "name": "Easy run",
+     "type": "easy",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "E continuous run",
+     "note": null
+    },
+    {
+     "week": 5,
+     "order": 3,
+     "name": "Long run",
+     "type": "long",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "Long run, conversational throughout",
+     "note": null
+    },
+    {
+     "week": 6,
+     "order": 1,
+     "name": "Tempo run",
+     "type": "tempo",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 3,
+       "steps": [
+        {
+         "seconds": 480.0,
+         "zone": "threshold",
+         "effort": false
+        }
+       ],
+       "recovery": {
+        "seconds": 120.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Recovery jog"
+       }
+      }
+     ],
+     "text": "3 x 8 min @ T, 2 min jog between",
+     "note": null
+    },
+    {
+     "week": 6,
+     "order": 2,
+     "name": "Easy run",
+     "type": "easy",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "E continuous run",
+     "note": null
+    },
+    {
+     "week": 6,
+     "order": 3,
+     "name": "Long run",
+     "type": "long",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "Long run, conversational throughout",
+     "note": null
+    },
+    {
+     "week": 7,
+     "order": 1,
+     "name": "Intervals",
+     "type": "intervals",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "reps",
+       "repeats": 6,
+       "steps": [
+        {
+         "meters": 1000.0,
+         "zone": "interval",
+         "effort": false
+        }
+       ],
+       "recovery": {
+        "seconds": 120.0,
+        "zone": "easy",
+        "effort": false,
+        "recovery": true,
+        "label": "Recovery jog"
+       }
+      }
+     ],
+     "text": "6 x 1 km @ I, 2 min jog between",
+     "note": null
+    },
+    {
+     "week": 7,
+     "order": 2,
+     "name": "Easy run",
+     "type": "easy",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "E continuous run",
+     "note": null
+    },
+    {
+     "week": 7,
+     "order": 3,
+     "name": "Long run",
+     "type": "long",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "Long run, conversational throughout",
+     "note": null
+    },
+    {
+     "week": 8,
+     "order": 1,
+     "name": "Race day",
+     "type": "race",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "race"
+      }
+     ],
+     "text": "5K time trial – hard but even, to update your paces",
+     "note": null
+    },
+    {
+     "week": 8,
+     "order": 2,
+     "name": "Easy run",
+     "type": "easy",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "E continuous run",
+     "note": null
+    },
+    {
+     "week": 8,
+     "order": 3,
+     "name": "Long run",
+     "type": "long",
+     "distance": {
+      "kind": "auto"
+     },
+     "parts": [
+      {
+       "kind": "share",
+       "share": 1.0,
+       "zone": "easy"
+      }
+     ],
+     "text": "Shorter long run, E",
      "note": null
     }
    ]
