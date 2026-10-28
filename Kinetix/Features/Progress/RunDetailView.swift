@@ -27,16 +27,12 @@ struct RunDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: KXSpacing.xl) {
                 header
-                if route.count > 1 {
-                    RouteMap(route: route)
-                        .frame(height: 240)
-                        .clipShape(RoundedRectangle(cornerRadius: KXRadius.md, style: .continuous))
-                }
                 totals
                 let pace = log.isImportedFromStrava ? [] : RunAnalysis.paceSeries(route: route)
                 if pace.count >= 3 { RunLineChart(title: "Pace", points: pace, kind: .pace(units)) }
                 let heartRate = RunAnalysis.heartRateSeries(log.heartRateSamples)
                 if heartRate.count >= 3 { RunLineChart(title: "Heart rate", points: heartRate, kind: .heartRate) }
+                if log.heartRateSamples.count >= 3 { HeartRateZonesCard(samples: log.heartRateSamples) }
                 if !log.splits.isEmpty { splitsCard }
                 if !log.laps.isEmpty { LapsCard(laps: log.laps, format: format) }
                 if !log.segmentResults.isEmpty { PlannedVsActualCard(results: log.segmentResults, format: format) }
@@ -92,38 +88,26 @@ struct RunDetailView: View {
     }
 
     private var totals: some View {
-        VStack(spacing: KXSpacing.md) {
-            HStack {
-                KXMetric(label: "Distance", value: Units.formatDistance(meters: log.distanceMeters, units: units),
-                         unit: Units.distanceUnitLabel(units), size: .small)
-                Spacer()
-                KXMetric(label: "Time", value: Units.formatMinutesSeconds(log.durationSeconds), size: .small)
-                Spacer()
-                KXMetric(label: "Avg pace", value: log.averagePace.map { Units.formatPace($0, units: units) } ?? "--:--",
-                         unit: Units.paceUnitLabel(units), size: .small)
-            }
-            Divider()
-            HStack {
-                KXMetric(label: "Avg HR", value: log.averageHeartRate.map { "\(Int($0))" } ?? "--", unit: "bpm", size: .small)
-                Spacer()
-                KXMetric(label: "Max HR", value: log.maxHeartRate.map { "\(Int($0))" } ?? "--", unit: "bpm", size: .small)
-                Spacer()
-                KXMetric(label: "Effort", value: "\(Int(log.effort))", unit: "/10", size: .small)
-                Spacer()
-                KXMetric(label: "Load", value: "\(Int(log.load.rounded()))", size: .small)
-            }
-            if log.targetedSeconds > 0 {
-                Divider()
-                let fraction = log.timeInTargetSeconds / log.targetedSeconds
-                HStack {
-                    Text("Time on target pace").font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
-                    Spacer()
-                    Text("\(Int((fraction * 100).rounded()))%").font(KXFont.bodyEmphasis.monospacedDigit())
-                }
-                KXProgressBar(value: fraction, tint: KXColor.run)
-            }
+        var secondary: [RunStatsGrid.Stat] = [
+            .init(label: "Max HR", value: log.maxHeartRate.map { "\(Int($0))" } ?? "--", unit: "bpm"),
+            .init(label: "Effort", value: "\(Int(log.effort))", unit: "/10"),
+            .init(label: "Load", value: "\(Int(log.load.rounded()))"),
+        ]
+        if log.targetedSeconds > 0 {
+            secondary.append(.init(label: "On target", value: "\(Int((log.timeInTargetSeconds / log.targetedSeconds * 100).rounded()))", unit: "%"))
         }
-        .kxCard()
+        return RunHeroCard(
+            showsMap: route.count > 1,
+            stats: [
+                .init(label: "Distance", value: Units.formatDistance(meters: log.distanceMeters, units: units), unit: Units.distanceUnitLabel(units)),
+                .init(label: "Avg pace", value: log.averagePace.map { Units.formatPace($0, units: units) } ?? "--:--", unit: Units.paceUnitLabel(units)),
+                .init(label: "Time", value: Units.formatMinutesSeconds(log.durationSeconds)),
+                .init(label: "Avg HR", value: log.averageHeartRate.map { "\(Int($0))" } ?? "--"),
+            ],
+            secondary: secondary
+        ) {
+            RouteMap(route: route)
+        }
     }
 
     private var splitsCard: some View {

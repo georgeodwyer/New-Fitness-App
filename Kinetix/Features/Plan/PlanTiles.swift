@@ -123,7 +123,7 @@ private struct BlockTile: View {
 }
 
 /// Every phase of the plan, with dates and what each is for.
-private struct PlanPhasesView: View {
+struct PlanPhasesView: View {
     let outline: PlanOutline
     @Environment(\.dismiss) private var dismiss
 

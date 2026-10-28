@@ -246,8 +246,8 @@ struct StrengthWorkoutView: View {
         HStack(spacing: KXSpacing.md) {
             KXIconButton(systemImage: "xmark", accessibilityLabel: "Leave workout", size: 36) { showLeave = true }
             VStack(alignment: .leading, spacing: 0) {
-                KXOverline(model.canEditExercises ? "Gym" : "Strength Trainer", color: KXColor.accent)
-                Text(model.log.title).font(KXFont.headline).foregroundStyle(KXColor.ink).lineLimit(1)
+                KXOverline((model.canEditExercises ? "Gym" : "Strength") + " · live", color: KXColor.lift)
+                Text(model.log.title).font(KXFont.headline).textCase(.uppercase).foregroundStyle(KXColor.ink).lineLimit(1)
             }
             Spacer()
             Menu {
@@ -275,9 +275,18 @@ struct StrengthWorkoutView: View {
             .accessibilityIdentifier("gym.more")
             TimelineView(.periodic(from: .now, by: 1)) { context in
                 VStack(alignment: .trailing, spacing: 0) {
-                    Text(Units.formatMinutesSeconds(context.date.timeIntervalSince(model.log.startedAt)))
-                        .font(KXFont.bodyEmphasis.monospacedDigit())
-                        .foregroundStyle(KXColor.ink)
+                    HStack(spacing: KXSpacing.xs) {
+                        if let bpm = model.heartRate {
+                            HStack(spacing: 2) {
+                                Image(systemName: "heart.fill").font(.caption2).foregroundStyle(KXColor.danger)
+                                Text("\(Int(bpm))").font(KXFont.number(15, relativeTo: .caption)).foregroundStyle(KXColor.ink)
+                            }
+                            .accessibilityLabel("Heart rate \(Int(bpm))")
+                        }
+                        Text(Units.formatMinutesSeconds(context.date.timeIntervalSince(model.log.startedAt)))
+                            .font(KXFont.number(26, relativeTo: .title2))
+                            .foregroundStyle(KXColor.ink)
+                    }
                     Text("Active \(Units.formatMinutesSeconds(model.activeSeconds(at: context.date))) · \(model.completedSets)/\(model.totalSets)")
                         .font(KXFont.caption.monospacedDigit())
                         .foregroundStyle(KXColor.inkSecondary)
@@ -300,13 +309,13 @@ struct StrengthWorkoutView: View {
             let remaining = max(0, (model.restEndsAt ?? context.date).timeIntervalSince(context.date))
             HStack(spacing: KXSpacing.sm) {
                 ZStack {
-                    Circle().stroke(KXColor.border, lineWidth: 4)
+                    Circle().stroke(KXColor.border, lineWidth: 5)
                     Circle()
                         .trim(from: 0, to: model.restTotalSeconds > 0 ? remaining / model.restTotalSeconds : 0)
-                        .stroke(KXColor.accent, style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                        .stroke(KXColor.accent, style: StrokeStyle(lineWidth: 5, lineCap: .round))
                         .rotationEffect(.degrees(-90))
                 }
-                .frame(width: 36, height: 36)
+                .frame(width: 46, height: 46)
                 .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 0) {
                     KXOverline(remaining > 0 ? "Rest" : "Rest done", color: KXColor.inkSecondary)
@@ -363,7 +372,7 @@ private struct ExerciseCard: View {
         VStack(alignment: .leading, spacing: KXSpacing.md) {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: KXSpacing.xxs) {
-                    Text(group.name).font(KXFont.headline).foregroundStyle(KXColor.ink)
+                    Text(group.name).font(KXFont.headline).textCase(.uppercase).foregroundStyle(KXColor.ink)
                     if isFolded {
                         Text(doneSummary).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
                     } else {
@@ -420,7 +429,8 @@ private struct ExerciseCard: View {
                             withAnimation(.easeInOut(duration: 0.2)) { _ = openSets.insert(set.id) }
                         }
                     } else {
-                        SetRow(set: set, units: units, model: model)
+                        SetRow(set: set, units: units, model: model,
+                               isNext: isCurrent && set.id == group.sets.first(where: { !$0.isCompleted })?.id)
                             .onChange(of: set.isCompleted) { _, done in if !done { openSets.remove(set.id) } }
                     }
                 }
@@ -502,6 +512,8 @@ private struct SetRow: View {
     let set: SetLogModel
     let units: UnitSystem
     let model: StrengthWorkoutModel
+    /// The set to do next: outlined in the accent colour.
+    var isNext = false
 
     private var weightStep: Double { units == .metric ? 2.5 : Units.lbToKg(5) }
 
@@ -542,7 +554,7 @@ private struct SetRow: View {
                 } label: {
                     Image(systemName: set.isCompleted ? "checkmark.circle.fill" : "circle")
                         .font(.system(size: 30))
-                        .foregroundStyle(set.isCompleted ? KXColor.success : KXColor.border)
+                        .foregroundStyle(set.isCompleted ? KXColor.success : isNext ? KXColor.accent : KXColor.border)
                         .frame(width: 44, height: 44)
                 }
                 .buttonStyle(.plain)
@@ -553,8 +565,12 @@ private struct SetRow: View {
             }
         }
         .padding(KXSpacing.sm)
-        .background(set.isCompleted ? KXColor.success.opacity(0.08) : KXColor.surfaceTint,
+        .background(set.isCompleted ? KXColor.success.opacity(0.08) : isNext ? KXColor.accentSoft : KXColor.surfaceTint,
                     in: RoundedRectangle(cornerRadius: KXRadius.sm, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: KXRadius.sm, style: .continuous)
+                .strokeBorder(isNext ? KXColor.accent : .clear, lineWidth: 1.5)
+        }
     }
 }
 

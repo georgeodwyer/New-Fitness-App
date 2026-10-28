@@ -21,7 +21,9 @@ struct ProgressSummaryView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: KXSpacing.xl) {
             thisWeek
+            if let profile { RacePredictionsCard(profile: profile) }
             if health.isConnected { recoveryCard }
+            StrengthTrendCard(workouts: workouts, units: units)
             let strain = StrainService.report(sessions: [], runs: runs, lifts: workouts, checkIn: nil, profile: profile,
                                               external: integrations.loadWorkouts, health: HealthInputs.current)
             DailyStrainChart(days: strain.days)

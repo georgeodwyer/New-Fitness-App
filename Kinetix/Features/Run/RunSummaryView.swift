@@ -38,16 +38,12 @@ struct RunSummaryView: View {
                     Text(title).font(KXFont.display).foregroundStyle(KXColor.ink)
                 }
                 stravaStatus
-                if summary.route.count > 1 {
-                    RouteMap(route: summary.route)
-                        .frame(height: 220)
-                        .clipShape(RoundedRectangle(cornerRadius: KXRadius.md, style: .continuous))
-                }
                 totals
+                if !summary.segments.isEmpty { PlannedVsActualCard(results: summary.segments, format: format) }
                 targetCard
+                if summary.heartRateSamples.count >= 3 { HeartRateZonesCard(samples: summary.heartRateSamples) }
                 if !summary.splits.isEmpty { splitsCard }
                 if let laps = summary.laps, !laps.isEmpty { LapsCard(laps: laps, format: format) }
-                if !summary.segments.isEmpty { PlannedVsActualCard(results: summary.segments, format: format) }
                 if let log, log.isFinished { SaveAsTemplateButton(source: .run(log)) }
             }
             .padding(KXSpacing.screenMargin)
@@ -72,31 +68,22 @@ struct RunSummaryView: View {
     }
 
     private var totals: some View {
-        VStack(spacing: KXSpacing.md) {
-            HStack {
-                KXMetric(label: "Distance", value: Units.formatDistance(meters: summary.distanceMeters, units: units),
-                         unit: Units.distanceUnitLabel(units), size: .small)
-                Spacer()
-                KXMetric(label: "Time", value: Units.formatMinutesSeconds(summary.durationSeconds), size: .small)
-                Spacer()
-                KXMetric(label: "Avg pace", value: summary.averagePace.map { Units.formatPace($0, units: units) } ?? "--:--",
-                         unit: Units.paceUnitLabel(units), size: .small)
-            }
-            Divider()
-            HStack {
-                KXMetric(label: "Avg HR", value: summary.averageHeartRate.map { "\(Int($0))" } ?? "--", unit: "bpm", size: .small)
-                Spacer()
-                KXMetric(label: "Max HR", value: summary.maxHeartRate.map { "\(Int($0))" } ?? "--", unit: "bpm", size: .small)
-                Spacer()
-                KXMetric(label: "Splits", value: "\(summary.splits.count)", size: .small)
-            }
-            if summary.averageHeartRate == nil {
-                Text("Heart rate appears here once Apple Watch or a chest strap is connected.")
-                    .font(KXFont.caption).foregroundStyle(KXColor.inkTertiary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
+        RunHeroCard(
+            showsMap: summary.route.count > 1,
+            stats: [
+                .init(label: "Distance", value: Units.formatDistance(meters: summary.distanceMeters, units: units), unit: Units.distanceUnitLabel(units)),
+                .init(label: "Avg pace", value: summary.averagePace.map { Units.formatPace($0, units: units) } ?? "--:--", unit: Units.paceUnitLabel(units)),
+                .init(label: "Time", value: Units.formatMinutesSeconds(summary.durationSeconds)),
+                .init(label: "Avg HR", value: summary.averageHeartRate.map { "\(Int($0))" } ?? "--"),
+            ],
+            secondary: [
+                .init(label: "Max HR", value: summary.maxHeartRate.map { "\(Int($0))" } ?? "--", unit: "bpm"),
+                .init(label: "Splits", value: "\(summary.splits.count)"),
+            ],
+            footnote: summary.averageHeartRate == nil ? "Heart rate appears here once Apple Watch or a chest strap is connected." : nil
+        ) {
+            RouteMap(route: summary.route)
         }
-        .kxCard()
     }
 
     private var targetCard: some View {

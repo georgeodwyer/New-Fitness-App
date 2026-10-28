@@ -8,6 +8,7 @@ struct PlanView: View {
     @Query(filter: #Predicate<TrainingPlanModel> { $0.isActive }) private var plans: [TrainingPlanModel]
     @Query(sort: \PlanChangeModel.createdAt, order: .reverse) private var changes: [PlanChangeModel]
     @Query(filter: #Predicate<UserProfileModel> { $0.deletedAt == nil }) private var profiles: [UserProfileModel]
+    @Query(filter: #Predicate<RunLogModel> { $0.isFinished && $0.deletedAt == nil }) private var runs: [RunLogModel]
     @State private var showOnboarding = false
     @State private var showWalkthrough = false
     @State private var showCalendar = false
@@ -140,6 +141,8 @@ struct PlanView: View {
                         PlanIntroCard { showOnboarding = true }
                     }
                     if let outline {
+                        RaceCountdownCard(outline: outline, profile: profiles.first?.profile)
+                        WeeklyDistanceCard(outline: outline, runs: runs, format: format)
                         PlanTopTiles(outline: outline, profile: profiles.first?.profile, profileModel: profiles.first, format: format)
                     }
                     if weeks.isEmpty && !profiles.isEmpty {
@@ -333,9 +336,14 @@ struct PlanView: View {
         let done = session.status == .completed
         let skipped = session.status == .skipped
         return HStack(spacing: KXSpacing.md) {
+            RoundedRectangle(cornerRadius: 2)
+                .fill(session.kind.tint.opacity(done || skipped ? 0.45 : 1))
+                .frame(width: 4, height: 36)
+                .accessibilityHidden(true)
             Image(systemName: done ? "checkmark.circle.fill" : session.kind.symbolName)
                 .foregroundStyle(done ? KXColor.success : session.kind.tint)
-                .frame(width: 28)
+                .frame(width: 34, height: 34)
+                .background((done ? KXColor.success : session.kind.tint).opacity(0.14), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: KXSpacing.xxs) {
                 Text(session.title).font(KXFont.bodyEmphasis).foregroundStyle(skipped ? KXColor.inkTertiary : KXColor.ink)
@@ -362,9 +370,14 @@ struct PlanView: View {
     /// A session not built yet: shown, but not opened or changed until it's built.
     private func previewRow(_ session: GeneratedSession) -> some View {
         HStack(spacing: KXSpacing.md) {
+            RoundedRectangle(cornerRadius: 2)
+                .strokeBorder(session.kind.tint.opacity(0.6), style: StrokeStyle(lineWidth: 1.5, dash: [3, 2]))
+                .frame(width: 4, height: 36)
+                .accessibilityHidden(true)
             Image(systemName: session.kind.symbolName)
-                .foregroundStyle(session.kind.tint)
-                .frame(width: 28)
+                .foregroundStyle(session.kind.tint.opacity(0.8))
+                .frame(width: 34, height: 34)
+                .background(session.kind.tint.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: KXSpacing.xxs) {
                 Text(session.title).font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink)
