@@ -58,17 +58,26 @@ jobs:
           if [ -z "$SUPABASE_URL" ]; then echo "::warning::SUPABASE_URL secret not set: accounts will be off in this build"; fi
           if [ -z "$STRAVA_CLIENT_ID" ]; then echo "::warning::STRAVA_CLIENT_ID secret not set: Strava will be off in this build"; fi
 
-      - name: Install XcodeGen and generate project
-        run: |
-          brew install xcodegen
-          xcodegen generate
-
       - name: Write App Store Connect API key
         run: |
           mkdir -p "$RUNNER_TEMP/keys"
           KEY_PATH="$RUNNER_TEMP/keys/AuthKey_${ASC_KEY_ID}.p8"
           printf '%s' "${{ secrets.ASC_KEY_P8 }}" > "$KEY_PATH"
           echo "KEY_PATH=$KEY_PATH" >> "$GITHUB_ENV"
+
+      - name: Create signing certificate and profiles
+        # A fresh Apple Distribution certificate and App Store profiles for this build, made
+        # with the API key and removed again at the end (no stored certificates, and no
+        # "development certificate for this machine" errors).
+        run: |
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install --quiet pyjwt cryptography
+          "$RUNNER_TEMP/venv/bin/python" scripts/asc_signing.py setup
+
+      - name: Install XcodeGen and generate project
+        run: |
+          brew install xcodegen
+          xcodegen generate
 
       - name: Archive
         run: |
@@ -79,10 +88,7 @@ jobs:
             -archivePath "$RUNNER_TEMP/Kinetix.xcarchive" \
             DEVELOPMENT_TEAM="$TEAM_ID" \
             CURRENT_PROJECT_VERSION="$((100 + ${{ github.run_number }}))" \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "$KEY_PATH" \
-            -authenticationKeyID "$ASC_KEY_ID" \
-            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+            OTHER_CODE_SIGN_FLAGS="--keychain $KX_KEYCHAIN"
 
       - name: Export and upload to App Store Connect
         run: |
@@ -94,7 +100,14 @@ jobs:
             <key>method</key><string>app-store-connect</string>
             <key>destination</key><string>upload</string>
             <key>teamID</key><string>${TEAM_ID}</string>
-            <key>signingStyle</key><string>automatic</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>signingCertificate</key><string>Apple Distribution</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>com.georgeodwyer.kinetix</key><string>${KX_PROFILE_APP}</string>
+              <key>com.georgeodwyer.kinetix.widgets</key><string>${KX_PROFILE_WIDGETS}</string>
+              <key>com.georgeodwyer.kinetix.watchkitapp</key><string>${KX_PROFILE_WATCH}</string>
+            </dict>
             <key>manageAppVersionAndBuildNumber</key><false/>
           </dict>
           </plist>
@@ -103,7 +116,6 @@ jobs:
             -archivePath "$RUNNER_TEMP/Kinetix.xcarchive" \
             -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
             -exportPath "$RUNNER_TEMP/export" \
-            -allowProvisioningUpdates \
             -authenticationKeyPath "$KEY_PATH" \
             -authenticationKeyID "$ASC_KEY_ID" \
             -authenticationKeyIssuerID "$ASC_ISSUER_ID"
@@ -115,6 +127,11 @@ jobs:
           name: testflight-logs
           path: '*.log'
           if-no-files-found: ignore
+
+      - name: Remove signing certificate and profiles
+        if: always()
+        run: |
+          if [ -x "$RUNNER_TEMP/venv/bin/python" ]; then "$RUNNER_TEMP/venv/bin/python" scripts/asc_signing.py cleanup; fi
 
       - name: Remove API key
         if: always()

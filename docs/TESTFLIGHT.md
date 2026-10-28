@@ -60,6 +60,14 @@ Secrets are stored encrypted by GitHub; they never appear in the code and Claude
 | `ASC_ISSUER_ID` | The Issuer ID from step 4 |
 | `ASC_KEY_P8` | Open the downloaded `.p8` file in TextEdit and paste **everything**, including the `-----BEGIN PRIVATE KEY-----` and `-----END PRIVATE KEY-----` lines |
 
+## Signing (nothing to do)
+
+Each TestFlight run creates its own Apple Distribution certificate and App Store profiles with
+the API key (`scripts/asc_signing.py`), signs the build with them, and removes them at the end.
+There's no certificate to store or renew, and no need to revoke certificates by hand. The API
+key must keep **Admin** access for this. Builds already uploaded are unaffected when a
+certificate is removed.
+
 ## 7. Upload a build
 
 Claude normally does this for you. To do it yourself:
