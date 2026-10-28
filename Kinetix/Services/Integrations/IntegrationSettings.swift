@@ -23,7 +23,6 @@ final class IntegrationSettings {
         stravaUploadRuns = defaults.object(forKey: Keys.stravaRuns) as? Bool ?? true
         stravaUploadLifts = defaults.object(forKey: Keys.stravaLifts) as? Bool ?? false
         stravaConnectedAt = defaults.object(forKey: Keys.stravaConnectedAt) as? Date
-        stravaImportEnabled = defaults.object(forKey: Keys.stravaImport) as? Bool ?? true
         stravaLastImport = defaults.object(forKey: Keys.stravaLastImport) as? Date
         stravaWorkouts = defaults.data(forKey: Keys.stravaWorkouts)
             .flatMap { try? JSONDecoder().decode([ExternalWorkout].self, from: $0) } ?? []
@@ -43,7 +42,6 @@ final class IntegrationSettings {
         static let stravaRuns = "integrations.strava.uploadRuns"
         static let stravaLifts = "integrations.strava.uploadLifts"
         static let stravaConnectedAt = "integrations.strava.connectedAt"
-        static let stravaImport = "integrations.strava.import"
         static let stravaLastImport = "integrations.strava.lastImport"
         static let stravaWorkouts = "integrations.strava.workouts"
         static let externalWorkouts = "integrations.health.externalWorkouts"
@@ -68,19 +66,16 @@ final class IntegrationSettings {
     var stravaUploadRuns: Bool { didSet { defaults.set(stravaUploadRuns, forKey: Keys.stravaRuns) } }
     var stravaUploadLifts: Bool { didSet { defaults.set(stravaUploadLifts, forKey: Keys.stravaLifts) } }
     var stravaConnectedAt: Date? { didSet { defaults.set(stravaConnectedAt, forKey: Keys.stravaConnectedAt) } }
-    /// Bring in activities recorded elsewhere (runs into history, everything into load).
-    var stravaImportEnabled: Bool { didSet { defaults.set(stravaImportEnabled, forKey: Keys.stravaImport) } }
-    /// When Strava was last checked for new activities.
+    /// When an older version last imported from Strava (cleared; imports are removed).
     var stravaLastImport: Date? { didSet { defaults.set(stravaLastImport, forKey: Keys.stravaLastImport) } }
-    /// Non-run activities from Strava (last 4 weeks), counted in training load.
+    /// Activities an older version imported from Strava (cleared; no longer counted).
     var stravaWorkouts: [ExternalWorkout] {
         didSet { defaults.set(try? JSONEncoder().encode(stravaWorkouts), forKey: Keys.stravaWorkouts) }
     }
 
-    /// Other apps' workouts that count towards training load: Apple Health's and Strava's,
-    /// with the same workout seen in both counted once.
+    /// Other apps' workouts that count towards training load (from Apple Health).
     var loadWorkouts: [ExternalWorkout] {
-        ExternalWorkouts.merged(healthEnabled ? externalWorkouts : [], stravaImportEnabled ? stravaWorkouts : [])
+        healthEnabled ? externalWorkouts : []
     }
 
     /// Workouts from other apps (last 4 weeks), refreshed from Apple Health.
@@ -104,7 +99,6 @@ final class IntegrationSettings {
         stravaUploadRuns = true
         stravaUploadLifts = false
         stravaConnectedAt = nil
-        stravaImportEnabled = true
         stravaLastImport = nil
         stravaWorkouts = []
         externalWorkouts = []

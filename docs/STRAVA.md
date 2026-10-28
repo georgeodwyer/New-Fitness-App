@@ -1,9 +1,11 @@
 # Setting up Strava
 
-Kinetix uploads finished runs (with route, splits and heart rate) to Strava, offers an
+Kinetix uploads finished runs (with route, splits and heart rate) to Strava and offers an
 "Upload to Strava" button for gym sessions (or uploads them automatically if you switch that
-on), and **imports activities recorded elsewhere** (a Garmin, the Strava app, Zwift…): runs
-appear in Progress marked *From Strava*, and everything counts towards training load.
+on). **It only sends to Strava.** Strava's API policy (June 2026) limits keeping Strava data,
+so workouts recorded elsewhere (a Garmin, Zwift, the Strava app) come into Kinetix through
+Apple Health instead. Activities imported from Strava by earlier versions are removed when
+the app opens.
 
 Strava's login needs the app's **client secret** to swap a login code for tokens. There are
 two ways to hold it:
@@ -44,14 +46,13 @@ Then ask Claude for a new TestFlight build (or run the TestFlight workflow yours
 
 ## 3. Connect
 
-In the app: **Settings → Integrations → Strava → Connect with Strava**. Sign in, leave
-**both** "Upload your activities" and "View data about your activities" ticked, and approve.
-Kinetix then imports your last 90 days (check Progress → Running), and from now on:
+In the app: **Settings → Integrations → Strava → Connect with Strava**. Sign in, allow
+"Upload your activities" and approve. From then on:
 
 - finished runs appear on Strava within a minute;
 - gym sessions have an **Upload to Strava** button on their summary (or switch on
   "Upload gym sessions" to send them automatically);
-- new Strava activities are imported whenever you open Kinetix (or tap **Check now**).
+- workouts from other apps reach Kinetix through Apple Health (let those apps write to Health).
 
 ## Moving the secret to Supabase (before App Store release)
 
@@ -76,32 +77,24 @@ Kinetix then imports your last 90 days (check Progress → Running), and from no
 - Rate limits: 200 requests per 15 minutes and 2,000 per day for the whole app. Each run
   upload uses about 3–6.
 - Uploads that fail because you're offline are retried the next time Kinetix opens (for a
-  week). Runs recorded with simulated GPS are never uploaded, and imported activities are
-  never sent back to Strava or to Apple Health.
-- The same workout is counted once: Kinetix's own uploads aren't imported back, and an
-  activity that overlaps a Kinetix session (or an Apple Health workout) by half or more is
-  treated as the same one.
-- Imported runs' routes come from Strava's summary map, without timings, so they don't
-  produce best efforts or pace charts. Their effort is estimated from heart rate; tap Edit
-  on the run to set it yourself.
-- Strava's API terms ask apps to show where data came from: imported runs are labelled
-  *From Strava* with a "View on Strava" link.
+  week). Runs recorded with simulated GPS are never uploaded.
 - Disconnecting in Kinetix also revokes its access on Strava.
 
 ## Getting more athletes (before testers or launch)
 
-New Strava apps can connect **one athlete** (you). Anyone else sees "Error 403: Limit of
+New Strava apps can connect **one athlete** (you); you can raise that to **10** yourself on
+strava.com/settings/api (enough for testers). Since June 2026 the account that owns the app
+needs a Strava subscription. Anyone else sees "Error 403: Limit of
 connected athletes exceeded" on Strava's page; in test builds, Kinetix's Strava screen
 explains this. To raise the limit, request a review with Strava's developer program form
 (linked from developers.strava.com, under rate limits / athlete capacity). Have ready:
 
 - Your app's **Client ID** (strava.com/settings/api).
-- What Kinetix does with Strava: uploads your own runs and gym sessions; imports your own
-  activities so your history and training load are complete. Each person only sees their
-  own data, and Strava data isn't used to train AI models.
-- Screenshots: the Connect with Strava button (Settings → Integrations → Strava) and an
-  imported run (Progress → a run marked From Strava) showing "Powered by Strava" and
-  "View on Strava".
+- What Kinetix does with Strava: uploads each athlete's own runs and gym sessions to their
+  own Strava account. It doesn't read, store or display Strava data (it asks only for the
+  `activity:write` permission), and nothing is used for AI.
+- Screenshots: the Connect with Strava button (Settings → Integrations → Strava), and a run
+  summary with "View on Strava" after an upload.
 - A link to the privacy policy.
 
 ### Brand images

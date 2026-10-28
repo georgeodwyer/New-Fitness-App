@@ -81,7 +81,7 @@ struct RootView: View {
                 Task {
                     await HealthService.shared.refresh()
                     await ActivityExportService.retryPending(in: context, units: units)
-                    await StravaService.shared.importRecent(in: context)
+                    StravaService.shared.removeImportedActivities(in: context)
                     WatchSyncService.shared.sendPlan()
                     WidgetSnapshotService.update(in: context)
                 }

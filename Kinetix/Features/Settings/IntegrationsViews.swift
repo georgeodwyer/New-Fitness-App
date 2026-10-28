@@ -464,7 +464,7 @@ struct StravaView: View {
                     .listRowBackground(Color.clear)
                     .accessibilityIdentifier("strava.connect")
                 } footer: {
-                    Text("You'll sign in on Strava's website and choose what Kinetix may do. Leave both boxes ticked: uploading your activities, and viewing them (for importing). Only sessions you finish after connecting are uploaded; the last 90 days of activities are imported.")
+                    Text("You'll sign in on Strava's website and allow Kinetix to upload your activities. Only sessions you finish after connecting are uploaded.")
                 }
                 if BuildChannel.isTesting {
                     Section {
@@ -492,32 +492,14 @@ struct StravaView: View {
                     Text("With gym sessions off, each workout's summary has an Upload to Strava button instead. Runs recorded with simulated GPS are never uploaded. If you're offline, uploads are retried the next time you open Kinetix.")
                 }
                 Section {
-                    Toggle("Import activities", isOn: $settings.stravaImportEnabled)
-                        .accessibilityIdentifier("strava.import")
-                    if settings.stravaImportEnabled {
-                        if strava.canReadActivities {
-                            LabeledContent("Last checked", value: settings.stravaLastImport.map { $0.formatted(.relative(presentation: .named)) } ?? "Not yet")
-                            LabeledContent("Other activities (4 weeks)", value: "\(settings.stravaWorkouts.count)")
-                            Button(working ? "Checking…" : "Check now") {
-                                Task {
-                                    working = true
-                                    await strava.importRecent(in: context, force: true)
-                                    working = false
-                                }
-                            }
-                            .disabled(working)
-                        } else {
-                            Label("Kinetix isn't allowed to view your activities. Disconnect, connect again and leave \u{201C}View data about your activities\u{201D} ticked.",
-                                  systemImage: "exclamationmark.triangle.fill")
-                                .font(KXFont.caption)
-                                .symbolRenderingMode(.multicolor)
-                        }
-                    }
-                    StravaAttribution()
+                    Label("Workouts from your Garmin, Zwift or the Strava app reach Kinetix through Apple Health: let those apps write to Health and they count towards your training load.",
+                          systemImage: "heart.text.square")
+                        .font(KXFont.caption)
+                        .foregroundStyle(KXColor.inkSecondary)
                 } header: {
-                    Text("From Strava")
+                    Text("Other workouts")
                 } footer: {
-                    Text("Runs recorded elsewhere appear in Progress (marked From Strava) and count towards your training load; rides, gym sessions and other activities count towards load. Kinetix's own uploads and anything already recorded in Kinetix or Apple Health are counted once.")
+                    Text("Kinetix only sends your sessions to Strava; it doesn't read your Strava activities.")
                 }
                 if !settings.uploadFailures.isEmpty {
                     Section("Couldn't upload") {

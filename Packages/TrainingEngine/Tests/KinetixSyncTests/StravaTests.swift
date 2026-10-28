@@ -42,7 +42,7 @@ final class StravaTests: XCTestCase {
         let url = client.authorizeURL(state: "xyz")
         let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
         XCTAssertEqual(items.first { $0.name == "redirect_uri" }?.value, "kinetix://localhost/strava")
-        XCTAssertEqual(items.first { $0.name == "scope" }?.value, "read,activity:read_all,activity:write")
+        XCTAssertEqual(items.first { $0.name == "scope" }?.value, "read,activity:write", "Upload only: Kinetix doesn't read Strava activities")
 
         let good = URL(string: "kinetix://localhost/strava?state=xyz&code=abc&scope=read,activity:write")!
         XCTAssertEqual(try StravaClient.authorizationCode(from: good, expectedState: "xyz"), "abc")

@@ -185,7 +185,7 @@ public actor StravaClient {
             URLQueryItem(name: "redirect_uri", value: config.redirectURI),
             URLQueryItem(name: "response_type", value: "code"),
             URLQueryItem(name: "approval_prompt", value: "auto"),
-            URLQueryItem(name: "scope", value: "read,activity:read_all,activity:write"),
+            URLQueryItem(name: "scope", value: "read,activity:write"),
             URLQueryItem(name: "state", value: state)
         ]
         return components.url!
@@ -202,7 +202,7 @@ public actor StravaClient {
         return code
     }
 
-    /// The permissions granted, from the redirect ("read,activity:read_all,activity:write").
+    /// The permissions granted, from the redirect ("read,activity:write").
     public static func grantedScopes(from callback: URL) -> [String] {
         let items = URLComponents(url: callback, resolvingAgainstBaseURL: false)?.queryItems ?? []
         return (items.first { $0.name == "scope" }?.value ?? "").split(separator: ",").map(String.init)

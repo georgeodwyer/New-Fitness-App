@@ -115,10 +115,9 @@ struct HomeView: View {
         }
     }
 
-    /// Pull to refresh: re-reads Apple Health and Strava and syncs.
+    /// Pull to refresh: re-reads Apple Health and syncs.
     private func refreshEverything() async {
         await health.refresh(force: true)
-        await StravaService.shared.importRecent(in: context, force: true)
         await SyncService.shared.sync(context: context)
         WidgetSnapshotService.update(in: context)
     }
