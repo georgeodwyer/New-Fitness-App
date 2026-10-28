@@ -474,14 +474,16 @@ extension RecoveryCheckInModel: SyncableModel {
         var sleep: Int
         var soreness: Int
         var energy: Int
+        var legSoreness: Int?
     }
     static var syncType: String { "recoveryCheckIn" }
-    var syncPayload: Payload { Payload(date: date, sleep: sleep, soreness: soreness, energy: energy) }
+    var syncPayload: Payload { Payload(date: date, sleep: sleep, soreness: soreness, energy: energy, legSoreness: legSoreness) }
     func applySync(_ p: Payload, context: ModelContext) {
         date = p.date
         sleep = p.sleep
         soreness = p.soreness
         energy = p.energy
+        legSoreness = p.legSoreness
     }
     static func makeForSync(id: UUID) -> RecoveryCheckInModel {
         RecoveryCheckInModel(date: .now, sleep: 3, soreness: 3, energy: 3, id: id)

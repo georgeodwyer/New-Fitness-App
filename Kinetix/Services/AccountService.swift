@@ -62,6 +62,7 @@ enum AccountService {
             var sleep: Int
             var soreness: Int
             var energy: Int
+            var legSoreness: Int?
         }
         struct Change: Encodable {
             var date: Date
@@ -119,7 +120,7 @@ enum AccountService {
                 Export.Record(exerciseId: $0.recordKey, kind: $0.kindRaw, value: $0.value, achievedAt: $0.achievedAt)
             },
             checkIns: all(RecoveryCheckInModel.self).filter { !$0.isSoftDeleted }.sorted { $0.date < $1.date }.map {
-                Export.CheckIn(date: $0.date, sleep: $0.sleep, soreness: $0.soreness, energy: $0.energy)
+                Export.CheckIn(date: $0.date, sleep: $0.sleep, soreness: $0.soreness, energy: $0.energy, legSoreness: $0.legSoreness)
             },
             planChanges: all(PlanChangeModel.self).filter { !$0.isSoftDeleted }.sorted { $0.createdAt < $1.createdAt }.map {
                 Export.Change(date: $0.createdAt, summary: $0.summary)
@@ -151,7 +152,7 @@ enum AccountService {
     /// (Milestone 7 also deletes the cloud account and its data.)
     static func deleteEverything(in context: ModelContext) {
         SampleData.eraseAll(in: context)
-        for key in [BalanceService.lastAutoAdjustKey, DeveloperSettings.simulateGPSKey, DeveloperSettings.simulationSpeedKey, AppearanceChoice.storageKey,
+        for key in [BalanceService.lastAutoAdjustKey, DeveloperSettings.simulateGPSKey, DeveloperSettings.simulationSpeedKey, AppearanceChoice.storageKey, AppearanceChoice.chosenKey,
                     UnitPreference.key, HealthNotice.key] {
             UserDefaults.standard.removeObject(forKey: key)
         }

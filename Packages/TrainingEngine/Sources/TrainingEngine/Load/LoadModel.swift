@@ -148,8 +148,10 @@ public enum LoadModel {
 public struct RecoveryCheckIn: Equatable, Sendable {
     /// 1 = terrible sleep, 5 = great.
     public var sleep: Int
-    /// 1 = not sore, 5 = very sore.
+    /// 1 = not sore, 5 = very sore. With `legSoreness` set, this is the upper body.
     public var soreness: Int
+    /// Legs: 1 = not sore, 5 = very sore (nil on check-ins from before legs were asked).
+    public var legSoreness: Int?
     /// 1 = exhausted, 5 = full of energy.
     public var energy: Int
     /// Resting heart rate from Apple Health is well above the runner's usual.
@@ -157,20 +159,30 @@ public struct RecoveryCheckIn: Equatable, Sendable {
     /// Overnight HRV from Apple Health is well below the runner's usual.
     public var hrvSuppressed: Bool
 
-    public init(sleep: Int, soreness: Int, energy: Int, restingHeartRateElevated: Bool = false, hrvSuppressed: Bool = false) {
+    public init(sleep: Int, soreness: Int, energy: Int, legSoreness: Int? = nil, restingHeartRateElevated: Bool = false,
+                hrvSuppressed: Bool = false) {
         self.sleep = min(max(sleep, 1), 5)
         self.soreness = min(max(soreness, 1), 5)
+        self.legSoreness = legSoreness.map { min(max($0, 1), 5) }
         self.energy = min(max(energy, 1), 5)
         self.restingHeartRateElevated = restingHeartRateElevated
         self.hrvSuppressed = hrvSuppressed
     }
+
+    /// Soreness for the overall score: the average of legs and upper body.
+    public var averageSoreness: Double {
+        legSoreness.map { (Double(soreness) + Double($0)) / 2 } ?? Double(soreness)
+    }
+
+    /// The sorest part.
+    public var worstSoreness: Int { max(soreness, legSoreness ?? soreness) }
 
     /// A body signal from Apple Health says recovery may be down.
     public var hasBodyWarning: Bool { restingHeartRateElevated || hrvSuppressed }
 
     /// 0…1 readiness (higher is better).
     public var readiness: Double {
-        Double((sleep - 1) + (5 - soreness) + (energy - 1)) / 12
+        (Double(sleep - 1) + (5 - averageSoreness) + Double(energy - 1)) / 12
     }
 
     /// Poor recovery: low overall readiness, very sore, or a raised resting heart rate or low
@@ -178,7 +190,7 @@ public struct RecoveryCheckIn: Equatable, Sendable {
     public var isPoor: Bool { isPoor(rules: BalanceRules.current.recovery) }
 
     public func isPoor(rules: BalanceRules.Recovery) -> Bool {
-        readiness < rules.poorReadinessBelow || soreness >= rules.verySoreAtOrAbove
+        readiness < rules.poorReadinessBelow || worstSoreness >= rules.verySoreAtOrAbove
             || (hasBodyWarning && readiness < rules.bodySignalCountsWhenReadinessBelow)
     }
 }

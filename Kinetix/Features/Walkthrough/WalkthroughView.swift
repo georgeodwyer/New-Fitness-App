@@ -81,7 +81,7 @@ struct WalkthroughPage: Sendable {
     let points: [(symbol: String, text: String)]
     let illustration: Illustration
 
-    enum Illustration { case welcome, today, adapts, record, progress, connect, help }
+    enum Illustration { case welcome, today, plan, adapts, record, progress, connect, help }
 
     static let all: [WalkthroughPage] = [
         WalkthroughPage(
@@ -97,12 +97,23 @@ struct WalkthroughPage: Sendable {
             plain: "Start each day on", accented: "Today",
             detail: "Everything you need for today, in one place.",
             points: [
-                ("gauge.with.needle", "Recovery: how ready your body is, out of 100. About 72 is a normal day; 85+ is great."),
-                ("flame", "Exertion: how hard you've worked today, with a target for the day."),
-                ("checkmark.circle", "Your score: a 10-second check-in on sleep, soreness and energy."),
+                ("gauge.with.needle", "Recovery: how ready your body is, out of 100, with your HRV, resting heart rate and sleep under it. About 72 is a normal day; 85+ is great."),
+                ("hand.raised", "No sleep data (watch charging overnight)? Tap \"Don't wait\" and your check-in sets the score."),
+                ("flame", "Exertion: how hard you've worked today, against a target for the day."),
+                ("checkmark.circle", "Your score: a 10-second check-in on sleep, legs, upper body and energy."),
                 ("arrow.down", "Pull down to refresh your Apple Health data."),
             ],
             illustration: .today),
+        WalkthroughPage(
+            plain: "Your", accented: "plan",
+            detail: "The Plan tab lays out every week, building towards your goal.",
+            points: [
+                ("flag.checkered", "A countdown to race day and the phase you're in."),
+                ("chart.bar", "This week's distance against the plan, and earlier weeks kept for reference."),
+                ("calendar", "Tap This week on Today for the full calendar."),
+                ("arrow.triangle.2.circlepath", "Change your goal or days in Settings and rebuild from today, keeping your progress."),
+            ],
+            illustration: .plan),
         WalkthroughPage(
             plain: "A plan that", accented: "adapts",
             detail: "Your plan isn't fixed. It responds to how you're doing.",
@@ -117,19 +128,19 @@ struct WalkthroughPage: Sendable {
             plain: "Record runs and", accented: "lifts",
             detail: "Start today's session from Today, or anything else from Record.",
             points: [
-                ("figure.run", "Runs: live pace, distance and heart rate, with audio coaching."),
-                ("dumbbell", "Gym: sets, reps and weights, with a rest timer that alerts you."),
-                ("chevron.down", "Minimise a workout to use the rest of the app. It stays in a bar above the tabs."),
-                ("applewatch", "Use Apple Watch for heart rate, or record a run from your wrist."),
+                ("figure.run", "Runs: live pace, distance and heart rate, with audio coaching. Tap the big number to switch it."),
+                ("trophy", "Racing? Choose Race: a new best updates your paces and plan."),
+                ("dumbbell", "Gym: sets, reps and weights, with a rest timer. Finish early if you're short on time."),
+                ("applewatch", "Apple Watch: run from your wrist and build your own watch screens in Settings."),
             ],
             illustration: .record),
         WalkthroughPage(
             plain: "See your", accented: "progress",
             detail: "The Progress tab shows what your training is adding up to.",
             points: [
+                ("speedometer", "Your paces for every type of run, and race time predictions."),
                 ("trophy", "Best efforts over each running distance, and records for every lift."),
                 ("chart.line.uptrend.xyaxis", "Each lift's working weight and estimated 1-rep max over time."),
-                ("waveform.path.ecg", "How this week compares with your usual training load."),
             ],
             illustration: .progress),
         WalkthroughPage(
@@ -137,6 +148,7 @@ struct WalkthroughPage: Sendable {
             detail: "Optional, but they make Kinetix much smarter. Set them up in Settings.",
             points: [
                 ("heart.fill", "Apple Health: sleep, HRV and resting heart rate power your recovery score."),
+                ("applewatch", "Apple Watch: runs and gym sessions on your wrist, with screens you design."),
                 ("arrow.triangle.2.circlepath", "Strava: send your runs and lifts there automatically."),
                 ("bell", "Notifications: a morning summary of the day, and rest timer alerts."),
             ],
@@ -196,6 +208,7 @@ private struct WalkthroughIllustration: View {
             switch kind {
             case .welcome: welcome
             case .today: today
+            case .plan: plan
             case .adapts: adapts
             case .record: record
             case .progress: progress
@@ -215,27 +228,60 @@ private struct WalkthroughIllustration: View {
     }
 
     private var today: some View {
-        VStack(spacing: KXSpacing.sm) {
-            HStack(spacing: KXSpacing.sm) {
-                miniCard {
-                    VStack(alignment: .leading, spacing: KXSpacing.xs) {
+        miniCard {
+            VStack(spacing: KXSpacing.sm) {
+                ZStack {
+                    Circle().trim(from: 0, to: 0.75)
+                        .stroke(KXColor.border, style: StrokeStyle(lineWidth: 9, lineCap: .round))
+                        .rotationEffect(.degrees(135))
+                    Circle().trim(from: 0, to: 0.75 * 0.78)
+                        .stroke(AngularGradient(colors: [KXColor.danger, KXColor.warning, KXColor.success], center: .center,
+                                                startAngle: .degrees(0), endAngle: .degrees(270)),
+                                style: StrokeStyle(lineWidth: 9, lineCap: .round))
+                        .rotationEffect(.degrees(135))
+                    VStack(spacing: 0) {
                         Text("RECOVERY").font(KXFont.overline).foregroundStyle(KXColor.inkSecondary)
-                        HStack(alignment: .firstTextBaseline, spacing: KXSpacing.xs) {
-                            Text("78").font(KXFont.metric).foregroundStyle(KXColor.ink)
-                            Circle().fill(KXColor.success).frame(width: 8, height: 8)
-                            Text("Good").font(KXFont.captionEmphasis).foregroundStyle(KXColor.ink)
-                        }
+                        Text("78").font(KXFont.number(30)).foregroundStyle(KXColor.ink)
                     }
                 }
-                miniCard {
-                    VStack(alignment: .leading, spacing: KXSpacing.xs) {
-                        Text("EXERTION").font(KXFont.overline).foregroundStyle(KXColor.inkSecondary)
-                        Text("9.4").font(KXFont.metric).foregroundStyle(KXColor.ink)
-                        ProgressView(value: 0.6).tint(KXColor.accent)
-                    }
+                .frame(width: 96, height: 96)
+                Capsule().fill(KXColor.surfaceTint).frame(height: 6)
+                    .overlay(alignment: .leading) { Capsule().fill(KXColor.accent).frame(width: 110, height: 6) }
+                HStack {
+                    stat("61", "HRV ms")
+                    Spacer()
+                    stat("49", "rest bpm")
+                    Spacer()
+                    stat("7:12", "sleep")
                 }
             }
-            sessionRow("figure.run", KXColor.run, "Tempo run", "8 km · 45 min")
+            .frame(maxWidth: .infinity)
+        }
+        .frame(maxWidth: 320)
+    }
+
+    private var plan: some View {
+        VStack(spacing: KXSpacing.sm) {
+            miniCard {
+                HStack {
+                    VStack(alignment: .leading, spacing: KXSpacing.xxs) {
+                        Text("RACE DAY").font(KXFont.overline).foregroundStyle(KXColor.inkSecondary)
+                        Text("Half marathon").font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink)
+                    }
+                    Spacer()
+                    Text("47 days").font(KXFont.number(26)).foregroundStyle(KXColor.accent)
+                }
+            }
+            miniCard {
+                HStack(alignment: .bottom, spacing: KXSpacing.sm) {
+                    ForEach(Self.bars.indices, id: \.self) { index in
+                        RoundedRectangle(cornerRadius: 3, style: .continuous)
+                            .fill(index == 4 ? KXColor.accent : KXColor.run.opacity(0.55))
+                            .frame(height: 60 * Self.bars[index])
+                    }
+                }
+                .frame(height: 64, alignment: .bottom)
+            }
         }
         .frame(maxWidth: 320)
     }

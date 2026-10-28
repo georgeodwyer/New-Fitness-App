@@ -353,7 +353,9 @@ public struct RecoveryScore: Equatable, Sendable {
         }
         if let checkIn {
             add("Your score", vsUsual: checkIn.readiness * 100,
-                detail: "Sleep \(checkIn.sleep)/5 · soreness \(checkIn.soreness)/5 · energy \(checkIn.energy)/5",
+                detail: checkIn.legSoreness.map {
+                    "Sleep \(checkIn.sleep)/5 · legs \($0)/5 · upper body \(checkIn.soreness)/5 · energy \(checkIn.energy)/5"
+                } ?? "Sleep \(checkIn.sleep)/5 · soreness \(checkIn.soreness)/5 · energy \(checkIn.energy)/5",
                 rule: "Your sleep, soreness and energy ratings: all 3s show as 72.", weight: weights.checkIn)
         }
         guard !parts.isEmpty else { return nil }
@@ -448,6 +450,15 @@ public struct LegsLoad: Equatable, Sendable {
         }
     }
 
+    /// How their legs feel overrides the numbers when it's worse: very sore (4–5) is tired,
+    /// a bit sore (3) is at least OK.
+    public func feeling(_ legSoreness: Int?) -> LegsLoad {
+        guard let legSoreness else { return self }
+        var result = self
+        if legSoreness >= 4 { result.status = .tired } else if legSoreness == 3 && status == .fresh { result.status = .ok }
+        return result
+    }
+
     public static func make(activities: [StrainActivity], now: Date, calendar: Calendar) -> LegsLoad {
         let current = fatigue(at: now, activities: activities)
         let first = activities.map(\.date).min()
@@ -485,7 +496,7 @@ public struct StrainReport: Equatable, Sendable {
     ///   - activities: sessions and other workouts (not steps).
     ///   - steps: daily step totals; workouts' share of steps is taken off (runs ≈ 1 step per 1.1 m).
     public static func make(activities: [StrainActivity], steps: [HealthDay], plannedLoadToday: Double?,
-                            recovery: RecoveryScore?, now: Date, calendar: Calendar) -> StrainReport {
+                            recovery: RecoveryScore?, legSoreness: Int? = nil, now: Date, calendar: Calendar) -> StrainReport {
         let today = calendar.startOfDay(for: now)
         func dayActivities(_ date: Date) -> [StrainActivity] {
             guard let next = calendar.date(byAdding: .day, value: 1, to: date) else { return [] }
@@ -524,7 +535,7 @@ public struct StrainReport: Equatable, Sendable {
         }
 
         return StrainReport(today: todayStrain, days: days, target: target, recovery: recovery,
-                            legs: LegsLoad.make(activities: activities, now: now, calendar: calendar),
+                            legs: LegsLoad.make(activities: activities, now: now, calendar: calendar).feeling(legSoreness),
                             weekVsUsual: weekVsUsual)
     }
 }

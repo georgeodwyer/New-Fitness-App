@@ -2,7 +2,7 @@ import Foundation
 
 /// The kinds of run you can record without a plan.
 public enum RecordRunType: String, Codable, CaseIterable, Sendable {
-    case free, easy, recovery, long, tempo, intervals, progression, fartlek
+    case free, easy, recovery, long, tempo, intervals, progression, fartlek, race
 
     public var displayName: String {
         switch self {
@@ -14,6 +14,7 @@ public enum RecordRunType: String, Codable, CaseIterable, Sendable {
         case .intervals: return "Intervals"
         case .progression: return "Progression"
         case .fartlek: return "Fartlek"
+        case .race: return "Race"
         }
     }
 
@@ -27,6 +28,7 @@ public enum RecordRunType: String, Codable, CaseIterable, Sendable {
         case .intervals: return "Fast repeats with recoveries."
         case .progression: return "Start easy, finish strong."
         case .fartlek: return "Playful surges of speed."
+        case .race: return "Race a distance. A new best updates your paces and plan."
         }
     }
 
@@ -39,6 +41,7 @@ public enum RecordRunType: String, Codable, CaseIterable, Sendable {
         case .long: return .long
         case .tempo, .progression: return .tempo
         case .intervals: return .intervals
+        case .race: return .tempo
         }
     }
 
@@ -51,6 +54,7 @@ public enum RecordRunType: String, Codable, CaseIterable, Sendable {
         case .tempo, .progression: return 7
         case .intervals: return 8
         case .fartlek: return 6
+        case .race: return 9
         }
     }
 }
@@ -136,6 +140,8 @@ public struct CustomRunWorkout: Codable, Equatable, Identifiable, Sendable {
                     var label: String?
                     if block.repeats > 1 && step.kind == .work && workSteps == 1 {
                         label = "Rep \(rep) of \(block.repeats)"
+                    } else if type == .race && step.kind == .work {
+                        label = "Race"
                     }
                     segments.append(RunSegment(kind: step.kind, length: step.length, targetPace: step.target?.range, label: label))
                 }
@@ -248,6 +254,8 @@ extension CustomRunWorkout {
                 step(.steady, km: 3, pace(.marathon)),
                 step(.work, km: 2, pace(.threshold))
             ])]
+        case .race:
+            return Self.race(meters: 5000, zones: zones)
         case .fartlek:
             blocks = [
                 RunBlock(steps: [step(.warmUp, minutes: 10)]),
@@ -256,6 +264,29 @@ extension CustomRunWorkout {
             ]
         }
         return CustomRunWorkout(name: type.displayName, type: type, blocks: blocks)
+    }
+}
+
+extension CustomRunWorkout {
+    /// Race distances offered on the Record tab.
+    public static let raceDistances: [(name: String, meters: Double)] = [
+        ("5K", 5000), ("10K", 10000), ("Half marathon", 21097.5), ("Marathon", 42195),
+    ]
+
+    /// A race: one step of the full distance, with their race pace for it as the target.
+    public static func race(meters: Double, zones: PaceZones?) -> CustomRunWorkout {
+        let zone: PaceZone = meters <= 6000 ? .fiveK : meters <= 15000 ? .tenK : meters <= 30000 ? .halfMarathon : .marathon
+        let target = zones.map { PaceTarget.single(Pace(secondsPerKm: ($0.typicalPace(for: zone).secondsPerKm / 5).rounded() * 5)) }
+        let name = raceDistances.first { $0.meters == meters }?.name
+            ?? String(format: "%g km", (meters / 100).rounded() / 10)
+        return CustomRunWorkout(name: "\(name) race", type: .race,
+                                blocks: [RunBlock(steps: [WorkoutStep(kind: .work, length: .distance(meters: meters), target: target)])])
+    }
+
+    /// The race distance, for a race.
+    public var raceMeters: Double? {
+        guard type == .race, case .distance(let meters)? = blocks.flatMap(\.steps).first(where: { $0.kind == .work })?.length else { return nil }
+        return meters
     }
 }
 

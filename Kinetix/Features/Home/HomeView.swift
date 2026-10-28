@@ -275,21 +275,24 @@ struct HomeView: View {
         if let existing = checkIns.first(where: { calendar.isDate($0.date, inSameDayAs: today) }) {
             existing.sleep = checkIn.sleep
             existing.soreness = checkIn.soreness
+            existing.legSoreness = checkIn.legSoreness
             existing.energy = checkIn.energy
             existing.touch()
         } else {
-            context.insert(RecoveryCheckInModel(date: today, sleep: checkIn.sleep, soreness: checkIn.soreness, energy: checkIn.energy))
+            context.insert(RecoveryCheckInModel(date: today, sleep: checkIn.sleep, soreness: checkIn.soreness, energy: checkIn.energy,
+                                                legSoreness: checkIn.legSoreness))
         }
         try? context.save()
     }
 }
 
 extension RecoveryCheckInModel {
-    var engineValue: RecoveryCheckIn { RecoveryCheckIn(sleep: sleep, soreness: soreness, energy: energy) }
+    var engineValue: RecoveryCheckIn { RecoveryCheckIn(sleep: sleep, soreness: soreness, energy: energy, legSoreness: legSoreness) }
 
     /// Includes this morning's resting heart rate and HRV from Apple Health, when known.
     func engineValue(restingHeartRate: RestingHeartRateSignal?, hrv: HRVSignal? = nil) -> RecoveryCheckIn {
-        RecoveryCheckIn(sleep: sleep, soreness: soreness, energy: energy, restingHeartRateElevated: restingHeartRate?.isElevated ?? false,
+        RecoveryCheckIn(sleep: sleep, soreness: soreness, energy: energy, legSoreness: legSoreness,
+                        restingHeartRateElevated: restingHeartRate?.isElevated ?? false,
                         hrvSuppressed: hrv?.isSuppressed ?? false)
     }
 }

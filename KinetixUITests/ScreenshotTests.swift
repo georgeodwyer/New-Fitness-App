@@ -78,7 +78,7 @@ final class ScreenshotTests: XCTestCase {
         // The app tour opens once after the plan is built; its last button goes to Today.
         let tourNext = app.buttons["walkthrough.next"]
         XCTAssertTrue(tourNext.waitForExistence(timeout: 10))
-        for page in 1...7 {
+        for page in 1...8 {
             snap("14a-tour-\(page)")
             tourNext.tap()
         }

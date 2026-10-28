@@ -213,4 +213,13 @@ final class StrainTests: XCTestCase {
         // 7 × 150 against (7 × 150 + 21 × 100) / 4.
         XCTAssertEqual(report.weekVsUsual ?? 0, 1050 / (3150.0 / 4), accuracy: 0.001)
     }
+
+    func testSoreLegsMakeLegsTired() {
+        let fresh = LegsLoad(current: 10, usual: nil, status: .fresh)
+        XCTAssertEqual(fresh.feeling(nil).status, .fresh)
+        XCTAssertEqual(fresh.feeling(2).status, .fresh)
+        XCTAssertEqual(fresh.feeling(3).status, .ok)
+        XCTAssertEqual(fresh.feeling(4).status, .tired)
+        XCTAssertEqual(LegsLoad(current: 300, usual: nil, status: .tired).feeling(1).status, .tired, "Numbers still count when legs feel fine")
+    }
 }

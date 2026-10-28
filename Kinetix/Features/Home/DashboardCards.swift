@@ -4,7 +4,8 @@ import TrainingEngine
 
 // MARK: - Recovery check-in
 
-/// Optional daily check-in: sleep, soreness, energy (1–5). Feeds the balancing logic.
+/// Optional daily check-in: sleep, leg and upper-body soreness, energy (1–5). Feeds the
+/// balancing logic; sore legs also count against the legs reading.
 struct CheckInCard: View {
     let existing: RecoveryCheckInModel?
     /// From Apple Health, when connected.
@@ -16,6 +17,7 @@ struct CheckInCard: View {
 
     @State private var sleep = 3
     @State private var soreness = 2
+    @State private var legSoreness = 2
     @State private var energy = 3
     @State private var editing = false
     /// Once the runner picks a sleep score, Health no longer changes it.
@@ -42,13 +44,15 @@ struct CheckInCard: View {
                         .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Your score logged").font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink)
-                        Text("Sleep \(checkIn.sleep) · soreness \(checkIn.soreness) · energy \(checkIn.energy)"
+                        Text("Sleep \(checkIn.sleep) · " + (checkIn.legSoreness.map { "legs \($0) · upper body \(checkIn.soreness)" }
+                                                             ?? "soreness \(checkIn.soreness)") + " · energy \(checkIn.energy)"
                              + (checkIn.isPoor ? " · plan eased" : ""))
                             .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
                     }
                     Spacer(minLength: KXSpacing.sm)
                     Button("Edit") {
                         sleep = existing.sleep; soreness = existing.soreness; energy = existing.energy
+                        legSoreness = existing.legSoreness ?? existing.soreness
                         sleepChosen = true
                         editing = true
                     }
@@ -68,10 +72,11 @@ struct CheckInCard: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityIdentifier("checkIn.sleepSuggestion")
                 }
-                ratingRow("Soreness", value: $soreness, low: "None", high: "Very", symbol: "bandage")
+                ratingRow("Legs", value: $legSoreness, low: "Fresh", high: "Very sore", symbol: "figure.run")
+                ratingRow("Upper body", value: $soreness, low: "Fresh", high: "Very sore", symbol: "bandage")
                 ratingRow("Energy", value: $energy, low: "Drained", high: "Buzzing", symbol: "bolt")
                 Button("Save my score") {
-                    onSave(RecoveryCheckIn(sleep: sleep, soreness: soreness, energy: energy))
+                    onSave(RecoveryCheckIn(sleep: sleep, soreness: soreness, energy: energy, legSoreness: legSoreness))
                     editing = false
                 }
                 .buttonStyle(.kx(.secondary, fullWidth: true))

@@ -72,6 +72,18 @@ final class CustomRunTests: XCTestCase {
         XCTAssertTrue(tempo.blocks.flatMap(\.steps).allSatisfy { $0.target == nil }, "No zones → no targets until the runner sets them")
     }
 
+    func testRaceIsOneLabelledStepOfTheDistance() throws {
+        let race = CustomRunWorkout.race(meters: 10000, zones: PaceZones(vdot: 45))
+        XCTAssertEqual(race.name, "10K race")
+        XCTAssertEqual(race.raceMeters, 10000)
+        let segments = try XCTUnwrap(race.structure).segments
+        XCTAssertEqual(segments.count, 1)
+        XCTAssertEqual(segments[0].label, "Race", "The run summary finds the race by this label")
+        XCTAssertNotNil(segments[0].targetPace)
+        XCTAssertEqual(CustomRunWorkout.race(meters: 7500, zones: nil).name, "7.5 km race")
+        XCTAssertNil(CustomRunWorkout.starter(for: .tempo, zones: nil).raceMeters)
+    }
+
     func testWorkoutRoundTripsThroughJSON() throws {
         let workout = thresholdSession // built once: each build gets fresh ids
         let data = try JSONEncoder().encode(workout)

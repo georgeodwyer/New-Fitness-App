@@ -17,42 +17,54 @@ struct StrainCard: View {
     private var strain: Double { report.today.strain }
     private var target: StrainTarget { report.target }
 
+    @State private var health = HealthService.shared
+
     var body: some View {
-        Button {
-            showDetail = true
-        } label: {
-            VStack(alignment: .leading, spacing: KXSpacing.lg) {
-                RecoveryDial(recovery: report.recovery, isWaitingForLastNight: isWaitingForLastNight)
-                    .frame(width: dialSize, height: dialSize * 0.86)
-                    .frame(maxWidth: .infinity)
-                    .accessibilityIdentifier("dashboard.recoveryBreakdown")
-                exertion
-                if let recovery = report.recovery {
-                    let readings = RecoveryReading.readings(recovery)
-                    if !readings.isEmpty {
-                        HStack(alignment: .top, spacing: KXSpacing.md) {
-                            ForEach(readings) { reading in
-                                reading.view.frame(maxWidth: .infinity, alignment: .leading)
-                            }
-                        }
+        VStack(alignment: .leading, spacing: KXSpacing.lg) {
+            RecoveryDial(recovery: report.recovery, isWaitingForLastNight: isWaitingForLastNight)
+                .frame(width: dialSize, height: dialSize * 0.86)
+                .frame(maxWidth: .infinity)
+                .accessibilityIdentifier("dashboard.recoveryBreakdown")
+            if isWaitingForLastNight {
+                VStack(spacing: KXSpacing.xs) {
+                    Button {
+                        health.stopWaitingForSleep()
+                    } label: {
+                        Label("Don't wait: use my check-in", systemImage: "hand.raised")
+                    }
+                    .buttonStyle(.kx(.outlined, fullWidth: true))
+                    .accessibilityIdentifier("dashboard.stopWaiting")
+                    Text("No sleep data yet (watch charging overnight?). Get a score now from your check-in and anything Health has; sleep is added if it arrives later.")
+                        .font(KXFont.caption)
+                        .foregroundStyle(KXColor.inkSecondary)
+                        .multilineTextAlignment(.center)
+                }
+            }
+            exertion
+            let readings = RecoveryReading.live(health: health, recovery: report.recovery, waiting: isWaitingForLastNight)
+            if !readings.isEmpty {
+                HStack(alignment: .top, spacing: KXSpacing.md) {
+                    ForEach(readings) { reading in
+                        reading.view.frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
-                HStack(spacing: KXSpacing.sm) {
-                    KXOverline("Legs")
-                    KXStatusPill(level: TodayFormat.legsLevel(report.legs.status), text: report.legs.status.title)
-                    Spacer(minLength: 0)
-                    Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(KXColor.inkTertiary)
-                        .accessibilityHidden(true)
-                }
-                .accessibilityElement(children: .combine)
             }
-            .kxCard()
-            .contentShape(Rectangle())
+            HStack(spacing: KXSpacing.sm) {
+                KXOverline("Legs")
+                KXStatusPill(level: TodayFormat.legsLevel(report.legs.status), text: report.legs.status.title)
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(KXColor.inkTertiary)
+                    .accessibilityHidden(true)
+            }
+            .accessibilityElement(children: .combine)
         }
-        .buttonStyle(.plain)
-        .accessibilityHint("Shows what's behind your recovery and exertion")
+        .kxCard()
+        .contentShape(Rectangle())
+        .onTapGesture { showDetail = true }
+        .accessibilityElement(children: .contain)
+        .accessibilityAction(named: "Show what's behind your recovery and exertion") { showDetail = true }
         .accessibilityIdentifier("dashboard.exertion")
         .sheet(isPresented: $showDetail) {
             TodayBodyDetailView(report: report, isWaitingForLastNight: isWaitingForLastNight)
@@ -208,6 +220,41 @@ struct RecoveryReading: Identifiable {
                 .minimumScaleFactor(0.8)
         }
         .accessibilityElement(children: .combine)
+    }
+
+    /// HRV, resting heart rate and last night's sleep, straight from Health, so they show even
+    /// before there's a score. Without Health, the parts of the recovery score (check-in).
+    @MainActor
+    static func live(health: HealthService, recovery: RecoveryScore?, waiting: Bool) -> [RecoveryReading] {
+        guard health.isConnected else { return recovery.map(readings) ?? [] }
+        let missing = waiting ? "waiting" : "no reading"
+        var result: [RecoveryReading] = []
+        if let hrv = health.hrv {
+            let percent = hrv.baseline > 0 ? Int(((hrv.today / hrv.baseline - 1) * 100).rounded()) : 0
+            result.append(RecoveryReading(label: "HRV", value: "\(Int(hrv.today.rounded()))", unit: "ms",
+                                          note: percent == 0 ? "Your usual" : "\(percent > 0 ? "▲" : "▼") \(abs(percent))% vs usual",
+                                          noteColor: percent == 0 ? KXColor.inkSecondary : (percent > 0 ? KXColor.success : KXColor.warning)))
+        } else {
+            result.append(RecoveryReading(label: "HRV", value: "–", unit: "", note: missing, noteColor: KXColor.inkSecondary))
+        }
+        if let rhr = health.restingHeartRate {
+            let delta = Int(rhr.difference.rounded())
+            result.append(RecoveryReading(label: "Resting HR", value: "\(Int(rhr.today.rounded()))", unit: "bpm",
+                                          note: delta == 0 ? "Your usual" : "\(delta < 0 ? "▼" : "▲") \(abs(delta)) bpm",
+                                          noteColor: delta == 0 ? KXColor.inkSecondary : (delta < 0 ? KXColor.success : KXColor.warning)))
+        } else {
+            result.append(RecoveryReading(label: "Resting HR", value: "–", unit: "", note: missing, noteColor: KXColor.inkSecondary))
+        }
+        if let hours = health.lastNightSleepHours {
+            let minutes = Int((hours * 60).rounded())
+            let note = health.usualSleepHours.map { "\(Int((hours / $0 * 100).rounded()))% of usual" } ?? "last night"
+            result.append(RecoveryReading(label: "Sleep", value: String(format: "%d:%02d", minutes / 60, minutes % 60), unit: "",
+                                          note: note, noteColor: KXColor.inkSecondary))
+        } else {
+            result.append(RecoveryReading(label: "Sleep", value: "–", unit: "",
+                                          note: health.stoppedWaitingToday ? "not in yet" : missing, noteColor: KXColor.inkSecondary))
+        }
+        return result
     }
 
     /// Up to three readings (HRV, resting heart rate, sleep, then your score) from the

@@ -9,6 +9,7 @@ struct KinetixApp: App {
 
     init() {
         KXFont.configureNavigationBars()
+        AppearanceChoice.applyDarkDefaultOnce()
         do {
             container = try Persistence.makeContainer(inMemory: launch.isUITesting)
         } catch {
@@ -69,6 +70,24 @@ enum AppearanceChoice: String, CaseIterable, Identifiable {
     static let storageKey = "appearance"
     /// Dark until someone picks otherwise in Settings.
     static let defaultChoice = AppearanceChoice.dark
+    /// Set once they pick an appearance in Settings: from then on their choice always wins.
+    static let chosenKey = "appearance.chosen"
+    private static let darkMigrationKey = "appearance.darkDefault.v1"
+
+    static func markChosen() { UserDefaults.standard.set(true, forKey: chosenKey) }
+
+    /// Dark becomes the default with this update. Anyone still on the old default ("Match
+    /// iPhone") who never picked one themselves moves to dark, once. Light was never a
+    /// default, so a saved Light is their choice and stays.
+    static func applyDarkDefaultOnce() {
+        let defaults = UserDefaults.standard
+        guard !defaults.bool(forKey: darkMigrationKey) else { return }
+        defaults.set(true, forKey: darkMigrationKey)
+        guard !defaults.bool(forKey: chosenKey) else { return }
+        if defaults.string(forKey: storageKey) == AppearanceChoice.system.rawValue {
+            defaults.set(AppearanceChoice.dark.rawValue, forKey: storageKey)
+        }
+    }
 
     var id: String { rawValue }
     var title: String {

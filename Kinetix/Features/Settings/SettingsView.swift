@@ -40,6 +40,7 @@ struct SettingsView: View {
                     }
                     .pickerStyle(.segmented)
                     .accessibilityIdentifier("settings.appearance")
+                    .onChange(of: appearance) { _, _ in AppearanceChoice.markChosen() }
                 } header: {
                     Text("Appearance")
                 }

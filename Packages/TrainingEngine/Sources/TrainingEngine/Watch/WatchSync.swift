@@ -90,37 +90,38 @@ public struct WatchControlSettings: Codable, Equatable, Sendable {
     /// The sensitivity in use (1–5).
     public var sensitivity: Int { min(max(crownSensitivity ?? 3, 1), 5) }
 
-    /// How far the crown must turn (in full turns) for the current sensitivity.
+    /// How far the crown must turn (in full turns) for the current sensitivity. Even the most
+    /// sensitive needs a full turn, so a brush against a sleeve never counts.
     public var crownTurnsNeeded: Double {
         switch sensitivity {
-        case 1: return 1.0
-        case 2: return 0.75
-        case 3: return 0.5
-        case 4: return 0.35
-        default: return 0.25
+        case 1: return 2.0
+        case 2: return 1.75
+        case 3: return 1.5
+        case 4: return 1.25
+        default: return 1.0
         }
     }
 
     /// The turn must be done within this many seconds: a slow drag (like a sleeve rubbing)
-    /// never adds up to a trigger.
+    /// never adds up to a trigger. Bigger turns get a little longer.
     public var crownWindowSeconds: Double {
         switch sensitivity {
-        case 1: return 0.6
-        case 2: return 0.7
-        case 3: return 0.8
-        case 4: return 1.0
-        default: return 1.2
+        case 1: return 1.2
+        case 2: return 1.05
+        case 3: return 0.9
+        case 4: return 0.75
+        default: return 0.6
         }
     }
 
-    /// "Needs a full, quick turn", for Settings.
+    /// "Two full turns, quickly", for Settings.
     public static func sensitivityDescription(_ level: Int) -> String {
         switch level {
-        case 1: return "Least sensitive: a full, quick turn"
-        case 2: return "Three-quarters of a turn, quickly"
-        case 3: return "Half a turn, quickly"
-        case 4: return "About a third of a turn"
-        default: return "Most sensitive: a quarter turn"
+        case 1: return "Least sensitive: two full, quick turns"
+        case 2: return "One and three-quarter turns, quickly"
+        case 3: return "One and a half turns, quickly"
+        case 4: return "One and a quarter turns, quickly"
+        default: return "Most sensitive: one full, quick turn"
         }
     }
 

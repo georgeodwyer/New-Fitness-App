@@ -65,6 +65,11 @@ final class LoadModelTests: XCTestCase {
         XCTAssertTrue(RecoveryCheckIn(sleep: 2, soreness: 4, energy: 2).isPoor)
         XCTAssertFalse(RecoveryCheckIn(sleep: 4, soreness: 2, energy: 4).isPoor)
         XCTAssertTrue(RecoveryCheckIn(sleep: 5, soreness: 5, energy: 5).isPoor, "Very sore always counts as poor")
+        // Legs and upper body: the score uses the average, "very sore" the worst.
+        let sorelegs = RecoveryCheckIn(sleep: 3, soreness: 1, energy: 3, legSoreness: 5)
+        XCTAssertEqual(sorelegs.averageSoreness, 3)
+        XCTAssertEqual(sorelegs.readiness, RecoveryCheckIn(sleep: 3, soreness: 3, energy: 3).readiness)
+        XCTAssertTrue(sorelegs.isPoor, "Very sore legs count as poor")
     }
 }
 

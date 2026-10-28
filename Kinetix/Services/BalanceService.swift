@@ -239,13 +239,15 @@ extension BalanceService {
                                  hrv: HRVSignal? = nil) -> [ChangeTrigger] {
         guard let checkIn, checkIn.isPoor else { return [] }
         let rules = BalanceRules.current.recovery
-        var triggers = [
+        let listed: [ChangeTrigger?] = [
             ChangeTrigger(label: "Your score", value: "\(Int((checkIn.readiness * 100).rounded()))%",
                           detail: "below \(Int(rules.poorReadinessBelow * 100))% counts as poor", symbol: "gauge.with.dots.needle.33percent"),
             ChangeTrigger(label: "Sleep", value: "\(checkIn.sleep)/5", symbol: "moon.zzz"),
-            ChangeTrigger(label: "Soreness", value: "\(checkIn.soreness)/5", symbol: "bandage"),
+            checkIn.legSoreness.map { ChangeTrigger(label: "Legs", value: "\($0)/5", symbol: "figure.run") },
+            ChangeTrigger(label: checkIn.legSoreness == nil ? "Soreness" : "Upper body", value: "\(checkIn.soreness)/5", symbol: "bandage"),
             ChangeTrigger(label: "Energy", value: "\(checkIn.energy)/5", symbol: "bolt")
         ]
+        var triggers = listed.compactMap { $0 }
         if checkIn.restingHeartRateElevated, let restingHeartRate {
             triggers.append(ChangeTrigger(label: "Resting HR", value: "+\(Int(restingHeartRate.difference.rounded())) bpm",
                                           detail: "\(Int(restingHeartRate.today.rounded())) vs usual \(Int(restingHeartRate.baseline.rounded()))",

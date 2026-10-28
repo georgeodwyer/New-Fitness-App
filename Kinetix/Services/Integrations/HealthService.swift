@@ -234,9 +234,23 @@ final class HealthService {
 
     /// Last night's data isn't in yet: Health hasn't been read today, or they track sleep and
     /// last night's sleep hasn't arrived (wearables can take a while to sync in the morning).
+    /// Not once they've said to stop waiting today (e.g. the watch was charging overnight).
     var isWaitingForLastNight: Bool {
-        guard isConnected, !isSample else { return false }
+        guard isConnected, !isSample, !stoppedWaitingToday else { return false }
         return !isFreshToday || (tracksSleep && lastNightSleepHours == nil)
+    }
+
+    static let stopWaitingKey = "recovery.stopWaitingDay"
+    /// The day they last tapped "Don't wait for sleep".
+    private(set) var stoppedWaitingDay: Date? = UserDefaults.standard.object(forKey: HealthService.stopWaitingKey) as? Date
+
+    var stoppedWaitingToday: Bool { stoppedWaitingDay.map { Calendar.kinetix.isDateInToday($0) } ?? false }
+
+    /// Work recovery out now from whatever's in (and their check-in); sleep is added if it
+    /// arrives later today.
+    func stopWaitingForSleep(now: Date = .now) {
+        stoppedWaitingDay = now
+        UserDefaults.standard.set(now, forKey: Self.stopWaitingKey)
     }
 
     /// Hours asleep last night, when Health has it.

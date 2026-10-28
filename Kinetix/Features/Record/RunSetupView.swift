@@ -145,6 +145,7 @@ struct RunSetupView: View {
                 .font(KXFont.headline)
                 .textFieldStyle(.roundedBorder)
                 .accessibilityIdentifier("record.name")
+            if workout.type == .race { raceDistancePicker }
             if workout.blocks.isEmpty {
                 Text(workout.type == .free
                      ? "Just press start. You'll hear your splits; there are no pace targets."
@@ -211,6 +212,47 @@ struct RunSetupView: View {
 
     // MARK: Actions
 
+    /// 5K, 10K, half, marathon or any distance in km.
+    private var raceDistancePicker: some View {
+        VStack(alignment: .leading, spacing: KXSpacing.sm) {
+            KXOverline("Distance")
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: KXSpacing.sm) {
+                    ForEach(CustomRunWorkout.raceDistances, id: \.meters) { option in
+                        let selected = workout.raceMeters == option.meters
+                        Button(option.name) { setRace(meters: option.meters) }
+                            .font(KXFont.captionEmphasis)
+                            .padding(.horizontal, 14).padding(.vertical, 8)
+                            .background(selected ? KXColor.accent : KXColor.surfaceTint, in: Capsule())
+                            .foregroundStyle(selected ? KXColor.onAccent : KXColor.ink)
+                            .buttonStyle(.plain)
+                    }
+                }
+            }
+            HStack {
+                Text("Other distance").font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
+                Spacer()
+                TextField("km", value: Binding(get: { (workout.raceMeters ?? 5000) / 1000 },
+                                               set: { if $0 >= 0.4 && $0 <= 200 { setRace(meters: ($0 * 1000).rounded()) } }),
+                          format: .number.precision(.fractionLength(0...2)))
+                    .keyboardType(.decimalPad)
+                    .multilineTextAlignment(.trailing)
+                    .frame(width: 80)
+                    .textFieldStyle(.roundedBorder)
+                Text("km").font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
+            }
+            Text("Recorded as a race. If it's your best yet, you'll be offered new paces and a plan rebuilt around them.")
+                .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+        }
+        .accessibilityIdentifier("record.raceDistance")
+    }
+
+    private func setRace(meters: Double) {
+        let id = workout.id
+        workout = CustomRunWorkout.race(meters: meters, zones: zones)
+        workout.id = id
+    }
+
     private func select(_ type: RecordRunType) {
         guard type != workout.type || template != nil else { return }
         workout = CustomRunWorkout.starter(for: type, zones: zones)
@@ -264,6 +306,7 @@ extension RecordRunType {
         case .intervals: return "repeat"
         case .progression: return "chart.line.uptrend.xyaxis"
         case .fartlek: return "waveform.path"
+        case .race: return "trophy"
         }
     }
 }

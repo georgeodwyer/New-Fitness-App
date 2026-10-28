@@ -225,10 +225,13 @@ final class RecoveryCheckInModel: SyncTracked {
 
     var date: Date
     var sleep: Int
+    /// Upper body once legs are asked separately; before that, overall soreness.
     var soreness: Int
+    /// Legs (nil on check-ins from before legs were asked).
+    var legSoreness: Int?
     var energy: Int
 
-    init(date: Date, sleep: Int, soreness: Int, energy: Int, id: UUID = UUID(), now: Date = .now) {
+    init(date: Date, sleep: Int, soreness: Int, energy: Int, legSoreness: Int? = nil, id: UUID = UUID(), now: Date = .now) {
         self.id = id
         self.updatedAt = now
         self.deletedAt = nil
@@ -236,6 +239,7 @@ final class RecoveryCheckInModel: SyncTracked {
         self.date = date
         self.sleep = sleep
         self.soreness = soreness
+        self.legSoreness = legSoreness
         self.energy = energy
     }
 }

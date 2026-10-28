@@ -136,6 +136,6 @@ enum StrainService {
             activities: activities(runs: runs, lifts: lifts, external: external, sessions: sessions, zones: zones),
             steps: health.steps,
             plannedLoadToday: plannedLoadToday(sessions: sessions, hasPlan: profile != nil, now: now),
-            recovery: recovery, now: now, calendar: .kinetix)
+            recovery: recovery, legSoreness: checkIn?.legSoreness, now: now, calendar: .kinetix)
     }
 }

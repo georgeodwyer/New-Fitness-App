@@ -12,19 +12,37 @@ struct PaceUpdateCard: View {
     @Query private var sessions: [PlannedSessionModel]
     @State private var updated = false
 
-    /// The race or time trial's distance, from the planned session's race segment.
+    /// A race recorded from the Record tab (not a planned one).
+    private var isRecordedRace: Bool { log.recordType == .race }
+
+    /// The race or time trial's distance, from the planned session's race segment or the
+    /// recorded race's.
     private var raceMeters: Double? {
-        guard let id = log.plannedSessionId, let planned = sessions.first(where: { $0.id == id }) else { return nil }
-        for segment in planned.runStructure?.segments ?? [] where segment.label == "Race" || segment.label == "Time trial" {
+        var segments = log.segmentResults.map(\.segment)
+        if let id = log.plannedSessionId, let planned = sessions.first(where: { $0.id == id }) {
+            segments = planned.runStructure?.segments ?? segments
+        }
+        for segment in segments where segment.label == "Race" || segment.label == "Time trial" {
             if case .distance(let meters) = segment.length { return meters }
         }
         return nil
+    }
+
+    /// Faster than the race time their paces come from (or they have none yet).
+    private func isBest(_ result: RaceResult, profile: AthleteProfile) -> Bool {
+        guard let current = profile.recentRace else { return true }
+        return PaceZones.vdot(for: result) > PaceZones.vdot(for: current) + 0.05
     }
 
     /// Their time for that distance: the best effort from GPS, or the whole run if it was
     /// about the right length.
     private var result: RaceResult? {
         guard let meters = raceMeters else { return nil }
+        // The race step itself, when it was run as one.
+        if let race = log.segmentResults.first(where: { $0.segment.label == "Race" || $0.segment.label == "Time trial" }),
+           race.distanceMeters >= meters * 0.97, race.durationSeconds > 0 {
+            return RaceResult(distanceMeters: meters, timeSeconds: race.durationSeconds * meters / race.distanceMeters)
+        }
         if let distance = BestEffortDistance(rawValue: meters),
            let seconds = RunAnalysis.bestEfforts(route: log.route)[distance] {
             return RaceResult(distanceMeters: meters, timeSeconds: seconds)
@@ -44,16 +62,21 @@ struct PaceUpdateCard: View {
     }
 
     var body: some View {
-        if let result, let profileModel = profiles.first {
+        if let result, let profileModel = profiles.first,
+           !isRecordedRace || isBest(result, profile: profileModel.profile) || updated {
+            let best = isBest(result, profile: profileModel.profile)
             VStack(alignment: .leading, spacing: KXSpacing.sm) {
-                KXOverline(updated ? "Paces updated" : "Update your paces", color: updated ? KXColor.success : KXColor.run)
+                KXOverline(updated ? "Paces updated" : best ? "New best!" : "Update your paces",
+                           color: updated ? KXColor.success : best ? KXColor.accent : KXColor.run)
                 Text(updated
                      ? "Your paces now come from your \(distanceName) in \(time(result.timeSeconds)). The rest of your plan has been rebuilt with them."
-                     : "You ran your \(distanceName) in \(time(result.timeSeconds)). Use it to set your training paces for the rest of the plan?")
+                     : best
+                        ? "\(time(result.timeSeconds)) for \(distanceName): faster than the race time your paces come from. Update your paces and rebuild the rest of your plan with them?"
+                        : "You ran your \(distanceName) in \(time(result.timeSeconds)). Use it to set your training paces for the rest of the plan?")
                     .font(KXFont.callout)
                     .foregroundStyle(KXColor.inkSecondary)
                 if !updated {
-                    Button("Use this result") { apply(result, to: profileModel) }
+                    Button(best ? "Update my paces" : "Use this result") { apply(result, to: profileModel) }
                         .buttonStyle(.kx(.primary, fullWidth: true))
                         .accessibilityIdentifier("summary.updatePaces")
                 }
