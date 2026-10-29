@@ -159,3 +159,26 @@ enum OutlineBuilder {
         return PlanOutline(startDate: startMonday, eventDate: eventDate, weeks: weeks)
     }
 }
+
+extension PlanOutline {
+    /// The plan after a pause: the week they paused in, and everything after it, moves later
+    /// by `weeks` so they pick up where they left off. After illness or injury the first week
+    /// back is an easier one. (Plans with a race date are rebuilt around the race instead.)
+    public func resumed(fromWeek paused: Int, laterBy weeks: Int, easeFirstWeek: Bool, calendar: Calendar) -> PlanOutline {
+        guard weeks > 0 || easeFirstWeek else { return self }
+        var outline = self
+        for index in outline.weeks.indices where index >= paused {
+            outline.weeks[index].startDate = calendar.date(byAdding: .day, value: 7 * weeks, to: outline.weeks[index].startDate)
+                ?? outline.weeks[index].startDate
+        }
+        if easeFirstWeek, outline.weeks.indices.contains(paused) {
+            outline.weeks[paused].isRecoveryWeek = true
+            outline.weeks[paused].runVolumeMeters *= 0.8
+        }
+        if var custom = outline.customPlan {
+            custom.startDate = calendar.date(byAdding: .day, value: 7 * weeks, to: custom.startDate) ?? custom.startDate
+            outline.customPlan = custom
+        }
+        return outline
+    }
+}

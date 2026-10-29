@@ -67,6 +67,7 @@ struct HomeView: View {
                     greeting
                     if let banner { changeBanner(banner) }
                     if profile == nil { planPrompt }
+                    if let plan = plans.first, plan.isPaused { PausedPlanCard(plan: plan) }
                     // Sunday evening and Monday: how the week went and what's next.
                     if WeeklyReviewData.isReviewTime(), profile != nil, let review = WeeklyReviewData.make(in: context) {
                         WeeklyReviewCard(data: review, units: units) { detailSession = $0 }

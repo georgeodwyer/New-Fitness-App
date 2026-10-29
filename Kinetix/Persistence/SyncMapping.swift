@@ -144,12 +144,15 @@ extension TrainingPlanModel: SyncableModel {
         var isActive: Bool
         var generatedWeekCount: Int
         var weekNotesData: Data?
+        var pausedAt: Date?
+        var pauseReasonRaw: String?
+        var pauseUntil: Date?
     }
     static var syncType: String { "trainingPlan" }
     var syncPayload: Payload {
         Payload(goalRaw: goalRaw, startDate: startDate, endDate: endDate, blocksData: blocksData,
                 engineVersion: engineVersion, isActive: isActive, generatedWeekCount: generatedWeekCount,
-                weekNotesData: weekNotesData)
+                weekNotesData: weekNotesData, pausedAt: pausedAt, pauseReasonRaw: pauseReasonRaw, pauseUntil: pauseUntil)
     }
     func applySync(_ p: Payload, context: ModelContext) {
         goalRaw = p.goalRaw
@@ -160,6 +163,9 @@ extension TrainingPlanModel: SyncableModel {
         isActive = p.isActive
         generatedWeekCount = p.generatedWeekCount
         weekNotesData = p.weekNotesData
+        pausedAt = p.pausedAt
+        pauseReasonRaw = p.pauseReasonRaw
+        pauseUntil = p.pauseUntil
     }
     static func makeForSync(id: UUID) -> TrainingPlanModel {
         TrainingPlanModel(goal: .balancedHybrid, startDate: .now, endDate: nil, id: id)

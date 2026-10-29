@@ -23,6 +23,13 @@ final class TrainingPlanModel: SyncTracked {
     var generatedWeekCount: Int = 0
     /// The coach's notes for each week ("Biggest week.", "Lighter week…"), by week index.
     var weekNotesData: Data?
+    /// Paused (ill, injured, away): no sessions are planned until they resume.
+    var pausedAt: Date?
+    var pauseReasonRaw: String?
+    /// When they expect to be back (a reminder, not an automatic restart).
+    var pauseUntil: Date?
+
+    var isPaused: Bool { pausedAt != nil }
 
     @Relationship(deleteRule: .cascade, inverse: \PlannedSessionModel.plan)
     var sessions: [PlannedSessionModel] = []

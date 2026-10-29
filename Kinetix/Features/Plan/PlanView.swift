@@ -14,6 +14,7 @@ struct PlanView: View {
     @State private var showCalendar = false
     @State private var showReview = false
     @State private var showBuilder = false
+    @State private var showPause = false
     @Environment(AppRouter.self) private var router
 
     private var format: DisplayFormat { DisplayFormat(units: profiles.first?.units ?? UnitPreference.stored) }
@@ -139,6 +140,7 @@ struct PlanView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: KXSpacing.xl) {
                     KXScreenHeader(title: "Training Plan", onCalendar: calendarAction)
+                    if let plan = plans.first, plan.isPaused { PausedPlanCard(plan: plan) }
                     if profiles.isEmpty {
                         PlanIntroCard { showOnboarding = true }
                     }
@@ -159,6 +161,15 @@ struct PlanView: View {
                         }
                         .buttonStyle(.kx(.outlined, fullWidth: true))
                         .accessibilityIdentifier("plan.builder")
+                        if let plan = plans.first, !plan.isPaused {
+                            Button {
+                                showPause = true
+                            } label: {
+                                Label("Pause plan (ill, injured or away)", systemImage: "pause.circle")
+                            }
+                            .buttonStyle(.kx(.outlined, fullWidth: true))
+                            .accessibilityIdentifier("plan.pause")
+                        }
                     }
                     if weeks.isEmpty && !profiles.isEmpty {
                         Text("No sessions planned yet.")
@@ -183,6 +194,7 @@ struct PlanView: View {
                 openedCurrentWeek = true
             }
             .sheet(isPresented: $showCalendar) { CalendarSheet() }
+            .sheet(isPresented: $showPause) { PausePlanSheet().presentationDetents([.large]) }
             .fullScreenCover(isPresented: $showBuilder) {
                 PlanBuilderView(existing: outline?.customPlan)
             }

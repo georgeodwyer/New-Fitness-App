@@ -64,6 +64,80 @@ enum PlanService {
         return plan
     }
 
+    // MARK: Pause
+
+    enum PauseReason: String, CaseIterable, Identifiable {
+        case ill, injured, away, other
+        var id: String { rawValue }
+        var title: String {
+            switch self {
+            case .ill: return "Ill"
+            case .injured: return "Injured"
+            case .away: return "Away"
+            case .other: return "Something else"
+            }
+        }
+        /// Coming back from these, the first week is an easier one.
+        var easesBackIn: Bool { self == .ill || self == .injured }
+    }
+
+    /// Pauses the active plan: today's and later sessions are cleared until they resume.
+    static func pause(reason: PauseReason, until: Date?, in context: ModelContext, now: Date = .now) {
+        guard let plan = activePlan(in: context), !plan.isPaused else { return }
+        let today = Calendar.kinetix.startOfDay(for: now)
+        for session in plan.sessions where !session.isSoftDeleted && session.date >= today
+            && (session.status == .planned || session.status == .swapped) {
+            session.softDelete(now: now)
+        }
+        plan.pausedAt = now
+        plan.pauseReasonRaw = reason.rawValue
+        plan.pauseUntil = until
+        plan.touch(now: now)
+        context.insert(PlanChangeModel(summary: "Paused your plan (\(reason.title.lowercased())). Take the time you need; it picks up where you left off.", now: now))
+        try? context.save()
+        SyncService.shared.requestSync()
+    }
+
+    /// Picks the plan back up: from the week they paused in, moved later by the time away (an
+    /// easier first week after illness or injury). With a race date, rebuilt around the race.
+    static func resume(profile: AthleteProfile, in context: ModelContext, now: Date = .now) {
+        guard let plan = activePlan(in: context), let pausedAt = plan.pausedAt, let outline = plan.outline else { return }
+        let calendar = Calendar.kinetix
+        let reason = plan.pauseReasonRaw.flatMap(PauseReason.init(rawValue:)) ?? .other
+        let pausedMonday = calendar.startOfISOWeek(for: pausedAt)
+        let thisMonday = calendar.startOfISOWeek(for: now)
+        let weeksAway = max(0, (calendar.dateComponents([.day], from: pausedMonday, to: thisMonday).day ?? 0) / 7)
+        let daysAway = calendar.dateComponents([.day], from: pausedAt, to: now).day ?? 0
+        plan.pausedAt = nil
+        plan.pauseReasonRaw = nil
+        plan.pauseUntil = nil
+
+        if outline.eventDate != nil {
+            // The race doesn't move: rebuild the weeks left around it.
+            rebuildRemainder(for: profile, in: context, now: now)
+        } else {
+            let pausedWeek = outline.weekIndex(containing: pausedAt, calendar: calendar) ?? plan.generatedWeekCount
+            plan.outline = outline.resumed(fromWeek: pausedWeek, laterBy: weeksAway,
+                                           easeFirstWeek: reason.easesBackIn && daysAway >= 7, calendar: calendar)
+            plan.generatedWeekCount = min(pausedWeek, plan.generatedWeekCount)
+            // Anything still planned from the paused week on is built again at its new dates.
+            for session in plan.sessions where !session.isSoftDeleted && session.weekIndex >= pausedWeek
+                && (session.status == .planned || session.status == .swapped) {
+                session.softDelete(now: now)
+            }
+            ensureHorizon(for: plan, profile: profile, in: context, now: now)
+        }
+        let back = reason.easesBackIn && daysAway >= 7 ? " Your first week back is an easier one." : ""
+        context.insert(PlanChangeModel(summary: "Welcome back! Your plan picks up where you left off.\(back)", now: now))
+        plan.touch(now: now)
+        try? context.save()
+        SyncService.shared.requestSync()
+    }
+
+    static func activePlan(in context: ModelContext) -> TrainingPlanModel? {
+        ((try? context.fetch(FetchDescriptor<TrainingPlanModel>())) ?? []).first { $0.isActive && !$0.isSoftDeleted }
+    }
+
     /// Starts a plan the athlete built themselves (the current one stops, keeping what's done).
     @discardableResult
     static func createCustomPlan(_ custom: CustomPlan, profile: AthleteProfile, in context: ModelContext, now: Date = .now) -> TrainingPlanModel {
@@ -138,7 +212,7 @@ enum PlanService {
         // From `from` (today or next Monday); the following weeks as usual.
         let weights = workingWeights(in: context)
         let horizon = max(calendar.date(byAdding: .day, value: horizonDays, to: today) ?? today, from)
-        while plan.generatedWeekCount < outline.weeks.count, outline.weeks[plan.generatedWeekCount].startDate <= horizon {
+        while !plan.isPaused, plan.generatedWeekCount < outline.weeks.count, outline.weeks[plan.generatedWeekCount].startDate <= horizon {
             let index = plan.generatedWeekCount
             if let week = generator.generateWeek(index, outline: outline, profile: profile, workingWeights: weights, notBefore: from) {
                 for generated in week.sessions {
@@ -164,7 +238,7 @@ enum PlanService {
 
     /// Generates further weeks so sessions always exist about two weeks ahead.
     static func ensureHorizon(for plan: TrainingPlanModel, profile: AthleteProfile, in context: ModelContext, now: Date = .now) {
-        guard var outline = plan.outline else { return }
+        guard var outline = plan.outline, !plan.isPaused else { return }
         let calendar = Calendar.kinetix
         let horizon = calendar.date(byAdding: .day, value: horizonDays, to: calendar.startOfDay(for: now)) ?? now
         let generator = generator

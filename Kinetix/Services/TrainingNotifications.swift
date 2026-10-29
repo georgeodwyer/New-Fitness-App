@@ -117,6 +117,13 @@ enum TrainingNotifications {
             }
         }
 
+        // Paused with a return date: a nudge that morning.
+        if let plan = PlanService.activePlan(in: context), plan.isPaused, let until = plan.pauseUntil,
+           let nine = calendar.date(byAdding: .hour, value: 9, to: calendar.startOfDay(for: until)) {
+            await add("resume", at: nine, title: "Ready to pick your plan back up?",
+                      body: "Open Kinetix and tap Resume when you feel ready. Your plan picks up where you left off.", thread: "plan")
+        }
+
         for offset in 0..<7 {
             guard let day = calendar.date(byAdding: .day, value: offset, to: today) else { continue }
             // Check-in nudge at 10:00 (cancelled once it's done).
