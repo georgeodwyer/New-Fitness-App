@@ -218,11 +218,11 @@ struct WeeklyDistanceCard: View {
                         let isCurrent = index == currentIndex
                         ZStack(alignment: .bottom) {
                             RoundedRectangle(cornerRadius: min(5, width / 3), style: .continuous)
-                                .strokeBorder(KXColor.border, lineWidth: 1.5)
+                                .strokeBorder(isCurrent ? KXColor.accent : KXColor.border, lineWidth: isCurrent ? 2 : 1.5)
                                 .frame(height: max(4, geo.size.height * planned[index] / top))
                             if let meters = done[index], meters > 0 {
                                 RoundedRectangle(cornerRadius: min(5, width / 3), style: .continuous)
-                                    .fill(isCurrent ? KXColor.accent : KXColor.run)
+                                    .fill(KXColor.run)
                                     .frame(height: max(3, geo.size.height * meters / top))
                             }
                         }
@@ -235,6 +235,7 @@ struct WeeklyDistanceCard: View {
             HStack(spacing: KXSpacing.md) {
                 legend(KXColor.run, filled: true, "Run")
                 legend(KXColor.border, filled: false, "Planned")
+                if currentIndex != nil { legend(KXColor.accent, filled: false, "This week") }
                 Spacer()
                 Text("Week 1–\(planned.count)").font(KXFont.caption).foregroundStyle(KXColor.inkTertiary)
             }

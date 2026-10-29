@@ -650,7 +650,7 @@ struct DailyStrainChart: View {
             }
             .chartXAxis {
                 AxisMarks(values: .stride(by: .day, count: isWeek ? 1 : 7)) { _ in
-                    AxisValueLabel(format: isWeek ? .dateTime.weekday(.abbreviated) : .dateTime.day().month(.abbreviated))
+                    AxisValueLabel(format: isWeek ? .dateTime.weekday(.abbreviated) : .dateTime.day().month(.abbreviated), centered: true)
                         .foregroundStyle(KXColor.inkSecondary)
                 }
             }

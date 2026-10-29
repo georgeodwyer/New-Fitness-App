@@ -107,17 +107,13 @@ struct HealthTile: View {
     }
 
     var body: some View {
+        // Every tile the same size, the same layout: name, then the number with its line, then
+        // the comparison (so long names never run into the line).
         VStack(alignment: .leading, spacing: KXSpacing.xs) {
-            HStack {
-                KXOverline(trend.metric.displayName)
-                    .lineLimit(1)
-                Spacer(minLength: 0)
-                if recent.count >= 3 {
-                    Sparkline(values: recent, color: KXColor.run)
-                        .frame(width: 52, height: 20)
-                }
-            }
-            HStack(alignment: .firstTextBaseline, spacing: 3) {
+            KXOverline(trend.metric.displayName)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+            HStack(alignment: .lastTextBaseline, spacing: 3) {
                 Text(trend.metric.format(trend.latest.value))
                     .font(KXFont.metricSmall)
                     .foregroundStyle(KXColor.ink)
@@ -125,11 +121,21 @@ struct HealthTile: View {
                     .minimumScaleFactor(0.7)
                 if trend.metric != .sleep {
                     Text(trend.metric.unit).font(.caption2).foregroundStyle(KXColor.inkSecondary).lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
+                Spacer(minLength: KXSpacing.xs)
+            }
+            .overlay(alignment: .topTrailing) {
+                if recent.count >= 3 {
+                    Sparkline(values: recent, color: KXColor.run)
+                        .frame(width: 44, height: 18)
+                        .offset(y: -2)
                 }
             }
+            Spacer(minLength: 0)
             TrendBadge(trend: trend)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, minHeight: 112, maxHeight: 112, alignment: .topLeading)
         .padding(KXSpacing.md)
         .background(KXColor.surfaceTint, in: RoundedRectangle(cornerRadius: KXRadius.sm, style: .continuous))
         .contentShape(Rectangle())
@@ -150,6 +156,8 @@ struct TrendBadge: View {
             }
             .font(.caption2)
             .lineLimit(2)
+            .minimumScaleFactor(0.85)
+            .fixedSize(horizontal: false, vertical: true)
         } else {
             Text(Self.dateText(trend.latest.date)).font(.caption2).foregroundStyle(KXColor.inkTertiary)
         }
@@ -321,7 +329,7 @@ struct HealthChart: View {
             .chartYScale(domain: .automatic(includesZero: metric.isDailyTotal))
             .chartXAxis {
                 AxisMarks(values: .stride(by: .day, count: days.count > 10 ? 7 : 1)) { _ in
-                    AxisValueLabel(format: days.count > 10 ? .dateTime.day().month(.abbreviated) : .dateTime.weekday(.narrow))
+                    AxisValueLabel(format: days.count > 10 ? .dateTime.day().month(.abbreviated) : .dateTime.weekday(.narrow), centered: true)
                         .foregroundStyle(KXColor.inkSecondary)
                 }
             }

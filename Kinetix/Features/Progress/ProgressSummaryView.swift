@@ -15,6 +15,7 @@ struct ProgressSummaryView: View {
     @Query(sort: \RecoveryCheckInModel.date) private var checkIns: [RecoveryCheckInModel]
     @State private var health = HealthService.shared
     @State private var integrations = IntegrationSettings.shared
+    @State private var selectedRecoveryDate: Date?
 
     private var format: DisplayFormat { DisplayFormat(units: units) }
 
@@ -90,26 +91,53 @@ struct ProgressSummaryView: View {
                     .font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             } else {
-                Chart(days, id: \.date) { day in
-                    BarMark(x: .value("Day", day.date, unit: .day), y: .value("Recovery", day.value))
-                        .foregroundStyle(TodayFormat.color(RecoveryScore(score: day.value, parts: []).band))
-                        .cornerRadius(2)
+                let selected = selectedRecoveryDate.flatMap { date in
+                    days.first { Calendar.kinetix.isDate($0.date, inSameDayAs: date) }
+                }
+                Chart {
+                    ForEach(days, id: \.date) { day in
+                        BarMark(x: .value("Day", day.date, unit: .day), y: .value("Recovery", day.value))
+                            .foregroundStyle(TodayFormat.color(RecoveryScore(score: day.value, parts: []).band))
+                            .cornerRadius(2)
+                            .opacity(selected == nil || selected?.date == day.date ? 1 : 0.4)
+                    }
+                    if let selected {
+                        RuleMark(x: .value("Day", selected.date, unit: .day))
+                            .foregroundStyle(KXColor.inkTertiary.opacity(0.6))
+                            .annotation(position: .top, overflowResolution: .init(x: .fit(to: .chart), y: .disabled)) {
+                                VStack(spacing: 0) {
+                                    Text("\(Int(selected.value.rounded()))").font(KXFont.number(20)).foregroundStyle(KXColor.ink)
+                                    Text(selected.date.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated)))
+                                        .font(.caption2).foregroundStyle(KXColor.inkSecondary)
+                                }
+                                .padding(KXSpacing.xs)
+                                .background(KXColor.surface, in: RoundedRectangle(cornerRadius: KXRadius.sm))
+                            }
+                    }
                 }
                 .chartYScale(domain: 0...100)
                 .chartYAxis {
-                    AxisMarks(values: [50, 70, 85]) { _ in
+                    AxisMarks(position: .leading, values: [50, 70, 85]) { _ in
                         AxisGridLine().foregroundStyle(KXColor.border)
-                        AxisValueLabel()
+                        AxisValueLabel().foregroundStyle(KXColor.inkSecondary)
                     }
                 }
                 .chartXAxis {
+                    // Labels inside the chart's width, so the last date isn't cut off.
                     AxisMarks(values: .stride(by: .day, count: 7)) { _ in
-                        AxisValueLabel(format: .dateTime.day().month(.abbreviated))
+                        AxisValueLabel(format: .dateTime.day().month(.abbreviated), centered: true,
+                                       collisionResolution: .greedy(minimumSpacing: 4))
+                            .foregroundStyle(KXColor.inkSecondary)
                     }
                 }
-                .frame(height: 150)
+                .chartXScale(range: .plotDimension(startPadding: 4, endPadding: 18))
+                .chartXSelection(value: $selectedRecoveryDate)
+                .padding(.top, KXSpacing.lg)
+                .frame(height: 170)
                 .accessibilityLabel("Recovery over the last 30 days")
                 .accessibilityValue(average.map { "Average \(Int($0.rounded()))" } ?? "")
+                Text("Touch and drag across the chart to see each day's score.")
+                    .font(.caption2).foregroundStyle(KXColor.inkTertiary)
                 HStack(spacing: KXSpacing.lg) {
                     key(KXColor.success, "Good 70+")
                     key(KXColor.warning, "Fair 50–69")

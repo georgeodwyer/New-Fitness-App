@@ -280,7 +280,7 @@ struct WeeklyBarChart: View {
             .chartXAxis {
                 AxisMarks(values: .stride(by: .weekOfYear, count: 3)) { _ in
                     AxisGridLine().foregroundStyle(KXColor.border)
-                    AxisValueLabel(format: .dateTime.day().month(.abbreviated))
+                    AxisValueLabel(format: .dateTime.day().month(.abbreviated), centered: true)
                 }
             }
             .chartYAxis {

@@ -93,7 +93,7 @@ struct LoadTrendCard: View {
                 }
                 .chartXAxis {
                     AxisMarks(values: .stride(by: .weekOfYear, count: 2)) { _ in
-                        AxisValueLabel(format: .dateTime.day().month(.abbreviated)).foregroundStyle(KXColor.inkSecondary)
+                        AxisValueLabel(format: .dateTime.day().month(.abbreviated), centered: true).foregroundStyle(KXColor.inkSecondary)
                     }
                 }
                 .chartXSelection(value: $selected)
