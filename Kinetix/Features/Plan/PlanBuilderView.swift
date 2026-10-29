@@ -248,7 +248,7 @@ struct PlanBuilderView: View {
         switch activity.discipline {
         case .run: return KXColor.run
         case .strength: return KXColor.lift
-        case .crossTraining: return KXColor.other
+        default: return KXColor.other
         }
     }
 
