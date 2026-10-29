@@ -401,3 +401,26 @@ public struct DashboardLayout: Codable, Equatable, Sendable {
         order = cards.map(\.rawValue)
     }
 }
+
+/// Readings taken overnight (8 pm the evening before to 10 am), one average per morning.
+/// Daytime readings (HRV especially) move with activity, coffee and stress, so leaving them
+/// out keeps the morning's figure settled for the rest of the day.
+public enum OvernightReadings {
+    public static func days(_ readings: [(date: Date, value: Double)], calendar: Calendar) -> [HealthDay] {
+        var byDay: [Date: [Double]] = [:]
+        for reading in readings where reading.value > 0 {
+            let hour = calendar.component(.hour, from: reading.date)
+            let day: Date
+            if hour < 10 {
+                day = calendar.startOfDay(for: reading.date)
+            } else if hour >= 20, let next = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: reading.date)) {
+                day = next
+            } else {
+                continue
+            }
+            byDay[day, default: []].append(reading.value)
+        }
+        return byDay.map { HealthDay(date: $0.key, value: $0.value.reduce(0, +) / Double($0.value.count)) }
+            .sorted { $0.date < $1.date }
+    }
+}

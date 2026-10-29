@@ -281,10 +281,30 @@ final class HealthService {
     private func readMetricDays(now: Date) async -> [HealthMetric: [HealthDay]] {
         var result: [HealthMetric: [HealthDay]] = [:]
         for metric in HealthMetric.allCases {
-            let days = metric == .sleep ? await readSleepDays(now: now) : await readQuantityDays(metric, now: now)
+            let days: [HealthDay]
+            switch metric {
+            case .sleep: days = await readSleepDays(now: now)
+            case .hrv: days = await readOvernightDays(metric, now: now)
+            default: days = await readQuantityDays(metric, now: now)
+            }
             if !days.isEmpty { result[metric] = days }
         }
         return result
+    }
+
+    /// HRV from overnight readings only (8 pm to 10 am), one value per morning, so daytime
+    /// readings don't move the recovery score after you've woken up.
+    private func readOvernightDays(_ metric: HealthMetric, now: Date) async -> [HealthDay] {
+        guard let store, let type = Self.quantityType(for: metric) else { return [] }
+        let calendar = Calendar.kinetix
+        guard let from = calendar.date(byAdding: .day, value: -31, to: calendar.startOfDay(for: now)) else { return [] }
+        let descriptor = HKSampleQueryDescriptor(
+            predicates: [.quantitySample(type: type, predicate: HKQuery.predicateForSamples(withStart: from, end: now))],
+            sortDescriptors: [SortDescriptor(\.startDate)]
+        )
+        guard let samples = try? await descriptor.result(for: store) else { return [] }
+        let unit = Self.unit(for: metric)
+        return OvernightReadings.days(samples.map { (date: $0.startDate, value: $0.quantity.doubleValue(for: unit)) }, calendar: calendar)
     }
 
     /// One value per day: the total for steps and energy, the average for readings.

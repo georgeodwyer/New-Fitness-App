@@ -161,7 +161,11 @@ struct TrainingProfileView: View {
             loaded = true
         }
         .confirmationDialog("Update your plan?", isPresented: $showRegenerate, titleVisibility: .visible) {
-            Button("Rebuild from today, keep my progress") {
+            Button("Start from Monday (recommended)") {
+                PlanService.rebuildRemainder(for: profileModel.profile, in: context, startingNextWeek: true)
+                dismiss()
+            }
+            Button("Start today") {
                 PlanService.rebuildRemainder(for: profileModel.profile, in: context)
                 dismiss()
             }
@@ -171,7 +175,7 @@ struct TrainingProfileView: View {
             }
             Button("Keep my current plan") { dismiss() }
         } message: {
-            Text("You changed your \(pendingChanges.joined(separator: ", ")). Rebuild your upcoming sessions to match? Completed sessions and progress are kept.")
+            Text("You changed your \(pendingChanges.joined(separator: ", ")). From Monday keeps this week's sessions as they are and starts the new plan next week. Start today changes today's and later sessions now. Completed sessions and progress are always kept.")
         }
     }
 

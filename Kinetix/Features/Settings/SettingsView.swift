@@ -196,14 +196,17 @@ struct SettingsView: View {
                 }
             }
             .confirmationDialog("Rebuild your plan from your current answers?", isPresented: $confirmRegenerate, titleVisibility: .visible) {
-                Button("Keep my progress, rebuild from today") {
+                Button("Keep my progress, from Monday (recommended)") {
+                    if let profile = profileModel?.profile { PlanService.rebuildRemainder(for: profile, in: context, startingNextWeek: true) }
+                }
+                Button("Keep my progress, from today") {
                     if let profile = profileModel?.profile { PlanService.rebuildRemainder(for: profile, in: context) }
                 }
                 Button("Start over from week 1") {
                     if let profile = profileModel?.profile { PlanService.createPlan(for: profile, in: context) }
                 }
             } message: {
-                Text("Keep my progress: you stay in the same week of the plan and today's and later sessions are rebuilt. Start over: a new plan from week 1. Either way, sessions you've done, records and progress are kept.")
+                Text("Keep my progress: you stay in the same week of the plan. From Monday leaves this week as it is; from today rebuilds today's and later sessions. Start over: a new plan from week 1. Either way, sessions you've done, records and progress are kept.")
             }
             .confirmationDialog("Delete your account and all data?", isPresented: $confirmDelete, titleVisibility: .visible) {
                 Button("Continue", role: .destructive) { confirmDeleteFinal = true }

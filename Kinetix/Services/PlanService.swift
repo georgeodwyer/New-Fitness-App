@@ -68,9 +68,13 @@ enum PlanService {
     /// keeping its start date and week numbers: sessions done or skipped stay, and today's and
     /// later sessions are built again. Falls back to a new plan if there isn't one.
     @discardableResult
-    static func rebuildRemainder(for profile: AthleteProfile, in context: ModelContext, now: Date = .now) -> TrainingPlanModel {
+    static func rebuildRemainder(for profile: AthleteProfile, in context: ModelContext, now: Date = .now,
+                                 startingNextWeek: Bool = false) -> TrainingPlanModel {
         let calendar = Calendar.kinetix
         let today = calendar.startOfDay(for: now)
+        // From next Monday: this week stays exactly as it is (sessions not done yet included).
+        let nextMonday = calendar.date(byAdding: .day, value: 7, to: calendar.startOfISOWeek(for: today)) ?? today
+        let from = startingNextWeek ? nextMonday : today
         let plans = ((try? context.fetch(FetchDescriptor<TrainingPlanModel>())) ?? []).filter { $0.isActive && !$0.isSoftDeleted }
         guard let plan = plans.first, let old = plan.outline, let firstMonday = old.weeks.first?.startDate else {
             return createPlan(for: profile, in: context, now: now)
@@ -78,10 +82,10 @@ enum PlanService {
         let generator = generator
         let outline = generator.makeOutline(for: profile, startingOn: firstMonday)
         // Past the end of the rebuilt plan (or before it starts): nothing to keep, start afresh.
-        guard let current = outline.weekIndex(containing: today, calendar: calendar) ?? (today < firstMonday ? 0 : nil) else {
+        guard let current = outline.weekIndex(containing: from, calendar: calendar) ?? (from < firstMonday ? 0 : nil) else {
             return createPlan(for: profile, in: context, now: now)
         }
-        for session in plan.sessions where !session.isSoftDeleted && session.date >= today
+        for session in plan.sessions where !session.isSoftDeleted && session.date >= from
             && (session.status == .planned || session.status == .swapped) {
             session.softDelete(now: now)
         }
@@ -91,12 +95,12 @@ enum PlanService {
         plan.endDate = outline.eventDate
         plan.generatedWeekCount = current
 
-        // This week from today; the following weeks as usual.
+        // From `from` (today or next Monday); the following weeks as usual.
         let weights = workingWeights(in: context)
-        let horizon = calendar.date(byAdding: .day, value: horizonDays, to: today) ?? today
+        let horizon = max(calendar.date(byAdding: .day, value: horizonDays, to: today) ?? today, from)
         while plan.generatedWeekCount < outline.weeks.count, outline.weeks[plan.generatedWeekCount].startDate <= horizon {
             let index = plan.generatedWeekCount
-            if let week = generator.generateWeek(index, outline: outline, profile: profile, workingWeights: weights, notBefore: today) {
+            if let week = generator.generateWeek(index, outline: outline, profile: profile, workingWeights: weights, notBefore: from) {
                 for generated in week.sessions {
                     let session = PlannedSessionModel(generated: generated, weekIndex: index)
                     context.insert(session)
@@ -109,7 +113,10 @@ enum PlanService {
         }
         plan.touch(now: now)
         previewCache = nil
-        context.insert(PlanChangeModel(summary: "Rebuilt your plan from today (week \(current + 1) of \(outline.weeks.count)). What you've done is kept.", now: now))
+        let summary = startingNextWeek
+            ? "Your updated plan starts Monday \(from.formatted(.dateTime.day().month())) (week \(current + 1) of \(outline.weeks.count)). This week stays as it was."
+            : "Rebuilt your plan from today (week \(current + 1) of \(outline.weeks.count)). What you've done is kept."
+        context.insert(PlanChangeModel(summary: summary, now: now))
         try? context.save()
         SyncService.shared.requestSync()
         return plan
