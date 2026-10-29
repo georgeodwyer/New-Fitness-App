@@ -45,6 +45,7 @@ enum NotificationService {
     /// Re-schedules the next seven mornings from the plan (call when the app goes to the
     /// background, so changes to the plan are picked up).
     static func scheduleMornings(in context: ModelContext, now: Date = .now) async {
+        await TrainingNotifications.schedule(in: context, now: now)
         let center = UNUserNotificationCenter.current()
         let pending = await center.pendingNotificationRequests().map(\.identifier).filter { $0.hasPrefix(morningPrefix) }
         center.removePendingNotificationRequests(withIdentifiers: pending)

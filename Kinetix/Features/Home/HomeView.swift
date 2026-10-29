@@ -286,6 +286,7 @@ struct HomeView: View {
                                                 legSoreness: checkIn.legSoreness))
         }
         try? context.save()
+        TrainingNotifications.checkInDone()
     }
 }
 
