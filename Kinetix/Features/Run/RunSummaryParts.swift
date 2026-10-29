@@ -73,7 +73,7 @@ struct RunHeroCard<Map: View>: View {
     }
 }
 
-/// Time in each heart-rate zone as one bar, with the share under each zone.
+/// Time in each heart-rate zone: a row per zone (1 at the top), with the time and share.
 struct HeartRateZonesCard: View {
     let samples: [HeartRateSample]
 
@@ -106,34 +106,41 @@ struct HeartRateZonesCard: View {
                     .font(KXFont.caption)
                     .foregroundStyle(KXColor.inkSecondary)
             }
-            GeometryReader { geo in
-                HStack(spacing: 2) {
-                    ForEach(0..<5, id: \.self) { zone in
-                        if seconds[zone] > 0 {
-                            Rectangle()
-                                .fill(Self.colors[zone])
-                                .frame(width: max(2, (geo.size.width - 8) * seconds[zone] / total))
-                        }
-                    }
-                }
-                .clipShape(Capsule())
-            }
-            .frame(height: 12)
-            HStack {
+            // One row per zone: the bar shows the time in it (the longest zone fills the row).
+            let longest = max(seconds.max() ?? 0, 1)
+            VStack(spacing: KXSpacing.sm) {
                 ForEach(0..<5, id: \.self) { zone in
-                    HStack(spacing: 3) {
-                        Text("Z\(zone + 1)").font(KXFont.caption).foregroundStyle(KXColor.inkTertiary)
-                        Text("\(Int((seconds[zone] / total * 100).rounded()))%")
-                            .font(KXFont.custom(.semiBold, 12, relativeTo: .caption).monospacedDigit())
+                    HStack(spacing: KXSpacing.sm) {
+                        Text("Z\(zone + 1)")
+                            .font(KXFont.captionEmphasis)
+                            .foregroundStyle(KXColor.inkSecondary)
+                            .frame(width: 24, alignment: .leading)
+                        GeometryReader { geo in
+                            ZStack(alignment: .leading) {
+                                Capsule().fill(KXColor.border.opacity(0.5))
+                                if seconds[zone] > 0 {
+                                    Capsule()
+                                        .fill(Self.colors[zone])
+                                        .frame(width: max(6, geo.size.width * seconds[zone] / longest))
+                                }
+                            }
+                        }
+                        .frame(height: 12)
+                        Text(Units.formatMinutesSeconds(seconds[zone]))
+                            .font(KXFont.custom(.semiBold, 13, relativeTo: .caption).monospacedDigit())
                             .foregroundStyle(KXColor.ink)
+                            .frame(width: 48, alignment: .trailing)
+                        Text("\(Int((seconds[zone] / total * 100).rounded()))%")
+                            .font(KXFont.caption.monospacedDigit())
+                            .foregroundStyle(KXColor.inkTertiary)
+                            .frame(width: 36, alignment: .trailing)
                     }
-                    if zone < 4 { Spacer(minLength: 0) }
                 }
             }
         }
         .kxCard()
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Heart-rate zones")
-        .accessibilityValue((0..<5).map { "zone \($0 + 1) \(Int((seconds[$0] / total * 100).rounded())) percent" }.joined(separator: ", "))
+        .accessibilityValue((0..<5).map { "zone \($0 + 1) \(Units.formatMinutesSeconds(seconds[$0])), \(Int((seconds[$0] / total * 100).rounded())) percent" }.joined(separator: ", "))
     }
 }
