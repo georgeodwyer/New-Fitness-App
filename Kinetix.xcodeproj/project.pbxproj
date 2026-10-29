@@ -173,6 +173,7 @@
 		E2FDA06D455ED83181BC45DA /* WalkthroughView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D49483D84839C27397EF32AE /* WalkthroughView.swift */; };
 		E33FDA73DE0178C4A40615A9 /* WatchControlsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3D4109323DCAF1418A3D9C5 /* WatchControlsStore.swift */; };
 		E34443073A1F6BE0D91C8DB9 /* SampleData.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5069ED66DFB790377708F8D /* SampleData.swift */; };
+		E3DAE4B853207507D0E51377 /* WeekRearrangeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F846785FB21370DB2686F26 /* WeekRearrangeView.swift */; };
 		E573A0887E71CCACCFAA8B6D /* SessionContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DD6B44B1B977B2EB92D215E /* SessionContainerView.swift */; };
 		E6A08B134E4E21693787F746 /* GymTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5503EC67D52AB746CA65FF96 /* GymTests.swift */; };
 		E78EBCB145C6F70B2CC85C94 /* CustomScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 624C995FD738D1EED4FEE350 /* CustomScreenView.swift */; };
@@ -293,6 +294,7 @@
 		2740B3F27E573D14E2F6054C /* BuildChannel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildChannel.swift; sourceTree = "<group>"; };
 		27D5D1CA3AE70EB8EF9D18FD /* AccountService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountService.swift; sourceTree = "<group>"; };
 		2E84B289743F4727A53D8FF5 /* WorkoutEditService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutEditService.swift; sourceTree = "<group>"; };
+		2F846785FB21370DB2686F26 /* WeekRearrangeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeekRearrangeView.swift; sourceTree = "<group>"; };
 		2FCE0202A3E975345AA0F2B0 /* KXProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXProgress.swift; sourceTree = "<group>"; };
 		3000B3D5DB9BC4ADD3017915 /* ProgressScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressScreen.swift; sourceTree = "<group>"; };
 		3238845C1F80144B68E1D0D4 /* RouteService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteService.swift; sourceTree = "<group>"; };
@@ -479,6 +481,7 @@
 				13D4219D257608DB539A51D9 /* PlanView.swift */,
 				626F847EE3778CA53D1E28E9 /* SessionDetailView.swift */,
 				78058F52816F02AF1FB746E5 /* TrainingCalendarView.swift */,
+				2F846785FB21370DB2686F26 /* WeekRearrangeView.swift */,
 			);
 			path = Plan;
 			sourceTree = "<group>";
@@ -1241,6 +1244,7 @@
 				58A813AAE226C58C5E8EA99B /* WatchMirrorService.swift in Sources */,
 				F73EA4AAE48E03D0392279D3 /* WatchScreensView.swift in Sources */,
 				FB99840249B20B1C46C58334 /* WatchSyncService.swift in Sources */,
+				E3DAE4B853207507D0E51377 /* WeekRearrangeView.swift in Sources */,
 				DACDE5B130F8FB4FB2ED1E0F /* WeeklyReviewCard.swift in Sources */,
 				72BB11CDF6863C2C39FDA03F /* WorkoutActivity.swift in Sources */,
 				6540A069DFA262A340BECB35 /* WorkoutActivityController.swift in Sources */,
