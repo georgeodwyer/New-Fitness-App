@@ -105,15 +105,18 @@ final class PlanServiceTests: XCTestCase {
         let plan = PlanService.createPlan(for: SampleData.profile, in: context, now: monday)
         let wednesday = Calendar.kinetix.date(byAdding: .day, value: 2, to: monday)!
         let nextMonday = Calendar.kinetix.date(byAdding: .day, value: 7, to: monday)!
-        let thisWeekBefore = Set(plan.sessions.filter { !$0.isSoftDeleted && $0.date < nextMonday }.map(\.id))
+        func live() throws -> [PlannedSessionModel] {
+            try context.fetch(FetchDescriptor<PlannedSessionModel>()).filter { !$0.isSoftDeleted && $0.plan?.id == plan.id }
+        }
+        let thisWeekBefore = Set(try live().filter { $0.date < nextMonday }.map(\.id))
 
         var changed = SampleData.profile
         changed.trainingDays = [.tuesday, .thursday, .saturday, .sunday]
         PlanService.rebuildRemainder(for: changed, in: context, now: wednesday, startingNextWeek: true)
 
-        let thisWeekAfter = Set(plan.sessions.filter { !$0.isSoftDeleted && $0.date < nextMonday }.map(\.id))
+        let thisWeekAfter = Set(try live().filter { $0.date < nextMonday }.map(\.id))
         XCTAssertEqual(thisWeekAfter, thisWeekBefore, "This week's sessions are left as they were")
-        let nextWeekDays = Set(plan.sessions.filter { !$0.isSoftDeleted && $0.date >= nextMonday
+        let nextWeekDays = Set(try live().filter { $0.date >= nextMonday
             && $0.date < Calendar.kinetix.date(byAdding: .day, value: 7, to: nextMonday)! }
             .map { Calendar.kinetix.weekday(of: $0.date) })
         XCTAssertTrue(nextWeekDays.isSubset(of: Set(changed.trainingDays)), "Next week follows the new days")

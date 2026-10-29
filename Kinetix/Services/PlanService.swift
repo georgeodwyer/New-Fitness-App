@@ -215,7 +215,7 @@ enum PlanService {
         while !plan.isPaused, plan.generatedWeekCount < outline.weeks.count, outline.weeks[plan.generatedWeekCount].startDate <= horizon {
             let index = plan.generatedWeekCount
             if let week = generator.generateWeek(index, outline: outline, profile: profile, workingWeights: weights, notBefore: from) {
-                for generated in week.sessions {
+                for generated in week.sessions where generated.date >= from {
                     let session = PlannedSessionModel(generated: generated, weekIndex: index)
                     context.insert(session)
                     session.plan = plan
