@@ -18,6 +18,16 @@ struct RunListView: View {
                         Button("OK") { workout.clearNotice() }
                     }
                 }
+                // Closed the watch app mid-session: pick the phone's workout back up (heart rate too).
+                Section {
+                    Button {
+                        workout.joinPhoneWorkout()
+                    } label: {
+                        Label(workout.isLookingForPhoneWorkout ? "Looking…" : "Join iPhone workout", systemImage: "iphone.radiowaves.left.and.right")
+                            .font(.footnote)
+                    }
+                    .disabled(workout.isLookingForPhoneWorkout)
+                }
                 let today = plan.planned(on: .now, calendar: calendar)
                 if !today.isEmpty {
                     Section {

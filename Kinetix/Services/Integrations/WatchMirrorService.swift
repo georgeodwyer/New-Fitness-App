@@ -18,6 +18,8 @@ final class WatchMirrorService: NSObject {
         var heartRate: @MainActor (Double, Date) -> Void
         /// True once the watch is showing the run; false if it couldn't be opened.
         var watchStatus: @MainActor (Bool) -> Void = { _ in }
+        /// Send a fresh frame now (the watch asked, or it has just reconnected).
+        var resync: @MainActor () -> Void = {}
     }
 
     private let healthStore = HKHealthStore()
@@ -53,6 +55,16 @@ final class WatchMirrorService: NSObject {
         self.handlers = handlers
         self.activity = activity
         launchWatchApp(runId: runId, attempt: 1)
+        return true
+    }
+
+    /// Opens Kinetix on the watch again for the session under way (it was closed there, or
+    /// didn't open first time). Returns false if there's nothing to reconnect.
+    @discardableResult
+    func reopenWatchApp() -> Bool {
+        guard let runId, isAvailable else { return false }
+        launchWatchApp(runId: runId, attempt: 1)
+        handlers?.resync()
         return true
     }
 
@@ -113,6 +125,7 @@ final class WatchMirrorService: NSObject {
         mirroredSession = session
         handlers?.watchStatus(true)
         // Reconnected: bring the watch up to date straight away.
+        handlers?.resync()
         resendLast()
     }
 
@@ -156,7 +169,8 @@ final class WatchMirrorService: NSObject {
         guard let message = MirrorMessage.decode(data) else { return }
         switch message {
         case .command(.sync):
-            if handlers != nil { resendLast() } else { send(.ended(runId: nil, saved: false)) }
+            // A fresh frame (so a watch that was closed and reopened can join in), else the last one.
+            if let handlers { handlers.resync(); resendLast() } else { send(.ended(runId: nil, saved: false)) }
         case .command(let command):
             if let handlers { handlers.command(command) } else { send(.ended(runId: nil, saved: false)) }
         case .heartRate(let bpm, let date):

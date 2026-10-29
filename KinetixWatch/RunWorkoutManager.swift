@@ -42,6 +42,10 @@ final class RunWorkoutManager: NSObject {
     @ObservationIgnored private var mirrorRunId: UUID?
     @ObservationIgnored private var lastFrameAt: Date?
     @ObservationIgnored private var lastSyncAsk = Date.distantPast
+    /// When Start/Finish set was last sent and the phone hasn't confirmed it yet (gym).
+    @ObservationIgnored private var pendingGymCommandAt: Date?
+    /// "Join iPhone workout" was pressed and the phone hasn't answered yet.
+    private(set) var isLookingForPhoneWorkout = false
     @ObservationIgnored private var remirrorAttempts = 0
     /// Phone runs that have finished, so a late frame doesn't bring one back.
     @ObservationIgnored private var endedMirrorRuns: Set<UUID> = []
@@ -483,7 +487,8 @@ final class RunWorkoutManager: NSObject {
         guard !endedMirrorRuns.contains(frame.sessionId) else { return }
         guard isMirroring else {
             // The phone's gym session is on and the app is open but wasn't woken for it: join in.
-            guard phase == .idle || phase == .finished, frame.isFresh(at: Date()) else { return }
+            guard phase == .idle || phase == .finished, frame.isFresh(at: Date()) || isLookingForPhoneWorkout else { return }
+            isLookingForPhoneWorkout = false
             let configuration = HKWorkoutConfiguration()
             configuration.activityType = .traditionalStrengthTraining
             configuration.locationType = .indoor
@@ -499,9 +504,26 @@ final class RunWorkoutManager: NSObject {
         mirrorRunId = frame.sessionId
         lastFrameAt = Date()
         isPhoneLinkStale = false
+        pendingGymCommandAt = nil
         gymFrame = frame
         if option?.title != frame.title {
             option = WatchRunOption(id: frame.sessionId, source: .free, title: frame.title)
+        }
+    }
+
+    /// "Join iPhone workout": the watch app was closed during a session on the phone. Ask the
+    /// phone for its session; a reply opens it here again (with heart rate).
+    func joinPhoneWorkout() {
+        guard !isMirroring else { return }
+        isLookingForPhoneWorkout = true
+        notice = nil
+        WatchStore.shared.sendMessage(MirrorMessage.command(.sync).encoded())
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(10))
+            if self.isLookingForPhoneWorkout && !self.isMirroring {
+                self.isLookingForPhoneWorkout = false
+                self.notice = "No workout found on your iPhone. Open Kinetix there and start or open your session."
+            }
         }
     }
 
@@ -510,6 +532,7 @@ final class RunWorkoutManager: NSObject {
         guard isGym, var frame = gymFrame, !frame.isComplete else { return }
         let starting = frame.setStartedAt == nil
         sendToPhone(.command(starting ? .startSet : .finishSet))
+        pendingGymCommandAt = Date()
         // Show it straight away; the phone's next update confirms it.
         frame.setStartedAt = starting ? Date() : nil
         if starting { frame.restEndsAt = nil }
@@ -521,7 +544,8 @@ final class RunWorkoutManager: NSObject {
         guard !endedMirrorRuns.contains(frame.runId) else { return }
         guard isMirroring else {
             // The phone is recording and the app is open but wasn't woken for it: join in.
-            guard phase == .idle || phase == .finished, frame.isFresh(at: Date()) else { return }
+            guard phase == .idle || phase == .finished, frame.isFresh(at: Date()) || isLookingForPhoneWorkout else { return }
+            isLookingForPhoneWorkout = false
             let configuration = HKWorkoutConfiguration()
             configuration.activityType = .running
             configuration.locationType = .outdoor
@@ -552,16 +576,22 @@ final class RunWorkoutManager: NSObject {
     private func mirrorTick() {
         guard isMirroring, let lastFrameAt else { return }
         let silence = Date().timeIntervalSince(lastFrameAt)
-        // A gym session changes rarely and the phone often sits locked on a bench, so allow
-        // longer before saying the phone's gone; runs update every second.
-        isPhoneLinkStale = silence > (isGym ? 45 : 15)
+        // A gym session: the phone often sits locked on a bench and goes quiet, which is fine.
+        // Only say it's lost when a Start/Finish set hasn't been confirmed, or after a long time.
+        if isGym {
+            let unconfirmed = pendingGymCommandAt.map { Date().timeIntervalSince($0) > 12 } ?? false
+            isPhoneLinkStale = unconfirmed || silence > 180
+        } else {
+            isPhoneLinkStale = silence > 15
+        }
         // Quiet for a while: ask the phone to send the latest again (every 8 seconds).
         if silence > 8, Date().timeIntervalSince(lastSyncAsk) > 8 {
             lastSyncAsk = Date()
             sendToPhone(.command(.sync))
         }
         // The phone has gone quiet for a long time (its app was closed): stop showing the run.
-        if silence > 600 {
+        // A gym session keeps going (and keeps heart rate) for longer: lifting can be quiet.
+        if silence > (isGym ? 3 * 3600 : 600) {
             Task { await finishMirroring(notice: isGym ? "Lost touch with your iPhone. Check your gym session there."
                                                       : "Lost touch with your iPhone. Check the run there.") }
         }

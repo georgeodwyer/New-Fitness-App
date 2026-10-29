@@ -104,20 +104,36 @@ final class StrengthWorkoutModel {
         }
         monitor.connectToSaved()
         startHealthHeartRate()
+        startWatch()
+    }
+
+    /// Opens Kinetix on the watch for this session (heart rate, and Start/Finish set there).
+    private func startWatch() {
         let handlers = WatchMirrorService.Handlers(
             command: { [weak self] command in self?.handleWatch(command) },
             heartRate: { [weak self] bpm, _ in self?.receiveHeartRate(bpm, from: .watch) },
-            watchStatus: { [weak self] showing in self?.watchNeedsOpening = !showing }
+            watchStatus: { [weak self] showing in self?.watchNeedsOpening = !showing },
+            resync: { [weak self] in self?.publishToWatch() }
         )
         isOnWatch = WatchMirrorService.shared.begin(runId: log.id, handlers: handlers, activity: .traditionalStrengthTraining)
         guard isOnWatch else { return }
         publishToWatch()
+        watchTimer?.invalidate()
         // The watch treats silence as a lost phone, so keep it up to date between changes.
         let timer = Timer(timeInterval: 5, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.publishToWatch() }
         }
         RunLoop.main.add(timer, forMode: .common)
         watchTimer = timer
+    }
+
+    /// "Reconnect Apple Watch": the watch app was closed (or never opened), so open it again.
+    var canReconnectWatch: Bool { WatchMirrorService.shared.isAvailable }
+
+    func reconnectWatch() {
+        watchNeedsOpening = false
+        if isOnWatch, WatchMirrorService.shared.reopenWatchApp() { return }
+        startWatch()
     }
 
     private func stopHeartRateAndWatch() {

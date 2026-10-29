@@ -827,8 +827,34 @@ extension WarmUpPage {
             .background(KXColor.surface, in: Capsule())
             .accessibilityElement(children: .combine)
             .accessibilityIdentifier("gym.warmUpHeartRate")
+            if bpm == nil, model.canReconnectWatch {
+                ReconnectWatchButton(model: model)
+            }
         }
         .padding(.top, KXSpacing.sm)
+    }
+}
+
+/// Opens Kinetix on the Apple Watch again (it was closed there, so heart rate stopped).
+private struct ReconnectWatchButton: View {
+    let model: StrengthWorkoutModel
+    @State private var asked = false
+
+    var body: some View {
+        Button {
+            model.reconnectWatch()
+            asked = true
+            Task {
+                try? await Task.sleep(for: .seconds(8))
+                asked = false
+            }
+        } label: {
+            Label(asked ? "Opening on your watch…" : "Reconnect Apple Watch", systemImage: "applewatch.radiowaves.left.and.right")
+                .font(KXFont.captionEmphasis)
+        }
+        .buttonStyle(.kx(.outlined))
+        .disabled(asked)
+        .accessibilityIdentifier("gym.reconnectWatch")
     }
 }
 
@@ -925,6 +951,9 @@ private struct GymHeartRatePage: View {
                         .multilineTextAlignment(.center)
                 }
                 .accessibilityElement(children: .combine)
+                if bpm == nil || model.heartRateSource == .health, model.canReconnectWatch {
+                    ReconnectWatchButton(model: model)
+                }
                 Spacer(minLength: KXSpacing.md)
                 zoneBar(bpm: bpm)
                 timeInZones
