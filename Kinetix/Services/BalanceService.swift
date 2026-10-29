@@ -158,6 +158,35 @@ enum BalanceService {
         return apply(result.adjustments, to: [session, other], profile: profile, triggers: [trigger], in: modelContext, now: now)
     }
 
+    /// Drag and drop on the week planner: onto an empty day the session moves; onto a day with
+    /// a session it trades days with it (one of the same kind if there is one). Returns what
+    /// changed and any heads-up about spacing (nil result: not allowed).
+    static func drop(_ session: PlannedSessionModel, on day: Date, profile: AthleteProfile, in modelContext: ModelContext,
+                     now: Date = .now) -> (explanations: [String], warning: String?)? {
+        let calendar = Calendar.kinetix
+        let today = calendar.startOfDay(for: now)
+        let target = calendar.startOfDay(for: day)
+        guard target >= today, session.date >= today, session.status == .planned || session.status == .swapped,
+              !calendar.isDate(session.date, inSameDayAs: target) else { return nil }
+        let onDay = sessions(around: target, in: modelContext).filter {
+            $0.id != session.id && calendar.isDate($0.date, inSameDayAs: target) && ($0.status == .planned || $0.status == .swapped)
+        }
+        if let other = onDay.first(where: { $0.kind.discipline == session.kind.discipline }) ?? onDay.first {
+            let around = sessions(around: session.date, in: modelContext) + sessions(around: other.date, in: modelContext) + [session, other]
+            let unique = Dictionary(around.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first }).map(\.value)
+            let warning = Rebalancer.swapDays(session.id, other.id, week: unique.map(\.weekSession),
+                                              context: context(profile: profile, now: now))?.warning
+            let explanations = swapDays(session, with: other, profile: profile, in: modelContext, now: now)
+            return explanations.isEmpty ? nil : (explanations, warning)
+        }
+        let around = sessions(around: session.date, in: modelContext) + sessions(around: target, in: modelContext) + [session]
+        let unique = Dictionary(around.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first }).map(\.value)
+        let warning = Rebalancer.move(session.id, to: target, week: unique.map(\.weekSession),
+                                      context: context(profile: profile, now: now))?.warning
+        let explanations = move(session, to: target, profile: profile, in: modelContext, now: now)
+        return explanations.isEmpty ? nil : (explanations, warning)
+    }
+
     /// A change can be undone while its session is still ahead (today or later) and not done.
     static func canUndo(_ change: PlanChangeModel, session: PlannedSessionModel?, now: Date = .now) -> Bool {
         guard change.undoneAt == nil, change.restorePoint != nil, let session, session.status != .completed else { return false }

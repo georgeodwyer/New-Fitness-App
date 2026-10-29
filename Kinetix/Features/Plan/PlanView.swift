@@ -15,6 +15,7 @@ struct PlanView: View {
     @State private var showReview = false
     @State private var showBuilder = false
     @State private var showPause = false
+    @State private var showRearrange = false
     @Environment(AppRouter.self) private var router
 
     private var format: DisplayFormat { DisplayFormat(units: profiles.first?.units ?? UnitPreference.stored) }
@@ -175,6 +176,13 @@ struct PlanView: View {
                         .buttonStyle(.kx(.outlined, fullWidth: true))
                         .accessibilityIdentifier("plan.weekReview")
                         Button {
+                            showRearrange = true
+                        } label: {
+                            Label("Rearrange this week or next", systemImage: "arrow.up.arrow.down")
+                        }
+                        .buttonStyle(.kx(.outlined, fullWidth: true))
+                        .accessibilityIdentifier("plan.rearrange")
+                        Button {
                             showBuilder = true
                         } label: {
                             Label(outline.customPlan == nil ? "Build my own plan" : "Edit my plan", systemImage: "square.and.pencil")
@@ -218,6 +226,7 @@ struct PlanView: View {
             .fullScreenCover(isPresented: $showBuilder) {
                 PlanBuilderView(existing: outline?.customPlan)
             }
+            .sheet(isPresented: $showRearrange) { WeekRearrangeView() }
             .sheet(isPresented: $showReview) {
                 WeeklyReviewSheet(units: profiles.first?.units ?? UnitPreference.stored)
             }

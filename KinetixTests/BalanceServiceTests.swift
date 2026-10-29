@@ -113,4 +113,41 @@ final class BalanceServiceTests: XCTestCase {
         XCTAssertGreaterThan(data.plannedRunMeters, 0)
         XCTAssertGreaterThan(data.plannedLiftVolumeKg, 0)
     }
+
+    // MARK: Drag and drop on the week planner
+
+    func testDropOnEmptyDayMovesTheSession() throws {
+        let calendar = Calendar.kinetix
+        let week = try thisWeek()
+        let busy = Set(week.map { calendar.startOfDay(for: $0.date) })
+        let free = try XCTUnwrap((1..<7).compactMap { calendar.date(byAdding: .day, value: $0, to: calendar.startOfDay(for: monday)) }
+            .first { !busy.contains($0) })
+        let session = try XCTUnwrap(week.first { $0.date > monday && $0.status == .planned })
+        let result = BalanceService.drop(session, on: free, profile: SampleData.profile, in: context, now: monday)
+        XCTAssertNotNil(result)
+        XCTAssertTrue(calendar.isDate(session.date, inSameDayAs: free))
+    }
+
+    func testDropOnBusyDaySwapsTheTwo() throws {
+        let calendar = Calendar.kinetix
+        let week = try thisWeek().filter { $0.date > monday && $0.status == .planned }
+        let first = try XCTUnwrap(week.first)
+        // A day with just the one session, so it's the one swapped.
+        let all = try thisWeek()
+        let second = try XCTUnwrap(week.first { other in
+            !calendar.isDate(other.date, inSameDayAs: first.date)
+                && all.filter { calendar.isDate($0.date, inSameDayAs: other.date) }.count == 1
+        })
+        let firstDay = calendar.startOfDay(for: first.date), secondDay = calendar.startOfDay(for: second.date)
+        let result = BalanceService.drop(first, on: secondDay, profile: SampleData.profile, in: context, now: monday)
+        XCTAssertNotNil(result)
+        XCTAssertTrue(calendar.isDate(first.date, inSameDayAs: secondDay))
+        XCTAssertTrue(calendar.isDate(second.date, inSameDayAs: firstDay))
+    }
+
+    func testCannotDropOntoAPastDay() throws {
+        let session = try XCTUnwrap(thisWeek().first { $0.date > monday && $0.status == .planned })
+        let lastWeek = Calendar.kinetix.date(byAdding: .day, value: -3, to: monday)!
+        XCTAssertNil(BalanceService.drop(session, on: lastWeek, profile: SampleData.profile, in: context, now: monday))
+    }
 }

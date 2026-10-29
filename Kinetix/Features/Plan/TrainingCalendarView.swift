@@ -24,6 +24,7 @@ struct TrainingCalendarView: View {
     @State private var openLift: StrengthLogModel?
     @State private var actionSession: PlannedSessionModel?
     @State private var banner: String?
+    @State private var showRearrange = false
 
     private let calendar = Calendar.kinetix
     private var units: UnitSystem { profiles.first?.units ?? UnitPreference.stored }
@@ -86,6 +87,13 @@ struct TrainingCalendarView: View {
                         if value.translation.width < -50 { step(1) } else if value.translation.width > 50 { step(-1) }
                     })
                 legend
+                Button {
+                    showRearrange = true
+                } label: {
+                    Label("Rearrange this week or next", systemImage: "arrow.up.arrow.down")
+                }
+                .buttonStyle(.kx(.outlined, fullWidth: true))
+                .accessibilityIdentifier("calendar.rearrange")
                 if let banner {
                     Label(banner, systemImage: "info.circle")
                         .font(KXFont.caption)
@@ -115,6 +123,7 @@ struct TrainingCalendarView: View {
         .navigationDestination(item: $openSession) { SessionDetailView(session: $0) }
         .navigationDestination(item: $openRun) { RunDetailView(log: $0, units: units) }
         .navigationDestination(item: $openLift) { StrengthSessionDetailView(log: $0, units: units) }
+        .sheet(isPresented: $showRearrange) { WeekRearrangeView() }
         .sheet(item: $actionSession) { session in
             if let profile = profiles.first?.profile {
                 SessionActionsSheet(session: session, profile: profile) { explanations in
