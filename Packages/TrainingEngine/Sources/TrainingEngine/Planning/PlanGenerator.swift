@@ -70,6 +70,11 @@ public struct PlanGenerator: Sendable {
         templates.programmes.programme(for: goal)
     }
 
+    /// The outline for a plan the athlete built themselves.
+    public func makeOutline(for plan: CustomPlan) -> PlanOutline {
+        CustomPlanGenerator.outline(plan, calendar: calendar)
+    }
+
     public func makeOutline(for profile: AthleteProfile, startingOn monday: Date) -> PlanOutline {
         if let programme = templates.programmes.programme(for: profile.goal) {
             return ProgrammePlanner.outline(programme: programme, profile: profile, startMonday: calendar.startOfISOWeek(for: monday),
@@ -108,7 +113,7 @@ public struct PlanGenerator: Sendable {
     ) -> GeneratedWeek? {
         guard var generated = generateMainSessions(index, outline: outline, profile: profile,
                                                    workingWeights: workingWeights, notBefore: notBefore) else { return nil }
-        addRecoveryRun(to: &generated, week: outline.weeks[index], profile: profile, notBefore: notBefore)
+        if outline.customPlan == nil { addRecoveryRun(to: &generated, week: outline.weeks[index], profile: profile, notBefore: notBefore) }
         return generated
     }
 
@@ -151,6 +156,10 @@ public struct PlanGenerator: Sendable {
         notBefore: Date?
     ) -> GeneratedWeek? {
         guard outline.weeks.indices.contains(index) else { return nil }
+        if let custom = outline.customPlan {
+            return CustomPlanGenerator.generateWeek(index, plan: custom, outline: outline, profile: profile, templates: templates,
+                                                    workingWeights: workingWeights, notBefore: notBefore, calendar: calendar)
+        }
         if let goal = outline.programmeGoal, let programme = templates.programmes.programme(for: goal) {
             return ProgrammePlanner.generateWeek(index, outline: outline, programme: programme, profile: profile, templates: templates,
                                                  workingWeights: workingWeights, notBefore: notBefore, calendar: calendar)

@@ -13,6 +13,7 @@ struct PlanView: View {
     @State private var showWalkthrough = false
     @State private var showCalendar = false
     @State private var showReview = false
+    @State private var showBuilder = false
     @Environment(AppRouter.self) private var router
 
     private var format: DisplayFormat { DisplayFormat(units: profiles.first?.units ?? UnitPreference.stored) }
@@ -151,6 +152,13 @@ struct PlanView: View {
                         }
                         .buttonStyle(.kx(.outlined, fullWidth: true))
                         .accessibilityIdentifier("plan.weekReview")
+                        Button {
+                            showBuilder = true
+                        } label: {
+                            Label(outline.customPlan == nil ? "Build my own plan" : "Edit my plan", systemImage: "square.and.pencil")
+                        }
+                        .buttonStyle(.kx(.outlined, fullWidth: true))
+                        .accessibilityIdentifier("plan.builder")
                     }
                     if weeks.isEmpty && !profiles.isEmpty {
                         Text("No sessions planned yet.")
@@ -175,6 +183,9 @@ struct PlanView: View {
                 openedCurrentWeek = true
             }
             .sheet(isPresented: $showCalendar) { CalendarSheet() }
+            .fullScreenCover(isPresented: $showBuilder) {
+                PlanBuilderView(existing: outline?.customPlan)
+            }
             .sheet(isPresented: $showReview) {
                 WeeklyReviewSheet(units: profiles.first?.units ?? UnitPreference.stored)
             }

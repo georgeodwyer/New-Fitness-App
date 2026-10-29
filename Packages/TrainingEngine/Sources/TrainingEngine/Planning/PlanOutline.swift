@@ -36,6 +36,8 @@ public struct PlanOutline: Codable, Equatable, Sendable {
     public var weeks: [WeekTarget]
     /// Set when the plan follows the coach's programme for this goal.
     public var programmeGoal: TrainingGoal? = nil
+    /// Set when the athlete built the plan themselves.
+    public var customPlan: CustomPlan? = nil
 
     public var blocks: [PlanBlock] {
         var result: [PlanBlock] = []

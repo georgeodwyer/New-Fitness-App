@@ -64,6 +64,45 @@ enum PlanService {
         return plan
     }
 
+    /// Starts a plan the athlete built themselves (the current one stops, keeping what's done).
+    @discardableResult
+    static func createCustomPlan(_ custom: CustomPlan, profile: AthleteProfile, in context: ModelContext, now: Date = .now) -> TrainingPlanModel {
+        let today = Calendar.kinetix.startOfDay(for: now)
+        for plan in (try? context.fetch(FetchDescriptor<TrainingPlanModel>())) ?? [] where plan.isActive {
+            plan.isActive = false
+            plan.touch(now: now)
+            for session in plan.sessions where session.status == .planned && session.date >= today {
+                session.softDelete(now: now)
+            }
+        }
+        let outline = generator.makeOutline(for: custom)
+        let plan = TrainingPlanModel(goal: profile.goal, startDate: max(outline.startDate, today), endDate: outline.eventDate)
+        plan.outline = outline
+        context.insert(plan)
+        context.insert(PlanChangeModel(summary: "Started your own plan, \(custom.name): \(custom.weeks) weeks.", now: now))
+        ensureHorizon(for: plan, profile: profile, in: context, now: now)
+        try? context.save()
+        SyncService.shared.requestSync()
+        return plan
+    }
+
+    /// Updates a self-built plan's template; the change starts next Monday, this week stays.
+    static func updateCustomPlan(_ custom: CustomPlan, profile: AthleteProfile, in context: ModelContext, now: Date = .now) {
+        let plans = ((try? context.fetch(FetchDescriptor<TrainingPlanModel>())) ?? []).filter { $0.isActive && !$0.isSoftDeleted }
+        guard let plan = plans.first, var outline = plan.outline else {
+            createCustomPlan(custom, profile: profile, in: context, now: now)
+            return
+        }
+        outline.customPlan = custom
+        plan.outline = outline
+        rebuildRemainder(for: profile, in: context, now: now, startingNextWeek: true)
+    }
+
+    /// The self-built plan behind the active plan, if it is one.
+    static func activeCustomPlan(in context: ModelContext) -> CustomPlan? {
+        ((try? context.fetch(FetchDescriptor<TrainingPlanModel>())) ?? []).first { $0.isActive && !$0.isSoftDeleted }?.outline?.customPlan
+    }
+
     /// Rebuilds the active plan from today with the current answers and the latest plan logic,
     /// keeping its start date and week numbers: sessions done or skipped stay, and today's and
     /// later sessions are built again. Falls back to a new plan if there isn't one.
@@ -80,7 +119,8 @@ enum PlanService {
             return createPlan(for: profile, in: context, now: now)
         }
         let generator = generator
-        let outline = generator.makeOutline(for: profile, startingOn: firstMonday)
+        // A plan they built themselves keeps its own weeks (only paces and weights are refreshed).
+        let outline = old.customPlan.map { generator.makeOutline(for: $0) } ?? generator.makeOutline(for: profile, startingOn: firstMonday)
         // Past the end of the rebuilt plan (or before it starts): nothing to keep, start afresh.
         guard let current = outline.weekIndex(containing: from, calendar: calendar) ?? (from < firstMonday ? 0 : nil) else {
             return createPlan(for: profile, in: context, now: now)
