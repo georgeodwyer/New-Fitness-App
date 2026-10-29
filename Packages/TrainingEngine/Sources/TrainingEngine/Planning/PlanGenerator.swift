@@ -172,7 +172,8 @@ public struct PlanGenerator: Sendable {
             doubleDays: mix.doubleDays,
             runs: mix.runs,
             lifts: mix.lifts,
-            prioritiseLifts: profile.goal == .buildStrength || profile.goal == .buildMuscle
+            prioritiseLifts: profile.goal == .buildStrength || profile.goal == .buildMuscle,
+            longRunDay: profile.longRunDay
         )
         let rules = templates.rules
         let goalRules = rules.goal(profile.goal)

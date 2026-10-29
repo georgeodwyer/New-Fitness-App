@@ -126,7 +126,10 @@
    "liftsMin": 1,
    "liftsMax": 2,
    "defaultSplit": "fullBody2",
-   "alsoSuggested": []
+   "alsoSuggested": [
+    "runner2",
+    "runner1"
+   ]
   },
   "faster5k": {
    "runsMin": 3,
@@ -134,7 +137,10 @@
    "liftsMin": 1,
    "liftsMax": 2,
    "defaultSplit": "fullBody2",
-   "alsoSuggested": []
+   "alsoSuggested": [
+    "runner2",
+    "runner1"
+   ]
   },
   "faster10k": {
    "runsMin": 3,
@@ -142,7 +148,10 @@
    "liftsMin": 1,
    "liftsMax": 5,
    "defaultSplit": "fullBody2",
-   "alsoSuggested": []
+   "alsoSuggested": [
+    "runner2",
+    "runner1"
+   ]
   },
   "halfMarathon": {
    "runsMin": 3,
@@ -150,7 +159,10 @@
    "liftsMin": 1,
    "liftsMax": 2,
    "defaultSplit": "fullBody2",
-   "alsoSuggested": []
+   "alsoSuggested": [
+    "runner2",
+    "runner1"
+   ]
   },
   "marathon": {
    "runsMin": 4,
@@ -158,7 +170,10 @@
    "liftsMin": 1,
    "liftsMax": 2,
    "defaultSplit": "fullBody2",
-   "alsoSuggested": []
+   "alsoSuggested": [
+    "runner2",
+    "runner1"
+   ]
   },
   "buildStrength": {
    "runsMin": 1,
@@ -1858,6 +1873,194 @@
         "repsLow": 8,
         "repsHigh": 12,
         "restSeconds": 90
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "code": "runner1",
+    "name": "Runner strength ×1",
+    "suits": "Runners: one short session of single-leg strength, calves and core to stay strong and injury-resistant.",
+    "shown": true,
+    "days": [
+     {
+      "name": "Runner strength",
+      "focus": "fullBody",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "named",
+        "exerciseName": "Bulgarian Split Squat",
+        "sets": 3,
+        "repsLow": 6,
+        "repsHigh": 8,
+        "restSeconds": 120,
+        "note": "Each leg. Back foot on a bench."
+       },
+       {
+        "role": "main",
+        "pattern": "named",
+        "exerciseName": "Romanian Deadlift",
+        "sets": 3,
+        "repsLow": 6,
+        "repsHigh": 8,
+        "restSeconds": 120
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Step-Up",
+        "sets": 2,
+        "repsLow": 8,
+        "repsHigh": 10,
+        "restSeconds": 60,
+        "note": "Each leg. Drive the knee up."
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Single-Leg Calf Raise",
+        "sets": 3,
+        "repsLow": 12,
+        "repsHigh": 15,
+        "restSeconds": 45,
+        "note": "Each leg. Pause at the bottom."
+       },
+       {
+        "role": "accessory",
+        "pattern": "horizontalPull",
+        "sets": 2,
+        "repsLow": 10,
+        "repsHigh": 12,
+        "restSeconds": 60
+       },
+       {
+        "role": "accessory",
+        "pattern": "antiRotation",
+        "sets": 2,
+        "repsLow": 8,
+        "repsHigh": 10,
+        "restSeconds": 45
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "code": "runner2",
+    "name": "Runner strength ×2",
+    "suits": "Runners: single-leg strength, hamstrings and calves, plus hip power. Short sessions that fit around running.",
+    "shown": true,
+    "days": [
+     {
+      "name": "Runner strength A",
+      "focus": "fullBody",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "squat",
+        "sets": 3,
+        "repsLow": 5,
+        "repsHigh": 6,
+        "restSeconds": 150
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Bulgarian Split Squat",
+        "sets": 3,
+        "repsLow": 6,
+        "repsHigh": 8,
+        "restSeconds": 90,
+        "note": "Each leg. Back foot on a bench."
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Nordic Hamstring Curl",
+        "sets": 3,
+        "repsLow": 4,
+        "repsHigh": 6,
+        "restSeconds": 90,
+        "note": "Lower as slowly as you can."
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Single-Leg Calf Raise",
+        "sets": 3,
+        "repsLow": 12,
+        "repsHigh": 15,
+        "restSeconds": 45,
+        "note": "Each leg. Pause at the bottom."
+       },
+       {
+        "role": "accessory",
+        "pattern": "antiRotation",
+        "sets": 2,
+        "repsLow": 8,
+        "repsHigh": 10,
+        "restSeconds": 45
+       }
+      ]
+     },
+     {
+      "name": "Runner strength B",
+      "focus": "fullBody",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "hinge",
+        "sets": 3,
+        "repsLow": 4,
+        "repsHigh": 6,
+        "restSeconds": 150
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Step-Up",
+        "sets": 3,
+        "repsLow": 8,
+        "repsHigh": 10,
+        "restSeconds": 60,
+        "note": "Each leg. Drive the knee up."
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Barbell Hip Thrust",
+        "sets": 3,
+        "repsLow": 8,
+        "repsHigh": 10,
+        "restSeconds": 90
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Kettlebell Swing",
+        "sets": 3,
+        "repsLow": 10,
+        "repsHigh": 12,
+        "restSeconds": 60,
+        "note": "Snap the hips: power for running."
+       },
+       {
+        "role": "accessory",
+        "pattern": "horizontalPull",
+        "sets": 2,
+        "repsLow": 10,
+        "repsHigh": 12,
+        "restSeconds": 60
+       },
+       {
+        "role": "accessory",
+        "pattern": "core",
+        "sets": 2,
+        "repsLow": 8,
+        "repsHigh": 10,
+        "restSeconds": 45
        }
       ]
      }

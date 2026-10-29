@@ -90,6 +90,7 @@ extension UserProfileModel: SyncableModel {
         planStartDate = p.planStartDate
         goalTimeSeconds = p.goalTimeSeconds
         recoveryRunDayRaw = p.recoveryRunDay?.rawValue
+        longRunDayRaw = p.longRunDay?.rawValue
         createdAt = payload.createdAt
     }
 

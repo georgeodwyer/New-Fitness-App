@@ -99,4 +99,63 @@ final class WeekSchedulerTests: XCTestCase {
         XCTAssertTrue(mix.runs.contains(.tempo))
         XCTAssertTrue(mix.runs.contains(.long))
     }
+
+    // MARK: Gym first, same muscles never back to back
+
+    private func split(_ code: String) -> [StrengthSessionTemplate] {
+        templates.programmes.strength!.split(code)!.days
+    }
+
+    private func assertNoSameMuscleBackToBack(_ placements: [Placement], file: StaticString = #filePath, line: UInt = #line) {
+        let lifts = placements.compactMap { p -> (Weekday, StrengthSessionTemplate)? in
+            if case .lift(let t) = p.item { return (p.weekday, t) }
+            return nil
+        }
+        for (i, a) in lifts.enumerated() {
+            for b in lifts[(i + 1)...] where a.0.circularDistance(to: b.0) == 1 {
+                XCTAssertFalse(a.1.sharesMuscles(with: b.1), "\(a.1.name) (\(a.0.shortName)) and \(b.1.name) (\(b.0.shortName)) are back to back",
+                               file: file, line: line)
+            }
+        }
+    }
+
+    func testPushAndUpperAreNotBackToBack() {
+        let lifts = split("pplUpperArms")
+        XCTAssertEqual(lifts.count, 5)
+        let push = lifts[0], upper = lifts[3], arms = lifts[4]
+        XCTAssertTrue(push.sharesMuscles(with: upper))
+        XCTAssertTrue(arms.sharesMuscles(with: upper))
+        XCTAssertFalse(push.sharesMuscles(with: lifts[1]), "Push and Pull can go on consecutive days")
+
+        let days = Weekday.allCases.filter { $0 != .friday }
+        let result = WeekScheduler.schedule(days: days, doubleDays: 3, runs: [.long, .tempo, .easy, .easy], lifts: lifts,
+                                            prioritiseLifts: true)
+        XCTAssertEqual(result.placements.filter { if case .lift = $0.item { return true }; return false }.count, 5)
+        assertNoSameMuscleBackToBack(result.placements)
+        XCTAssertEqual(WeekScheduler.violations(result.placements, days: days, doubleDays: 3), [])
+    }
+
+    func testFourDaySplitsAvoidOverlapWhenThereIsRoom() {
+        for code in ["pplUpper", "upperLower", "ppl"] {
+            let lifts = split(code)
+            let result = WeekScheduler.schedule(days: Weekday.allCases.filter { $0 != .friday }, doubleDays: 2,
+                                                runs: [.long, .intervals, .easy], lifts: lifts, prioritiseLifts: true)
+            assertNoSameMuscleBackToBack(result.placements)
+        }
+    }
+
+    func testLongRunOnChosenDay() {
+        let days: [Weekday] = [.tuesday, .thursday, .saturday, .sunday]
+        let result = WeekScheduler.schedule(days: days, doubleDays: 0, runs: [.long, .tempo, .easy], lifts: [upper],
+                                            longRunDay: .saturday)
+        XCTAssertEqual(result.placements.first { $0.item == .run(.long) }?.weekday, .saturday)
+        XCTAssertEqual(WeekScheduler.violations(result.placements, days: days, doubleDays: 0), [])
+    }
+
+    func testRunningGoalsKeepTheirHardRunsWithGymFirst() {
+        let days: [Weekday] = [.monday, .tuesday, .wednesday, .thursday, .saturday, .sunday]
+        let result = WeekScheduler.schedule(days: days, doubleDays: 1, runs: [.long, .intervals, .tempo, .easy], lifts: [lower, upper])
+        XCTAssertEqual(result.placements.filter(\.isHardRun).count, 3, "\(result.notes)")
+        XCTAssertEqual(result.placements.filter { if case .lift = $0.item { return true }; return false }.count, 2)
+    }
 }

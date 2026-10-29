@@ -52,6 +52,7 @@ SPLITS = {
     "ppl + upper / lower": "pplUpperLower", "ppl + upper + shoulders & arms": "pplUpperArms",
     "push / pull / legs / upper": "pplUpper",
     "hyrox: stations ×2": "hyroxStations2", "hyrox: strength + stations": "hyroxHybrid3",
+    "runner strength ×1": "runner1", "runner strength ×2": "runner2",
 }
 PATTERNS = {
     "any squat": "squat", "any hinge (deadlift)": "hinge", "any hinge accessory (rdl, bridge)": "hingeAccessory",

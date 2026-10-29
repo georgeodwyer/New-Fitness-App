@@ -263,7 +263,8 @@ enum ProgrammePlanner {
         // Build strength and Build muscle place their gym days first.
         let liftingGoal = profile.goal == .buildStrength || profile.goal == .buildMuscle
         let schedule = WeekScheduler.schedule(days: mix.days, doubleDays: mix.doubles, runs: runs.map(\.session.runType), lifts: lifts,
-                                              prioritiseLifts: liftingGoal, keepLegSessions: liftingGoal || profile.goal == .hyrox)
+                                              prioritiseLifts: liftingGoal, keepLegSessions: liftingGoal || profile.goal == .hyrox,
+                                              longRunDay: profile.longRunDay)
         notes += schedule.notes
 
         var pool = runs

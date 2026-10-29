@@ -170,7 +170,8 @@ final class ProgrammePlannerTests: XCTestCase {
 
     func testChosenGymSplit() {
         let strength = try! XCTUnwrap(TestSupport.bundledTemplates.programmes.strength)
-        XCTAssertEqual(Set(strength.offered(sessions: 2).map(\.code)), ["fullBody2", "upperLower", "hyroxStations2"])
+        XCTAssertEqual(Set(strength.offered(sessions: 2).map(\.code)), ["fullBody2", "upperLower", "hyroxStations2", "runner2"])
+        XCTAssertTrue(strength.offered(sessions: 1).map(\.code).contains("runner1"))
         XCTAssertEqual(Set(strength.offered(sessions: 3).map(\.code)), ["fullBody3", "ppl", "upperLowerFull", "hyroxHybrid3"])
         XCTAssertEqual(strength.offered(sessions: 6).map(\.code), ["ppl6"])
         XCTAssertEqual(Set(strength.offered(sessions: 4).map(\.code)), ["upperLower", "pplUpper"])

@@ -151,6 +151,8 @@ public struct AthleteProfile: Codable, Equatable, Sendable {
     public var goalTimeSeconds: Double?
     /// Training all 7 days: the day that's an easy recovery run (nil = Friday).
     public var recoveryRunDay: Weekday?
+    /// The day they want their long run (nil = the weekend, as before).
+    public var longRunDay: Weekday?
 
     public static func swapKey(day: String, exerciseId: String) -> String { "\(day)|\(exerciseId)" }
 
@@ -178,7 +180,8 @@ public struct AthleteProfile: Codable, Equatable, Sendable {
         exerciseSwaps: [String: String]? = nil,
         planStartDate: Date? = nil,
         goalTimeSeconds: Double? = nil,
-        recoveryRunDay: Weekday? = nil
+        recoveryRunDay: Weekday? = nil,
+        longRunDay: Weekday? = nil
     ) {
         self.runningExperience = runningExperience
         self.recentRace = recentRace
@@ -204,6 +207,7 @@ public struct AthleteProfile: Codable, Equatable, Sendable {
         self.planStartDate = planStartDate
         self.goalTimeSeconds = goalTimeSeconds
         self.recoveryRunDay = recoveryRunDay
+        self.longRunDay = longRunDay
     }
 
     /// Training every day: one of them is an easy recovery run, planned around the rest.
@@ -243,6 +247,7 @@ extension AthleteProfile {
         if hyroxDivision != other.hyroxDivision { changes.append("Hyrox division") }
         if goalTimeSeconds.map({ Int($0) }) != other.goalTimeSeconds.map({ Int($0) }) { changes.append("target time") }
         if hasRecoveryRunDay && effectiveRecoveryRunDay != other.effectiveRecoveryRunDay { changes.append("recovery run day") }
+        if longRunDay != other.longRunDay { changes.append("long run day") }
         return changes
     }
 }

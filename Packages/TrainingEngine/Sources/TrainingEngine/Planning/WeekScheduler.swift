@@ -43,7 +43,8 @@ public enum WeekScheduler {
         runs: [RunSessionType],
         lifts: [StrengthSessionTemplate],
         prioritiseLifts: Bool = false,
-        keepLegSessions: Bool? = nil
+        keepLegSessions: Bool? = nil,
+        longRunDay: Weekday? = nil
     ) -> Result {
         // When a leg session fits nowhere, ease a hard run to keep it (lifting goals, Hyrox),
         // or drop the leg session (running goals).
@@ -65,7 +66,8 @@ public enum WeekScheduler {
                     && !(state.lifts[day]?.focus.loadsLowerBody ?? false)
                     && !(state.lifts[day.previous]?.focus.loadsLowerBody ?? false)
             }
-            let preferred = [Weekday.sunday, .saturday].first { allowed.contains($0) } ?? allowed.last
+            let chosen = longRunDay.flatMap { allowed.contains($0) ? $0 : nil }
+            let preferred = chosen ?? [Weekday.sunday, .saturday].first { allowed.contains($0) } ?? allowed.last
             if let day = preferred {
                 state.addRun(.long, on: day)
             } else {
@@ -101,21 +103,41 @@ public enum WeekScheduler {
             remainingRuns.removeAll { $0.isQuality }
         }
 
-        // Lifts, lower-body first because they're the most constrained.
+        // Gym sessions, laid out together: every way of putting them on the free days is scored,
+        // so sessions working the same muscles are never on back-to-back days if it can be helped,
+        // the split keeps its order where it can, and there's still room for the runs.
         func placeLifts() {
-            let orderedLifts = lifts.enumerated().sorted { lhs, rhs in
-                if lhs.element.focus.loadsLowerBody != rhs.element.focus.loadsLowerBody {
-                    return lhs.element.focus.loadsLowerBody
+            let qualityCount = remainingRuns.filter(\.isQuality).count
+            let easyCount = remainingRuns.count - qualityCount
+            var best: (days: [Weekday?], score: Double)?
+            var chosen: [Weekday?] = []
+            func search(_ index: Int, _ trial: inout State) {
+                if index == lifts.count {
+                    let score = trial.liftLayoutScore(lifts, days: chosen, qualityRuns: qualityCount, easyRuns: easyCount)
+                    if best == nil || score > best!.score + 1e-9 { best = (chosen, score) }
+                    return
                 }
-                return lhs.offset < rhs.offset
-            }.map(\.element)
-            for lift in orderedLifts {
-                let candidates = state.days.filter { state.canPlaceLift(lift, on: $0) }
-                let best = candidates.max { a, b in
-                    let sa = state.liftScore(lift, on: a), sb = state.liftScore(lift, on: b)
-                    return sa == sb ? a > b : sa < sb
+                let lift = lifts[index]
+                let options = trial.days.filter { trial.canPlaceLift(lift, on: $0) }
+                for day in options {
+                    trial.lifts[day] = lift
+                    chosen.append(day)
+                    search(index + 1, &trial)
+                    chosen.removeLast()
+                    trial.lifts[day] = nil
                 }
-                if let day = best {
+                if options.isEmpty {
+                    // No day for it: left out (or made room for below).
+                    chosen.append(nil)
+                    search(index + 1, &trial)
+                    chosen.removeLast()
+                }
+            }
+            var trial = state
+            search(0, &trial)
+            let layout = best?.days ?? Array(repeating: nil, count: lifts.count)
+            for (lift, day) in zip(lifts, layout) {
+                if let day {
                     state.addLift(lift, on: day)
                 } else if easeRunsForLegs, lift.focus.loadsLowerBody, let room = state.roomByEasingHardRun(for: lift) {
                     // Keep the leg session: one of several hard runs becomes easy instead.
@@ -129,15 +151,10 @@ public enum WeekScheduler {
             }
         }
 
-        if prioritiseLifts {
-            placeLifts()
-            placeLongRun()
-            placeQualityRuns()
-        } else {
-            placeLongRun()
-            placeQualityRuns()
-            placeLifts()
-        }
+        // The long run keeps its day; the gym week goes next and the other runs fit around it.
+        placeLongRun()
+        placeLifts()
+        placeQualityRuns()
         remainingRuns += Array(repeating: .easy, count: convertedToEasy)
 
         // Easy runs in the gaps.
@@ -260,6 +277,44 @@ public enum WeekScheduler {
             return score
         }
 
+        /// How good a layout of the week's gym sessions is (`days[i]` for `lifts[i]`, nil = left out).
+        func liftLayoutScore(_ lifts: [StrengthSessionTemplate], days layout: [Weekday?], qualityRuns: Int, easyRuns: Int) -> Double {
+            var score = 0.0
+            let placed = zip(lifts, layout).compactMap { lift, day in day.map { (lift, $0) } }
+            score -= 30 * Double(layout.count - placed.count)
+            for (lift, day) in placed {
+                score += runs[day] == nil ? 3 : (runs[day]?.isQuality == true && lift.focus.loadsLowerBody ? 2 : 1)
+                // Legs are tired the day after the long run.
+                if lift.focus.loadsLowerBody && runs[day.previous] == .long { score -= 2 }
+                // Spread gym days out a little.
+                let spacing = placed.filter { $0.1 != day }.map { $0.1.circularDistance(to: day) }.min() ?? 3
+                score += 0.3 * Double(min(spacing, 3))
+            }
+            // The same muscles on back-to-back days (also Sunday into Monday): avoided if at all possible.
+            for (i, a) in placed.enumerated() {
+                for b in placed[(i + 1)...] where a.1.circularDistance(to: b.1) == 1 && a.0.sharesMuscles(with: b.0) {
+                    score -= 20
+                }
+            }
+            // The split's order (Push, Pull, Legs…) through the week where it fits.
+            for i in placed.indices.dropLast() where placed[i].1 < placed[i + 1].1 { score += 0.4 }
+            // Room left for the runs.
+            var free = 0, withLift = 0, nonLegFree = 0
+            for day in days where runs[day] == nil {
+                let afterLegs = placed.contains { $0.1 == day.previous && $0.0.focus.loadsLowerBody }
+                let lift = placed.first { $0.1 == day }?.0
+                if lift == nil { free += 1 } else { withLift += 1 }
+                if !afterLegs && !(lift?.focus.loadsLowerBody ?? false) {
+                    if lift == nil { nonLegFree += 1 }
+                }
+            }
+            let doublesLeft = max(0, doubleDays - placed.filter { runs[$0.1] != nil }.count)
+            let hardRoom = nonLegFree + doublesLeft
+            score -= 8 * Double(max(0, qualityRuns - hardRoom))
+            score -= 4 * Double(max(0, qualityRuns + easyRuns - free - min(withLift, doublesLeft)))
+            return score
+        }
+
         func easyRunScore(on day: Weekday) -> Double {
             var score = 0.0
             if lifts[day] == nil {
@@ -308,5 +363,58 @@ public enum WeekScheduler {
             }
             return result
         }
+    }
+}
+
+// MARK: - Muscles worked
+
+/// The muscle areas a gym session works hard, so two sessions on the same muscles aren't put on
+/// back-to-back days. Push and Pull don't overlap (that's the point of the split); Upper,
+/// Shoulders & arms and Full body overlap both.
+enum MuscleArea: Hashable {
+    case chest, back, shoulders, biceps, triceps, legs
+}
+
+extension StrengthSessionTemplate {
+    var muscleAreas: Set<MuscleArea> {
+        switch focus {
+        case .push: return [.chest, .shoulders, .triceps]
+        case .pull: return [.back, .biceps]
+        case .legs, .lower: return [.legs]
+        case .fullBody: return [.chest, .back, .shoulders, .legs]
+        case .upper:
+            // An upper day is read from its exercises (Shoulders & arms has no chest or back).
+            var areas = Set<MuscleArea>()
+            for slot in slots { areas.formUnion(Self.areas(for: slot)) }
+            return areas.isEmpty ? [.chest, .back, .shoulders, .biceps, .triceps] : areas
+        }
+    }
+
+    func sharesMuscles(with other: StrengthSessionTemplate) -> Bool {
+        !muscleAreas.isDisjoint(with: other.muscleAreas)
+    }
+
+    private static func areas(for slot: ExerciseSlot) -> Set<MuscleArea> {
+        switch slot.pattern {
+        case "horizontalPush": return [.chest, .triceps]
+        case "verticalPush": return [.shoulders, .triceps]
+        case "horizontalPull", "verticalPull": return [.back, .biceps]
+        case "arms": return [.biceps, .triceps]
+        case "squat", "lunge", "hinge", "hingeAccessory", "calf": return [.legs]
+        case "core", "antiRotation": return []
+        default: break
+        }
+        let name = (slot.exerciseName ?? "").lowercased()
+        if name.isEmpty { return [] }
+        if name.contains("leg ") || name.contains("squat") || name.contains("lunge") || name.contains("calf")
+            || name.contains("deadlift") || name.contains("hip thrust") || name.contains("step-up") { return [.legs] }
+        if name.contains("curl") { return [.biceps] }
+        if name.contains("tricep") || name.contains("skull") || name.contains("close-grip") || name.contains("dip") { return [.triceps] }
+        if name.contains("lateral") || name.contains("shoulder") || name.contains("overhead press") || name.contains("arnold")
+            || name.contains("rear delt") || name.contains("face pull") || name.contains("upright") { return [.shoulders] }
+        if name.contains("bench") || name.contains("chest") || name.contains("fly") || name.contains("push-up") { return [.chest, .triceps] }
+        if name.contains("row") || name.contains("pulldown") || name.contains("pull-up") || name.contains("chin-up")
+            || name.contains("pullover") { return [.back, .biceps] }
+        return []
     }
 }

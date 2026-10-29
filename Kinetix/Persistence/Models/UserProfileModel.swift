@@ -44,6 +44,8 @@ final class UserProfileModel: SyncTracked {
     var goalTimeSeconds: Double?
     /// Training all 7 days: the day that's an easy recovery run.
     var recoveryRunDayRaw: Int?
+    /// The day they want their long run (nil = the weekend).
+    var longRunDayRaw: Int?
 
     init(profile: AthleteProfile, id: UUID = UUID(), now: Date = .now) {
         self.id = id
@@ -75,6 +77,7 @@ final class UserProfileModel: SyncTracked {
         self.planStartDate = profile.planStartDate
         self.goalTimeSeconds = profile.goalTimeSeconds
         self.recoveryRunDayRaw = profile.recoveryRunDay?.rawValue
+        self.longRunDayRaw = profile.longRunDay?.rawValue
     }
 
     /// The engine's view of this profile.
@@ -104,7 +107,8 @@ final class UserProfileModel: SyncTracked {
                 exerciseSwaps: StoredJSON.decode([String: String].self, from: exerciseSwapsData),
                 planStartDate: planStartDate,
                 goalTimeSeconds: goalTimeSeconds,
-                recoveryRunDay: recoveryRunDayRaw.flatMap(Weekday.init(rawValue:))
+                recoveryRunDay: recoveryRunDayRaw.flatMap(Weekday.init(rawValue:)),
+                longRunDay: longRunDayRaw.flatMap(Weekday.init(rawValue:))
             )
         }
         set {
@@ -132,6 +136,7 @@ final class UserProfileModel: SyncTracked {
             planStartDate = newValue.planStartDate
             goalTimeSeconds = newValue.goalTimeSeconds
             recoveryRunDayRaw = newValue.recoveryRunDay?.rawValue
+            longRunDayRaw = newValue.longRunDay?.rawValue
             touch()
         }
     }
