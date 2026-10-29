@@ -90,7 +90,10 @@ struct PlanView: View {
             let days = byDay.keys.sorted().map { day in
                 DayGroup(day: day, items: (byDay[day] ?? []).sorted { $0.slot == .morning && $1.slot == .evening }.map(Item.session))
             }
-            return WeekGroup(index: index, target: target(index), days: days, isPreview: false)
+            let start = target(index)?.startDate ?? calendar.startOfISOWeek(for: days.first?.day ?? today)
+            let planStart = plans.first.map { calendar.startOfDay(for: $0.startDate) }
+            return WeekGroup(index: index, target: target(index), days: withRestDays(days, weekStart: start, from: planStart),
+                             isPreview: false)
         }
         let builtIndexes = Set(built.map(\.index))
         let later = previews.keys.sorted().filter { !builtIndexes.contains($0) }.compactMap { index -> WeekGroup? in
@@ -99,9 +102,26 @@ struct PlanView: View {
             let days = byDay.keys.sorted().map { day in
                 DayGroup(day: day, items: (byDay[day] ?? []).sorted { $0.slot == .morning && $1.slot == .evening }.map(Item.preview))
             }
-            return WeekGroup(index: index, target: week.target, days: days, isPreview: true)
+            return WeekGroup(index: index, target: week.target, days: withRestDays(days, weekStart: week.target.startDate, from: today),
+                             isPreview: true)
         }
         return built + later
+    }
+
+    /// All seven days of the week: days with nothing planned show as rest days (none before `from`).
+    private func withRestDays(_ days: [DayGroup], weekStart: Date, from: Date?) -> [DayGroup] {
+        let calendar = Calendar.kinetix
+        let monday = calendar.startOfDay(for: weekStart)
+        let byDay = Dictionary(days.map { ($0.day, $0) }, uniquingKeysWith: { a, _ in a })
+        let filled = (0..<7).compactMap { offset -> DayGroup? in
+            guard let day = calendar.date(byAdding: .day, value: offset, to: monday) else { return nil }
+            if let existing = byDay[day] { return existing }
+            if let from, day < from { return nil }
+            return DayGroup(day: day, items: [])
+        }
+        // Anything outside Monday–Sunday (shouldn't happen) is kept.
+        let extra = days.filter { day in !filled.contains { $0.day == day.day } }
+        return (filled + extra).sorted { $0.day < $1.day }
     }
 
     /// Finished weeks (before this one), oldest first.
@@ -302,6 +322,9 @@ struct PlanView: View {
                 ForEach(week.days) { day in
                     VStack(alignment: .leading, spacing: KXSpacing.xs) {
                         KXOverline(day.day.formatted(.dateTime.weekday(.wide).day().month()))
+                        if day.items.isEmpty {
+                            restRow
+                        }
                         ForEach(day.items) { item in
                             switch item {
                             case .session(let session):
@@ -316,6 +339,27 @@ struct PlanView: View {
                 }
             }
         }
+    }
+
+    /// A day with nothing planned.
+    private var restRow: some View {
+        HStack(spacing: KXSpacing.sm) {
+            Image(systemName: "moon.zzz")
+                .font(KXFont.callout)
+                .foregroundStyle(KXColor.inkTertiary)
+                .frame(width: 28)
+                .accessibilityHidden(true)
+            Text("Rest day")
+                .font(KXFont.callout)
+                .foregroundStyle(KXColor.inkSecondary)
+            Spacer()
+        }
+        .padding(.vertical, KXSpacing.sm)
+        .padding(.horizontal, KXSpacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(KXColor.surface.opacity(0.5), in: RoundedRectangle(cornerRadius: KXRadius.md, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("plan.restDay")
     }
 
     /// "Week 3 · Build" with the week's dates and "3 runs · 2 lifts · 28 km".

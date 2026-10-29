@@ -93,6 +93,8 @@ struct TrainingProfileView: View {
             Section("Schedule") {
                 row("Training days", value: Weekday.allCases.filter { model.trainingDays.contains($0) }.map(\.shortName).joined(separator: " "),
                     step: .trainingDays)
+                row("Long run day", value: (model.longRunDay.flatMap { model.trainingDays.contains($0) ? $0 : nil })?.shortName ?? "Weekend",
+                    step: .trainingDays)
                 row("Double sessions", value: model.doubleSessionDays == 0 ? "None" : "\(model.doubleSessionDays) day\(model.doubleSessionDays == 1 ? "" : "s")",
                     step: .doubleSessions)
                 row("Gym week", value: gymWeekText, step: .gymWeek)

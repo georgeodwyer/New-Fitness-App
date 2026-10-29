@@ -82,6 +82,8 @@ final class OnboardingModel {
     var trainingDays: Set<Weekday> = [.monday, .tuesday, .thursday, .saturday]
     /// Training all 7 days: the day that's an easy recovery run.
     var recoveryRunDay: Weekday = .friday
+    /// The day for the long run (nil until they pick: the weekend).
+    var longRunDay: Weekday?
     /// Gym sessions a week and the split (set on the gym week screen; until then the plan
     /// decides, as for profiles made before the question existed).
     var liftSessionsPerWeek = 2
@@ -189,7 +191,8 @@ final class OnboardingModel {
             exerciseSwaps: exerciseSwaps,
             planStartDate: planStartDate,
             goalTimeSeconds: asksGoalTime && hasGoalTime && goalTimeSeconds >= 600 ? goalTimeSeconds : nil,
-            recoveryRunDay: trainingDays.count >= 7 ? recoveryRunDay : nil
+            recoveryRunDay: trainingDays.count >= 7 ? recoveryRunDay : nil,
+            longRunDay: longRunDay.flatMap { trainingDays.contains($0) ? $0 : nil }
         )
     }
 
@@ -254,6 +257,7 @@ final class OnboardingModel {
         }
         trainingDays = Set(profile.trainingDays)
         recoveryRunDay = profile.effectiveRecoveryRunDay
+        longRunDay = profile.longRunDay
         doubleSessionDays = profile.doubleSessionDays
         equipment = profile.equipment
     }

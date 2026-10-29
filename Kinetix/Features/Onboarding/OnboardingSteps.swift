@@ -527,7 +527,34 @@ struct TrainingDaysStep: View {
             }
             .kxCard()
         }
+        if model.trainingDays.count >= 2 {
+            VStack(alignment: .leading, spacing: KXSpacing.sm) {
+                KXOverline("Long run day")
+                Text("Which day suits your longest run? Your gym days and other runs are planned around it.")
+                    .font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 64), spacing: KXSpacing.sm)], spacing: KXSpacing.sm) {
+                    ForEach(longRunOptions, id: \.self) { day in
+                        KXSelectableChip(text: day.shortName, isSelected: selectedLongRunDay == day) {
+                            model.longRunDay = day
+                        }
+                        .accessibilityIdentifier("onboarding.longRunDay.\(day.rawValue)")
+                    }
+                }
+            }
+            .kxCard()
+        }
         ScheduleFitWarning(model: model)
+    }
+
+    /// Training days that can take the long run (not the recovery run day).
+    private var longRunOptions: [Weekday] {
+        model.trainingDays.sorted().filter { !(model.trainingDays.count >= 7 && $0 == model.recoveryRunDay) }
+    }
+
+    /// Their pick, else what the plan would choose (Sunday, then Saturday, then the last day).
+    private var selectedLongRunDay: Weekday? {
+        if let day = model.longRunDay, longRunOptions.contains(day) { return day }
+        return [Weekday.sunday, .saturday].first { longRunOptions.contains($0) } ?? longRunOptions.last
     }
 
     private var daysCaption: String {

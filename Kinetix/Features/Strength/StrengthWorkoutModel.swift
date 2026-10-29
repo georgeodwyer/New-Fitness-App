@@ -157,8 +157,12 @@ final class StrengthWorkoutModel {
 
     private func handleWatch(_ command: MirrorCommand) {
         switch command {
-        case .startSet: startSet()
-        case .finishSet: finishSet()
+        case .startSet:
+            // Started on the watch during the warm-up: the phone moves on to the first set too.
+            if needsWarmUp { finishWarmUp(startFirstSet: true) } else { startSet() }
+        case .finishSet:
+            if needsWarmUp { finishWarmUp(startFirstSet: false) }
+            finishSet()
         case .undo: undoLast()
         default: break
         }
@@ -279,61 +283,80 @@ final class StrengthWorkoutModel {
         log.activeSeconds + (setStartedAt.map { max(0, now.timeIntervalSince($0)) } ?? 0)
     }
 
-    /// Starts timing the next set. Any rest still showing ends (rest is a guide, not a gate).
-    /// The last Start set / Finish set, so it can be undone (until the next one).
-    private enum LastAction {
-        case started
+    /// Start set / Finish set as they happened, so they can be undone one at a time, back
+    /// through the workout (Finish → back in the set, Start → back to the rest before it…).
+    private enum Action {
+        case started(restEndsAt: Date?, restTotal: Double, lastFinished: UUID?)
         case finished(setId: UUID, previousStart: Date?, activeSeconds: Double?)
     }
-    private var lastAction: LastAction?
-    var canUndo: Bool { lastAction != nil }
+    private var history: [Action] = []
+    var canUndo: Bool { !history.isEmpty }
     /// "Undo finish" or "Undo start", for the button's label.
     var undoLabel: String {
-        switch lastAction {
+        switch history.last {
         case .started?: return "Undo start"
         case .finished?: return "Undo finish"
         case nil: return "Undo"
         }
     }
 
+    /// Starts timing the next set. Any rest still showing ends (rest is a guide, not a gate).
     func startSet() {
         guard nextSet != nil, setStartedAt == nil else { return }
+        let resting = restEndsAt.map { $0 > .now } ?? false
+        history.append(.started(restEndsAt: resting ? restEndsAt : nil, restTotal: restTotalSeconds, lastFinished: lastFinishedSetId))
         if restEndsAt != nil { skipRest() }
         lastFinishedSetId = nil
         setStartedAt = .now
-        lastAction = .started
+        trimHistory()
         updateLockScreen()
     }
 
-    /// Takes back the last Start set (back to resting) or Finish set (the set is open
-    /// again and its timer carries on from when it started).
+    /// Takes back the last Start set (back to the rest before it, still counting down if
+    /// there's time left) or Finish set (the set is open again and its timer carries on).
     func undoLast() {
-        switch lastAction {
-        case .started?:
+        guard let action = history.popLast() else { return }
+        switch action {
+        case .started(let restEnd, let total, let lastFinished):
             setStartedAt = nil
-        case .finished(let setId, let previousStart, let activeSeconds)?:
+            lastFinishedSetId = lastFinished
+            if let restEnd, restEnd > .now {
+                restTotalSeconds = total
+                restEndsAt = restEnd
+                scheduleRestEnd()
+            }
+        case .finished(let setId, let previousStart, let activeSeconds):
             guard let set = log.orderedSets.first(where: { $0.id == setId }) else { break }
             log.activeSeconds = max(0, log.activeSeconds - (set.activeSeconds ?? 0))
             set.activeSeconds = activeSeconds
             set.completedAt = nil
             set.touch()
             log.touch()
+            restTask?.cancel()
+            NotificationService.cancelRest()
             restEndsAt = nil
             lastFinishedSetId = nil
             setStartedAt = previousStart
             save()
-        case nil:
-            return
         }
-        lastAction = nil
         updateLockScreen()
+    }
+
+    private func trimHistory() {
+        if history.count > 20 { history.removeFirst(history.count - 20) }
+    }
+
+    /// Folds a finished set that was left open (for its effort rating).
+    func closeFinishedSet(_ set: SetLogModel) {
+        if lastFinishedSetId == set.id { lastFinishedSetId = nil }
     }
 
     /// Logs the set being done with the weight and reps shown, and starts its rest.
     func finishSet() {
         guard let set = nextSet else { return }
         let now = Date()
-        lastAction = .finished(setId: set.id, previousStart: setStartedAt, activeSeconds: set.activeSeconds)
+        history.append(.finished(setId: set.id, previousStart: setStartedAt, activeSeconds: set.activeSeconds))
+        trimHistory()
         if let start = setStartedAt {
             let seconds = max(0, now.timeIntervalSince(start))
             set.activeSeconds = seconds
@@ -525,6 +548,8 @@ final class StrengthWorkoutModel {
             guard !Task.isCancelled else { return }
             self?.restEndsAt = nil
             self?.restFinishedCount += 1
+            // Rest over: the set just done folds away (its rating stays saved).
+            self?.lastFinishedSetId = nil
             self?.updateLockScreen()
         }
     }

@@ -137,23 +137,40 @@ struct PlanPreviewView: View {
         VStack(alignment: .leading, spacing: KXSpacing.md) {
             KXSectionHeader("Your first week")
             if let week = preview.firstWeek {
-                ForEach(Array(week.sessions.enumerated()), id: \.offset) { _, session in
-                    HStack(spacing: KXSpacing.md) {
-                        Text(session.date.formatted(.dateTime.weekday(.abbreviated)))
-                            .font(KXFont.captionEmphasis)
-                            .foregroundStyle(KXColor.inkSecondary)
-                            .frame(width: 40, alignment: .leading)
-                        Image(systemName: session.kind.symbolName)
-                            .foregroundStyle(session.kind.tint)
-                            .frame(width: 24)
-                            .accessibilityHidden(true)
-                        VStack(alignment: .leading, spacing: KXSpacing.xxs) {
-                            Text(session.title).font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink)
-                            Text(session.summary).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+                ForEach(Array(entries(of: week).enumerated()), id: \.offset) { _, entry in
+                    switch entry {
+                    case .session(let session):
+                        HStack(spacing: KXSpacing.md) {
+                            Text(session.date.formatted(.dateTime.weekday(.abbreviated)))
+                                .font(KXFont.captionEmphasis)
+                                .foregroundStyle(KXColor.inkSecondary)
+                                .frame(width: 40, alignment: .leading)
+                            Image(systemName: session.kind.symbolName)
+                                .foregroundStyle(session.kind.tint)
+                                .frame(width: 24)
+                                .accessibilityHidden(true)
+                            VStack(alignment: .leading, spacing: KXSpacing.xxs) {
+                                Text(session.title).font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink)
+                                Text(session.summary).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+                            }
+                            Spacer()
                         }
-                        Spacer()
+                        .accessibilityElement(children: .combine)
+                    case .rest(let day):
+                        HStack(spacing: KXSpacing.md) {
+                            Text(day.formatted(.dateTime.weekday(.abbreviated)))
+                                .font(KXFont.captionEmphasis)
+                                .foregroundStyle(KXColor.inkTertiary)
+                                .frame(width: 40, alignment: .leading)
+                            Image(systemName: "moon.zzz")
+                                .foregroundStyle(KXColor.inkTertiary)
+                                .frame(width: 24)
+                                .accessibilityHidden(true)
+                            Text("Rest day").font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
+                            Spacer()
+                        }
+                        .accessibilityElement(children: .combine)
                     }
-                    .accessibilityElement(children: .combine)
                 }
                 ForEach(week.notes, id: \.self) { note in
                     Label(note, systemImage: "info.circle")
@@ -167,6 +184,27 @@ struct PlanPreviewView: View {
             }
         }
         .kxCard()
+    }
+
+    private enum Entry {
+        case session(GeneratedSession)
+        case rest(Date)
+    }
+
+    /// The week day by day: sessions, and rest days in between (from the first session's day).
+    private func entries(of week: GeneratedWeek) -> [Entry] {
+        let calendar = Calendar.kinetix
+        guard let first = week.sessions.map(\.date).min() else { return [] }
+        let monday = calendar.startOfDay(for: week.target.startDate)
+        var result: [Entry] = []
+        for offset in 0..<7 {
+            guard let day = calendar.date(byAdding: .day, value: offset, to: monday),
+                  let next = calendar.date(byAdding: .day, value: 1, to: day) else { continue }
+            if next <= calendar.startOfDay(for: first) { continue }
+            let sessions = week.sessions.filter { $0.date >= day && $0.date < next }
+            result += sessions.isEmpty ? [Entry.rest(day)] : sessions.map { Entry.session($0) }
+        }
+        return result
     }
 
     private func save() {

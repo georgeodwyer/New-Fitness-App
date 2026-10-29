@@ -103,7 +103,7 @@ final class WeekSchedulerTests: XCTestCase {
     // MARK: Gym first, same muscles never back to back
 
     private func split(_ code: String) -> [StrengthSessionTemplate] {
-        templates.programmes.strength!.split(code)!.days
+        TestSupport.bundledTemplates.programmes.strength!.split(code)!.days
     }
 
     private func assertNoSameMuscleBackToBack(_ placements: [Placement], file: StaticString = #filePath, line: UInt = #line) {

@@ -151,9 +151,15 @@ public enum WeekScheduler {
             }
         }
 
-        // The long run keeps its day; the gym week goes next and the other runs fit around it.
-        placeLongRun()
-        placeLifts()
+        // The gym week first and the runs around it. The long run goes before the gym week (so it
+        // keeps its day) unless lifting is the goal and they haven't picked a long-run day.
+        if prioritiseLifts && longRunDay == nil {
+            placeLifts()
+            placeLongRun()
+        } else {
+            placeLongRun()
+            placeLifts()
+        }
         placeQualityRuns()
         remainingRuns += Array(repeating: .easy, count: convertedToEasy)
 

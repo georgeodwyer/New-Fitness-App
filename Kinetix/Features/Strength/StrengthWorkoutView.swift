@@ -251,60 +251,68 @@ struct StrengthWorkoutView: View {
     }
 
     private var header: some View {
-        HStack(spacing: KXSpacing.md) {
-            KXIconButton(systemImage: "xmark", accessibilityLabel: "Leave workout", size: 36) { showLeave = true }
-            VStack(alignment: .leading, spacing: 0) {
-                KXOverline((model.canEditExercises ? "Gym" : "Strength") + " · live", color: KXColor.lift)
-                Text(model.log.title).font(KXFont.headline).textCase(.uppercase).foregroundStyle(KXColor.ink).lineLimit(1)
-            }
-            Spacer()
-            Menu {
-                Button {
-                    showFinish = true
-                } label: {
-                    Label("Finish workout", systemImage: "flag.checkered")
+        VStack(spacing: KXSpacing.xs) {
+            HStack(spacing: KXSpacing.sm) {
+                KXIconButton(systemImage: "xmark", accessibilityLabel: "Leave workout", size: 36) { showLeave = true }
+                VStack(alignment: .leading, spacing: 0) {
+                    KXOverline((model.canEditExercises ? "Gym" : "Strength") + " · live", color: KXColor.lift)
+                    Text(model.log.title).font(KXFont.headline).textCase(.uppercase).foregroundStyle(KXColor.ink)
+                        .lineLimit(1).minimumScaleFactor(0.75)
                 }
-                .disabled(model.totalSets == 0)
-                if model.canEditExercises {
+                Spacer(minLength: KXSpacing.xs)
+                Menu {
                     Button {
-                        model.saveAsTemplate()
+                        showFinish = true
                     } label: {
-                        Label("Save as template", systemImage: "bookmark")
+                        Label("Finish workout", systemImage: "flag.checkered")
                     }
                     .disabled(model.totalSets == 0)
-                }
-            } label: {
-                Image(systemName: "ellipsis.circle")
-                    .font(.title3)
-                    .foregroundStyle(KXColor.ink)
-                    .frame(width: 36, height: 44)
-            }
-            .accessibilityLabel("More")
-            .accessibilityIdentifier("gym.more")
-            TimelineView(.periodic(from: .now, by: 1)) { context in
-                VStack(alignment: .trailing, spacing: 0) {
-                    HStack(spacing: KXSpacing.xs) {
-                        if let bpm = model.heartRate {
-                            HStack(spacing: 2) {
-                                Image(systemName: "heart.fill").font(KXFont.caption2).foregroundStyle(KXColor.danger)
-                                Text("\(Int(bpm))").font(KXFont.number(15, relativeTo: .caption)).foregroundStyle(KXColor.ink)
-                            }
-                            .accessibilityLabel("Heart rate \(Int(bpm))")
+                    if model.canEditExercises {
+                        Button {
+                            model.saveAsTemplate()
+                        } label: {
+                            Label("Save as template", systemImage: "bookmark")
                         }
-                        Text(Units.formatMinutesSeconds(context.date.timeIntervalSince(model.log.startedAt)))
-                            .font(KXFont.number(26, relativeTo: .title2))
-                            .foregroundStyle(KXColor.ink)
+                        .disabled(model.totalSets == 0)
                     }
-                    Text("Active \(Units.formatMinutesSeconds(model.activeSeconds(at: context.date))) · \(model.completedSets)/\(model.totalSets)")
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .font(.title3)
+                        .foregroundStyle(KXColor.ink)
+                        .frame(width: 36, height: 44)
+                }
+                .accessibilityLabel("More")
+                .accessibilityIdentifier("gym.more")
+                if let onMinimise {
+                    KXIconButton(systemImage: "chevron.down", accessibilityLabel: "Minimise", size: 36, action: onMinimise)
+                        .accessibilityIdentifier("gym.minimise")
+                }
+            }
+            // Time, heart rate and progress on their own line, so they always fit.
+            TimelineView(.periodic(from: .now, by: 1)) { context in
+                HStack(alignment: .firstTextBaseline, spacing: KXSpacing.sm) {
+                    Text(Units.formatMinutesSeconds(context.date.timeIntervalSince(model.log.startedAt)))
+                        .font(KXFont.number(28, relativeTo: .title2))
+                        .foregroundStyle(KXColor.ink)
+                        .lineLimit(1)
+                        .fixedSize()
+                    if let bpm = model.currentHeartRate(at: context.date) {
+                        HStack(spacing: 3) {
+                            Image(systemName: "heart.fill").font(KXFont.caption).foregroundStyle(KXColor.danger)
+                            Text("\(Int(bpm))").font(KXFont.number(17, relativeTo: .body)).foregroundStyle(KXColor.ink)
+                        }
+                        .fixedSize()
+                        .accessibilityLabel("Heart rate \(Int(bpm))")
+                    }
+                    Spacer(minLength: KXSpacing.xs)
+                    Text("Active \(Units.formatMinutesSeconds(model.activeSeconds(at: context.date))) · \(model.completedSets)/\(model.totalSets) sets")
                         .font(KXFont.caption.monospacedDigit())
                         .foregroundStyle(KXColor.inkSecondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                 }
             }
             .accessibilityElement(children: .combine)
-            if let onMinimise {
-                KXIconButton(systemImage: "chevron.down", accessibilityLabel: "Minimise", size: 36, action: onMinimise)
-                    .accessibilityIdentifier("gym.minimise")
-            }
         }
         .padding(.horizontal, KXSpacing.screenMargin)
         .padding(.vertical, KXSpacing.sm)
@@ -365,7 +373,8 @@ private struct ExerciseCard: View {
     let onSwap: () -> Void
 
     @State private var openSets: Set<UUID> = []
-    @State private var exerciseOpen = false
+    /// Their own open/closed choice for this card (nil = automatic: folded once done).
+    @State private var folded: Bool?
 
     private var format: DisplayFormat { DisplayFormat(units: units) }
 
@@ -374,7 +383,7 @@ private struct ExerciseCard: View {
         return group.sets.contains { $0.id == id }
     }
 
-    private var isFolded: Bool { group.isComplete && !exerciseOpen && !holdsLastFinished }
+    private var isFolded: Bool { folded ?? (group.isComplete && !holdsLastFinished) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: KXSpacing.md) {
@@ -382,7 +391,7 @@ private struct ExerciseCard: View {
                 VStack(alignment: .leading, spacing: KXSpacing.xxs) {
                     Text(group.name).font(KXFont.headline).textCase(.uppercase).foregroundStyle(KXColor.ink)
                     if isFolded {
-                        Text(doneSummary).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+                        Text(group.isComplete ? doneSummary : targetText).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
                     } else {
                         Text(targetText).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
                         if let lastTime = model.lastTime[group.first.exerciseId] {
@@ -398,18 +407,16 @@ private struct ExerciseCard: View {
                 } else if isCurrent {
                     KXChip(text: "Now", variant: .primary)
                 }
-                if group.isComplete {
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.2)) { exerciseOpen.toggle() }
-                    } label: {
-                        Image(systemName: "chevron.down")
-                            .font(KXFont.captionEmphasis)
-                            .foregroundStyle(KXColor.inkSecondary)
-                            .rotationEffect(.degrees(isFolded ? 0 : 180))
-                            .frame(width: 32, height: 32)
-                    }
-                    .accessibilityLabel(isFolded ? "Show sets" : "Hide sets")
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) { folded = !isFolded }
+                } label: {
+                    Image(systemName: "chevron.down")
+                        .font(KXFont.captionEmphasis)
+                        .foregroundStyle(KXColor.inkSecondary)
+                        .rotationEffect(.degrees(isFolded ? 0 : 180))
+                        .frame(width: 32, height: 32)
                 }
+                .accessibilityLabel(isFolded ? "Show sets" : "Hide sets")
                 Menu {
                     if !group.isComplete {
                         Button(action: onSwap) {
@@ -438,7 +445,13 @@ private struct ExerciseCard: View {
                         }
                     } else {
                         SetRow(set: set, units: units, model: model,
-                               isNext: isCurrent && set.id == group.sets.first(where: { !$0.isCompleted })?.id)
+                               isNext: isCurrent && set.id == group.sets.first(where: { !$0.isCompleted })?.id,
+                               onCollapse: set.isCompleted ? {
+                                   withAnimation(.easeInOut(duration: 0.2)) {
+                                       openSets.remove(set.id)
+                                       model.closeFinishedSet(set)
+                                   }
+                               } : nil)
                             .onChange(of: set.isCompleted) { _, done in if !done { openSets.remove(set.id) } }
                     }
                 }
@@ -455,6 +468,16 @@ private struct ExerciseCard: View {
         .overlay {
             RoundedRectangle(cornerRadius: KXRadius.md, style: .continuous)
                 .strokeBorder(isCurrent ? KXColor.accent : .clear, lineWidth: 1.5)
+        }
+        // Done (or started again): back to folding by itself, with any opened sets closed.
+        .onChange(of: group.isComplete) { _, _ in
+            withAnimation(.easeInOut(duration: 0.2)) {
+                folded = nil
+                openSets.removeAll()
+            }
+        }
+        .onChange(of: isCurrent) { _, current in
+            if current { withAnimation(.easeInOut(duration: 0.2)) { folded = nil } }
         }
     }
 
@@ -522,6 +545,8 @@ private struct SetRow: View {
     let model: StrengthWorkoutModel
     /// The set to do next: outlined in the accent colour.
     var isNext = false
+    /// A finished set that's open: folds it back to one line.
+    var onCollapse: (() -> Void)? = nil
 
     private var weightStep: Double { units == .metric ? 2.5 : Units.lbToKg(5) }
 
@@ -569,7 +594,19 @@ private struct SetRow: View {
                 .accessibilityLabel(set.isCompleted ? "Set \(set.setIndex + 1) done. Tap to undo" : "Complete set \(set.setIndex + 1)")
             }
             if set.isCompleted {
-                RPEPicker(value: set.rpe) { model.setRPE($0, for: set) }
+                HStack(spacing: KXSpacing.xs) {
+                    RPEPicker(value: set.rpe) { model.setRPE($0, for: set) }
+                    if let onCollapse {
+                        Button(action: onCollapse) {
+                            Image(systemName: "chevron.up")
+                                .font(KXFont.captionEmphasis)
+                                .foregroundStyle(KXColor.inkSecondary)
+                                .frame(width: 32, height: 28)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Fold set \(set.setIndex + 1)")
+                    }
+                }
             }
         }
         .padding(KXSpacing.sm)
@@ -733,6 +770,7 @@ private struct WarmUpPage: View {
                     .font(KXFont.callout)
                     .foregroundStyle(KXColor.inkSecondary)
                     .multilineTextAlignment(.center)
+                warmUpHeartRate
             }
             if let first = model.groups.first {
                 VStack(spacing: KXSpacing.xxs) {
@@ -756,6 +794,41 @@ private struct WarmUpPage: View {
             }
         }
         .padding(KXSpacing.screenMargin)
+    }
+}
+
+extension WarmUpPage {
+    /// Live heart rate while warming up, with its zone (or where it'll come from).
+    var warmUpHeartRate: some View {
+        TimelineView(.periodic(from: .now, by: 1)) { context in
+            let bpm = model.currentHeartRate(at: context.date)
+            let zone = bpm.map { model.zones.zone(for: $0) } ?? 0
+            HStack(spacing: KXSpacing.sm) {
+                Image(systemName: "heart.fill")
+                    .foregroundStyle(bpm == nil ? KXColor.inkTertiary : KXColor.danger)
+                    .symbolEffect(.pulse, isActive: bpm != nil)
+                if let bpm {
+                    Text("\(Int(bpm.rounded()))")
+                        .font(KXFont.number(28, relativeTo: .title2))
+                        .foregroundStyle(KXColor.ink)
+                        .contentTransition(.numericText())
+                    Text(zone > 0 ? "bpm · Zone \(zone)" : "bpm")
+                        .font(KXFont.captionEmphasis)
+                        .foregroundStyle(KXColor.inkSecondary)
+                } else {
+                    Text(model.watchNeedsOpening ? "Open Kinetix on your Apple Watch for heart rate"
+                         : model.isOnWatch ? "Waiting for your Apple Watch…" : "No heart rate yet")
+                        .font(KXFont.caption)
+                        .foregroundStyle(KXColor.inkSecondary)
+                }
+            }
+            .padding(.horizontal, KXSpacing.md)
+            .padding(.vertical, KXSpacing.xs)
+            .background(KXColor.surface, in: Capsule())
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("gym.warmUpHeartRate")
+        }
+        .padding(.top, KXSpacing.sm)
     }
 }
 
