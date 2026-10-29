@@ -104,7 +104,7 @@ final class PlanServiceTests: XCTestCase {
         context.insert(UserProfileModel(profile: SampleData.profile))
         let plan = PlanService.createPlan(for: SampleData.profile, in: context, now: monday)
         let wednesday = Calendar.kinetix.date(byAdding: .day, value: 2, to: monday)!
-        let nextMonday = Calendar.kinetix.date(byAdding: .day, value: 7, to: monday)!
+        let nextMonday = Calendar.kinetix.date(byAdding: .day, value: 7, to: Calendar.kinetix.startOfDay(for: monday))!
         func live() throws -> [PlannedSessionModel] {
             try context.fetch(FetchDescriptor<PlannedSessionModel>()).filter { !$0.isSoftDeleted && $0.plan?.id == plan.id }
         }
