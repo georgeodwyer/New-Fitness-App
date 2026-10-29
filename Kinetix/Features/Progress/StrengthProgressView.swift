@@ -65,10 +65,10 @@ struct StrengthProgressView: View {
                         if let e1rm = best(.estimatedOneRepMax, for: state.exerciseId) {
                             VStack(alignment: .trailing, spacing: 0) {
                                 Text(format.weight(e1rm)).font(KXFont.bodyEmphasis.monospacedDigit()).foregroundStyle(KXColor.ink)
-                                Text("est. 1RM").font(.caption2).foregroundStyle(KXColor.inkSecondary)
+                                Text("est. 1RM").font(KXFont.caption2).foregroundStyle(KXColor.inkSecondary)
                             }
                         }
-                        Image(systemName: "chevron.right").font(.caption).foregroundStyle(KXColor.inkTertiary)
+                        Image(systemName: "chevron.right").font(KXFont.caption).foregroundStyle(KXColor.inkTertiary)
                             .accessibilityHidden(true)
                     }
                     .padding(.vertical, KXSpacing.xs)
@@ -105,7 +105,7 @@ struct StrengthProgressView: View {
                             HStack(spacing: KXSpacing.md) {
                                 VStack(spacing: 0) {
                                     Text(workout.startedAt.formatted(.dateTime.day())).font(KXFont.bodyEmphasis.monospacedDigit())
-                                    Text(workout.startedAt.formatted(.dateTime.weekday(.abbreviated))).font(.caption2)
+                                    Text(workout.startedAt.formatted(.dateTime.weekday(.abbreviated))).font(KXFont.caption2)
                                         .foregroundStyle(KXColor.inkSecondary)
                                 }
                                 .frame(width: 36)
@@ -117,7 +117,7 @@ struct StrengthProgressView: View {
                                 }
                                 Spacer()
                                 Text(format.volume(workout.volumeKg)).font(KXFont.callout.monospacedDigit()).foregroundStyle(KXColor.ink)
-                                Image(systemName: "chevron.right").font(.caption).foregroundStyle(KXColor.inkTertiary).accessibilityHidden(true)
+                                Image(systemName: "chevron.right").font(KXFont.caption).foregroundStyle(KXColor.inkTertiary).accessibilityHidden(true)
                             }
                             .padding(.vertical, KXSpacing.xxs)
                             .contentShape(Rectangle())

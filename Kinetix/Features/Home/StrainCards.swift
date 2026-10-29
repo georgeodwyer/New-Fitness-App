@@ -54,7 +54,7 @@ struct StrainCard: View {
                 KXStatusPill(level: TodayFormat.legsLevel(report.legs.status), text: report.legs.status.title)
                 Spacer(minLength: 0)
                 Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
+                    .font(KXFont.captionEmphasis)
                     .foregroundStyle(KXColor.inkTertiary)
                     .accessibilityHidden(true)
             }
@@ -404,7 +404,7 @@ struct TodayBodyDetailView: View {
                         .accessibilityHidden(true)
                     Text(activity.name).font(KXFont.callout).foregroundStyle(KXColor.ink)
                     if activity.usedHeartRate {
-                        Image(systemName: "heart.fill").font(.caption2).foregroundStyle(KXColor.danger)
+                        Image(systemName: "heart.fill").font(KXFont.caption2).foregroundStyle(KXColor.danger)
                             .accessibilityLabel("from heart rate")
                     }
                     Spacer()
@@ -414,7 +414,7 @@ struct TodayBodyDetailView: View {
                 }
             }
             Text("Exertion isn't additive: each point takes more than the last, so the day's total is less than the sum.")
-                .font(.caption2)
+                .font(KXFont.caption2)
                 .foregroundStyle(KXColor.inkTertiary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -452,7 +452,7 @@ struct StrainRing: View {
                 .rotationEffect(.degrees(-90))
             VStack(spacing: 0) {
                 Text(TodayFormat.one(strain))
-                    .font(.system(size: 34, weight: .bold, design: .rounded).monospacedDigit())
+                    .font(KXFont.number(34))
                     .foregroundStyle(KXColor.ink)
                 Text("of 100").font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
             }
@@ -494,7 +494,7 @@ struct WeekVsUsualBar: View {
             }
             .frame(height: 8)
             Text(caption)
-                .font(.caption2)
+                .font(KXFont.caption2)
                 .foregroundStyle(KXColor.inkTertiary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -658,7 +658,7 @@ struct DailyStrainChart: View {
             .frame(height: 190)
             .accessibilityLabel("Daily exertion, last \(range) days")
             Text(target == nil ? "Touch and drag across the chart to see each day." : "The shaded band is today's target; amber days went over it. Touch and drag to see each day.")
-                .font(.caption2).foregroundStyle(KXColor.inkTertiary)
+                .font(KXFont.caption2).foregroundStyle(KXColor.inkTertiary)
         }
         .kxCard()
     }
@@ -672,10 +672,10 @@ struct DailyStrainChart: View {
 
     private func tooltip(_ day: DayStrain) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(day.date.formatted(.dateTime.weekday(.abbreviated).day().month())).font(.caption2.weight(.semibold))
-            Text("Exertion \(TodayFormat.one(day.strain))").font(.caption2.weight(.semibold))
+            Text(day.date.formatted(.dateTime.weekday(.abbreviated).day().month())).font(KXFont.caption2Emphasis)
+            Text("Exertion \(TodayFormat.one(day.strain))").font(KXFont.caption2Emphasis)
             ForEach(day.activities.prefix(4)) { activity in
-                Text(activity.name).font(.caption2)
+                Text(activity.name).font(KXFont.caption2)
             }
         }
         .foregroundStyle(KXColor.ink)

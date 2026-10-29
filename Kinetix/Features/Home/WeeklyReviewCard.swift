@@ -94,16 +94,17 @@ struct WeeklyReviewCard: View {
                 Text(data.review.headline).font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            HStack(alignment: .top, spacing: KXSpacing.lg) {
+            // A grid, so four numbers still fit side by side on a small phone.
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: KXSpacing.sm, alignment: .topLeading), count: 4),
+                      alignment: .leading, spacing: KXSpacing.sm) {
                 if data.review.sessionsPlanned > 0 {
                     KXMetric(label: "Sessions", value: "\(data.review.sessionsDone)/\(data.review.sessionsPlanned)", size: .small)
                 }
                 KXMetric(label: "Run", value: format.distance(data.review.runMeters), size: .small)
                 KXMetric(label: "Gym", value: "\(data.review.lifts)", size: .small)
                 if let ratio = data.review.loadRatio {
-                    KXMetric(label: "Load", value: "\(Int((ratio * 100).rounded()))", unit: "% usual", size: .small)
+                    KXMetric(label: "Load", value: "\(Int((ratio * 100).rounded()))", unit: "%", size: .small)
                 }
-                Spacer(minLength: 0)
             }
             if data.review.sessionsPlanned > 0 {
                 ProgressView(value: min(data.review.completion, 1))

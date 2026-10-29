@@ -169,7 +169,7 @@ struct WorkoutBuilderView: View {
             Text(step.target?.formatted(units) ?? "No target")
                 .font(KXFont.callout.monospacedDigit())
                 .foregroundStyle(step.target == nil ? KXColor.inkTertiary : KXColor.ink)
-            Image(systemName: "chevron.right").font(.caption).foregroundStyle(KXColor.inkTertiary).accessibilityHidden(true)
+            Image(systemName: "chevron.right").font(KXFont.caption).foregroundStyle(KXColor.inkTertiary).accessibilityHidden(true)
         }
         .accessibilityElement(children: .combine)
     }

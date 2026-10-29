@@ -202,7 +202,7 @@ struct RoutePlannerView: View {
         Button(action: action) {
             VStack(spacing: 2) {
                 Image(systemName: symbol).font(.body.weight(.semibold))
-                Text(title).font(.caption2)
+                Text(title).font(KXFont.caption2)
             }
             .frame(maxWidth: .infinity, minHeight: 48)
             .foregroundStyle(KXColor.ink)

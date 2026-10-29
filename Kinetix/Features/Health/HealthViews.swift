@@ -120,7 +120,7 @@ struct HealthTile: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
                 if trend.metric != .sleep {
-                    Text(trend.metric.unit).font(.caption2).foregroundStyle(KXColor.inkSecondary).lineLimit(1)
+                    Text(trend.metric.unit).font(KXFont.caption2).foregroundStyle(KXColor.inkSecondary).lineLimit(1)
                         .minimumScaleFactor(0.8)
                 }
                 Spacer(minLength: KXSpacing.xs)
@@ -154,12 +154,12 @@ struct TrendBadge: View {
             } icon: {
                 Image(systemName: symbol).foregroundStyle(color)
             }
-            .font(.caption2)
+            .font(KXFont.caption2)
             .lineLimit(2)
             .minimumScaleFactor(0.85)
             .fixedSize(horizontal: false, vertical: true)
         } else {
-            Text(Self.dateText(trend.latest.date)).font(.caption2).foregroundStyle(KXColor.inkTertiary)
+            Text(Self.dateText(trend.latest.date)).font(KXFont.caption2).foregroundStyle(KXColor.inkTertiary)
         }
     }
 
@@ -238,7 +238,7 @@ struct HealthMetricDetailView: View {
                             .font(KXFont.caption).foregroundStyle(KXColor.ink)
                     }
                     Text("General information, not medical advice. If a number worries you, talk to a doctor.")
-                        .font(.caption2).foregroundStyle(KXColor.inkTertiary)
+                        .font(KXFont.caption2).foregroundStyle(KXColor.inkTertiary)
                 }
                 .kxCard()
             }
@@ -307,7 +307,7 @@ struct HealthChart: View {
                         .foregroundStyle(KXColor.inkTertiary)
                         .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
                         .annotation(position: .top, alignment: .leading) {
-                            Text("Usual").font(.caption2).foregroundStyle(KXColor.inkSecondary)
+                            Text("Usual").font(KXFont.caption2).foregroundStyle(KXColor.inkSecondary)
                         }
                 }
                 if let day = selectedDay {
@@ -318,7 +318,7 @@ struct HealthChart: View {
                                 Text(metric.format(day.value) + (metric == .sleep ? "" : " \(metric.unit)"))
                                     .font(KXFont.captionEmphasis).foregroundStyle(KXColor.ink)
                                 Text(day.date.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated)))
-                                    .font(.caption2).foregroundStyle(KXColor.inkSecondary)
+                                    .font(KXFont.caption2).foregroundStyle(KXColor.inkSecondary)
                             }
                             .padding(KXSpacing.xs)
                             .background(KXColor.surface, in: RoundedRectangle(cornerRadius: KXRadius.sm))
@@ -374,7 +374,7 @@ struct HealthProgressView: View {
                                 Spacer()
                                 Text(trend.metric.format(trend.latest.value) + (trend.metric == .sleep ? "" : " \(trend.metric.unit)"))
                                     .font(KXFont.bodyEmphasis.monospacedDigit()).foregroundStyle(KXColor.ink)
-                                Image(systemName: "chevron.right").font(.caption).foregroundStyle(KXColor.inkTertiary)
+                                Image(systemName: "chevron.right").font(KXFont.caption).foregroundStyle(KXColor.inkTertiary)
                                     .accessibilityHidden(true)
                             }
                             TrendBadge(trend: trend)
@@ -391,7 +391,7 @@ struct HealthProgressView: View {
                     .accessibilityIdentifier("health.card.\(trend.metric.rawValue)")
                 }
                 Text("Readings come from Apple Health and stay on this phone. General information, not medical advice.")
-                    .font(.caption2).foregroundStyle(KXColor.inkTertiary)
+                    .font(KXFont.caption2).foregroundStyle(KXColor.inkTertiary)
             }
         }
         .task { await health.refresh() }

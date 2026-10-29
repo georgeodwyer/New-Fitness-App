@@ -109,7 +109,7 @@ struct PlanChangeCard: View {
     private func sessionComparison(before: SessionSnapshot, after: SessionSnapshot) -> some View {
         HStack(spacing: KXSpacing.sm) {
             sessionBadge(before, crossedOut: before.title != after.title || after.status == .skipped)
-            Image(systemName: "arrow.right").font(.caption.weight(.bold)).foregroundStyle(KXColor.inkTertiary)
+            Image(systemName: "arrow.right").font(KXFont.captionEmphasis).foregroundStyle(KXColor.inkTertiary)
                 .accessibilityHidden(true)
             sessionBadge(after, crossedOut: false)
         }
@@ -120,7 +120,7 @@ struct PlanChangeCard: View {
     private func sessionBadge(_ snapshot: SessionSnapshot, crossedOut: Bool) -> some View {
         HStack(spacing: KXSpacing.xs) {
             Image(systemName: snapshot.kind.symbolName)
-                .font(.caption.weight(.semibold))
+                .font(KXFont.captionEmphasis)
                 .foregroundStyle(snapshot.kind.tint)
             VStack(alignment: .leading, spacing: 0) {
                 Text(snapshot.title)
@@ -129,7 +129,7 @@ struct PlanChangeCard: View {
                     .strikethrough(crossedOut)
                     .lineLimit(1)
                 Text(snapshot.date.formatted(.dateTime.weekday(.abbreviated)) + " · \(Int(snapshot.durationMinutes.rounded())) min")
-                    .font(.caption2).foregroundStyle(KXColor.inkSecondary)
+                    .font(KXFont.caption2).foregroundStyle(KXColor.inkSecondary)
             }
         }
         .padding(.horizontal, KXSpacing.sm)
@@ -143,7 +143,7 @@ struct PlanChangeCard: View {
             Text(field.label).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
                 .frame(width: 92, alignment: .leading)
             Text(field.before).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary).strikethrough()
-            Image(systemName: "arrow.right").font(.caption2).foregroundStyle(KXColor.inkTertiary)
+            Image(systemName: "arrow.right").font(KXFont.caption2).foregroundStyle(KXColor.inkTertiary)
             Text(field.after).font(KXFont.captionEmphasis).foregroundStyle(KXColor.ink)
             Spacer(minLength: 0)
         }
@@ -154,14 +154,14 @@ struct PlanChangeCard: View {
     private func triggerRow(_ trigger: ChangeTrigger) -> some View {
         HStack(spacing: KXSpacing.sm) {
             Image(systemName: trigger.symbol)
-                .font(.caption)
+                .font(KXFont.caption)
                 .foregroundStyle(KXColor.accent)
                 .frame(width: 20)
                 .accessibilityHidden(true)
             Text(trigger.label).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
             Text(trigger.value).font(KXFont.captionEmphasis.monospacedDigit()).foregroundStyle(KXColor.ink)
             if let detail = trigger.detail {
-                Text(detail).font(.caption2).foregroundStyle(KXColor.inkTertiary)
+                Text(detail).font(KXFont.caption2).foregroundStyle(KXColor.inkTertiary)
             }
             Spacer(minLength: 0)
         }

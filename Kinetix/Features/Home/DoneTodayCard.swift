@@ -101,7 +101,7 @@ struct DoneTodayCard: View {
                 Text(source).font(KXFont.caption).foregroundStyle(KXColor.inkTertiary)
             }
             if opens {
-                Image(systemName: "chevron.right").font(.caption).foregroundStyle(KXColor.inkTertiary).accessibilityHidden(true)
+                Image(systemName: "chevron.right").font(KXFont.caption).foregroundStyle(KXColor.inkTertiary).accessibilityHidden(true)
             }
         }
         .contentShape(Rectangle())

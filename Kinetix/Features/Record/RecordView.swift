@@ -178,7 +178,7 @@ struct RecordView: View {
                     .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
             }
             Spacer()
-            Image(systemName: "chevron.right").font(.caption).foregroundStyle(KXColor.inkTertiary).accessibilityHidden(true)
+            Image(systemName: "chevron.right").font(KXFont.caption).foregroundStyle(KXColor.inkTertiary).accessibilityHidden(true)
         }
         .padding(.vertical, KXSpacing.xxs)
         .contentShape(Rectangle())
@@ -242,7 +242,7 @@ struct RecordView: View {
             HStack(alignment: .firstTextBaseline) {
                 Text(workout.name).font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink).lineLimit(1)
                 Spacer()
-                Image(systemName: "chevron.right").font(.caption).foregroundStyle(KXColor.inkTertiary).accessibilityHidden(true)
+                Image(systemName: "chevron.right").font(KXFont.caption).foregroundStyle(KXColor.inkTertiary).accessibilityHidden(true)
             }
             if let structure = workout.structure, structure.segments.count > 1 {
                 SessionStructureBar(structure: structure).frame(height: 10)

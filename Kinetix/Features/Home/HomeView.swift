@@ -154,7 +154,7 @@ struct HomeView: View {
                 Text(text).font(KXFont.callout).foregroundStyle(KXColor.ink).fixedSize(horizontal: false, vertical: true)
             }
             Spacer()
-            Button { banner = nil } label: { Image(systemName: "xmark").font(.caption) }
+            Button { banner = nil } label: { Image(systemName: "xmark").font(KXFont.caption) }
                 .foregroundStyle(KXColor.inkSecondary)
                 .accessibilityLabel("Dismiss")
         }

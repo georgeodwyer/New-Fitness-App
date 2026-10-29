@@ -102,7 +102,7 @@ struct WeekProgressCard: View {
 
     private func legend(_ symbol: String, _ color: Color, _ text: String) -> some View {
         HStack(spacing: 4) {
-            Image(systemName: symbol).foregroundStyle(color).font(.caption)
+            Image(systemName: symbol).foregroundStyle(color).font(KXFont.caption)
             Text(text).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
         }
     }
@@ -142,7 +142,7 @@ struct WeekStripCard: View {
             VStack(spacing: 4) {
                 if day.sessions.isEmpty {
                     Image(systemName: "moon.zzz")
-                        .font(.caption2)
+                        .font(KXFont.caption2)
                         .foregroundStyle(KXColor.inkTertiary)
                         .frame(height: 26)
                 } else {
@@ -276,7 +276,7 @@ struct SessionActionsSheet: View {
                                 Text(option.detail).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
                             }
                             Spacer()
-                            Image(systemName: "chevron.right").font(.caption).foregroundStyle(KXColor.inkTertiary)
+                            Image(systemName: "chevron.right").font(KXFont.caption).foregroundStyle(KXColor.inkTertiary)
                         }
                         .kxCard(padding: KXSpacing.md)
                     }
@@ -307,7 +307,7 @@ struct SessionActionsSheet: View {
                                     }
                                 }
                                 Spacer()
-                                Image(systemName: "chevron.right").font(.caption).foregroundStyle(KXColor.inkTertiary)
+                                Image(systemName: "chevron.right").font(KXFont.caption).foregroundStyle(KXColor.inkTertiary)
                             }
                             .kxCard(padding: KXSpacing.md)
                         }
@@ -342,7 +342,7 @@ struct SessionActionsSheet: View {
                                     }
                                 }
                                 Spacer()
-                                Image(systemName: "chevron.right").font(.caption).foregroundStyle(KXColor.inkTertiary)
+                                Image(systemName: "chevron.right").font(KXFont.caption).foregroundStyle(KXColor.inkTertiary)
                             }
                             .kxCard(padding: KXSpacing.md)
                         }

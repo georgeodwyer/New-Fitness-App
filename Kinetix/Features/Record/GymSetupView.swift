@@ -116,7 +116,7 @@ struct GymSetupView: View {
                     .font(KXFont.caption).foregroundStyle(KXColor.inkTertiary).lineLimit(1)
             }
             Spacer()
-            Image(systemName: "chevron.right").font(.caption).foregroundStyle(KXColor.inkTertiary).accessibilityHidden(true)
+            Image(systemName: "chevron.right").font(KXFont.caption).foregroundStyle(KXColor.inkTertiary).accessibilityHidden(true)
         }
         .padding(.vertical, KXSpacing.xxs)
         .contentShape(Rectangle())

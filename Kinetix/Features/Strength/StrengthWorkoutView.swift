@@ -286,7 +286,7 @@ struct StrengthWorkoutView: View {
                     HStack(spacing: KXSpacing.xs) {
                         if let bpm = model.heartRate {
                             HStack(spacing: 2) {
-                                Image(systemName: "heart.fill").font(.caption2).foregroundStyle(KXColor.danger)
+                                Image(systemName: "heart.fill").font(KXFont.caption2).foregroundStyle(KXColor.danger)
                                 Text("\(Int(bpm))").font(KXFont.number(15, relativeTo: .caption)).foregroundStyle(KXColor.ink)
                             }
                             .accessibilityLabel("Heart rate \(Int(bpm))")
@@ -403,7 +403,7 @@ private struct ExerciseCard: View {
                         withAnimation(.easeInOut(duration: 0.2)) { exerciseOpen.toggle() }
                     } label: {
                         Image(systemName: "chevron.down")
-                            .font(.caption.weight(.semibold))
+                            .font(KXFont.captionEmphasis)
                             .foregroundStyle(KXColor.inkSecondary)
                             .rotationEffect(.degrees(isFolded ? 0 : 180))
                             .frame(width: 32, height: 32)
@@ -598,7 +598,7 @@ private struct CompactStepper: View {
             VStack(spacing: 0) {
                 KXEditableNumber(display: value, font: KXFont.bodyEmphasis, allowsDecimal: allowsDecimal,
                                  accessibilityLabel: label, onCommit: onType)
-                Text(unit).font(.caption2).foregroundStyle(KXColor.inkSecondary)
+                Text(unit).font(KXFont.caption2).foregroundStyle(KXColor.inkSecondary)
             }
             .frame(minWidth: 48)
             stepButton("plus", action: onPlus)
@@ -725,7 +725,7 @@ private struct WarmUpPage: View {
                 KXOverline("Warm-up", color: KXColor.accent)
                 TimelineView(.periodic(from: model.warmUpStartedAt, by: 1)) { context in
                     Text(Units.formatMinutesSeconds(context.date.timeIntervalSince(model.warmUpStartedAt)))
-                        .font(.system(size: 72, weight: .bold, design: .rounded).monospacedDigit())
+                        .font(KXFont.number(72))
                         .foregroundStyle(KXColor.ink)
                         .accessibilityLabel("Warm-up time \(Int(context.date.timeIntervalSince(model.warmUpStartedAt) / 60)) minutes")
                 }
@@ -840,7 +840,7 @@ private struct GymHeartRatePage: View {
                         .foregroundStyle(bpm == nil ? KXColor.inkTertiary : KXColor.danger)
                         .symbolEffect(.pulse, isActive: bpm != nil)
                     Text(bpm.map { "\(Int($0.rounded()))" } ?? "--")
-                        .font(.system(size: 88, weight: .bold, design: .rounded).monospacedDigit())
+                        .font(KXFont.number(88))
                         .foregroundStyle(KXColor.ink)
                         .contentTransition(.numericText())
                     Text(zone > 0 ? "Zone \(zone) · \(HeartRateZones.names[zone - 1])" : (bpm == nil ? "No heart rate yet" : "Below zone 1"))
@@ -893,7 +893,7 @@ private struct GymHeartRatePage: View {
                     if let bpm {
                         let x = width * min(max((bpm - low) / max(1, high - low), 0), 1)
                         Image(systemName: "arrowtriangle.down.fill")
-                            .font(.caption)
+                            .font(KXFont.caption)
                             .foregroundStyle(KXColor.ink)
                             .offset(x: x - 6, y: -16)
                             .animation(.easeInOut, value: bpm)
@@ -923,7 +923,7 @@ private struct GymHeartRatePage: View {
                         .font(KXFont.captionEmphasis.monospacedDigit())
                         .foregroundStyle(KXColor.ink)
                     Text(model.zones.starts.indices.contains(zone - 1) ? "\(Int(model.zones.starts[zone - 1]))+" : "")
-                        .font(.caption2)
+                        .font(KXFont.caption2)
                         .foregroundStyle(KXColor.inkTertiary)
                 }
                 .frame(maxWidth: .infinity)

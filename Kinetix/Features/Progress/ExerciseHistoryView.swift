@@ -102,7 +102,7 @@ struct ExerciseHistoryView: View {
                         VStack(alignment: .trailing, spacing: 0) {
                             Text(format.weight(record.value)).font(KXFont.bodyEmphasis.monospacedDigit())
                             Text(record.achievedAt.formatted(.dateTime.day().month().year()))
-                                .font(.caption2).foregroundStyle(KXColor.inkSecondary)
+                                .font(KXFont.caption2).foregroundStyle(KXColor.inkSecondary)
                         }
                     }
                     .accessibilityElement(children: .combine)

@@ -129,7 +129,7 @@ struct RunningProgressView: View {
                             Text("\(format.pace(Pace(secondsPerKm: row.seconds / row.distance.meters * 1000))) · \(row.date.formatted(.dateTime.day().month().year()))")
                                 .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
                         }
-                        Image(systemName: "chevron.right").font(.caption).foregroundStyle(KXColor.inkTertiary).accessibilityHidden(true)
+                        Image(systemName: "chevron.right").font(KXFont.caption).foregroundStyle(KXColor.inkTertiary).accessibilityHidden(true)
                     }
                     .contentShape(Rectangle())
                 }
@@ -198,7 +198,7 @@ struct RunHistoryRow: View {
         HStack(spacing: KXSpacing.md) {
             VStack(spacing: 0) {
                 Text(run.startedAt.formatted(.dateTime.day())).font(KXFont.bodyEmphasis.monospacedDigit())
-                Text(run.startedAt.formatted(.dateTime.weekday(.abbreviated))).font(.caption2).foregroundStyle(KXColor.inkSecondary)
+                Text(run.startedAt.formatted(.dateTime.weekday(.abbreviated))).font(KXFont.caption2).foregroundStyle(KXColor.inkSecondary)
             }
             .frame(width: 36)
             .foregroundStyle(KXColor.ink)
@@ -214,7 +214,7 @@ struct RunHistoryRow: View {
             }
             Spacer(minLength: 0)
             Text(format.distance(run.distanceMeters, decimals: 2)).font(KXFont.callout.monospacedDigit()).foregroundStyle(KXColor.ink)
-            Image(systemName: "chevron.right").font(.caption).foregroundStyle(KXColor.inkTertiary).accessibilityHidden(true)
+            Image(systemName: "chevron.right").font(KXFont.caption).foregroundStyle(KXColor.inkTertiary).accessibilityHidden(true)
         }
         .padding(.vertical, KXSpacing.xxs)
         .contentShape(Rectangle())

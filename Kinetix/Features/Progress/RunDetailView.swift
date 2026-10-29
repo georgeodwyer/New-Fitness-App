@@ -163,7 +163,7 @@ struct RunDetailView: View {
         HStack {
             Text(label).font(KXFont.callout).foregroundStyle(KXColor.inkSecondary).frame(width: 70, alignment: .leading)
             Text(planned).font(KXFont.callout.monospacedDigit()).foregroundStyle(KXColor.inkSecondary)
-            Image(systemName: "arrow.right").font(.caption2).foregroundStyle(KXColor.inkTertiary).accessibilityHidden(true)
+            Image(systemName: "arrow.right").font(KXFont.caption2).foregroundStyle(KXColor.inkTertiary).accessibilityHidden(true)
             Text(actual).font(KXFont.bodyEmphasis.monospacedDigit()).foregroundStyle(KXColor.ink)
             Spacer()
         }

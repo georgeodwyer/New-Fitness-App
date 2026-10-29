@@ -34,6 +34,9 @@ enum KXFont {
     static let callout = custom(.regular, 14, relativeTo: .subheadline)
     static let caption = custom(.regular, 12, relativeTo: .caption)
     static let captionEmphasis = custom(.semiBold, 12, relativeTo: .caption)
+    /// Small print: footnotes under charts, units in tiles.
+    static let caption2 = custom(.regular, 11, relativeTo: .caption2)
+    static let caption2Emphasis = custom(.semiBold, 11, relativeTo: .caption2)
     /// Small uppercase labels: "RECOVERY", "THIS WEEK".
     static let overline = custom(.condensedSemiBold, 13, relativeTo: .caption2)
     /// Large live numbers: "4:42", "105.0".

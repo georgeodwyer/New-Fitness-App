@@ -21,7 +21,7 @@ struct MiniWorkoutBar: View {
                         detail
                     }
                     Spacer()
-                    Image(systemName: "chevron.up").font(.caption.weight(.semibold)).foregroundStyle(KXColor.inkSecondary)
+                    Image(systemName: "chevron.up").font(KXFont.captionEmphasis).foregroundStyle(KXColor.inkSecondary)
                         .accessibilityHidden(true)
                 }
                 .padding(.horizontal, KXSpacing.lg)

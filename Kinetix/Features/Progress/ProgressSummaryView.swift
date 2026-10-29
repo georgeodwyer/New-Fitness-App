@@ -108,7 +108,7 @@ struct ProgressSummaryView: View {
                                 VStack(spacing: 0) {
                                     Text("\(Int(selected.value.rounded()))").font(KXFont.number(20)).foregroundStyle(KXColor.ink)
                                     Text(selected.date.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated)))
-                                        .font(.caption2).foregroundStyle(KXColor.inkSecondary)
+                                        .font(KXFont.caption2).foregroundStyle(KXColor.inkSecondary)
                                 }
                                 .padding(KXSpacing.xs)
                                 .background(KXColor.surface, in: RoundedRectangle(cornerRadius: KXRadius.sm))
@@ -137,7 +137,7 @@ struct ProgressSummaryView: View {
                 .accessibilityLabel("Recovery over the last 30 days")
                 .accessibilityValue(average.map { "Average \(Int($0.rounded()))" } ?? "")
                 Text("Touch and drag across the chart to see each day's score.")
-                    .font(.caption2).foregroundStyle(KXColor.inkTertiary)
+                    .font(KXFont.caption2).foregroundStyle(KXColor.inkTertiary)
                 HStack(spacing: KXSpacing.lg) {
                     key(KXColor.success, "Good 70+")
                     key(KXColor.warning, "Fair 50–69")
@@ -182,7 +182,7 @@ struct ProgressSummaryView: View {
                     Text(detail).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
                 }
                 Spacer()
-                Image(systemName: "chevron.right").font(.caption).foregroundStyle(KXColor.inkTertiary)
+                Image(systemName: "chevron.right").font(KXFont.caption).foregroundStyle(KXColor.inkTertiary)
             }
             .padding(.vertical, KXSpacing.sm)
             .contentShape(Rectangle())

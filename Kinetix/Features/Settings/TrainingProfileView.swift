@@ -191,7 +191,7 @@ struct TrainingProfileView: View {
             HStack {
                 LabeledContent(title, value: value)
                 Image(systemName: "chevron.right")
-                    .font(.caption)
+                    .font(KXFont.caption)
                     .foregroundStyle(KXColor.inkTertiary)
                     .accessibilityHidden(true)
             }

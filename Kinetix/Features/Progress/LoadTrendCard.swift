@@ -28,7 +28,7 @@ struct LoadTrendCard: View {
             .fill(color)
             .frame(width: plot.width, height: max(0, bottom - top))
             .overlay(alignment: .topTrailing) {
-                Text(label).font(.caption2).foregroundStyle(KXColor.inkSecondary).padding(4)
+                Text(label).font(KXFont.caption2).foregroundStyle(KXColor.inkSecondary).padding(4)
             }
             .offset(x: plot.minX, y: top)
     }
@@ -52,7 +52,7 @@ struct LoadTrendCard: View {
                             .foregroundStyle(KXColor.ink)
                             .symbolSize(60)
                             .annotation(position: .top, alignment: .trailing) {
-                                Text("\(Int(last.ratio.rounded()))%").font(.caption.weight(.semibold)).foregroundStyle(KXColor.ink)
+                                Text("\(Int(last.ratio.rounded()))%").font(KXFont.captionEmphasis).foregroundStyle(KXColor.ink)
                             }
                     }
                     if let point = selectedPoint {
@@ -60,8 +60,8 @@ struct LoadTrendCard: View {
                             .foregroundStyle(KXColor.inkTertiary)
                             .annotation(position: .top, overflowResolution: .init(x: .fit(to: .chart), y: .disabled)) {
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(point.date.formatted(.dateTime.day().month())).font(.caption2.weight(.semibold))
-                                    Text("\(Int(point.ratio.rounded()))% of usual").font(.caption2)
+                                    Text(point.date.formatted(.dateTime.day().month())).font(KXFont.caption2Emphasis)
+                                    Text("\(Int(point.ratio.rounded()))% of usual").font(KXFont.caption2)
                                 }
                                 .foregroundStyle(KXColor.ink)
                                 .padding(KXSpacing.sm)

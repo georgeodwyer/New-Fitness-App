@@ -246,7 +246,7 @@ struct PlanView: View {
                 }
                 Spacer()
                 Image(systemName: "chevron.down")
-                    .font(.caption.weight(.semibold))
+                    .font(KXFont.captionEmphasis)
                     .foregroundStyle(KXColor.inkTertiary)
                     .rotationEffect(.degrees(showHistory ? 180 : 0))
                     .accessibilityHidden(true)
@@ -281,7 +281,7 @@ struct PlanView: View {
                 if !notes.isEmpty {
                     HStack(alignment: .top, spacing: KXSpacing.sm) {
                         Image(systemName: "quote.opening")
-                            .font(.caption)
+                            .font(KXFont.caption)
                             .foregroundStyle(KXColor.accent)
                             .accessibilityHidden(true)
                         Text(notes.joined(separator: " "))
@@ -336,7 +336,7 @@ struct PlanView: View {
             }
             Spacer()
             Image(systemName: "chevron.down")
-                .font(.caption.weight(.semibold))
+                .font(KXFont.captionEmphasis)
                 .foregroundStyle(KXColor.inkTertiary)
                 .rotationEffect(.degrees(isOpen ? 180 : 0))
                 .accessibilityHidden(true)
@@ -392,7 +392,7 @@ struct PlanView: View {
                 KXChip(text: "Skipped", variant: .outlined)
             }
             Image(systemName: "chevron.right")
-                .font(.caption)
+                .font(KXFont.caption)
                 .foregroundStyle(KXColor.inkTertiary)
                 .accessibilityHidden(true)
         }
@@ -437,7 +437,7 @@ struct PlanView: View {
                     .font(KXFont.bodyEmphasis)
                     .foregroundStyle(KXColor.ink)
                 Spacer()
-                Image(systemName: "chevron.right").font(.caption).foregroundStyle(KXColor.inkTertiary)
+                Image(systemName: "chevron.right").font(KXFont.caption).foregroundStyle(KXColor.inkTertiary)
             }
             .kxCard(.tinted, padding: KXSpacing.md)
         }
