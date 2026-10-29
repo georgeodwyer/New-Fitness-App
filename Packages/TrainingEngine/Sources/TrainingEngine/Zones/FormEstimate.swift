@@ -31,7 +31,7 @@ public enum FormEstimate {
         return vo2 / fractionOfMax
     }
 
-    /// The best signals from the last six weeks (the top three, averaged), held within 5% of
+    /// The best signals from the last six weeks (up to three within 3% of the best, averaged), held within 5% of
     /// the current figure so one odd run can't swing it. nil with fewer than two signals.
     public static func estimate(_ runs: [Evidence], current: Double, now: Date) -> Result? {
         let from = now.addingTimeInterval(-42 * 86_400)
@@ -56,7 +56,9 @@ public enum FormEstimate {
             if found { sessions += 1 }
         }
         guard candidates.count >= 2, sessions >= 1 else { return nil }
-        let top = candidates.sorted(by: >).prefix(3)
+        // Most runs aren't flat out, so only efforts close to the best one count.
+        let best = candidates.max() ?? 0
+        let top = candidates.filter { $0 >= best * 0.97 }.sorted(by: >).prefix(3)
         let average = top.reduce(0, +) / Double(top.count)
         let held = min(max(average, current * 0.95), current * 1.05)
         return Result(vdot: held, sessions: sessions)
