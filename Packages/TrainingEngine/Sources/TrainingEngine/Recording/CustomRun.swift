@@ -130,6 +130,30 @@ public struct CustomRunWorkout: Codable, Equatable, Identifiable, Sendable {
         self.blocks = blocks
     }
 
+    /// Adds a block where it belongs: a warm-up first, a cool-down last, anything else just
+    /// before a cool-down at the end (so it doesn't land after it).
+    public mutating func insert(_ block: RunBlock) {
+        switch block.steps.first?.kind {
+        case .warmUp?:
+            blocks.insert(block, at: 0)
+        case .coolDown?:
+            blocks.append(block)
+        default:
+            if let last = blocks.last, last.repeats == 1, last.steps.allSatisfy({ $0.kind == .coolDown }) {
+                blocks.insert(block, at: blocks.count - 1)
+            } else {
+                blocks.append(block)
+            }
+        }
+    }
+
+    /// Swaps a block with the one above (`by: -1`) or below (`by: 1`).
+    public mutating func moveBlock(at index: Int, by offset: Int) {
+        let target = index + offset
+        guard blocks.indices.contains(index), blocks.indices.contains(target) else { return }
+        blocks.swapAt(index, target)
+    }
+
     /// Segments for the run engine (nil for an unstructured run).
     public var structure: RunStructure? {
         var segments: [RunSegment] = []

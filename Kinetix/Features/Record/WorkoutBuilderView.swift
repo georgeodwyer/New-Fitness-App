@@ -19,10 +19,22 @@ struct WorkoutBuilderView: View {
     var body: some View {
         List {
             Section {
+                if let structure = workout.structure, !structure.segments.isEmpty {
+                    VStack(alignment: .leading, spacing: KXSpacing.sm) {
+                        SessionStructureBar(structure: structure).frame(height: 14)
+                        HStack(spacing: KXSpacing.md) {
+                            legend("Easy", KXColor.run)
+                            legend("Work", KXColor.warning)
+                            legend("Recovery", KXColor.other)
+                        }
+                    }
+                    .padding(.vertical, KXSpacing.xxs)
+                    .animation(.easeInOut(duration: 0.2), value: workout.blocks)
+                }
                 LabeledContent("Total", value: totals)
                     .accessibilityIdentifier("builder.total")
             } footer: {
-                Text("Tap a step to change its length or pace. A repeat block runs all its steps in order, that many times.")
+                Text("Tap a step to change its length or pace. Use ⋯ on a block to move it up or down, or press and drag a step. A repeat block runs all its steps in order, that many times.")
             }
 
             ForEach(Array(workout.blocks.enumerated()), id: \.element.id) { blockIndex, block in
@@ -53,6 +65,9 @@ struct WorkoutBuilderView: View {
                         workout.blocks[blockIndex].steps.remove(atOffsets: offsets)
                         if workout.blocks[blockIndex].steps.isEmpty { workout.blocks.remove(at: blockIndex) }
                     }
+                    .onMove { offsets, destination in
+                        workout.blocks[blockIndex].steps.move(fromOffsets: offsets, toOffset: destination)
+                    }
                     if block.repeats > 1 || block.steps.contains(where: { $0.kind == .work }) {
                         Button {
                             workout.blocks[blockIndex].steps.append(
@@ -65,12 +80,30 @@ struct WorkoutBuilderView: View {
                     HStack {
                         Text(blockTitle(block))
                         Spacer()
-                        Button(role: .destructive) {
-                            workout.blocks.remove(at: blockIndex)
+                        Menu {
+                            Button {
+                                withAnimation { workout.moveBlock(at: blockIndex, by: -1) }
+                            } label: {
+                                Label("Move up", systemImage: "arrow.up")
+                            }
+                            .disabled(blockIndex == 0)
+                            Button {
+                                withAnimation { workout.moveBlock(at: blockIndex, by: 1) }
+                            } label: {
+                                Label("Move down", systemImage: "arrow.down")
+                            }
+                            .disabled(blockIndex == workout.blocks.count - 1)
+                            Button(role: .destructive) {
+                                withAnimation { _ = workout.blocks.remove(at: blockIndex) }
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
                         } label: {
-                            Image(systemName: "trash")
+                            Image(systemName: "ellipsis.circle").font(.body)
+                                .frame(minWidth: 44, minHeight: 32, alignment: .trailing)
                         }
-                        .accessibilityLabel("Delete \(blockTitle(block))")
+                        .accessibilityLabel("\(blockTitle(block)) options")
+                        .accessibilityIdentifier("builder.blockMenu.\(blockIndex)")
                     }
                 }
             }
@@ -80,7 +113,7 @@ struct WorkoutBuilderView: View {
                     Button("Warm-up") { add(.warmUp, .distance(meters: 2000)) }
                     Button("Steady run") { add(.steady, .distance(meters: 5000)) }
                     Button("Repeats (work + recovery)") {
-                        workout.blocks.append(RunBlock(repeats: 4, steps: [
+                        workout.insert(RunBlock(repeats: 4, steps: [
                             WorkoutStep(kind: .work, length: .duration(seconds: 180)),
                             WorkoutStep(kind: .recovery, length: .duration(seconds: 90))
                         ]))
@@ -94,6 +127,7 @@ struct WorkoutBuilderView: View {
         }
         .navigationTitle("Edit workout")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar { ToolbarItem(placement: .primaryAction) { EditButton() } }
         .tint(KXColor.accent)
         .sheet(item: $editing) { location in
             NavigationStack {
@@ -140,22 +174,25 @@ struct WorkoutBuilderView: View {
         .accessibilityElement(children: .combine)
     }
 
+    /// The same colours as the bar (and the plan's session bars).
     private func color(for kind: SegmentKind) -> Color {
         switch kind {
-        case .work: return KXColor.run
-        case .recovery: return KXColor.lift
-        case .warmUp, .coolDown: return KXColor.other
-        case .steady: return KXColor.accent
+        case .work: return KXColor.warning
+        case .recovery: return KXColor.other
+        case .warmUp, .coolDown, .steady: return KXColor.run
         }
     }
 
-    private func add(_ kind: SegmentKind, _ length: SegmentLength) {
-        let block = RunBlock(steps: [WorkoutStep(kind: kind, length: length)])
-        if kind == .warmUp {
-            workout.blocks.insert(block, at: 0)
-        } else {
-            workout.blocks.append(block)
+    private func legend(_ name: String, _ color: Color) -> some View {
+        HStack(spacing: 4) {
+            Circle().fill(color).frame(width: 8, height: 8)
+            Text(name).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
         }
+        .accessibilityHidden(true)
+    }
+
+    private func add(_ kind: SegmentKind, _ length: SegmentLength) {
+        withAnimation { workout.insert(RunBlock(steps: [WorkoutStep(kind: kind, length: length)])) }
     }
 
     private func repeatsBinding(_ index: Int) -> Binding<Int> {

@@ -48,21 +48,25 @@ struct RecordView: View {
                         .accessibilityIdentifier("record.gym")
                     }
 
-                    VStack(alignment: .leading, spacing: KXSpacing.md) {
+                    VStack(alignment: .leading, spacing: KXSpacing.sm) {
                         HStack {
                             KXOverline("My run workouts")
                             Spacer()
                             if !templates.isEmpty { Text("tap to start or edit").font(KXFont.caption).foregroundStyle(KXColor.inkSecondary) }
                         }
+                        .padding(.horizontal, KXSpacing.xxs)
                         if sortedTemplates.isEmpty {
                             KXEmptyState(symbol: "bookmark", title: "No saved workouts yet",
                                          message: "Build a run (say 2 × 10 min at threshold) and tap \u{201C}Save as template\u{201D} to reuse it.")
+                                .kxCard()
                         }
+                        // Each workout in its own card.
                         ForEach(sortedTemplates) { template in
                             NavigationLink {
                                 RunSetupView(initial: template)
                             } label: {
                                 templateRow(template)
+                                    .kxCard(padding: KXSpacing.md)
                             }
                             .buttonStyle(.plain)
                             .contextMenu {
@@ -76,7 +80,6 @@ struct RecordView: View {
                             }
                         }
                     }
-                    .kxCard()
 
                     routesSection
                 }
@@ -228,11 +231,10 @@ struct RecordView: View {
                 Image(systemName: "chevron.right").font(.caption).foregroundStyle(KXColor.inkTertiary).accessibilityHidden(true)
             }
             if let structure = workout.structure, structure.segments.count > 1 {
-                SessionStructureBar(structure: structure).frame(height: 8)
+                SessionStructureBar(structure: structure).frame(height: 10)
             }
             Text(workout.summary(units: units)).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary).lineLimit(2)
         }
-        .padding(.vertical, KXSpacing.xs)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
     }

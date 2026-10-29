@@ -125,4 +125,22 @@ final class CustomRunTests: XCTestCase {
         XCTAssertEqual(single.blocks[0].steps.count, 3)
         XCTAssertEqual(RecordRunType(session: .intervals), .intervals)
     }
+
+    func testNewBlocksGoAboveTheCoolDown() {
+        var workout = CustomRunWorkout(name: "Test", type: .intervals, blocks: [
+            RunBlock(steps: [WorkoutStep(kind: .warmUp, length: .distance(meters: 2000))]),
+            RunBlock(steps: [WorkoutStep(kind: .coolDown, length: .distance(meters: 1000))])
+        ])
+        workout.insert(RunBlock(repeats: 4, steps: [WorkoutStep(kind: .work, length: .duration(seconds: 60)),
+                                                    WorkoutStep(kind: .recovery, length: .duration(seconds: 60))]))
+        XCTAssertEqual(workout.blocks.map { $0.steps.first?.kind }, [.warmUp, .work, .coolDown])
+        workout.insert(RunBlock(steps: [WorkoutStep(kind: .warmUp, length: .distance(meters: 1000))]))
+        XCTAssertEqual(workout.blocks.first?.steps.first?.kind, .warmUp)
+        XCTAssertEqual(workout.blocks.count, 4)
+
+        workout.moveBlock(at: 3, by: -1)
+        XCTAssertEqual(workout.blocks.map { $0.steps.first?.kind }, [.warmUp, .warmUp, .coolDown, .work])
+        workout.moveBlock(at: 0, by: -1) // already at the top: nothing happens
+        XCTAssertEqual(workout.blocks.count, 4)
+    }
 }
