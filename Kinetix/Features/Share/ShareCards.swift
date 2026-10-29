@@ -119,7 +119,7 @@ private extension Color {
 }
 
 /// Fixed-size card fonts (cards are images: they don't follow Dynamic Type).
-private enum CardFont {
+enum CardFont {
     static func condensed(_ size: CGFloat, _ face: KXFont.Face = .condensedBold) -> Font { .custom(face.rawValue, fixedSize: size) }
     static func label(_ size: CGFloat = 12) -> Font { .custom(KXFont.Face.condensedSemiBold.rawValue, fixedSize: size) }
     static func text(_ size: CGFloat, _ face: KXFont.Face = .regular) -> Font { .custom(face.rawValue, fixedSize: size) }

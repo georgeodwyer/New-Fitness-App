@@ -14,8 +14,12 @@ struct RecordView: View {
     private var routes: [RouteModel]
     @State private var showImporter = false
     @State private var importMessage: String?
+    @State private var sharingWorkout: CustomRunWorkout?
 
     private var units: UnitSystem { profiles.first?.units ?? UnitPreference.stored }
+    private var defaultPace: Pace {
+        profiles.first.map { PaceZones(profile: $0.profile).typicalPace(for: .easy) } ?? Pace(secondsPerKm: 360)
+    }
 
     /// Most recently used first.
     private var sortedTemplates: [RunTemplateModel] {
@@ -52,7 +56,7 @@ struct RecordView: View {
                         HStack {
                             KXOverline("My run workouts")
                             Spacer()
-                            if !templates.isEmpty { Text("tap to start or edit").font(KXFont.caption).foregroundStyle(KXColor.inkSecondary) }
+                            if !templates.isEmpty { Text("tap to start · swipe to delete").font(KXFont.caption).foregroundStyle(KXColor.inkSecondary) }
                         }
                         .padding(.horizontal, KXSpacing.xxs)
                         if sortedTemplates.isEmpty {
@@ -61,21 +65,28 @@ struct RecordView: View {
                                 .kxCard()
                         }
                         // Each workout in its own card.
+                        // Swipe left to delete; press and hold to share.
                         ForEach(sortedTemplates) { template in
-                            NavigationLink {
-                                RunSetupView(initial: template)
-                            } label: {
-                                templateRow(template)
-                                    .kxCard(padding: KXSpacing.md)
-                            }
-                            .buttonStyle(.plain)
-                            .contextMenu {
-                                Button(role: .destructive) {
+                            KXSwipeToDelete {
+                                withAnimation {
                                     template.softDelete()
                                     try? context.save()
-                                    SyncService.shared.requestSync()
+                                }
+                                SyncService.shared.requestSync()
+                            } content: {
+                                NavigationLink {
+                                    RunSetupView(initial: template)
                                 } label: {
-                                    Label("Delete", systemImage: "trash")
+                                    templateRow(template)
+                                        .kxCard(padding: KXSpacing.md)
+                                }
+                                .buttonStyle(.plain)
+                                .contextMenu {
+                                    Button {
+                                        sharingWorkout = template.workout
+                                    } label: {
+                                        Label("Share workout", systemImage: "square.and.arrow.up")
+                                    }
                                 }
                             }
                         }
@@ -86,6 +97,9 @@ struct RecordView: View {
                 .padding(KXSpacing.screenMargin)
             }
             .background(KXColor.background.ignoresSafeArea())
+            .sheet(item: $sharingWorkout) { workout in
+                ShareWorkoutSheet(workout: workout, units: units, defaultPace: defaultPace)
+            }
             .fileImporter(isPresented: $showImporter, allowedContentTypes: [.gpx, .xml, .data]) { result in
                 importGPX(result)
             }
