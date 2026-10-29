@@ -98,6 +98,7 @@
 		98464367EEB76116BBCAAB61 /* StrengthProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23ED18C901A4AF49BA72E38A /* StrengthProgressView.swift */; };
 		987F88FE0499291815271F5E /* KXButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72DC83A5774C0DFA7D49CB52 /* KXButton.swift */; };
 		98DA738472E66B2BB81137D8 /* BarlowCondensed-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 325D39D3C463CAE911C0A916 /* BarlowCondensed-Bold.ttf */; };
+		99534041F0D3B630947DE328 /* KXSwipeToDelete.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C5F896841CF5371E58D2E96 /* KXSwipeToDelete.swift */; };
 		997D9CDDED136526D197815A /* KinetixSync in Frameworks */ = {isa = PBXBuildFile; productRef = 2CA9B1268AB94CE9AE75FDC2 /* KinetixSync */; };
 		99894027FBB2F90E7717BE0D /* SaveAsTemplateButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB543700E16287B81819AF2B /* SaveAsTemplateButton.swift */; };
 		9C9188C072E5E81D7B8839E3 /* KinetixWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = F90D4CAA5435C52D08225A30 /* KinetixWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -182,6 +183,7 @@
 		F73EA4AAE48E03D0392279D3 /* WatchScreensView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F823128F6113921A9181667C /* WatchScreensView.swift */; };
 		F7A63A32C9724AB22A7FCE39 /* KXEditableNumber.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C2E983D74F526A10F2CFA2B /* KXEditableNumber.swift */; };
 		F8FD30FC6BE6998D5DB641B3 /* KXEmptyState.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1664E7DAA11627C79DB8265 /* KXEmptyState.swift */; };
+		F94AE5B5889EB755538B2A90 /* WorkoutShareCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B47FF206A078EFBF0D55363B /* WorkoutShareCard.swift */; };
 		FA0E637FA834325958C956CB /* StrengthSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB27DBF74434135E36364597 /* StrengthSummaryView.swift */; };
 		FA8F771A9CCBA11E9BD58893 /* KXOptionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F31D7238D3089FE39D1AF49 /* KXOptionCard.swift */; };
 		FAAA797E412F91CD1EC86CB2 /* HeartRateZonesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35A3ED64048A8315BCB94E8 /* HeartRateZonesView.swift */; };
@@ -311,6 +313,7 @@
 		57D4371AF5820D576CE51646 /* GymService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GymService.swift; sourceTree = "<group>"; };
 		58CC4DBE6FC7ADA3A6C7F4EE /* LapsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LapsCard.swift; sourceTree = "<group>"; };
 		59C34693744398934B3DC293 /* GymLiveView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GymLiveView.swift; sourceTree = "<group>"; };
+		5C5F896841CF5371E58D2E96 /* KXSwipeToDelete.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXSwipeToDelete.swift; sourceTree = "<group>"; };
 		624C995FD738D1EED4FEE350 /* CustomScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomScreenView.swift; sourceTree = "<group>"; };
 		626F847EE3778CA53D1E28E9 /* SessionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionDetailView.swift; sourceTree = "<group>"; };
 		68BA25507C64D36A65136666 /* ProgressSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressSummaryView.swift; sourceTree = "<group>"; };
@@ -367,6 +370,7 @@
 		B1038EB67DEE18F975258A44 /* YourPacesCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YourPacesCard.swift; sourceTree = "<group>"; };
 		B16CC86849C40BB16FD55693 /* WorkoutBuilderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutBuilderView.swift; sourceTree = "<group>"; };
 		B20939AE5B582C11C6898982 /* KXSessionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXSessionCard.swift; sourceTree = "<group>"; };
+		B47FF206A078EFBF0D55363B /* WorkoutShareCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutShareCard.swift; sourceTree = "<group>"; };
 		B488A5C64C09276C346F5B82 /* RunWorkoutModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunWorkoutModel.swift; sourceTree = "<group>"; };
 		B86E9E847C741EE0B68892BC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B9816665D38BFB8C7D3C8793 /* RunWorkoutManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunWorkoutManager.swift; sourceTree = "<group>"; };
@@ -614,6 +618,7 @@
 				496B3A47CBAC67D049C956DF /* ShareCards.swift */,
 				D0194D5106F49F620FDB86E8 /* ShareService.swift */,
 				55937FA7CC685D3DBBA76FA0 /* ShareSessionView.swift */,
+				B47FF206A078EFBF0D55363B /* WorkoutShareCard.swift */,
 			);
 			path = Share;
 			sourceTree = "<group>";
@@ -880,6 +885,7 @@
 				2FCE0202A3E975345AA0F2B0 /* KXProgress.swift */,
 				B20939AE5B582C11C6898982 /* KXSessionCard.swift */,
 				D763CB1795460ACC4115555D /* KXStepper.swift */,
+				5C5F896841CF5371E58D2E96 /* KXSwipeToDelete.swift */,
 				E266EDCEE7A3C5533B50F72F /* KXText.swift */,
 			);
 			path = Components;
@@ -1136,6 +1142,7 @@
 				D476D771D5426B889C8C62E2 /* KXSessionCard.swift in Sources */,
 				6A5C33C319519EE85058D5AF /* KXSpacing.swift in Sources */,
 				0147D8BEC0DBA6EF2072DCD9 /* KXStepper.swift in Sources */,
+				99534041F0D3B630947DE328 /* KXSwipeToDelete.swift in Sources */,
 				3312F6FAC1B80A1BF812DE48 /* KXText.swift in Sources */,
 				93B0A23AFFF5CCD24A81AF87 /* Keychain.swift in Sources */,
 				4ABFCBB55C182B3A0ED4611A /* KinetixApp.swift in Sources */,
@@ -1216,6 +1223,7 @@
 				6540A069DFA262A340BECB35 /* WorkoutActivityController.swift in Sources */,
 				1682D3131EDEDDCF809DC004 /* WorkoutBuilderView.swift in Sources */,
 				7F6C3F91173E450852BB2B7C /* WorkoutEditService.swift in Sources */,
+				F94AE5B5889EB755538B2A90 /* WorkoutShareCard.swift in Sources */,
 				05F1AC2F40F88D04EE925BDF /* YourPacesCard.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
