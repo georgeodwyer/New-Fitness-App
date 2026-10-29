@@ -1,9 +1,13 @@
 import SwiftUI
+import SwiftData
 import TrainingEngine
 
 /// Predicted 5K, 10K, half and marathon times from current fitness, the goal race highlighted.
 struct RacePredictionsCard: View {
     let profile: AthleteProfile
+    @Environment(\.modelContext) private var context
+    @Query(filter: #Predicate<UserProfileModel> { $0.deletedAt == nil }) private var profiles: [UserProfileModel]
+    @State private var updated = false
 
     private struct Race: Identifiable {
         let meters: Double
@@ -25,12 +29,13 @@ struct RacePredictionsCard: View {
     }
 
     var body: some View {
-        let zones = PaceZones(profile: profile)
+        let onForm = FormService.formVDOT != nil
+        let zones = PaceZones(vdot: FormService.predictionVDOT(for: profile))
         VStack(alignment: .leading, spacing: KXSpacing.md) {
             HStack {
                 KXOverline("Race predictions")
                 Spacer()
-                Text(profile.recentRace == nil ? "from your experience" : "from your race time")
+                Text(onForm ? "on current form" : profile.recentRace == nil ? "from your experience" : "from your race time")
                     .font(KXFont.caption)
                     .foregroundStyle(KXColor.inkSecondary)
             }
@@ -55,6 +60,16 @@ struct RacePredictionsCard: View {
                     }
                     .accessibilityElement(children: .combine)
                 }
+            }
+            if FormService.shouldOfferPaceUpdate(for: profile), !updated, let model = profiles.first {
+                Text("You're running faster than your training paces assume. Update them to match your current form? The rest of your plan is rebuilt with the new paces.")
+                    .font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
+                Button("Update my training paces") {
+                    FormService.applyForm(to: model, in: context)
+                    updated = true
+                }
+                .buttonStyle(.kx(.primary, fullWidth: true))
+                .accessibilityIdentifier("predictions.updatePaces")
             }
         }
         .kxCard()

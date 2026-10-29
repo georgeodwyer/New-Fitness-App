@@ -80,6 +80,7 @@ struct RootView: View {
                 let units = profiles.first?.units ?? UnitPreference.stored
                 Task {
                     await HealthService.shared.refresh()
+                    if let profile = profiles.first?.profile { FormService.check(profile: profile, in: context) }
                     await ActivityExportService.retryPending(in: context, units: units)
                     StravaService.shared.removeImportedActivities(in: context)
                     WatchSyncService.shared.sendPlan()

@@ -63,7 +63,7 @@ struct RaceCountdownCard: View {
                     if let meters = raceMeters, let profile {
                         VStack(alignment: .trailing, spacing: 2) {
                             KXOverline("Predicted")
-                            Text(Units.formatMinutesSeconds(PaceZones(profile: profile).predictedTime(distanceMeters: meters)))
+                            Text(Units.formatMinutesSeconds(PaceZones(vdot: FormService.predictionVDOT(for: profile)).predictedTime(distanceMeters: meters)))
                                 .font(KXFont.number(26, relativeTo: .title2))
                                 .foregroundStyle(KXColor.ink)
                             Text("from your current fitness")
