@@ -446,12 +446,12 @@ private struct ExerciseCard: View {
                     } else {
                         SetRow(set: set, units: units, model: model,
                                isNext: isCurrent && set.id == group.sets.first(where: { !$0.isCompleted })?.id,
-                               onCollapse: set.isCompleted ? {
+                               onCollapse: {
                                    withAnimation(.easeInOut(duration: 0.2)) {
-                                       openSets.remove(set.id)
+                                       _ = openSets.remove(set.id)
                                        model.closeFinishedSet(set)
                                    }
-                               } : nil)
+                               })
                             .onChange(of: set.isCompleted) { _, done in if !done { openSets.remove(set.id) } }
                     }
                 }

@@ -286,7 +286,7 @@ public enum WeekScheduler {
         /// How good a layout of the week's gym sessions is (`days[i]` for `lifts[i]`, nil = left out).
         func liftLayoutScore(_ lifts: [StrengthSessionTemplate], days layout: [Weekday?], qualityRuns: Int, easyRuns: Int) -> Double {
             var score = 0.0
-            let placed = zip(lifts, layout).compactMap { lift, day in day.map { (lift, $0) } }
+            let placed: [(StrengthSessionTemplate, Weekday)] = zip(lifts, layout).compactMap { pair in pair.1.map { (pair.0, $0) } }
             score -= 30 * Double(layout.count - placed.count)
             for (lift, day) in placed {
                 score += runs[day] == nil ? 3 : (runs[day]?.isQuality == true && lift.focus.loadsLowerBody ? 2 : 1)
