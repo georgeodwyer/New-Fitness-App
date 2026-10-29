@@ -12,6 +12,7 @@ struct PlanView: View {
     @State private var showOnboarding = false
     @State private var showWalkthrough = false
     @State private var showCalendar = false
+    @State private var showReview = false
     @Environment(AppRouter.self) private var router
 
     private var format: DisplayFormat { DisplayFormat(units: profiles.first?.units ?? UnitPreference.stored) }
@@ -143,6 +144,13 @@ struct PlanView: View {
                     if let outline {
                         RaceCountdownCard(outline: outline, profile: profiles.first?.profile)
                         WeeklyDistanceCard(outline: outline, runs: runs, format: format)
+                        Button {
+                            showReview = true
+                        } label: {
+                            Label("Week review & next week", systemImage: "calendar.badge.checkmark")
+                        }
+                        .buttonStyle(.kx(.outlined, fullWidth: true))
+                        .accessibilityIdentifier("plan.weekReview")
                     }
                     if weeks.isEmpty && !profiles.isEmpty {
                         Text("No sessions planned yet.")
@@ -167,6 +175,9 @@ struct PlanView: View {
                 openedCurrentWeek = true
             }
             .sheet(isPresented: $showCalendar) { CalendarSheet() }
+            .sheet(isPresented: $showReview) {
+                WeeklyReviewSheet(units: profiles.first?.units ?? UnitPreference.stored)
+            }
             .navigationDestination(for: PlannedSessionModel.self) { session in
                 PlannedSessionDestination(session: session)
             }

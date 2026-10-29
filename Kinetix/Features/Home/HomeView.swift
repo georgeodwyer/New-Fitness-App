@@ -67,6 +67,10 @@ struct HomeView: View {
                     greeting
                     if let banner { changeBanner(banner) }
                     if profile == nil { planPrompt }
+                    // Sunday evening and Monday: how the week went and what's next.
+                    if WeeklyReviewData.isReviewTime(), profile != nil, let review = WeeklyReviewData.make(in: context) {
+                        WeeklyReviewCard(data: review, units: units) { detailSession = $0 }
+                    }
                     ForEach(layout.visibleCards, id: \.self) { card in
                         dashboardCard(card, data: data)
                     }
