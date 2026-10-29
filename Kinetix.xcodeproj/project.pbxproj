@@ -82,6 +82,7 @@
 		72BB11CDF6863C2C39FDA03F /* WorkoutActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C470E8546A565DBFCC3CB74 /* WorkoutActivity.swift */; };
 		75556304FD12FA065E0F81F2 /* RunWorkoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12C1324B1AC05AA177D5BF93 /* RunWorkoutView.swift */; };
 		77489A72C05C50887F2B9E0F /* BarlowCondensed-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0628314AAB0F25B9D1812815 /* BarlowCondensed-SemiBold.ttf */; };
+		7AC10FAFB65860215645CCEA /* PausePlanViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22F7BDD03DC4A48D642C2103 /* PausePlanViews.swift */; };
 		7ACA70325602396261B857E8 /* AccountService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27D5D1CA3AE70EB8EF9D18FD /* AccountService.swift */; };
 		7C7C3B1A994523C342761A39 /* LogModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08A053F7F4B39B04FED73E26 /* LogModels.swift */; };
 		7CA88CFE8439E3F9F876A122 /* WatchStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4279740084F6D852D0D6FA4 /* WatchStore.swift */; };
@@ -284,6 +285,7 @@
 		1F31D7238D3089FE39D1AF49 /* KXOptionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXOptionCard.swift; sourceTree = "<group>"; };
 		20B9963B730BCD17BDF41812 /* PlanModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanModels.swift; sourceTree = "<group>"; };
 		20FB067B24E854B00EC36D31 /* StrainCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrainCards.swift; sourceTree = "<group>"; };
+		22F7BDD03DC4A48D642C2103 /* PausePlanViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PausePlanViews.swift; sourceTree = "<group>"; };
 		2388FFC3629A913F08C12797 /* PlanPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanPreviewView.swift; sourceTree = "<group>"; };
 		23ED18C901A4AF49BA72E38A /* StrengthProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrengthProgressView.swift; sourceTree = "<group>"; };
 		24EE4D4AE4E5EC11003FF81E /* ActivityExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityExportService.swift; sourceTree = "<group>"; };
@@ -468,6 +470,7 @@
 			isa = PBXGroup;
 			children = (
 				BDC72FB367FDEB3A2329FA4E /* MarkDoneSheets.swift */,
+				22F7BDD03DC4A48D642C2103 /* PausePlanViews.swift */,
 				EDB23F98437C808EBB58BEF7 /* PlanBuilderView.swift */,
 				9379EA201DE82CD3ADB9493E /* PlanChangesView.swift */,
 				7C67CE135FFA96780C7E6557 /* PlanHeaderCards.swift */,
@@ -1175,6 +1178,7 @@
 				B29A94D91EADFC17D2BA06B6 /* OnboardingModel.swift in Sources */,
 				B3732468744D9B820C1E44A5 /* OnboardingSteps.swift in Sources */,
 				12D872ADCBB025ADE604F9BA /* PaceUpdateCard.swift in Sources */,
+				7AC10FAFB65860215645CCEA /* PausePlanViews.swift in Sources */,
 				31ED552C55B36D3CBDB1CD53 /* Persistence.swift in Sources */,
 				A47B288FF2F8B682D8D657BC /* PlanBuilderView.swift in Sources */,
 				581C33227F0ED31F466A2D30 /* PlanChangesView.swift in Sources */,
