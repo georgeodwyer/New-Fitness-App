@@ -110,6 +110,7 @@
 		A19788111D2249802E071BA9 /* Inter-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 76AA41DAE169FF4021C02273 /* Inter-Medium.ttf */; };
 		A37859534B61490F5D344E6B /* IntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3880708490C8993B63991C6A /* IntegrationTests.swift */; };
 		A4561A30040BF6AF33AEA62D /* TrainingNotifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = 851DCA273730E4C3853CA837 /* TrainingNotifications.swift */; };
+		A47B288FF2F8B682D8D657BC /* PlanBuilderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDB23F98437C808EBB58BEF7 /* PlanBuilderView.swift */; };
 		AAB951D77E1C14D2213A481B /* LaunchSplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEBF6BA7F003C6E83A36A08F /* LaunchSplashView.swift */; };
 		AB990DAD91CD53F0EC663C56 /* HistoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54B7256C957EAF28749C4ECF /* HistoryTests.swift */; };
 		ABE991D19232BC6D6AAF9136 /* LocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15A2B8D3E8EAC9797667326F /* LocationService.swift */; };
@@ -430,6 +431,7 @@
 		EA669D15368E1CA7DFE58741 /* KinetixWatch.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = KinetixWatch.entitlements; sourceTree = "<group>"; };
 		EB27DBF74434135E36364597 /* StrengthSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrengthSummaryView.swift; sourceTree = "<group>"; };
 		EB5ABC7399477B7DC54BACD0 /* KinetixWidgetsBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KinetixWidgetsBundle.swift; sourceTree = "<group>"; };
+		EDB23F98437C808EBB58BEF7 /* PlanBuilderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanBuilderView.swift; sourceTree = "<group>"; };
 		F0B148FD2061C24465AF19AE /* DoneTodayCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DoneTodayCard.swift; sourceTree = "<group>"; };
 		F2EEE532F379E91567B19BF6 /* KXSpacing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXSpacing.swift; sourceTree = "<group>"; };
 		F327708828E05100B42EDD57 /* TrainingProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingProfileView.swift; sourceTree = "<group>"; };
@@ -466,6 +468,7 @@
 			isa = PBXGroup;
 			children = (
 				BDC72FB367FDEB3A2329FA4E /* MarkDoneSheets.swift */,
+				EDB23F98437C808EBB58BEF7 /* PlanBuilderView.swift */,
 				9379EA201DE82CD3ADB9493E /* PlanChangesView.swift */,
 				7C67CE135FFA96780C7E6557 /* PlanHeaderCards.swift */,
 				C020B6C7BA9E92A91574F16A /* PlannedSessionDestination.swift */,
@@ -1173,6 +1176,7 @@
 				B3732468744D9B820C1E44A5 /* OnboardingSteps.swift in Sources */,
 				12D872ADCBB025ADE604F9BA /* PaceUpdateCard.swift in Sources */,
 				31ED552C55B36D3CBDB1CD53 /* Persistence.swift in Sources */,
+				A47B288FF2F8B682D8D657BC /* PlanBuilderView.swift in Sources */,
 				581C33227F0ED31F466A2D30 /* PlanChangesView.swift in Sources */,
 				D9A716D65223D1908E24F63B /* PlanHeaderCards.swift in Sources */,
 				1153E095AEC952349F00FE4F /* PlanModels.swift in Sources */,
