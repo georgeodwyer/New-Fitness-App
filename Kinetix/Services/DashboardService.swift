@@ -94,8 +94,7 @@ enum DashboardService {
             }
         }
 
-        let plannedRun = thisWeek.filter { $0.status != .skipped && $0.kind.discipline == .run }
-            .compactMap(\.estimatedDistanceMeters).reduce(0, +)
+        let plannedRun = PlannedSessionModel.plannedRunMeters(thisWeek)
         let weekRuns = runs.filter { $0.isFinished && !$0.isSoftDeleted && $0.startedAt >= monday && $0.startedAt < nextMonday }
         let plannedVolume = thisWeek.filter { $0.status != .skipped }.compactMap(\.strengthPrescription).reduce(0.0) { total, prescription in
             total + prescription.exercises.reduce(0.0) { $0 + Double($1.sets * $1.repRange.upper) * ($1.weightKg ?? 0) }
@@ -118,5 +117,14 @@ enum DashboardService {
             adherence: adherence,
             todaysCheckIn: todaysCheckIn
         )
+    }
+}
+
+extension PlannedSessionModel {
+    /// A week's planned running: its run sessions added up, skipped ones left out. The one
+    /// definition used by Today, the Plan tab's weekly distance and its week headers.
+    static func plannedRunMeters(_ sessions: [PlannedSessionModel]) -> Double {
+        sessions.filter { !$0.isSoftDeleted && $0.status != .skipped && $0.kind.discipline == .run }
+            .compactMap(\.estimatedDistanceMeters).reduce(0, +)
     }
 }

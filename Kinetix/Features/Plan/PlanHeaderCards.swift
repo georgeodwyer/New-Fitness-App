@@ -168,6 +168,17 @@ struct WeeklyDistanceCard: View {
     let outline: PlanOutline
     let runs: [RunLogModel]
     let format: DisplayFormat
+    /// The plan's sessions: weeks already built show what's actually planned, not the target.
+    var sessions: [PlannedSessionModel] = []
+
+    /// Each week's planned running: the sessions when they're built, else the outline's target.
+    private var plannedMeters: [Double] {
+        outline.weeks.map { week in
+            let end = calendar.date(byAdding: .day, value: 7, to: week.startDate) ?? week.startDate
+            let inWeek = sessions.filter { !$0.isSoftDeleted && $0.date >= week.startDate && $0.date < end }
+            return inWeek.isEmpty ? week.runVolumeMeters : PlannedSessionModel.plannedRunMeters(inWeek)
+        }
+    }
 
     private var calendar: Calendar { .kinetix }
     private var currentIndex: Int? { outline.weekIndex(containing: .now, calendar: calendar) }
@@ -186,7 +197,7 @@ struct WeeklyDistanceCard: View {
 
     var body: some View {
         let done = doneMeters
-        let planned = outline.weeks.map(\.runVolumeMeters)
+        let planned = plannedMeters
         let top = max(planned.max() ?? 0, done.values.max() ?? 0, 1)
         VStack(alignment: .leading, spacing: KXSpacing.md) {
             HStack(alignment: .firstTextBaseline) {
@@ -231,7 +242,7 @@ struct WeeklyDistanceCard: View {
         .kxCard()
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Weekly distance")
-        .accessibilityValue(currentIndex.map { "This week \(format.distance(done[$0] ?? 0, decimals: 0)) of \(format.distance(planned[$0], decimals: 0)) planned" } ?? "")
+        .accessibilityValue(currentIndex.map { "This week \(format.distance(done[$0] ?? 0, decimals: 0)) of \(format.distance(plannedMeters[$0], decimals: 0)) planned" } ?? "")
     }
 
     private func legend(_ color: Color, filled: Bool, _ text: String) -> some View {

@@ -70,7 +70,7 @@ struct PlanView: View {
         }
         var meters: Double? {
             switch self {
-            case .session(let session): return session.estimatedDistanceMeters
+            case .session(let session): return session.status == .skipped ? nil : session.estimatedDistanceMeters
             case .preview(let session): return session.estimatedDistanceMeters
             }
         }
@@ -146,7 +146,7 @@ struct PlanView: View {
                     }
                     if let outline {
                         RaceCountdownCard(outline: outline, profile: profiles.first?.profile)
-                        WeeklyDistanceCard(outline: outline, runs: runs, format: format)
+                        WeeklyDistanceCard(outline: outline, runs: runs, format: format, sessions: plans.first?.sessions ?? [])
                         Button {
                             showReview = true
                         } label: {
