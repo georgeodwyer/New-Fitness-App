@@ -328,10 +328,6 @@ struct PlanBuilderView: View {
     }
 }
 
-extension Weekday: Identifiable {
-    public var id: Int { rawValue }
-}
-
 /// Pick a session for a day: saved workouts, Kinetix runs, Kinetix gym sessions or cardio.
 private struct AddPlanSessionSheet: View {
     let day: Weekday

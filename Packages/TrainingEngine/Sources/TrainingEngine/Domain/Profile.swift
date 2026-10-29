@@ -51,7 +51,9 @@ public enum UnitSystem: String, Codable, CaseIterable, Sendable {
 }
 
 /// ISO-style weekday, Monday = 1 ... Sunday = 7.
-public enum Weekday: Int, Codable, CaseIterable, Comparable, Sendable {
+public enum Weekday: Int, Codable, CaseIterable, Comparable, Sendable, Identifiable {
+    public var id: Int { rawValue }
+
     case monday = 1, tuesday, wednesday, thursday, friday, saturday, sunday
 
     public static func < (lhs: Weekday, rhs: Weekday) -> Bool { lhs.rawValue < rhs.rawValue }
