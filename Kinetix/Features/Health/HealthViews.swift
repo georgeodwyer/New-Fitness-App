@@ -326,6 +326,7 @@ struct HealthChart: View {
                 }
             }
             .chartXSelection(value: $selected)
+            .chartXScale(range: .plotDimension(startPadding: 4, endPadding: days.count > 10 ? 14 : 4))
             .chartYScale(domain: .automatic(includesZero: metric.isDailyTotal))
             .chartXAxis {
                 AxisMarks(values: .stride(by: .day, count: days.count > 10 ? 7 : 1)) { _ in

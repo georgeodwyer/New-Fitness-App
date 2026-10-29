@@ -654,6 +654,7 @@ struct DailyStrainChart: View {
                         .foregroundStyle(KXColor.inkSecondary)
                 }
             }
+            .chartXScale(range: .plotDimension(startPadding: 2, endPadding: isWeek ? 2 : 14))
             .chartXSelection(value: $selected)
             .frame(height: 190)
             .accessibilityLabel("Daily exertion, last \(range) days")

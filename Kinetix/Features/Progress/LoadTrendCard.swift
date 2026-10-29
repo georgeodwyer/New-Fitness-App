@@ -96,6 +96,7 @@ struct LoadTrendCard: View {
                         AxisValueLabel(format: .dateTime.day().month(.abbreviated), centered: true).foregroundStyle(KXColor.inkSecondary)
                     }
                 }
+                .chartXScale(range: .plotDimension(startPadding: 4, endPadding: 14))
                 .chartXSelection(value: $selected)
                 .frame(height: 180)
                 .accessibilityLabel("This week against your usual over the last 8 weeks; latest \(Int(points.last?.ratio ?? 0)) percent")
