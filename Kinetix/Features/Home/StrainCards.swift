@@ -239,7 +239,7 @@ struct RecoveryReading: Identifiable {
         }
         if let rhr = health.restingHeartRate {
             let delta = Int(rhr.difference.rounded())
-            result.append(RecoveryReading(label: "Resting HR", value: "\(Int(rhr.today.rounded()))", unit: "bpm",
+            result.append(RecoveryReading(label: rhr.isFromSleep ? "Sleeping HR" : "Resting HR", value: "\(Int(rhr.today.rounded()))", unit: "bpm",
                                           note: delta == 0 ? "Your usual" : "\(delta < 0 ? "▼" : "▲") \(abs(delta)) bpm",
                                           noteColor: delta == 0 ? KXColor.inkSecondary : (delta < 0 ? KXColor.success : KXColor.warning)))
         } else {
@@ -280,11 +280,11 @@ struct RecoveryReading: Identifiable {
             return RecoveryReading(label: "HRV", value: "\(ms)", unit: "ms",
                                    note: percent == 0 ? "Your usual" : "\(up ? "▲" : "▼") \(percent)% vs usual",
                                    noteColor: percent == 0 ? KXColor.inkSecondary : (up ? KXColor.success : KXColor.warning))
-        case "Resting HR":
+        case "Resting HR", "Sleeping HR":
             guard let bpm = firstInt("(\\d+) bpm", in: detail) else { return nil }
             let delta = firstInt("(\\d+) (?:above|below)", in: detail) ?? 0
             let below = detail.contains("below")
-            return RecoveryReading(label: "Resting HR", value: "\(bpm)", unit: "bpm",
+            return RecoveryReading(label: part.name, value: "\(bpm)", unit: "bpm",
                                    note: delta == 0 ? "Your usual" : "\(below ? "▼" : "▲") \(delta) bpm",
                                    noteColor: delta == 0 ? KXColor.inkSecondary : (below ? KXColor.success : KXColor.warning))
         case "Sleep":
@@ -575,7 +575,7 @@ struct RecoveryBreakdownSection: View {
     private func color(for name: String) -> Color {
         switch name {
         case "HRV": return KXColor.accent
-        case "Resting HR": return KXColor.lift
+        case "Resting HR", "Sleeping HR": return KXColor.lift
         case "Sleep": return KXColor.teal
         default: return KXColor.warning
         }

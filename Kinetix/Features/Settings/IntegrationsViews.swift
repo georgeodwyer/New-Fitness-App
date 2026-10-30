@@ -233,7 +233,7 @@ struct AppleHealthView: View {
             } else {
                 Section("Today") {
                     if let signal = health.restingHeartRate {
-                        LabeledContent("Resting heart rate", value: signal.description)
+                        LabeledContent(signal.isFromSleep ? "Heart rate while asleep" : "Resting heart rate", value: signal.description)
                         if signal.isElevated {
                             Label("Higher than usual. If you also feel run down, Kinetix eases today's plan.", systemImage: "exclamationmark.triangle.fill")
                                 .font(KXFont.caption)

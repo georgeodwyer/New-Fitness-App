@@ -82,6 +82,8 @@ public struct RestingHeartRateSignal: Equatable, Sendable {
     public var today: Double
     /// Median of the previous readings.
     public var baseline: Double
+    /// Worked out from heart rate while asleep (not Apple's all-day resting figure).
+    public var isFromSleep = false
     public var difference: Double { today - baseline }
     /// At least `RestingHeartRateSignal.elevatedThreshold` bpm above usual.
     public var isElevated: Bool { difference >= Self.elevatedThreshold }

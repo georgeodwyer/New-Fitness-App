@@ -101,7 +101,7 @@ struct CheckInCard: View {
 
     private func restingHeartRateLine(_ signal: RestingHeartRateSignal) -> some View {
         Label {
-            Text("Resting HR \(signal.description)")
+            Text("\(signal.isFromSleep ? "Sleeping HR" : "Resting HR") \(signal.description)")
         } icon: {
             Image(systemName: signal.isElevated ? "exclamationmark.triangle.fill" : "heart.fill")
                 .foregroundStyle(signal.isElevated ? KXColor.warning : KXColor.inkSecondary)

@@ -38,6 +38,9 @@ final class HealthService {
     /// When Health was last read in full (set once the readings are in).
     private(set) var lastRefresh: Date?
     @ObservationIgnored private var isRefreshing = false
+    /// When you were asleep each night (keyed by the day you woke up), read once per refresh.
+    @ObservationIgnored private var sleepSamples: [SleepSample] = []
+    @ObservationIgnored private var asleep: [Date: [DateInterval]] = [:]
 
     var isAvailable: Bool { store != nil || isSample }
 
@@ -191,7 +194,14 @@ final class HealthService {
             // Set last, so anything watching it sees the new readings.
             lastRefresh = now
         }
-        restingHeartRate = await readRestingHeartRate(now: now)
+        // Sleep first: HRV and heart rate are only counted while you were asleep.
+        sleepSamples = await readSleepSamples(now: now)
+        asleep = SleepNights.periods(sleepSamples, calendar: .kinetix)
+        if let sleeping = await readSleepingHeartRate(now: now) {
+            restingHeartRate = sleeping
+        } else {
+            restingHeartRate = await readRestingHeartRate(now: now)
+        }
         metricDays = await readMetricDays(now: now)
         hrv = Self.hrvSignal(from: metricDays[.hrv] ?? [], now: now)
         needsPermission = await checkNeedsPermission()
@@ -292,8 +302,8 @@ final class HealthService {
         return result
     }
 
-    /// HRV from overnight readings only (8 pm to 10 am), one value per morning, so daytime
-    /// readings don't move the recovery score after you've woken up.
+    /// HRV from readings taken while you were asleep, one value per morning (nights with no
+    /// sleep recorded use 8 pm to 10 am), so daytime readings don't move the recovery score.
     private func readOvernightDays(_ metric: HealthMetric, now: Date) async -> [HealthDay] {
         guard let store, let type = Self.quantityType(for: metric) else { return [] }
         let calendar = Calendar.kinetix
@@ -304,7 +314,8 @@ final class HealthService {
         )
         guard let samples = try? await descriptor.result(for: store) else { return [] }
         let unit = Self.unit(for: metric)
-        return OvernightReadings.days(samples.map { (date: $0.startDate, value: $0.quantity.doubleValue(for: unit)) }, calendar: calendar)
+        return SleepReadings.days(samples.map { (date: $0.startDate, value: $0.quantity.doubleValue(for: unit)) },
+                                  asleep: asleep, calendar: calendar)
     }
 
     /// One value per day: the total for steps and energy, the average for readings.
@@ -332,6 +343,11 @@ final class HealthService {
     /// Hours asleep per night (6 pm to 6 pm), counted on the day you woke up, including sleep
     /// before midnight. When several apps or devices record the same night, the longest is used.
     private func readSleepDays(now: Date) async -> [HealthDay] {
+        SleepNights.days(sleepSamples, calendar: .kinetix)
+    }
+
+    /// Asleep records from Health for the last month (any app or device).
+    private func readSleepSamples(now: Date) async -> [SleepSample] {
         guard let store else { return [] }
         let calendar = Calendar.kinetix
         guard let from = calendar.date(byAdding: .day, value: -31, to: calendar.startOfDay(for: now)) else { return [] }
@@ -340,11 +356,37 @@ final class HealthService {
             sortDescriptors: [SortDescriptor(\.startDate)]
         )
         guard let samples = try? await descriptor.result(for: store) else { return [] }
-        let asleep = HKCategoryValueSleepAnalysis.allAsleepValues.map(\.rawValue)
-        let records = samples.filter { asleep.contains($0.value) }.map {
+        let asleepValues = HKCategoryValueSleepAnalysis.allAsleepValues.map(\.rawValue)
+        return samples.filter { asleepValues.contains($0.value) }.map {
             SleepSample(source: $0.sourceRevision.source.bundleIdentifier, start: $0.startDate, end: $0.endDate)
         }
-        return SleepNights.days(records, calendar: calendar)
+    }
+
+    /// Last night's heart rate while asleep against your usual (nil when last night's sleep
+    /// isn't recorded, or there aren't enough nights yet: Apple's resting heart rate is used).
+    private func readSleepingHeartRate(now: Date) async -> RestingHeartRateSignal? {
+        guard let store else { return nil }
+        let calendar = Calendar.kinetix
+        let today = calendar.startOfDay(for: now)
+        guard asleep[today] != nil else { return nil }
+        // Only the hours around each night's sleep are fetched (not a month of workouts).
+        let spans = asleep.values.compactMap { periods -> NSPredicate? in
+            guard let first = periods.map(\.start).min(), let last = periods.map(\.end).max() else { return nil }
+            return HKQuery.predicateForSamples(withStart: first, end: last)
+        }
+        guard !spans.isEmpty else { return nil }
+        let descriptor = HKSampleQueryDescriptor(
+            predicates: [.quantitySample(type: heartRateType, predicate: NSCompoundPredicate(orPredicateWithSubpredicates: spans))],
+            sortDescriptors: [SortDescriptor(\.startDate)]
+        )
+        guard let samples = try? await descriptor.result(for: store) else { return nil }
+        let days = SleepReadings.days(samples.map { (date: $0.startDate, value: $0.quantity.doubleValue(for: Self.heartRateUnit)) },
+                                      asleep: asleep, calendar: calendar, fallbackToOvernight: false)
+        guard let last = days.last, last.date == today else { return nil }
+        let history = days.dropLast().map(\.value)
+        guard var signal = RestingHeartRateSignal.assess(today: last.value, history: history) else { return nil }
+        signal.isFromSleep = true
+        return signal
     }
 
     /// Last night's HRV against the previous days' readings. Last night alone (not averaged with

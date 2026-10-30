@@ -288,7 +288,7 @@ extension BalanceService {
     private static func symbol(for reading: String) -> String {
         switch reading {
         case "HRV": return "waveform.path.ecg"
-        case "Resting HR": return "heart"
+        case "Resting HR", "Sleeping HR": return "heart"
         case "Sleep": return "moon.zzz"
         default: return "person.crop.circle.badge.checkmark"
         }

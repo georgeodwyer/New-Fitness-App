@@ -297,6 +297,67 @@ public enum SleepNights {
     }
 }
 
+extension SleepNights {
+    /// When you were asleep each night, keyed like `days` (the day you woke up): the merged
+    /// periods from the source that recorded the most sleep that night.
+    public static func periods(_ samples: [SleepSample], calendar: Calendar) -> [Date: [DateInterval]] {
+        var bySourceNight: [String: [Date: [SleepSample]]] = [:]
+        for sample in samples where sample.end > sample.start {
+            let night = calendar.startOfDay(for: sample.end.addingTimeInterval(6 * 3600))
+            bySourceNight[sample.source, default: [:]][night, default: []].append(sample)
+        }
+        var best: [Date: (seconds: Double, periods: [DateInterval])] = [:]
+        for nights in bySourceNight.values {
+            for (night, records) in nights {
+                let seconds = mergedSeconds(records)
+                guard seconds >= 1800, seconds > (best[night]?.seconds ?? 0) else { continue }
+                best[night] = (seconds, merged(records))
+            }
+        }
+        return best.mapValues(\.periods)
+    }
+
+    /// The records as separate periods, overlaps joined.
+    static func merged(_ records: [SleepSample]) -> [DateInterval] {
+        var result: [DateInterval] = []
+        for record in records.sorted(by: { $0.start < $1.start }) {
+            if let last = result.last, record.start <= last.end {
+                result[result.count - 1] = DateInterval(start: last.start, end: max(last.end, record.end))
+            } else {
+                result.append(DateInterval(start: record.start, end: record.end))
+            }
+        }
+        return result
+    }
+}
+
+/// Readings taken while you were asleep (HRV, heart rate), one average per morning, keyed by
+/// the day you woke up. A night with no sleep recorded (the watch was charging, say) falls back
+/// to the overnight window (8 pm to 10 am) when `fallbackToOvernight` is set.
+public enum SleepReadings {
+    public static func days(_ readings: [(date: Date, value: Double)], asleep: [Date: [DateInterval]], calendar: Calendar,
+                            fallbackToOvernight: Bool = true) -> [HealthDay] {
+        var byDay: [Date: [Double]] = [:]
+        var noSleep: [(date: Date, value: Double)] = []
+        for reading in readings where reading.value > 0 {
+            let night = calendar.startOfDay(for: reading.date.addingTimeInterval(6 * 3600))
+            if let periods = asleep[night] {
+                if periods.contains(where: { $0.start <= reading.date && reading.date <= $0.end }) {
+                    byDay[night, default: []].append(reading.value)
+                }
+            } else {
+                noSleep.append(reading)
+            }
+        }
+        var result = byDay.map { HealthDay(date: $0.key, value: $0.value.reduce(0, +) / Double($0.value.count)) }
+        if fallbackToOvernight {
+            let covered = Set(asleep.keys)
+            result += OvernightReadings.days(noSleep, calendar: calendar).filter { !covered.contains($0.date) }
+        }
+        return result.sorted { $0.date < $1.date }
+    }
+}
+
 /// Suggests a 1–5 check-in sleep score from hours asleep.
 public enum SleepScore {
     public static func score(hours: Double) -> Int {

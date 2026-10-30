@@ -334,8 +334,11 @@ public struct RecoveryScore: Equatable, Sendable {
                 weight: weights.hrv)
         }
         if let restingHeartRate {
-            add("Resting HR", vsUsual: 50 - restingHeartRate.difference * 5, detail: restingHeartRate.description,
-                rule: "This morning against your usual: your usual shows as 72, 5 beats lower about 87, 5 beats higher about 50.",
+            add(restingHeartRate.isFromSleep ? "Sleeping HR" : "Resting HR", vsUsual: 50 - restingHeartRate.difference * 5,
+                detail: restingHeartRate.description,
+                rule: restingHeartRate.isFromSleep
+                    ? "Your average heart rate while asleep last night against your usual: your usual shows as 72, 5 beats lower about 87, 5 beats higher about 50."
+                    : "This morning against your usual: your usual shows as 72, 5 beats lower about 87, 5 beats higher about 50.",
                 weight: weights.restingHeartRate)
         }
         if let sleepHours, sleepHours > 0 {
