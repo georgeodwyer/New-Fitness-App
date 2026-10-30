@@ -105,6 +105,7 @@
 		99894027FBB2F90E7717BE0D /* SaveAsTemplateButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB543700E16287B81819AF2B /* SaveAsTemplateButton.swift */; };
 		9C9188C072E5E81D7B8839E3 /* KinetixWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = F90D4CAA5435C52D08225A30 /* KinetixWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		9CC7887F47F654851696D89E /* Inter-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9FEF325D88A33F77DC18605A /* Inter-Regular.ttf */; };
+		9DEB8A7192F18F6042382FD0 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = DDF0111F313AC1FBE3F6CAA1 /* Assets.xcassets */; };
 		9F4B9AF3C9674797C22FF1D7 /* GymSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AFFA954318BD83DFBE4F5ED /* GymSetupView.swift */; };
 		9F6D5D7C390529C797D53991 /* UnitPreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A699B6FB1001149DC010A14 /* UnitPreference.swift */; };
 		A125DAE7DFD8901C454AC776 /* BarlowCondensed-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 325D39D3C463CAE911C0A916 /* BarlowCondensed-Bold.ttf */; };
@@ -423,6 +424,7 @@
 		DA9718F435F06430788DECB6 /* IntegrationsViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntegrationsViews.swift; sourceTree = "<group>"; };
 		DCED44B92E0BFCB84A0AFC97 /* PrivacyPolicyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyPolicyView.swift; sourceTree = "<group>"; };
 		DD08ED26A91FB4B4953B85A1 /* WatchSyncTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchSyncTests.swift; sourceTree = "<group>"; };
+		DDF0111F313AC1FBE3F6CAA1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		DE60D8E623FC5E87ABB1C84E /* GymTemplateEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GymTemplateEditorView.swift; sourceTree = "<group>"; };
 		DFBEFA7B7B4203748B86952F /* AccountServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountServiceTests.swift; sourceTree = "<group>"; };
 		E1A1F79A98C11CFA85E3E4C1 /* CalendarTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarTests.swift; sourceTree = "<group>"; };
@@ -821,6 +823,7 @@
 		C9FEE39118FBCF0CA62414D3 /* KinetixWidgets */ = {
 			isa = PBXGroup;
 			children = (
+				DDF0111F313AC1FBE3F6CAA1 /* Assets.xcassets */,
 				09F31049BEE6448D25F4EED4 /* HomeWidgets.swift */,
 				A4F90BB8590CAE95AEE03BF5 /* Info.plist */,
 				9B95580C3DD3F20C3F44C791 /* KinetixWidgets.entitlements */,
@@ -991,6 +994,7 @@
 			buildConfigurationList = F9FC6B70E12C1A5E5C0E4D34 /* Build configuration list for PBXNativeTarget "KinetixWidgets" */;
 			buildPhases = (
 				5D300A99CAF8018F44F22642 /* Sources */,
+				A6FEF30CC7138C61AF588562 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -1095,6 +1099,14 @@
 				9CC7887F47F654851696D89E /* Inter-Regular.ttf in Resources */,
 				CFA606BEB9C2629F6B52DC40 /* Inter-SemiBold.ttf in Resources */,
 				5301A43F2906CE8182CCE4F8 /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A6FEF30CC7138C61AF588562 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9DEB8A7192F18F6042382FD0 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
