@@ -124,8 +124,9 @@ struct GymLiveView: View {
                     setDots(frame)
                 }
                 if let rest = frame?.restEndsAt, rest > context.date, frame?.setStartedAt == nil {
-                    HStack(spacing: 8) {
+                    HStack(alignment: .center, spacing: 6) {
                         restRing(until: rest, now: context.date)
+                        Spacer(minLength: 4)
                         heartRateCompact
                     }
                 } else {
@@ -169,17 +170,17 @@ struct GymLiveView: View {
         let left = end.timeIntervalSince(now)
         let total = max(end.timeIntervalSince(restSeenAt ?? now), left, 1)
         return ZStack {
-            Circle().stroke(WatchColor.surface2, lineWidth: 5)
+            Circle().stroke(WatchColor.surface2, lineWidth: 4)
             Circle().trim(from: 0, to: left / total)
-                .stroke(WatchColor.accent, style: StrokeStyle(lineWidth: 5, lineCap: .round))
+                .stroke(WatchColor.accent, style: StrokeStyle(lineWidth: 4, lineCap: .round))
                 .rotationEffect(.degrees(-90))
             VStack(spacing: 0) {
-                Text(Units.formatMinutesSeconds(left)).font(WatchFont.number(20)).minimumScaleFactor(0.7).lineLimit(1)
-                Text("REST").font(WatchFont.unit).tracking(1).foregroundStyle(WatchColor.inkSecondary)
+                Text(Units.formatMinutesSeconds(left)).font(WatchFont.number(16)).minimumScaleFactor(0.7).lineLimit(1)
+                Text("REST").font(WatchFont.unit).tracking(0.8).foregroundStyle(WatchColor.inkSecondary)
             }
-            .padding(.horizontal, 6)
+            .padding(.horizontal, 5)
         }
-        .frame(width: 66, height: 66)
+        .frame(width: 54, height: 54)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Rest, \(Int(left)) seconds left")
     }
@@ -188,7 +189,7 @@ struct GymLiveView: View {
     private var heartRateCompact: some View {
         let bpm = workout.liveHeartRate
         let zone = bpm.flatMap { value in frame.map { $0.zone(for: value) } } ?? 0
-        return VStack(alignment: .leading, spacing: 0) {
+        return VStack(alignment: .trailing, spacing: 0) {
             Text(bpm.map { "\(Int($0.rounded()))" } ?? "--")
                 .font(WatchFont.number(26))
                 .foregroundStyle(zone > 0 ? WatchColor.zone(zone) : WatchColor.bad)
