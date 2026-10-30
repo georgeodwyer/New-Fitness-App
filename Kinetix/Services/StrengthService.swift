@@ -104,6 +104,20 @@ enum StrengthService {
         log.touch()
     }
 
+    /// Takes a set out of the workout; the exercise's later sets move up one.
+    static func removeSet(_ set: SetLogModel, from log: StrengthLogModel, in context: ModelContext) {
+        if set.isCompleted, let seconds = set.activeSeconds {
+            log.activeSeconds = max(0, log.activeSeconds - seconds)
+        }
+        set.softDelete()
+        for later in log.orderedSets where later.progressionKey == set.progressionKey && later.setIndex > set.setIndex {
+            later.setIndex -= 1
+            later.touch()
+        }
+        log.touch()
+        try? context.save()
+    }
+
     /// Completes the workout: progression, records, load, and plan updates.
     static func finish(
         _ log: StrengthLogModel,

@@ -523,6 +523,15 @@ final class StrengthWorkoutModel {
         pendingKeep = nil
     }
 
+    /// Removes a set (an exercise keeps at least one: remove the exercise instead).
+    func removeSet(_ set: SetLogModel, from group: ExerciseGroup) {
+        guard group.sets.count > 1 else { return }
+        if set.id == nextSet?.id, setStartedAt != nil { setStartedAt = nil }
+        if lastFinishedSetId == set.id { lastFinishedSetId = nil }
+        StrengthService.removeSet(set, from: log, in: context)
+        updateLockScreen()
+    }
+
     func addSet(to group: ExerciseGroup) {
         guard let last = group.sets.last else { return }
         StrengthService.addSet(after: last, to: log, in: context)

@@ -443,6 +443,7 @@ private struct ExerciseCard: View {
                         DoneSetRow(set: set, units: units) {
                             withAnimation(.easeInOut(duration: 0.2)) { _ = openSets.insert(set.id) }
                         }
+                        .contextMenu { removeSetButton(set) }
                     } else {
                         SetRow(set: set, units: units, model: model,
                                isNext: isCurrent && set.id == group.sets.first(where: { !$0.isCompleted })?.id,
@@ -453,15 +454,30 @@ private struct ExerciseCard: View {
                                    }
                                })
                             .onChange(of: set.isCompleted) { _, done in if !done { openSets.remove(set.id) } }
+                            .contextMenu { removeSetButton(set) }
                     }
                 }
-                Button {
-                    model.addSet(to: group)
-                } label: {
-                    Label("Add set", systemImage: "plus")
-                        .font(KXFont.captionEmphasis)
+                HStack {
+                    Button {
+                        model.addSet(to: group)
+                    } label: {
+                        Label("Add set", systemImage: "plus")
+                            .font(KXFont.captionEmphasis)
+                    }
+                    .foregroundStyle(KXColor.accent)
+                    Spacer()
+                    // Takes off the last set still to do (or the last set, if all are done).
+                    if group.sets.count > 1, let set = group.sets.last(where: { !$0.isCompleted }) ?? group.sets.last {
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.2)) { model.removeSet(set, from: group) }
+                        } label: {
+                            Label("Remove set", systemImage: "minus")
+                                .font(KXFont.captionEmphasis)
+                        }
+                        .foregroundStyle(KXColor.inkSecondary)
+                        .accessibilityIdentifier("gym.removeSet")
+                    }
                 }
-                .foregroundStyle(KXColor.accent)
             }
         }
         .kxCard(isCurrent ? .raised : .tinted)
@@ -478,6 +494,17 @@ private struct ExerciseCard: View {
         }
         .onChange(of: isCurrent) { _, current in
             if current { withAnimation(.easeInOut(duration: 0.2)) { folded = nil } }
+        }
+    }
+
+    @ViewBuilder
+    private func removeSetButton(_ set: SetLogModel) -> some View {
+        if group.sets.count > 1 {
+            Button(role: .destructive) {
+                withAnimation(.easeInOut(duration: 0.2)) { model.removeSet(set, from: group) }
+            } label: {
+                Label("Remove set \(set.setIndex + 1)", systemImage: "trash")
+            }
         }
     }
 

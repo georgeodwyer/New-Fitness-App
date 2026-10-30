@@ -74,7 +74,7 @@ enum WorkoutActivityLayout {
                     }
                 }
             } compactLeading: {
-                Image(systemName: context.attributes.kind == "run" ? "figure.run" : "dumbbell.fill")
+                WorkoutKindIcon(kind: context.attributes.kind, size: 16)
                     .foregroundStyle(KXColor.accent)
             } compactTrailing: {
                 // The gym has no pace: always the clock (rest countdown, set or session time).
@@ -124,7 +124,7 @@ struct WatchWorkoutView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: 4) {
-                Image(systemName: kind == "run" ? "figure.run" : "dumbbell.fill").foregroundStyle(KXColor.accent)
+                WorkoutKindIcon(kind: kind, size: 14).foregroundStyle(KXColor.accent)
                 Text(headline).font(.caption2.weight(.semibold)).lineLimit(1)
                 Spacer(minLength: 0)
                 if state.mode == .paused {
@@ -222,7 +222,7 @@ struct LockScreenWorkoutView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Image(systemName: kind == "run" ? "figure.run" : "dumbbell.fill").foregroundStyle(KXColor.accent)
+                WorkoutKindIcon(kind: kind, size: 14).foregroundStyle(KXColor.accent)
                 Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(KXColor.ink).lineLimit(1)
                 Spacer()
                 if state.mode == .paused {
@@ -296,6 +296,25 @@ struct LockScreenWorkoutView: View {
         VStack(alignment: .leading, spacing: 2) {
             Text(label.uppercased()).font(.caption2.weight(.bold)).foregroundStyle(KXColor.inkSecondary)
             value().font(.title3.weight(.bold).monospacedDigit()).foregroundStyle(KXColor.ink)
+        }
+    }
+}
+
+/// A run shows a runner; the gym shows the Kinetix mark.
+struct WorkoutKindIcon: View {
+    let kind: String
+    var size: CGFloat = 16
+
+    var body: some View {
+        if kind == "run" {
+            Image(systemName: "figure.run")
+        } else {
+            Image("KinetixMark")
+                .renderingMode(.template)
+                .resizable()
+                .scaledToFit()
+                .frame(width: size, height: size)
+                .accessibilityLabel("Kinetix")
         }
     }
 }

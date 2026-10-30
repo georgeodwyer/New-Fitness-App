@@ -36,6 +36,19 @@ final class StrengthServiceTests: XCTestCase {
         XCTAssertEqual(resumed.id, log.id, "An unfinished workout is resumed, not duplicated")
     }
 
+    func testRemovingASetRenumbersTheRest() throws {
+        let context = try makeContext()
+        let session = try XCTUnwrap(strengthSessions(in: context).first)
+        let log = StrengthService.startOrResume(session, in: context, now: monday)
+        let key = try XCTUnwrap(log.orderedSets.first?.progressionKey)
+        let before = log.orderedSets.filter { $0.progressionKey == key }
+        XCTAssertGreaterThan(before.count, 1)
+        StrengthService.removeSet(before[0], from: log, in: context)
+        let after = log.orderedSets.filter { $0.progressionKey == key }
+        XCTAssertEqual(after.count, before.count - 1)
+        XCTAssertEqual(after.map(\.setIndex), Array(0..<after.count))
+    }
+
     func testFinishingAtTopOfRangeIncreasesWeightsAndUpdatesFutureSessions() throws {
         let context = try makeContext()
         let sessions = try strengthSessions(in: context)
