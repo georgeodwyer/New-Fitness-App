@@ -57,6 +57,8 @@ public struct PaceCue: Codable, Equatable, Sendable {
 /// Something worth telling the runner. Each has a spoken `announcement`.
 public enum RunEvent: Equatable, Sendable {
     case segmentStarted(index: Int, segment: RunSegment, announcement: String)
+    /// A step's time or distance is up and steps don't move on by themselves: waiting for Next step.
+    case stepEnded(index: Int, next: RunSegment, announcement: String)
     case paceCue(PaceCue)
     case split(Split, announcement: String)
     case workoutComplete(announcement: String)
@@ -64,6 +66,7 @@ public enum RunEvent: Equatable, Sendable {
     public var announcement: String {
         switch self {
         case .segmentStarted(_, _, let text): return text
+        case .stepEnded(_, _, let text): return text
         case .paceCue(let cue): return cue.message
         case .split(_, let text): return text
         case .workoutComplete(let text): return text
@@ -98,6 +101,8 @@ public struct RunSnapshot: Codable, Equatable, Sendable {
     public var lapDistanceMeters: Double? = nil
     /// The last lap marked.
     public var lastLap: Lap? = nil
+    /// The step is done and waiting for Next step (steps not moving on by themselves).
+    public var isWaitingForNextStep: Bool? = nil
 }
 
 public struct RunSummary: Codable, Equatable, Sendable {
@@ -173,6 +178,8 @@ public struct RunEngine: Sendable {
     private var segmentStartActive: Double = 0
     private var segmentStartDistance: Double = 0
     private var structureComplete = false
+    /// The step's time or distance is up and it's waiting for Next step.
+    private var waitingForNextStep = false
     private var segmentResults: [SegmentResult] = []
     private var segmentInTarget: Double = 0
     private var segmentMeasured: Double = 0
@@ -204,6 +211,7 @@ public struct RunEngine: Sendable {
         /// Segment results expected after the action (an automatic step change since then
         /// makes undo unsafe).
         var resultCountAfter: Int
+        var waitingForNextStep = false
     }
     private var undoPoint: UndoPoint?
 
@@ -242,9 +250,9 @@ public struct RunEngine: Sendable {
         startDate = date
         lastClock = date
         guard let first = segments.first else { return [] }
-        return config.segmentAnnouncementsEnabled
-            ? [.segmentStarted(index: 0, segment: first, announcement: Announcer.segmentStart(first, units: config.units))]
-            : []
+        // Always sent (silent when step announcements are off) so the watch can still tap.
+        return [.segmentStarted(index: 0, segment: first,
+                                announcement: config.segmentAnnouncementsEnabled ? Announcer.segmentStart(first, units: config.units) : "")]
     }
 
     public mutating func pause(at date: Date) {
@@ -312,6 +320,7 @@ public struct RunEngine: Sendable {
         segmentStartActive = point.segmentStartActive
         segmentStartDistance = point.segmentStartDistance
         structureComplete = point.structureComplete
+        waitingForNextStep = point.waitingForNextStep
         segmentResults.removeLast(segmentResults.count - point.segmentResultCount)
         segmentInTarget = point.segmentInTarget + segmentInTarget
         segmentMeasured = point.segmentMeasured + segmentMeasured
@@ -329,7 +338,7 @@ public struct RunEngine: Sendable {
                   structureComplete: structureComplete, segmentResultCount: segmentResults.count,
                   segmentInTarget: segmentInTarget, segmentMeasured: segmentMeasured,
                   lapCount: laps.count, lapStartActive: lapStartActive, lapStartDistance: lapStartDistance,
-                  lapHeartRates: lapHeartRates, resultCountAfter: segmentResults.count)
+                  lapHeartRates: lapHeartRates, resultCountAfter: segmentResults.count, waitingForNextStep: waitingForNextStep)
     }
 
     // MARK: - Inputs
@@ -425,7 +434,8 @@ public struct RunEngine: Sendable {
             lapNumber: laps.isEmpty ? nil : laps.count + 1,
             lapElapsedSeconds: laps.isEmpty ? nil : activeSeconds - lapStartActive,
             lapDistanceMeters: laps.isEmpty ? nil : distance - lapStartDistance,
-            lastLap: laps.last
+            lastLap: laps.last,
+            isWaitingForNextStep: waitingForNextStep ? true : nil
         )
     }
 
@@ -509,6 +519,18 @@ public struct RunEngine: Sendable {
             case .distance(let meters): done = distance - segmentStartDistance >= meters
             }
             guard done else { break }
+            // Steps that don't move on by themselves: say so once and wait for Next step (the
+            // last step still finishes the session).
+            if !config.advancesStepsAutomatically, segmentIndex + 1 < segments.count {
+                if !waitingForNextStep {
+                    waitingForNextStep = true
+                    let next = segments[segmentIndex + 1]
+                    events.append(.stepEnded(index: segmentIndex, next: next,
+                                             announcement: config.segmentAnnouncementsEnabled
+                                                ? Announcer.stepEnded(segment, next: next, units: config.units) : ""))
+                }
+                break
+            }
             events += finishSegment()
         }
         return events
@@ -521,22 +543,29 @@ public struct RunEngine: Sendable {
         segmentMeasured = 0
         resetCoach()
 
-        // Start the next segment where this one should have ended (keeps boundaries exact).
-        switch segment.length {
-        case .duration(let seconds): segmentStartActive = min(activeSeconds, segmentStartActive + seconds)
-        case .distance: segmentStartActive = activeSeconds
-        }
-        switch segment.length {
-        case .distance(let meters): segmentStartDistance = min(distance, segmentStartDistance + meters)
-        case .duration: segmentStartDistance = distance
+        if waitingForNextStep {
+            // Started by hand after waiting: the next step starts now.
+            segmentStartActive = activeSeconds
+            segmentStartDistance = distance
+            waitingForNextStep = false
+        } else {
+            // Start the next segment where this one should have ended (keeps boundaries exact).
+            switch segment.length {
+            case .duration(let seconds): segmentStartActive = min(activeSeconds, segmentStartActive + seconds)
+            case .distance: segmentStartActive = activeSeconds
+            }
+            switch segment.length {
+            case .distance(let meters): segmentStartDistance = min(distance, segmentStartDistance + meters)
+            case .duration: segmentStartDistance = distance
+            }
         }
 
         if segmentIndex + 1 < segments.count {
             segmentIndex += 1
             let next = segments[segmentIndex]
-            return config.segmentAnnouncementsEnabled
-                ? [.segmentStarted(index: segmentIndex, segment: next, announcement: Announcer.segmentStart(next, units: config.units))]
-                : []
+            return [.segmentStarted(index: segmentIndex, segment: next,
+                                    announcement: config.segmentAnnouncementsEnabled
+                                        ? Announcer.segmentStart(next, units: config.units, after: segment) : "")]
         }
         structureComplete = true
         return [.workoutComplete(announcement: Announcer.workoutComplete)]

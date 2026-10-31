@@ -154,6 +154,61 @@ final class RunEngineTests: XCTestCase {
 
     // MARK: Segments
 
+    func testStepsCanWaitForNextStep() {
+        let structure = RunStructure(segments: [
+            RunSegment(kind: .work, length: .duration(seconds: 60), label: "Rep 1 of 2"),
+            RunSegment(kind: .recovery, length: .duration(seconds: 30)),
+            RunSegment(kind: .work, length: .duration(seconds: 60), label: "Rep 2 of 2")
+        ])
+        var config = CoachingConfig()
+        config.autoAdvanceSteps = false
+        var engine = RunEngine(structure: structure, config: config)
+        _ = engine.start(at: start)
+        var events: [RunEvent] = []
+        for second in 1...120 { events += engine.tick(at: start.addingTimeInterval(Double(second))) }
+        // The first rep's minute is up: it waits rather than moving on to the recovery.
+        XCTAssertEqual(engine.snapshot().segmentIndex, 0)
+        XCTAssertEqual(engine.snapshot().isWaitingForNextStep, true)
+        let ended = events.filter { event in
+            if case .stepEnded = event { return true }
+            return false
+        }
+        XCTAssertEqual(ended.count, 1, "Said once, not every second")
+
+        // Next step: the recovery starts now (its 30 seconds count from the press).
+        _ = engine.skipSegment(at: start.addingTimeInterval(121))
+        XCTAssertEqual(engine.snapshot().segmentIndex, 1)
+        XCTAssertNil(engine.snapshot().isWaitingForNextStep)
+        events = []
+        for second in 122...140 { events += engine.tick(at: start.addingTimeInterval(Double(second))) }
+        XCTAssertEqual(engine.snapshot().segmentIndex, 1, "30 s from the press, not from when the rep's time was up")
+        for second in 141...160 { events += engine.tick(at: start.addingTimeInterval(Double(second))) }
+        XCTAssertEqual(engine.snapshot().isWaitingForNextStep, true)
+        let next = engine.skipSegment(at: start.addingTimeInterval(161))
+        XCTAssertTrue(next.first?.announcement.hasPrefix("End of recovery. Rep 2 of 2") ?? false, next.first?.announcement ?? "")
+    }
+
+    func testRepAfterRecoveryIsAnnouncedAsEndOfRecovery() {
+        let structure = RunStructure(segments: [
+            RunSegment(kind: .recovery, length: .duration(seconds: 30)),
+            RunSegment(kind: .work, length: .duration(seconds: 60), label: "Rep 2 of 6")
+        ])
+        var engine = RunEngine(structure: structure)
+        _ = engine.start(at: start)
+        var events: [RunEvent] = []
+        for second in 1...31 { events += engine.tick(at: start.addingTimeInterval(Double(second))) }
+        XCTAssertTrue(events.contains { $0.announcement.hasPrefix("End of recovery. Rep 2 of 6") })
+        // With step announcements off the change still comes through (silently) for the watch's buzz.
+        var quiet = RunEngine(structure: structure, config: CoachingConfig(segmentAnnouncementsEnabled: false))
+        _ = quiet.start(at: start)
+        var quietEvents: [RunEvent] = []
+        for second in 1...31 { quietEvents += quiet.tick(at: start.addingTimeInterval(Double(second))) }
+        XCTAssertTrue(quietEvents.contains { event in
+            if case .segmentStarted(1, _, "") = event { return true }
+            return false
+        })
+    }
+
     func testStructuredIntervalSessionAnnouncesSegments() {
         let zones = PaceZones(race: RaceResult(distanceMeters: 5000, timeSeconds: 1320))
         let template = TestSupport.templates.workouts(type: .intervals, level: .intermediate)[1] // 5 × 800 m

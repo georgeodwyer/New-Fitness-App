@@ -13,6 +13,10 @@ public struct CoachingConfig: Codable, Equatable, Sendable {
     public var units: UnitSystem
     /// Rolling window used to smooth GPS pace.
     public var smoothingWindowSeconds: Double
+    /// Steps move on by themselves when their time or distance is up (nil = yes). Off: the
+    /// watch says the step is done and waits for Next step.
+    public var autoAdvanceSteps: Bool? = nil
+    public var advancesStepsAutomatically: Bool { autoAdvanceSteps ?? true }
 
     public init(
         paceCueDelaySeconds: Double = 20,

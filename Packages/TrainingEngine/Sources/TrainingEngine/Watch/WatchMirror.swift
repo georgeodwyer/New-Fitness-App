@@ -54,7 +54,7 @@ public enum MirrorAlert: String, Codable, Sendable {
     public init(event: RunEvent) {
         switch event {
         case .paceCue(let cue): self = cue.direction == .tooSlow ? .speedUp : .easeOff
-        case .segmentStarted: self = .newStep
+        case .segmentStarted, .stepEnded: self = .newStep
         case .split: self = .split
         case .workoutComplete: self = .complete
         }

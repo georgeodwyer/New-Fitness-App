@@ -436,10 +436,12 @@ final class RunWorkoutModel {
         for event in events {
             let isCue: Bool
             if case .paceCue = event { isCue = true } else { isCue = false }
+            if isMirroringToWatch { pendingAlerts.append(MirrorAlert(event: event)) }
+            // Step changes come through silently when step announcements are off.
+            guard !event.announcement.isEmpty else { continue }
             announcements.append(Announcement(text: event.announcement, isCue: isCue, time: snapshot.elapsedSeconds))
             if announcements.count > 20 { announcements.removeFirst() }
             voice.speak(event.announcement)
-            if isMirroringToWatch { pendingAlerts.append(MirrorAlert(event: event)) }
         }
     }
 }

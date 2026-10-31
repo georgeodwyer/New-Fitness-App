@@ -75,6 +75,10 @@ public struct WatchControlSettings: Codable, Equatable, Sendable {
     /// Lower levels stop a sleeve brushing the crown from skipping steps. Nil in settings
     /// saved before this existed (treated as 3).
     public var crownSensitivity: Int?
+    /// Steps of a session move on by themselves when they're done (nil = yes). Off: the
+    /// watch buzzes and waits for Next step (double tap, crown or the button).
+    public var autoNextStep: Bool? = nil
+    public var movesToNextStepAutomatically: Bool { autoNextStep ?? true }
 
     public init(doubleTap: Action = .nextOrLap, crown: Action = .nextOrLap, crownTurn: Double = 0.25, undoSeconds: Double = 3,
                 crownSensitivity: Int? = 3) {

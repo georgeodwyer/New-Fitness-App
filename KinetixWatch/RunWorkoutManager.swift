@@ -132,6 +132,7 @@ final class RunWorkoutManager: NSObject {
         let plan = WatchStore.shared.plan
         var coaching = plan.coaching
         coaching.units = plan.units
+        coaching.autoAdvanceSteps = controls.movesToNextStepAutomatically
         var engine = RunEngine(structure: option.structure, config: coaching)
 
         let configuration = HKWorkoutConfiguration()
@@ -404,20 +405,44 @@ final class RunWorkoutManager: NSObject {
 
     private func handle(_ events: [RunEvent]) {
         for event in events {
-            lastMessage = event.announcement
+            if !event.announcement.isEmpty { lastMessage = event.announcement }
             let device = WKInterfaceDevice.current()
             switch event {
             case .paceCue(let cue):
                 // Up = speed up, down = ease off.
                 device.play(cue.direction == .tooSlow ? .directionUp : .directionDown)
-            case .segmentStarted:
-                device.play(.notification)
+            case .segmentStarted(_, let segment, _):
+                // A rep starting (end of recovery) gets a strong double buzz, so it's felt without audio.
+                if segment.kind == .work { Self.goBuzz() } else { device.play(.notification) }
+            case .stepEnded:
+                // Waiting for Next step: two taps.
+                Self.stepDoneBuzz()
             case .split:
                 device.play(.click)
             case .workoutComplete:
                 device.play(.success)
             }
             if voiceEnabled { speak(event.announcement) }
+        }
+    }
+
+    /// Two strong taps: go.
+    static func goBuzz() {
+        let device = WKInterfaceDevice.current()
+        device.play(.start)
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(450))
+            device.play(.start)
+        }
+    }
+
+    /// A step is done and waiting for Next step.
+    private static func stepDoneBuzz() {
+        let device = WKInterfaceDevice.current()
+        device.play(.notification)
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(450))
+            device.play(.notification)
         }
     }
 
@@ -566,7 +591,8 @@ final class RunWorkoutManager: NSObject {
             switch alert {
             case .speedUp: device.play(.directionUp)
             case .easeOff: device.play(.directionDown)
-            case .newStep: device.play(.notification)
+            case .newStep:
+                if frame.snapshot.segment?.kind == .work { Self.goBuzz() } else { device.play(.notification) }
             case .split: device.play(.click)
             case .complete: device.play(.success)
             }

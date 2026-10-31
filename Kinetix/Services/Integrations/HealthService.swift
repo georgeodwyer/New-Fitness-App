@@ -41,6 +41,8 @@ final class HealthService {
     /// When you were asleep each night (keyed by the day you woke up), read once per refresh.
     @ObservationIgnored private var sleepSamples: [SleepSample] = []
     @ObservationIgnored private var asleep: [Date: [DateInterval]] = [:]
+    /// Last night's sleep is in but the heart rate recorded during it hasn't synced yet.
+    private(set) var sleepingHeartRatePending = false
 
     var isAvailable: Bool { store != nil || isSample }
 
@@ -197,10 +199,18 @@ final class HealthService {
         // Sleep first: HRV and heart rate are only counted while you were asleep.
         sleepSamples = await readSleepSamples(now: now)
         asleep = SleepNights.periods(sleepSamples, calendar: .kinetix)
-        if let sleeping = await readSleepingHeartRate(now: now) {
-            restingHeartRate = sleeping
-        } else {
+        switch await readSleepingHeartRate(now: now) {
+        case .ready(let signal):
+            restingHeartRate = signal
+            sleepingHeartRatePending = false
+        case .notInYet:
+            // Last night's sleep is in but its heart rate hasn't synced: wait for it rather
+            // than use Apple's all-day figure now and switch later (the score would jump).
+            restingHeartRate = nil
+            sleepingHeartRatePending = true
+        case .unavailable:
             restingHeartRate = await readRestingHeartRate(now: now)
+            sleepingHeartRatePending = false
         }
         metricDays = await readMetricDays(now: now)
         hrv = Self.hrvSignal(from: metricDays[.hrv] ?? [], now: now)
@@ -247,7 +257,7 @@ final class HealthService {
     /// Not once they've said to stop waiting today (e.g. the watch was charging overnight).
     var isWaitingForLastNight: Bool {
         guard isConnected, !isSample, !stoppedWaitingToday else { return false }
-        return !isFreshToday || (tracksSleep && lastNightSleepHours == nil)
+        return !isFreshToday || (tracksSleep && lastNightSleepHours == nil) || sleepingHeartRatePending
     }
 
     static let stopWaitingKey = "recovery.stopWaitingDay"
@@ -362,31 +372,50 @@ final class HealthService {
         }
     }
 
-    /// Last night's heart rate while asleep against your usual (nil when last night's sleep
-    /// isn't recorded, or there aren't enough nights yet: Apple's resting heart rate is used).
-    private func readSleepingHeartRate(now: Date) async -> RestingHeartRateSignal? {
-        guard let store else { return nil }
+    enum SleepingHeartRate {
+        case ready(RestingHeartRateSignal)
+        /// Last night's sleep is recorded but not (enough of) its heart rate yet.
+        case notInYet
+        /// No sleep recorded last night, or not enough nights yet to know your usual.
+        case unavailable
+    }
+
+    /// A night needs this many heart-rate readings while asleep (an Apple Watch records one
+    /// every few minutes), so a night that's only part-synced isn't used.
+    private static let sleepingHeartRateReadings = 10
+
+    /// Last night's heart rate while asleep against your usual.
+    private func readSleepingHeartRate(now: Date) async -> SleepingHeartRate {
+        guard let store else { return .unavailable }
         let calendar = Calendar.kinetix
         let today = calendar.startOfDay(for: now)
-        guard asleep[today] != nil else { return nil }
+        guard asleep[today] != nil else { return .unavailable }
         // Only the hours around each night's sleep are fetched (not a month of workouts).
         let spans = asleep.values.compactMap { periods -> NSPredicate? in
             guard let first = periods.map(\.start).min(), let last = periods.map(\.end).max() else { return nil }
             return HKQuery.predicateForSamples(withStart: first, end: last)
         }
-        guard !spans.isEmpty else { return nil }
+        guard !spans.isEmpty else { return .unavailable }
         let descriptor = HKSampleQueryDescriptor(
             predicates: [.quantitySample(type: heartRateType, predicate: NSCompoundPredicate(orPredicateWithSubpredicates: spans))],
             sortDescriptors: [SortDescriptor(\.startDate)]
         )
-        guard let samples = try? await descriptor.result(for: store) else { return nil }
+        guard let samples = try? await descriptor.result(for: store) else { return .unavailable }
         let days = SleepReadings.days(samples.map { (date: $0.startDate, value: $0.quantity.doubleValue(for: Self.heartRateUnit)) },
-                                      asleep: asleep, calendar: calendar, fallbackToOvernight: false)
-        guard let last = days.last, last.date == today else { return nil }
-        let history = days.dropLast().map(\.value)
-        guard var signal = RestingHeartRateSignal.assess(today: last.value, history: history) else { return nil }
+                                      asleep: asleep, calendar: calendar, fallbackToOvernight: false,
+                                      minimumReadings: Self.sleepingHeartRateReadings)
+        let history = days.filter { $0.date < today }.map(\.value)
+        // Not enough nights yet to know your usual: Apple's figure until there are.
+        guard history.count >= RestingHeartRateSignal.minimumHistory else { return .unavailable }
+        guard let last = days.last, last.date == today else {
+            // Waits up to two hours after waking for the night's heart rate to sync; after that
+            // (say the sleep came from an app that doesn't record heart rate), Apple's figure.
+            let woke = asleep[today]?.map(\.end).max() ?? now
+            return now.timeIntervalSince(woke) > 2 * 3600 ? .unavailable : .notInYet
+        }
+        guard var signal = RestingHeartRateSignal.assess(today: last.value, history: history) else { return .unavailable }
         signal.isFromSleep = true
-        return signal
+        return .ready(signal)
     }
 
     /// Last night's HRV against the previous days' readings. Last night alone (not averaged with

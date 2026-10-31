@@ -40,6 +40,26 @@ public enum Announcer {
         }
     }
 
+    /// The next step, saying the recovery's over first when a rep follows one.
+    public static func segmentStart(_ segment: RunSegment, units: UnitSystem, after previous: RunSegment?) -> String {
+        let text = segmentStart(segment, units: units)
+        if previous?.kind == .recovery && segment.kind == .work { return "End of recovery. " + text }
+        return text
+    }
+
+    /// Steps not moving on by themselves: this one's done, start the next when ready.
+    public static func stepEnded(_ segment: RunSegment, next: RunSegment, units: UnitSystem) -> String {
+        let done: String
+        switch segment.kind {
+        case .recovery: done = "End of recovery."
+        case .warmUp: done = "Warm-up done."
+        case .work: done = "\(segment.label ?? "Rep") done."
+        default: done = "Step done."
+        }
+        let what = next.kind == .work ? (next.label ?? "the next rep") : "the next step"
+        return "\(done) Press next step to start \(what)."
+    }
+
     public static func segmentStart(_ segment: RunSegment, units: UnitSystem) -> String {
         let length = lengthText(segment.length, units: units)
         let target = segment.targetPace.map { " at \(rangeText($0, units: units))" } ?? ""

@@ -45,10 +45,30 @@ struct RunLiveView: View {
         .onAppear { crownFocused = true }
         .overlay { crownRing }
         .overlay(alignment: .bottom) { gestureBar }
+        .overlay(alignment: .bottom) { nextStepPrompt }
         .animation(.easeInOut(duration: 0.2), value: workout.undoBanner)
         .confirmationDialog(workout.isMirroring ? "Finish this run?" : "End this run?", isPresented: $confirmEnd) {
             Button(workout.isMirroring ? "Finish run" : "End run") { Task { await workout.end() } }
             Button("Keep going", role: .cancel) {}
+        }
+    }
+
+    /// Steps not moving on by themselves: the step is done, start the next one when ready.
+    @ViewBuilder
+    private var nextStepPrompt: some View {
+        if workout.snapshot?.isWaitingForNextStep == true {
+            let next = workout.snapshot?.nextSegment
+            Button {
+                workout.nextOrLap()
+            } label: {
+                VStack(spacing: 0) {
+                    Text("STEP DONE").font(WatchFont.unit).tracking(1)
+                    Text("Start \(next?.label ?? next?.kind.displayName ?? "next step")").lineLimit(1).minimumScaleFactor(0.7)
+                }
+            }
+            .buttonStyle(WatchFilledButtonStyle(color: WatchColor.accent))
+            .padding(.horizontal, 4)
+            .accessibilityIdentifier("watch.startNextStep")
         }
     }
 

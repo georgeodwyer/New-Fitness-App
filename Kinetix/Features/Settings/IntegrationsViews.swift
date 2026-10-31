@@ -174,6 +174,8 @@ struct WatchControlsSection: View {
                 Text("3 seconds").tag(3.0)
                 Text("5 seconds").tag(5.0)
             }
+            Toggle("Move to the next step automatically", isOn: autoNextStep)
+                .accessibilityIdentifier("watch.autoNextStep")
         } header: {
             Text("Controls during a run")
         } footer: {
@@ -182,13 +184,17 @@ struct WatchControlsSection: View {
         .onChange(of: controls) { _, new in WatchControlsStore.settings = new }
     }
 
+    private var autoNextStep: Binding<Bool> {
+        Binding(get: { controls.movesToNextStepAutomatically }, set: { controls.autoNextStep = $0 })
+    }
+
     /// 1 (least) to 5 (most); older saved settings show as 3.
     private var sensitivity: Binding<Int> {
         Binding(get: { controls.sensitivity }, set: { controls.crownSensitivity = $0 })
     }
 
     private var footer: String {
-        var text = "Next step / lap skips to the next step of a session, or marks a lap on a run without steps (laps show in the run's summary). Turn the crown firmly in one go: a ring fills, your wrist taps and it happens. If a sleeve keeps skipping steps, turn the sensitivity down: lower levels need a bigger, quicker turn, so slow rubbing never counts. Undo shows for a moment afterwards in case."
+        var text = "Next step / lap skips to the next step of a session, or marks a lap on a run without steps (laps show in the run's summary). Turn the crown firmly in one go: a ring fills, your wrist taps and it happens. If a sleeve keeps skipping steps, turn the sensitivity down: lower levels need a bigger, quicker turn, so slow rubbing never counts. Undo shows for a moment afterwards in case. With Move to the next step automatically off, your watch buzzes when a step's time or distance is up and waits for you to press Next step (handy for starting reps on a track yourself). A rep starting always gives a strong double buzz, with or without voice."
         if device == nil {
             text += " Double tap needs Apple Watch Series 9 or later, Ultra 2 or later, or SE (3rd generation), with watchOS 11."
         } else if doubleTapKnownUnsupported {

@@ -335,8 +335,10 @@ extension SleepNights {
 /// the day you woke up. A night with no sleep recorded (the watch was charging, say) falls back
 /// to the overnight window (8 pm to 10 am) when `fallbackToOvernight` is set.
 public enum SleepReadings {
+    /// `minimumReadings`: a night needs at least this many readings while asleep to count (a
+    /// night whose readings haven't all synced yet isn't used).
     public static func days(_ readings: [(date: Date, value: Double)], asleep: [Date: [DateInterval]], calendar: Calendar,
-                            fallbackToOvernight: Bool = true) -> [HealthDay] {
+                            fallbackToOvernight: Bool = true, minimumReadings: Int = 1) -> [HealthDay] {
         var byDay: [Date: [Double]] = [:]
         var noSleep: [(date: Date, value: Double)] = []
         for reading in readings where reading.value > 0 {
@@ -349,7 +351,8 @@ public enum SleepReadings {
                 noSleep.append(reading)
             }
         }
-        var result = byDay.map { HealthDay(date: $0.key, value: $0.value.reduce(0, +) / Double($0.value.count)) }
+        var result = byDay.filter { $0.value.count >= minimumReadings }
+            .map { HealthDay(date: $0.key, value: $0.value.reduce(0, +) / Double($0.value.count)) }
         if fallbackToOvernight {
             let covered = Set(asleep.keys)
             result += OvernightReadings.days(noSleep, calendar: calendar).filter { !covered.contains($0.date) }
