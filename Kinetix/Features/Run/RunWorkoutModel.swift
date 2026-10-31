@@ -217,6 +217,59 @@ final class RunWorkoutModel {
         publishToWatch()
     }
 
+    // MARK: Track mode
+
+    /// The GPS looks like a running track and track mode isn't on: offered on the run screen.
+    private(set) var trackSuggested = false
+    /// The lane picked for track mode (1 unless they choose another).
+    var trackLane = 1
+    @ObservationIgnored private var trackSuggestionDismissed = false
+    @ObservationIgnored private var lastTrackCheck = Date.distantPast
+
+    var isTrackModeOn: Bool { engine.isTrackModeOn }
+
+    /// Every 15 seconds: does the last lap of GPS look like a track?
+    private func checkForTrack(at now: Date) {
+        guard !trackSuggestionDismissed, !trackSuggested, !engine.isTrackModeOn, simulator == nil,
+              now.timeIntervalSince(lastTrackCheck) >= 15 else { return }
+        lastTrackCheck = now
+        if engine.looksLikeTrack() {
+            trackSuggested = true
+            voice.speak("Looks like you're on a running track. Turn on track mode for accurate distance.")
+            if isMirroringToWatch { pendingAlerts.append(.newStep) }
+            publishToWatch()
+        }
+    }
+
+    func useTrack(lane: Int) {
+        trackLane = lane
+        engine.useTrack(lane: lane)
+        trackSuggested = false
+        snapshot = engine.snapshot()
+        voice.speak(snapshot.trackLane != nil ? "Track mode on, lane \(lane)." : "Track mode on. It'll lock to the track after a lap.")
+        publishToWatch()
+    }
+
+    func changeTrackLane(_ lane: Int) {
+        trackLane = lane
+        engine.changeTrackLane(lane)
+        snapshot = engine.snapshot()
+        publishToWatch()
+    }
+
+    func stopTrack() {
+        engine.stopTrack()
+        trackSuggestionDismissed = true
+        snapshot = engine.snapshot()
+        publishToWatch()
+    }
+
+    func dismissTrackSuggestion() {
+        trackSuggested = false
+        trackSuggestionDismissed = true
+        publishToWatch()
+    }
+
     /// Marks a lap (from the watch's gestures or Lap button).
     func markLap() {
         let lap = engine.markLap(at: clockNow())
@@ -350,8 +403,10 @@ final class RunWorkoutModel {
     /// Sends the run screen (and any wrist taps) to the watch.
     private func publishToWatch() {
         guard isMirroringToWatch, phase == .running else { return }
+        var shown = snapshot
+        shown.isTrackSuggested = trackSuggested ? true : nil
         let frame = MirrorFrame(runId: mirrorRunId, title: title, units: units, isStructured: structure != nil,
-                                snapshot: snapshot, alerts: pendingAlerts, sentAt: .now)
+                                snapshot: shown, alerts: pendingAlerts, sentAt: .now)
         pendingAlerts = []
         WatchMirrorService.shared.publish(frame)
     }
@@ -365,6 +420,8 @@ final class RunWorkoutModel {
         case .lap: markLap()
         case .undo: undoLastControl()
         case .startSet, .finishSet, .sync: break // gym only / handled by the mirror link
+        case .useTrack: useTrack(lane: trackLane)
+        case .stopTrack: stopTrack()
         case .end: watchEndRequests += 1
         }
     }
@@ -424,6 +481,7 @@ final class RunWorkoutModel {
         lastTick = now
         handle(engine.tick(at: now))
         snapshot = engine.snapshot()
+        checkForTrack(at: now)
         updateLockScreen()
         publishToWatch()
         if now.timeIntervalSince(lastCheckpoint) >= 30, let log {

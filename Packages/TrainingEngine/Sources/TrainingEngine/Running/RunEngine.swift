@@ -108,6 +108,8 @@ public struct RunSnapshot: Codable, Equatable, Sendable {
     public var trackLaps: Double? = nil
     /// Track mode was asked for and is waiting for a lap of GPS to find the track.
     public var isFindingTrack: Bool? = nil
+    /// The GPS looks like a track and track mode isn't on: offer it (set by the app, not the engine).
+    public var isTrackSuggested: Bool? = nil
     /// The last few finished steps (reps, recoveries) and kilometre/mile splits, for a splits screen.
     public var recentParts: [SegmentResult]? = nil
     public var recentSplits: [Split]? = nil

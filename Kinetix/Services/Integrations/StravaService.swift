@@ -116,8 +116,15 @@ final class StravaService {
         let route = log.route
         let description = Self.runDescription(log)
         if route.count >= 2 {
-            let gpx = GPXBuilder.gpx(name: log.title, start: log.startedAt, route: route, heartRate: heartRate)
-            return String(try await client.uploadGPX(gpx, name: log.title, description: description, externalId: "kinetix-\(log.id.uuidString)"))
+            // TCX: each rep and recovery a lap (Strava's Laps match Kinetix's parts), and Kinetix's
+            // distance at each point (so Strava's distance matches, track mode included).
+            let segments = StoredJSON.decode([SegmentResult].self, from: log.segmentsData) ?? []
+            let laps = StoredJSON.decode([Lap].self, from: log.lapsData) ?? []
+            let spans = TCXBuilder.laps(segments: segments, laps: laps, durationSeconds: log.durationSeconds,
+                                        distanceMeters: log.distanceMeters)
+            let tcx = TCXBuilder.tcx(start: log.startedAt, route: route, heartRate: heartRate, laps: spans,
+                                     distanceMeters: log.distanceMeters)
+            return String(try await client.uploadTCX(tcx, name: log.title, description: description, externalId: "kinetix-\(log.id.uuidString)"))
         }
         // No GPS (e.g. treadmill): a manual activity with time only.
         return String(try await client.createActivity(name: log.title, sportType: "Run", start: log.startedAt,

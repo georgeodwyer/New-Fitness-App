@@ -185,6 +185,7 @@ struct RunWorkoutView: View {
                                 KXChip(text: "Simulated GPS", variant: .inverted).padding(KXSpacing.sm)
                             }
                         }
+                    trackCard
                     segmentCard
                     telemetryCard
                     pacerCard
@@ -290,6 +291,87 @@ struct RunWorkoutView: View {
         }
         .padding(.horizontal, KXSpacing.screenMargin)
         .padding(.vertical, KXSpacing.sm)
+    }
+
+    /// Track mode: offered when the GPS looks like a track; then lane, laps and a lane change.
+    @ViewBuilder
+    private var trackCard: some View {
+        let snapshot = model.snapshot
+        if model.trackSuggested && !model.isTrackModeOn {
+            VStack(alignment: .leading, spacing: KXSpacing.sm) {
+                Label("Running on a track?", systemImage: "circle.dashed").font(KXFont.headline).foregroundStyle(KXColor.ink)
+                Text("Track mode measures along your lane instead of GPS, so reps and laps are accurate. Which lane?")
+                    .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                lanePicker
+                HStack {
+                    Button("Use track mode") { model.useTrack(lane: model.trackLane) }
+                        .buttonStyle(.kx(.primary))
+                        .accessibilityIdentifier("run.useTrack")
+                    Button("No thanks") { model.dismissTrackSuggestion() }
+                        .buttonStyle(.kx(.outlined))
+                }
+            }
+            .kxCard(.accent)
+        } else if let lane = snapshot.trackLane {
+            HStack(spacing: KXSpacing.sm) {
+                Image(systemName: "circle.dashed").foregroundStyle(KXColor.accent).accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("Track mode · lane \(lane)").font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink)
+                    Text(String(format: "%.1f laps", snapshot.trackLaps ?? 0)).font(KXFont.caption.monospacedDigit())
+                        .foregroundStyle(KXColor.inkSecondary)
+                }
+                Spacer()
+                Menu {
+                    Picker("Lane", selection: Binding(get: { lane }, set: { model.changeTrackLane($0) })) {
+                        ForEach(1...8, id: \.self) { Text("Lane \($0)").tag($0) }
+                    }
+                    Button("Turn off track mode", role: .destructive) { model.stopTrack() }
+                } label: {
+                    Text("Lane").font(KXFont.captionEmphasis)
+                }
+                .buttonStyle(.kx(.outlined))
+            }
+            .kxCard(.tinted)
+            .accessibilityElement(children: .contain)
+        } else if snapshot.isFindingTrack == true {
+            Label("Track mode: finding the track. Keep running; it locks on after about a lap.", systemImage: "circle.dashed")
+                .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .kxCard(.tinted)
+        } else {
+            // On a track but not suggested yet (or said no): turn it on by hand.
+            Menu {
+                ForEach(1...8, id: \.self) { lane in
+                    Button("Lane \(lane)") { model.useTrack(lane: lane) }
+                }
+            } label: {
+                Label("Track mode", systemImage: "circle.dashed").font(KXFont.captionEmphasis)
+            }
+            .buttonStyle(.kx(.outlined))
+            .frame(maxWidth: .infinity, alignment: .trailing)
+            .accessibilityIdentifier("run.trackMode")
+        }
+    }
+
+    private var lanePicker: some View {
+        HStack(spacing: 4) {
+            ForEach(1...8, id: \.self) { lane in
+                Button {
+                    model.trackLane = lane
+                } label: {
+                    Text("\(lane)")
+                        .font(KXFont.bodyEmphasis)
+                        .frame(maxWidth: .infinity, minHeight: 36)
+                        .foregroundStyle(model.trackLane == lane ? KXColor.onAccent : KXColor.ink)
+                        .background(model.trackLane == lane ? KXColor.accent : KXColor.surface,
+                                    in: RoundedRectangle(cornerRadius: KXRadius.sm, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Lane \(lane)")
+                .accessibilityAddTraits(model.trackLane == lane ? .isSelected : [])
+            }
+        }
     }
 
     private var segmentCard: some View {

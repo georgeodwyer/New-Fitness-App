@@ -360,6 +360,9 @@ final class RunWorkoutManager: NSObject {
         mirrorRunId = nil
         isGym = false
         gymFrame = nil
+        trackSuggestedHere = false
+        trackDismissed = false
+        dismissedPhoneSuggestion = false
         liveHeartRate = nil
         extras.reset()
         lastFrameAt = nil
@@ -379,6 +382,63 @@ final class RunWorkoutManager: NSObject {
         self.engine = engine
         handle(events)
         snapshot = engine.snapshot()
+        checkForTrack()
+    }
+
+    // MARK: Track mode
+
+    /// The GPS looks like a running track: offer track mode (a run on the watch). On a phone
+    /// run the phone decides and its frame says so.
+    private(set) var trackSuggestedHere = false
+    @ObservationIgnored private var trackDismissed = false
+    @ObservationIgnored private var lastTrackCheck = Date.distantPast
+    @ObservationIgnored private var dismissedPhoneSuggestion = false
+
+    var showsTrackSuggestion: Bool {
+        if isMirroring { return snapshot?.isTrackSuggested == true && !dismissedPhoneSuggestion }
+        return trackSuggestedHere
+    }
+
+    var isTrackModeOn: Bool { snapshot?.trackLane != nil || snapshot?.isFindingTrack == true }
+
+    private func checkForTrack() {
+        guard !isMirroring, !trackDismissed, !trackSuggestedHere, let engine, !engine.isTrackModeOn,
+              Date().timeIntervalSince(lastTrackCheck) >= 15 else { return }
+        lastTrackCheck = Date()
+        if engine.looksLikeTrack() {
+            trackSuggestedHere = true
+            Self.goBuzz()
+            if voiceEnabled { speak("Looks like you're on a running track. Turn on track mode for accurate distance.") }
+        }
+    }
+
+    func useTrack(lane: Int) {
+        trackSuggestedHere = false
+        if isMirroring {
+            sendToPhone(.command(.useTrack))
+            dismissedPhoneSuggestion = true
+            return
+        }
+        guard var engine else { return }
+        engine.useTrack(lane: lane)
+        self.engine = engine
+        snapshot = engine.snapshot()
+        WKInterfaceDevice.current().play(.success)
+    }
+
+    func stopTrack() {
+        if isMirroring { sendToPhone(.command(.stopTrack)); return }
+        guard var engine else { return }
+        engine.stopTrack()
+        trackDismissed = true
+        self.engine = engine
+        snapshot = engine.snapshot()
+    }
+
+    func dismissTrackSuggestion() {
+        trackSuggestedHere = false
+        trackDismissed = true
+        dismissedPhoneSuggestion = true
     }
 
     private func receive(_ samples: [LocationSample]) {

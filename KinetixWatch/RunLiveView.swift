@@ -34,6 +34,7 @@ struct RunLiveView: View {
             ForEach(Array(screens.enumerated()), id: \.element.id) { index, screen in
                 customPage(screen).tag(index + (showsRepPage ? 2 : 1))
             }
+            splitsPage.tag(100)
         }
         .tabViewStyle(.page)
         .focusable()
@@ -46,6 +47,13 @@ struct RunLiveView: View {
         .overlay { crownRing }
         .overlay(alignment: .bottom) { gestureBar }
         .overlay(alignment: .bottom) { nextStepPrompt }
+        .sheet(isPresented: Binding(get: { workout.showsTrackSuggestion }, set: { if !$0 { workout.dismissTrackSuggestion() } })) {
+            TrackSuggestionView(isMirroring: workout.isMirroring) { lane in
+                workout.useTrack(lane: lane)
+            } onDismiss: {
+                workout.dismissTrackSuggestion()
+            }
+        }
         .animation(.easeInOut(duration: 0.2), value: workout.undoBanner)
         .confirmationDialog(workout.isMirroring ? "Finish this run?" : "End this run?", isPresented: $confirmEnd) {
             Button(workout.isMirroring ? "Finish run" : "End run") { Task { await workout.end() } }
@@ -91,6 +99,53 @@ struct RunLiveView: View {
             status(workout.snapshot)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    // MARK: Splits
+
+    /// Every finished rep (time and pace, against target) on a structured run; kilometre or
+    /// mile splits otherwise. Always the last page.
+    private var splitsPage: some View {
+        let snapshot = workout.snapshot
+        let reps = (snapshot?.recentParts ?? []).filter { $0.segment.kind == .work }
+        let splits = snapshot?.recentSplits ?? []
+        return ScrollView {
+            VStack(alignment: .leading, spacing: 4) {
+                WatchOverline(reps.isEmpty ? "Splits" : "Reps", color: WatchColor.accent)
+                if !reps.isEmpty {
+                    ForEach(Array(reps.enumerated()), id: \.offset) { number, rep in
+                        splitRow(label: "\(number + 1)",
+                                 time: Units.formatMinutesSeconds(rep.durationSeconds),
+                                 pace: rep.averagePace.map { Units.formatPace($0, units: workout.units) },
+                                 color: WatchColor.pace(rep.averagePace.flatMap { pace in rep.segment.targetPace?.position(of: pace) }))
+                    }
+                } else if !splits.isEmpty {
+                    ForEach(splits, id: \.index) { split in
+                        splitRow(label: "\(split.index)",
+                                 time: Units.formatMinutesSeconds(split.durationSeconds),
+                                 pace: Units.formatPace(split.pace, units: workout.units),
+                                 color: .white)
+                    }
+                } else {
+                    Text(isStructured ? "Your reps show here as you finish them." : "Your splits show here at each \(workout.units == .metric ? "kilometre" : "mile").")
+                        .font(.caption2).foregroundStyle(WatchColor.inkSecondary)
+                }
+                if let segment = snapshot?.segment, !reps.isEmpty {
+                    Text("NOW · \((segment.label ?? segment.kind.displayName).uppercased())")
+                        .font(WatchFont.unit).foregroundStyle(WatchColor.inkSecondary).padding(.top, 2)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private func splitRow(label: String, time: String, pace: String?, color: Color) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            Text(label).font(WatchFont.unit).foregroundStyle(WatchColor.inkSecondary).frame(width: 18, alignment: .leading)
+            Text(time).font(WatchFont.number(17)).frame(maxWidth: .infinity, alignment: .leading)
+            Text(pace ?? "–").font(WatchFont.number(17)).foregroundStyle(color)
+        }
+        .accessibilityElement(children: .combine)
     }
 
     // MARK: Current rep (main page for structured runs)
@@ -186,6 +241,11 @@ struct RunLiveView: View {
             Text("Paused").font(.caption).foregroundStyle(WatchColor.offPace)
         } else if snapshot?.gpsAvailable == false {
             Text("Finding GPS…").font(.caption2).foregroundStyle(.secondary)
+        } else if let lane = snapshot?.trackLane {
+            Text(String(format: "TRACK · LANE %d · %.1f LAPS", lane, snapshot?.trackLaps ?? 0))
+                .font(WatchFont.unit).foregroundStyle(WatchColor.accent)
+        } else if snapshot?.isFindingTrack == true {
+            Text("TRACK · FINDING THE TRACK").font(WatchFont.unit).foregroundStyle(WatchColor.inkSecondary)
         }
     }
 
@@ -210,6 +270,10 @@ struct RunLiveView: View {
                               symbol: workout.voiceEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill", tint: .white) {
                     workout.voiceEnabled.toggle()
                 }
+            }
+            controlButton(workout.isTrackModeOn ? "Track off" : "Track", symbol: "circle.dashed", tint: WatchColor.accent) {
+                if workout.isTrackModeOn { workout.stopTrack() } else { workout.useTrack(lane: 1) }
+                page = 1
             }
             controlButton("End", symbol: "stop.fill", tint: WatchColor.bad) { confirmEnd = true }
         }
@@ -466,6 +530,39 @@ private extension View {
             handGestureShortcut(.primaryAction)
         } else {
             self
+        }
+    }
+}
+
+/// "On a track?": track mode measures along your lane, so reps and laps are accurate.
+struct TrackSuggestionView: View {
+    let isMirroring: Bool
+    let onUse: (Int) -> Void
+    let onDismiss: () -> Void
+    @State private var lane = 1
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 6) {
+                WatchOverline("Track mode", color: WatchColor.accent)
+                Text("On a track?").font(WatchFont.title(18))
+                Text("Measures along your lane instead of GPS, so reps and laps are accurate.")
+                    .font(.caption2).foregroundStyle(WatchColor.inkSecondary)
+                if isMirroring {
+                    Text("Lane 1. Change it on your iPhone.").font(.caption2).foregroundStyle(WatchColor.inkSecondary)
+                } else {
+                    HStack {
+                        Button { lane = max(1, lane - 1) } label: { Image(systemName: "minus") }
+                            .frame(width: 40)
+                        Text("Lane \(lane)").font(WatchFont.number(20)).frame(maxWidth: .infinity)
+                        Button { lane = min(8, lane + 1) } label: { Image(systemName: "plus") }
+                            .frame(width: 40)
+                    }
+                }
+                Button("Use track mode") { onUse(lane) }
+                    .buttonStyle(WatchFilledButtonStyle(color: WatchColor.accent))
+                Button("Not now") { onDismiss() }
+            }
         }
     }
 }

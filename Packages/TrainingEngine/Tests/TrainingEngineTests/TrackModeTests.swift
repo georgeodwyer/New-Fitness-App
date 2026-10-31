@@ -88,6 +88,29 @@ final class TrackModeTests: XCTestCase {
     }
 }
 
+final class TCXBuilderTests: XCTestCase {
+    func testEachPartIsALapAndDistanceMatchesTheRun() {
+        let rep = RunSegment(kind: .work, length: .distance(meters: 400), label: "Rep 1 of 2")
+        let recovery = RunSegment(kind: .recovery, length: .duration(seconds: 60))
+        let segments = [
+            SegmentResult(index: 0, segment: rep, durationSeconds: 80, distanceMeters: 400, averagePace: nil, secondsInTarget: 0, secondsMeasured: 0),
+            SegmentResult(index: 1, segment: recovery, durationSeconds: 60, distanceMeters: 150, averagePace: nil, secondsInTarget: 0, secondsMeasured: 0)
+        ]
+        let laps = TCXBuilder.laps(segments: segments, laps: [], durationSeconds: 200, distanceMeters: 700)
+        XCTAssertEqual(laps.count, 3, "Two parts plus the running after them")
+        XCTAssertEqual(laps[1].isRest, true)
+        XCTAssertEqual(laps[2].start, 140)
+        XCTAssertEqual(laps[2].distanceMeters, 150, accuracy: 0.01)
+
+        let route = (0...200).map { RoutePoint(latitude: 51.48 + Double($0) * 3.5 / 110_540, longitude: -0.15, elapsed: Double($0)) }
+        let tcx = TCXBuilder.tcx(start: Date(timeIntervalSince1970: 0), route: route, laps: laps, distanceMeters: 700)
+        XCTAssertEqual(tcx.components(separatedBy: "<Lap StartTime").count - 1, 3)
+        XCTAssertTrue(tcx.contains("<Intensity>Resting</Intensity>"))
+        XCTAssertTrue(tcx.contains("<DistanceMeters>700.0</DistanceMeters>"), "The last point carries the run's distance")
+        XCTAssertEqual(tcx.components(separatedBy: "<Trackpoint>").count - 1, route.count, "Every point once")
+    }
+}
+
 /// Repeatable random numbers for tests.
 struct SeededGenerator: RandomNumberGenerator {
     private var state: UInt64

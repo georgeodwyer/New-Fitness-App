@@ -270,12 +270,23 @@ public actor StravaClient {
     /// Uploads a GPX file and waits for Strava to turn it into an activity. Returns the
     /// activity id. `externalId` makes repeat uploads of the same run detectable.
     public func uploadGPX(_ gpx: String, name: String, description: String?, externalId: String) async throws -> Int {
+        try await upload(gpx, dataType: "gpx", contentType: "application/gpx+xml", name: name, description: description, externalId: externalId)
+    }
+
+    /// A TCX file: laps (each rep its own) and distance at each point.
+    public func uploadTCX(_ tcx: String, name: String, description: String?, externalId: String) async throws -> Int {
+        try await upload(tcx, dataType: "tcx", contentType: "application/vnd.garmin.tcx+xml", name: name, description: description,
+                         externalId: externalId)
+    }
+
+    private func upload(_ file: String, dataType: String, contentType: String, name: String, description: String?,
+                        externalId: String) async throws -> Int {
         var form = MultipartForm()
-        form.addField("data_type", "gpx")
+        form.addField("data_type", dataType)
         form.addField("name", name)
         if let description { form.addField("description", description) }
         form.addField("external_id", externalId)
-        form.addFile("file", filename: "\(externalId).gpx", contentType: "application/gpx+xml", data: Data(gpx.utf8))
+        form.addFile("file", filename: "\(externalId).\(dataType)", contentType: contentType, data: Data(file.utf8))
 
         let data = try await authorized(path: "api/v3/uploads", method: "POST", body: form.finished, contentType: form.contentType)
         let status = try decodeStatus(data)

@@ -35,6 +35,8 @@ public enum MirrorCommand: String, Codable, Sendable {
     case startSet, finishSet
     /// The watch hasn't heard from the phone for a while: send the latest again.
     case sync
+    /// Track mode on (lane 1; the lane can be changed on the phone) or off.
+    case useTrack, stopTrack
 }
 
 /// What the watch should tap the wrist for.
