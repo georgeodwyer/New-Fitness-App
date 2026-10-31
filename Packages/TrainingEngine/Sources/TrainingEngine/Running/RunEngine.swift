@@ -103,6 +103,14 @@ public struct RunSnapshot: Codable, Equatable, Sendable {
     public var lastLap: Lap? = nil
     /// The step is done and waiting for Next step (steps not moving on by themselves).
     public var isWaitingForNextStep: Bool? = nil
+    /// Track mode: the lane, and laps done since it started.
+    public var trackLane: Int? = nil
+    public var trackLaps: Double? = nil
+    /// Track mode was asked for and is waiting for a lap of GPS to find the track.
+    public var isFindingTrack: Bool? = nil
+    /// The last few finished steps (reps, recoveries) and kilometre/mile splits, for a splits screen.
+    public var recentParts: [SegmentResult]? = nil
+    public var recentSplits: [Split]? = nil
 }
 
 public struct RunSummary: Codable, Equatable, Sendable {
@@ -120,6 +128,8 @@ public struct RunSummary: Codable, Equatable, Sendable {
     public var heartRateSamples: [HeartRateSample] = []
     /// Laps marked by hand (nil when none were).
     public var laps: [Lap]? = nil
+    /// Track mode was used, in this lane (distance measured along the lane, not GPS).
+    public var trackLane: Int? = nil
 
     /// For building a summary outside the engine (e.g. a run sent from the watch, tests).
     public init(durationSeconds: Double, distanceMeters: Double, averagePace: Pace?, splits: [Split] = [], segments: [SegmentResult] = [],
@@ -171,6 +181,16 @@ public struct RunEngine: Sendable {
     /// Shorter window that reflects what the runner is doing now; decides "off pace".
     private var coachSmoother: PaceSmoother
     private var route: [RoutePoint] = []
+    // Track mode
+    private var track: TrackLock?
+    private var pendingTrackLane: Int?
+    private var trackStartDistance: Double = 0
+    private var lastTrackPosition: Double?
+    private var trackProgress: Double = 0
+    private var trackCounted: Double = 0
+    private var offTrackCount = 0
+    private var trackLaneUsed: Int?
+    private var samplesSinceTrackTry = 0
     private var lastFixActive: Double?
 
     // Segments
@@ -362,10 +382,33 @@ public struct RunEngine: Sendable {
         var events = advanceClock(to: sample.timestamp)
         guard !isPaused, sample.horizontalAccuracy >= 0, sample.horizontalAccuracy <= 30 else { return events }
 
+        // Track mode: distance along the lane instead of between GPS points, and the route drawn on it.
+        var point = (latitude: sample.latitude, longitude: sample.longitude)
+        var trackStep: Double?
+        if let lock = track {
+            let on = lock.fit.project(latitude: sample.latitude, longitude: sample.longitude, lane: lock.lane)
+            if on.offset > 25 {
+                // Well off the track for a while (a cool-down on the road, say): back to GPS.
+                offTrackCount += 1
+                if offTrackCount >= 5 { track = nil; lastTrackPosition = nil; trackProgress = 0; trackCounted = 0 }
+            } else {
+                offTrackCount = 0
+                point = (on.latitude, on.longitude)
+                // Progress round the lane can wobble back and forth with the GPS; only new ground
+                // (past the furthest point reached) counts, so jitter doesn't add distance.
+                if let last = lastTrackPosition {
+                    trackProgress += lock.direction * TrackLock.wrapped(on.position - last, length: lock.lapLength)
+                }
+                trackStep = max(0, trackProgress - trackCounted)
+                trackCounted = max(trackCounted, trackProgress)
+                lastTrackPosition = on.position
+            }
+        }
+
         if let previous = lastSample {
             let dt = sample.timestamp.timeIntervalSince(previous.timestamp)
             guard dt > 0 else { return events }
-            let step = Geo.distance(previous.latitude, previous.longitude, sample.latitude, sample.longitude)
+            let step = trackStep ?? Geo.distance(previous.latitude, previous.longitude, sample.latitude, sample.longitude)
             // Ignore teleports (faster than ~12 m/s, i.e. a sub-1:30/km sprint).
             guard step / dt <= 12 else { return events }
             let before = distance
@@ -375,13 +418,74 @@ public struct RunEngine: Sendable {
         lastSample = sample
         lastSampleActive = activeSeconds
         lastFixActive = activeSeconds
-        smoother.add(time: activeSeconds, distance: distance, speed: sample.speed)
-        coachSmoother.add(time: activeSeconds, distance: distance, speed: sample.speed)
-        route.append(RoutePoint(latitude: sample.latitude, longitude: sample.longitude, elapsed: activeSeconds, altitude: sample.altitude))
+        // On the track, pace comes from distance along the lane (the chip's speed wobbles on bends).
+        let speed = trackStep != nil ? -1 : sample.speed
+        smoother.add(time: activeSeconds, distance: distance, speed: speed)
+        coachSmoother.add(time: activeSeconds, distance: distance, speed: speed)
+        route.append(RoutePoint(latitude: point.latitude, longitude: point.longitude, elapsed: activeSeconds, altitude: sample.altitude))
+        tryPendingTrack()
 
         events += progressSegments()
         events += evaluateCoach()
         return events
+    }
+
+    // MARK: - Track mode
+
+    /// Whether the last lap or so of GPS looks like a 400 m track (to suggest track mode).
+    /// Fairly heavy: call every 15 seconds or so, not on every fix.
+    public func looksLikeTrack() -> Bool {
+        guard track == nil, pendingTrackLane == nil else { return false }
+        return TrackDetector.fit(TrackDetector.recent(route)) != nil
+    }
+
+    public var isTrackModeOn: Bool { track != nil || pendingTrackLane != nil }
+
+    /// Turns track mode on in a lane. Uses the last lap of GPS to find the track; until there's
+    /// a lap to go on, it keeps trying as they run.
+    public mutating func useTrack(lane: Int) {
+        pendingTrackLane = min(max(lane, 1), 8)
+        samplesSinceTrackTry = 1_000
+        tryPendingTrack()
+    }
+
+    /// Back to plain GPS distance.
+    public mutating func stopTrack() {
+        track = nil
+        pendingTrackLane = nil
+        lastTrackPosition = nil
+    }
+
+    /// A different lane (distance from now on is measured along it).
+    public mutating func changeTrackLane(_ lane: Int) {
+        if var lock = track {
+            lock.lane = min(max(lane, 1), 8)
+            track = lock
+            trackLaneUsed = lock.lane
+            lastTrackPosition = nil
+            trackProgress = 0
+            trackCounted = 0
+        } else if pendingTrackLane != nil {
+            pendingTrackLane = min(max(lane, 1), 8)
+        }
+    }
+
+    private mutating func tryPendingTrack() {
+        guard let lane = pendingTrackLane else { return }
+        samplesSinceTrackTry += 1
+        guard samplesSinceTrackTry >= 10 else { return }
+        samplesSinceTrackTry = 0
+        let points = TrackDetector.recent(route)
+        // Asked for by the runner: a little more forgiving than the automatic suggestion.
+        guard let fit = TrackDetector.fit(points, maxResidual: 10, minCoverage: 0.6) else { return }
+        track = TrackLock(fit: fit, lane: lane, direction: TrackLock.direction(of: points, fit: fit, lane: lane))
+        trackLaneUsed = lane
+        pendingTrackLane = nil
+        trackStartDistance = distance
+        lastTrackPosition = nil
+        trackProgress = 0
+        trackCounted = 0
+        offTrackCount = 0
     }
 
     /// Call about once a second so time-based segments advance even without GPS.
@@ -435,7 +539,12 @@ public struct RunEngine: Sendable {
             lapElapsedSeconds: laps.isEmpty ? nil : activeSeconds - lapStartActive,
             lapDistanceMeters: laps.isEmpty ? nil : distance - lapStartDistance,
             lastLap: laps.last,
-            isWaitingForNextStep: waitingForNextStep ? true : nil
+            isWaitingForNextStep: waitingForNextStep ? true : nil,
+            trackLane: track?.lane,
+            trackLaps: track.map { (distance - trackStartDistance) / $0.lapLength },
+            isFindingTrack: pendingTrackLane != nil ? true : nil,
+            recentParts: segmentResults.isEmpty ? nil : Array(segmentResults.suffix(12)),
+            recentSplits: splits.isEmpty ? nil : Array(splits.suffix(12))
         )
     }
 
@@ -458,6 +567,7 @@ public struct RunEngine: Sendable {
             heartRateSamples: heartRateSamples,
             laps: summaryLaps
         )
+        .withTrackLane(trackLaneUsed)
     }
 
     /// The marked laps plus the one in progress (so the last stretch isn't lost).
@@ -653,5 +763,13 @@ public struct RunEngine: Sendable {
                           message: Announcer.paceCue(position, target: target, units: config.units))
         lastCue = cue
         return [.paceCue(cue)]
+    }
+}
+
+extension RunSummary {
+    func withTrackLane(_ lane: Int?) -> RunSummary {
+        var copy = self
+        copy.trackLane = lane
+        return copy
     }
 }
