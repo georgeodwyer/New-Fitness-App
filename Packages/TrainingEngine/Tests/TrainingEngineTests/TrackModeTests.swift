@@ -16,7 +16,9 @@ final class TrackModeTests: XCTestCase {
         for position in stride(from: 0.0, to: 400, by: 13) {
             let point = track.coordinate(atPosition: position, lane: 1)
             let back = track.project(latitude: point.latitude, longitude: point.longitude, lane: 1)
-            XCTAssertEqual(back.position, position, accuracy: 0.05)
+            // The same place round the lap (the start line can come back as 0 or 400).
+            let difference = abs(back.position - position)
+            XCTAssertLessThan(min(difference, 400 - difference), 0.05, "\(position) came back as \(back.position)")
             XCTAssertEqual(back.offset, 0, accuracy: 0.05)
         }
     }

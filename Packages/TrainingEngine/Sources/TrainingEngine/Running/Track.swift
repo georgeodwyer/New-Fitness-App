@@ -70,7 +70,12 @@ public struct TrackFit: Codable, Equatable, Sendable {
         let r = TrackGeometry.radius(lane: lane)
         let result = Self.project(u: p.u, v: p.v, radius: r)
         let point = coordinate(u: result.u, v: result.v)
-        return (result.position, result.offset, point.latitude, point.longitude)
+        // The start line is 0 (not a full lap round).
+        let length = TrackGeometry.lapLength(lane: lane)
+        var position = result.position.truncatingRemainder(dividingBy: length)
+        if position < 0 { position += length }
+        if length - position < 1e-6 { position = 0 }
+        return (position, result.offset, point.latitude, point.longitude)
     }
 
     /// The point `position` metres round a lane (from the start of the bottom straight, anticlockwise).
