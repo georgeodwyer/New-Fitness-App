@@ -58,6 +58,7 @@ final class ScreenshotTests: XCTestCase {
         tap("Intermediate"); snap("04-onboarding-lifting"); next()
         snap("05-onboarding-lift-numbers"); tap("Skip")
         tap("Half marathon"); snap("06-onboarding-goal"); next()
+        snap("06b-onboarding-plan-type"); next()
         snap("07-onboarding-event"); tap("Skip")
         snap("07b-onboarding-gym-week"); next()
         snap("08-onboarding-days"); next()
@@ -295,7 +296,7 @@ final class ScreenshotTests: XCTestCase {
 
     /// Record tab: builds a tempo run, saves it as a template and opens the run screen.
     private func recordRun() {
-        app.tabBars.buttons["Record"].tap()
+        app.tabBars.buttons["Workout"].tap()
         snap("50-record")
         let run = app.buttons["record.run"].firstMatch
         guard run.waitForExistence(timeout: 5) else { return }
@@ -335,7 +336,7 @@ final class ScreenshotTests: XCTestCase {
 
     /// Record tab → Gym: builds a saved workout, then starts an empty one and adds an exercise.
     private func recordGym() {
-        app.tabBars.buttons["Record"].tap()
+        app.tabBars.buttons["Workout"].tap()
         let gym = app.buttons["record.gym"].firstMatch
         guard gym.waitForExistence(timeout: 5) else { return }
         gym.tap()
@@ -411,7 +412,7 @@ final class ScreenshotTests: XCTestCase {
     /// Record tab → Plan a route: taps three points (straight lines, so no network needed),
     /// makes a loop, saves it, and opens it on the run set-up screen.
     private func planRoute() {
-        app.tabBars.buttons["Record"].tap()
+        app.tabBars.buttons["Workout"].tap()
         let plan = app.buttons["record.planRoute"].firstMatch
         if !plan.waitForExistence(timeout: 3) { app.swipeUp() }
         guard plan.waitForExistence(timeout: 5) else { return }

@@ -40,6 +40,34 @@ struct PlanPreviewView: View {
     private var format: DisplayFormat { DisplayFormat(units: model.units) }
 
     var body: some View {
+        if model.planStyle == .custom {
+            customStart
+        } else {
+            planPreview
+        }
+    }
+
+    /// Building their own plan: no Kinetix plan to preview; the plan builder opens next.
+    private var customStart: some View {
+        VStack(alignment: .leading, spacing: KXSpacing.lg) {
+            KXAccentHeadline(plain: "Now build your", accented: "plan")
+            Text("Next, the plan builder: how many weeks, a typical week from your own workouts and Kinetix's sessions, and how it progresses. You can build run and gym workouts any time in the Workout tab.")
+                .font(KXFont.body)
+                .foregroundStyle(KXColor.inkSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            zonesCard
+            Spacer()
+            Button("Build my plan") { save() }
+                .buttonStyle(.kx(.primary, fullWidth: true))
+                .accessibilityIdentifier("onboarding.buildMyPlan")
+            Button("Change my answers", action: onBack)
+                .buttonStyle(.kx(.outlined, fullWidth: true))
+        }
+        .padding(KXSpacing.screenMargin)
+        .background(KXColor.background.ignoresSafeArea())
+    }
+
+    private var planPreview: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: KXSpacing.xl) {
                 VStack(alignment: .leading, spacing: KXSpacing.sm) {
@@ -215,7 +243,12 @@ struct PlanPreviewView: View {
         UnitPreference.stored = profile.units
         // Numbers they entered win over any weights saved from an earlier plan.
         PlanService.applyLiftEstimates(profile.liftEstimates, profile: profile, in: context)
-        PlanService.createPlan(for: profile, in: context)
+        if profile.style == .custom {
+            // Their own plan: the plan builder opens on the Plan tab.
+            PlanBuilderLaunch.isPending = true
+        } else {
+            PlanService.createPlan(for: profile, in: context)
+        }
         Walkthrough.isPending = true
         // A good moment to ask: they've just got a plan to be reminded about.
         Task { await NotificationService.requestPermissionIfNeeded() }
@@ -235,5 +268,14 @@ extension PaceZone {
         case .tenK: return "10K"
         case .fiveK: return "5K"
         }
+    }
+}
+
+/// Opens the plan builder on the Plan tab (after onboarding for a self-built plan).
+enum PlanBuilderLaunch {
+    private static let key = "planBuilderLaunchPending"
+    static var isPending: Bool {
+        get { UserDefaults.standard.bool(forKey: key) }
+        set { UserDefaults.standard.set(newValue, forKey: key) }
     }
 }

@@ -71,6 +71,9 @@ struct SessionDetailView: View {
                 }
                 if let structure = session.runStructure { runCard(structure) }
                 if let strength = session.strengthPrescription { strengthCard(strength) }
+                if session.kind.discipline == .strength, session.strengthPrescription == nil {
+                    LinkGymWorkoutCard(session: session)
+                }
                 if session.kind == .crossTraining {
                     Text("Keep it easy and conversational: cycling, cross-trainer, swimming or a brisk walk.")
                         .font(KXFont.callout)
@@ -186,5 +189,56 @@ struct SessionDetailView: View {
             }
         }
         .kxCard()
+    }
+}
+
+/// A "Gym n" day with no workout linked: link a saved gym workout to it for every week.
+private struct LinkGymWorkoutCard: View {
+    let session: PlannedSessionModel
+    @Environment(\.modelContext) private var context
+    @Environment(\.dismiss) private var dismiss
+    @Query(filter: #Predicate<UserProfileModel> { $0.deletedAt == nil }) private var profiles: [UserProfileModel]
+    @Query(filter: #Predicate<GymTemplateModel> { $0.deletedAt == nil }, sort: \GymTemplateModel.createdAt, order: .reverse)
+    private var templates: [GymTemplateModel]
+
+    private var slot: Int? { Int(session.title.replacingOccurrences(of: "Gym ", with: "").prefix { $0.isNumber }) }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: KXSpacing.sm) {
+            KXOverline("Your gym workout")
+            Text("Link one of your saved gym workouts to \(session.title). It's used every week, and Kinetix places it around your runs.")
+                .font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            if templates.isEmpty {
+                Text("No saved gym workouts yet. Build one in the Workout tab, or start this session and add exercises as you go.")
+                    .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                Menu {
+                    ForEach(templates) { template in
+                        Button(template.name) { link(template) }
+                    }
+                } label: {
+                    Label("Choose a workout", systemImage: "dumbbell")
+                }
+                .buttonStyle(.kx(.primary, fullWidth: true))
+                .accessibilityIdentifier("session.linkGym")
+            }
+        }
+        .kxCard(.accent)
+    }
+
+    private func link(_ template: GymTemplateModel) {
+        guard let slot, let model = profiles.first else { return }
+        var profile = model.profile
+        var links = profile.ownGymWorkouts ?? [:]
+        links[slot] = OwnGymWorkout(name: template.name, exercises: template.items)
+        profile.ownGymWorkouts = links
+        model.profile = profile
+        try? context.save()
+        // This day is rebuilt with the workout in it, so close it.
+        PlanService.rebuildRemainder(for: profile, in: context)
+        SyncService.shared.requestSync()
+        dismiss()
     }
 }

@@ -68,7 +68,7 @@ struct SaveAsTemplateButton: View {
 
     var body: some View {
         if let savedName {
-            Label("Saved \"\(savedName)\": start it from the Record tab", systemImage: "checkmark.circle.fill")
+            Label("Saved \"\(savedName)\": start it from the Workout tab", systemImage: "checkmark.circle.fill")
                 .font(KXFont.callout)
                 .foregroundStyle(KXColor.success)
                 .frame(maxWidth: .infinity, alignment: .leading)

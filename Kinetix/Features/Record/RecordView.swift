@@ -3,8 +3,8 @@ import SwiftData
 import UniformTypeIdentifiers
 import TrainingEngine
 
-/// The Record tab: start a run or a gym session without a plan, from scratch or
-/// from a saved workout. Recorded sessions count towards training load like planned ones.
+/// The Workout tab: start a run or a gym session without a plan, from scratch or from a saved
+/// workout, and build your own run and gym workouts (for your plan, or just to use). Recorded sessions count towards training load like planned ones.
 struct RecordView: View {
     @Query(filter: #Predicate<RunTemplateModel> { $0.deletedAt == nil }, sort: \RunTemplateModel.createdAt, order: .reverse)
     private var templates: [RunTemplateModel]
@@ -30,7 +30,7 @@ struct RecordView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: KXSpacing.xl) {
-                    KXScreenHeader(title: "Record")
+                    KXScreenHeader(title: "Workout")
 
                     HStack(spacing: KXSpacing.md) {
                         NavigationLink {
@@ -50,6 +50,28 @@ struct RecordView: View {
                         }
                         .buttonStyle(.plain)
                         .accessibilityIdentifier("record.gym")
+                    }
+
+                    // Build your own: saved here, linked to your plan from the Plan tab.
+                    HStack(spacing: KXSpacing.sm) {
+                        NavigationLink {
+                            RunSetupView(initial: nil)
+                        } label: {
+                            Label("Build a run workout", systemImage: "plus")
+                                .font(KXFont.captionEmphasis)
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.kx(.outlined, fullWidth: true))
+                        .accessibilityIdentifier("workout.buildRun")
+                        NavigationLink {
+                            GymTemplateEditorView(template: nil)
+                        } label: {
+                            Label("Build a gym workout", systemImage: "plus")
+                                .font(KXFont.captionEmphasis)
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.kx(.outlined, fullWidth: true))
+                        .accessibilityIdentifier("workout.buildGym")
                     }
 
                     VStack(alignment: .leading, spacing: KXSpacing.sm) {

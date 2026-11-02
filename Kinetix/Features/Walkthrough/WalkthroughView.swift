@@ -127,7 +127,7 @@ struct WalkthroughPage: Sendable {
             illustration: .adapts),
         WalkthroughPage(
             plain: "Record runs and", accented: "lifts",
-            detail: "Start today's session from Today, or anything else from Record.",
+            detail: "Start today's session from Today, or anything else from Workout.",
             points: [
                 ("figure.run", "Runs: live pace, distance and heart rate, with audio coaching. Tap the big number to switch it."),
                 ("trophy", "Racing? Choose Race: a new best updates your paces and plan."),

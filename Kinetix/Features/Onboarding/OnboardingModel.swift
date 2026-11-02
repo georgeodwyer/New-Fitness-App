@@ -7,7 +7,7 @@ import TrainingEngine
 final class OnboardingModel {
     enum Step: Int, CaseIterable {
         case units, age, runningExperience, raceTime, currentRunning, liftingExperience, liftEstimates,
-             goal, eventDate, gymWeek, trainingDays, doubleSessions, equipment, finish
+             goal, planType, eventDate, gymWeek, trainingDays, doubleSessions, equipment, finish
     }
 
     enum RaceDistance: Double, CaseIterable, Identifiable {
@@ -70,6 +70,11 @@ final class OnboardingModel {
         LiftEntry(lift: .overheadPress, weightKg: 30)
     ]
     var goal: TrainingGoal?
+    /// What kind of plan: Kinetix builds both, own gym, own runs, or fully custom.
+    var planStyle: PlanStyle = .kinetix
+    /// Kept as they were when editing (linked from the Plan tab, not asked here).
+    private var ownGymWorkouts: [Int: OwnGymWorkout]?
+    private var ownRunWorkouts: [RunRole: CustomRunWorkout]?
     /// Hyrox race category, asked when the goal is Hyrox.
     var hyroxDivision: HyroxDivision?
     var hasEvent = false
@@ -107,8 +112,9 @@ final class OnboardingModel {
         case .liftingExperience: return liftingExperience != nil
         case .liftEstimates: return true
         case .goal: return goal != nil && (goal != .hyrox || hyroxDivision != nil)
+        case .planType: return true
         case .eventDate: return (!hasEvent || eventDate > .now) && (!asksGoalTime || !hasGoalTime || goalTimeSeconds >= 600)
-        case .gymWeek: return liftSessionsPerWeek == 0 || splitCode != nil
+        case .gymWeek: return liftSessionsPerWeek == 0 || splitCode != nil || planStyle == .ownGym
         case .trainingDays: return (2...7).contains(trainingDays.count)
         case .doubleSessions: return true
         case .equipment: return equipment != nil
@@ -194,6 +200,7 @@ final class OnboardingModel {
             recoveryRunDay: trainingDays.count >= 7 ? recoveryRunDay : nil,
             longRunDay: longRunDay.flatMap { trainingDays.contains($0) ? $0 : nil }
         )
+        .withPlanStyle(planStyle == .kinetix ? nil : planStyle, gym: ownGymWorkouts, runs: ownRunWorkouts)
     }
 
     /// Fills in the running answers from their history.
@@ -258,6 +265,9 @@ final class OnboardingModel {
         trainingDays = Set(profile.trainingDays)
         recoveryRunDay = profile.effectiveRecoveryRunDay
         longRunDay = profile.longRunDay
+        planStyle = profile.style
+        ownGymWorkouts = profile.ownGymWorkouts
+        ownRunWorkouts = profile.ownRunWorkouts
         doubleSessionDays = profile.doubleSessionDays
         equipment = profile.equipment
     }

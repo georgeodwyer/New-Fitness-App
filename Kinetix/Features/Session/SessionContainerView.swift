@@ -63,6 +63,12 @@ struct SessionContainerView: View {
             return
         }
         guard let planned = plannedSession() else { close(); return }
+        // A "Gym n" day with no workout linked yet: start an open workout to add exercises to.
+        if planned.strengthPrescription == nil {
+            let log = GymService.start(title: planned.title, items: [], linkedPlanned: planned, in: context)
+            router.strengthModel = StrengthWorkoutModel(log: log, planned: planned, context: context, units: units)
+            return
+        }
         let log = StrengthService.startOrResume(planned, in: context)
         router.strengthModel = StrengthWorkoutModel(log: log, planned: planned, context: context, units: units)
     }

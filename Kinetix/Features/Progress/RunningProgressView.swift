@@ -162,7 +162,7 @@ struct RunningProgressView: View {
             }
             if filtered.isEmpty {
                 KXEmptyState(symbol: "figure.run", title: finished.isEmpty ? "No runs yet" : "No runs match",
-                             message: finished.isEmpty ? "Finish a planned run or record one from the Record tab."
+                             message: finished.isEmpty ? "Finish a planned run or record one from the Workout tab."
                                                        : "Try another filter.")
             }
             ForEach(months, id: \.month) { group in

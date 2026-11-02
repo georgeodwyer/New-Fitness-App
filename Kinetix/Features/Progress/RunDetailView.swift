@@ -152,7 +152,7 @@ struct RunDetailView: View {
                           actual: Units.formatMinutesSeconds(log.durationSeconds))
             comparisonRow("Effort", planned: "\(Int(planned.plannedEffort))/10", actual: "\(Int(log.effort))/10")
             if log.recordTypeRaw != nil {
-                Text("Recorded from the Record tab and counted as this planned session.")
+                Text("Recorded from the Workout tab and counted as this planned session.")
                     .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
             }
         }

@@ -203,7 +203,7 @@ struct RunSetupView: View {
                 .buttonStyle(.kx(.secondary, fullWidth: true))
                 .accessibilityIdentifier("record.chooseRoute")
             } else if route == nil {
-                Text("Plan routes from the Record tab (Routes), then pick one here.")
+                Text("Plan routes from the Workout tab (Routes), then pick one here.")
                     .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
             }
         }

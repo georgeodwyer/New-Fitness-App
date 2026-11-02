@@ -165,6 +165,20 @@ struct PlanView: View {
                     if profiles.isEmpty {
                         PlanIntroCard { showOnboarding = true }
                     }
+                    // Building their own plan and none yet: the builder.
+                    if outline == nil, profiles.first?.profile.style == .custom {
+                        VStack(alignment: .leading, spacing: KXSpacing.sm) {
+                            KXOverline("Your plan")
+                            Text("Build your plan from your own workouts and Kinetix's sessions.")
+                                .font(KXFont.body).foregroundStyle(KXColor.ink)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Button("Build my plan") { showBuilder = true }
+                                .buttonStyle(.kx(.primary, fullWidth: true))
+                                .accessibilityIdentifier("plan.buildMyPlan")
+                        }
+                        .kxCard()
+                    }
+                    OwnWorkoutsCard()
                     if let outline {
                         RaceCountdownCard(outline: outline, profile: profiles.first?.profile)
                         WeeklyDistanceCard(outline: outline, runs: runs, format: format, sessions: plans.first?.sessions ?? [])
@@ -223,6 +237,13 @@ struct PlanView: View {
             }
             .sheet(isPresented: $showCalendar) { CalendarSheet() }
             .sheet(isPresented: $showPause) { PausePlanSheet().presentationDetents([.large]) }
+            .onAppear {
+                // Just finished onboarding with "I'll build my own plan".
+                if PlanBuilderLaunch.isPending {
+                    PlanBuilderLaunch.isPending = false
+                    showBuilder = true
+                }
+            }
             .fullScreenCover(isPresented: $showBuilder) {
                 PlanBuilderView(existing: outline?.customPlan)
             }
@@ -523,7 +544,7 @@ struct PlanIntroCard: View {
             Button("Build my plan", action: onBuild)
                 .buttonStyle(.kx(.primary, fullWidth: true))
                 .accessibilityIdentifier("plan.build")
-            Text("Or just record sessions from the Record tab.")
+            Text("Or just start sessions from the Workout tab.")
                 .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
         }
         .kxCard()

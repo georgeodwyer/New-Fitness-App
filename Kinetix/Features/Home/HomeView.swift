@@ -67,6 +67,7 @@ struct HomeView: View {
                     greeting
                     if let banner { changeBanner(banner) }
                     if profile == nil { planPrompt }
+                    if profile?.style == .custom, !hasActivePlan { buildOwnPlanPrompt }
                     if let plan = plans.first, plan.isPaused { PausedPlanCard(plan: plan) }
                     // Sunday evening and Monday: how the week went and what's next.
                     if WeeklyReviewData.isReviewTime(), profile != nil, let review = WeeklyReviewData.make(in: context) {
@@ -162,17 +163,38 @@ struct HomeView: View {
     }
 
     /// Shown until a plan exists: everything else on the dashboard works from recorded sessions.
+    /// "I'll build my own plan" and no plan yet.
+    private var buildOwnPlanPrompt: some View {
+        VStack(alignment: .leading, spacing: KXSpacing.md) {
+            KXSectionHeader("Build your plan", subtitle: "Your weeks, your workouts")
+            Text("Set your weeks in the plan builder from your own run and gym workouts and Kinetix's sessions. Build workouts any time in the Workout tab.")
+                .font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Button("Build my plan") {
+                PlanBuilderLaunch.isPending = true
+                router.selectedTab = .plan
+            }
+            .buttonStyle(.kx(.primary, fullWidth: true))
+            .accessibilityIdentifier("home.buildOwnPlan")
+        }
+        .kxCard(.accent)
+    }
+
+    private var hasActivePlan: Bool {
+        plans.contains { !$0.isSoftDeleted }
+    }
+
     private var planPrompt: some View {
         VStack(alignment: .leading, spacing: KXSpacing.md) {
             KXSectionHeader("Get a personalised plan", subtitle: "About two minutes")
-            Text("Tell Kinetix your goal, week and equipment and it plans your runs and lifts so they work together. Or just record sessions from the Record tab.")
+            Text("Tell Kinetix your goal, week and equipment and it plans your runs and lifts so they work together. Or just start sessions from the Workout tab.")
                 .font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
                 .fixedSize(horizontal: false, vertical: true)
             HStack(spacing: KXSpacing.sm) {
                 Button("Build my plan") { router.selectedTab = .plan }
                     .buttonStyle(.kx(.primary, fullWidth: true))
                     .accessibilityIdentifier("home.buildPlan")
-                Button("Record") { router.selectedTab = .record }
+                Button("Workout") { router.selectedTab = .record }
                     .buttonStyle(.kx(.outlined, fullWidth: true))
             }
         }

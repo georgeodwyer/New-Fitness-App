@@ -23,7 +23,7 @@ struct TrainingProfileView: View {
     }
 
     private static let allQuestions: [OnboardingModel.Step] = [
-        .age, .runningExperience, .raceTime, .currentRunning, .goal, .eventDate, .gymWeek, .liftingExperience, .liftEstimates,
+        .age, .runningExperience, .raceTime, .currentRunning, .goal, .planType, .eventDate, .gymWeek, .liftingExperience, .liftEstimates,
         .trainingDays, .doubleSessions, .equipment
     ]
 
@@ -82,6 +82,7 @@ struct TrainingProfileView: View {
             }
             Section("Goal") {
                 row("Primary goal", value: model.goal?.displayName ?? "–", step: .goal)
+                row("Plan type", value: model.planStyle.title, step: .planType)
                 if model.goal == .hyrox {
                     row("Hyrox division", value: model.hyroxDivision?.displayName ?? "Not set", step: .goal)
                 }

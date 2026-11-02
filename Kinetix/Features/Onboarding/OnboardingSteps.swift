@@ -397,6 +397,42 @@ struct EventDateStep: View {
     }
 }
 
+struct PlanTypeStep: View {
+    @Bindable var model: OnboardingModel
+
+    var body: some View {
+        OnboardingQuestion(plain: "Your", accented: "plan",
+                           detail: "Kinetix can build all of it, or leave the gym, the runs or the whole plan to you. You can change this later in Settings.")
+        VStack(spacing: KXSpacing.md) {
+            ForEach(PlanStyle.allCases, id: \.self) { style in
+                KXOptionCard(title: style.title, detail: Self.detail(style), systemImage: Self.symbol(style),
+                             isSelected: model.planStyle == style) {
+                    model.planStyle = style
+                }
+                .accessibilityIdentifier("onboarding.planType.\(style.rawValue)")
+            }
+        }
+    }
+
+    static func detail(_ style: PlanStyle) -> String {
+        switch style {
+        case .kinetix: return "Runs and gym sessions planned and progressed for your goal."
+        case .ownGym: return "Kinetix plans your runs. Your gym days show as Gym 1, Gym 2… and you link your own gym workouts to them."
+        case .ownRuns: return "Kinetix plans your gym. Your runs show as Run 1 · Long, Run 2 · Quality… and you link your own run workouts."
+        case .custom: return "Build your own weeks from your workouts and Kinetix's sessions, with your own progression. The plan builder opens next."
+        }
+    }
+
+    static func symbol(_ style: PlanStyle) -> String {
+        switch style {
+        case .kinetix: return "sparkles"
+        case .ownGym: return "dumbbell"
+        case .ownRuns: return "figure.run"
+        case .custom: return "square.and.pencil"
+        }
+    }
+}
+
 struct GymWeekStep: View {
     @Bindable var model: OnboardingModel
 
@@ -417,6 +453,13 @@ struct GymWeekStep: View {
             Text("No gym sessions: your plan is running only.")
                 .font(KXFont.callout)
                 .foregroundStyle(KXColor.inkSecondary)
+        } else if model.planStyle == .ownGym {
+            Label("Your gym days show as \((1...model.liftSessionsPerWeek).map { "Gym \($0)" }.joined(separator: ", ")). After setup, link your own gym workouts to them on the Plan tab (or build them in Workout).",
+                  systemImage: "dumbbell")
+                .font(KXFont.callout)
+                .foregroundStyle(KXColor.inkSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .kxCard(.tinted)
         } else {
             VStack(spacing: KXSpacing.md) {
                 ForEach(offered) { split in

@@ -379,7 +379,7 @@ private struct AddPlanSessionSheet: View {
 
     @ViewBuilder private var savedWorkouts: some View {
         Section("Run workouts") {
-            if runTemplates.isEmpty { Text("None saved yet (Record → build a run → Save).").foregroundStyle(KXColor.inkSecondary) }
+            if runTemplates.isEmpty { Text("None saved yet (Workout → Build a run workout → Save).").foregroundStyle(KXColor.inkSecondary) }
             ForEach(runTemplates) { template in
                 Button {
                     add(.runWorkout(template.workout))
@@ -394,7 +394,7 @@ private struct AddPlanSessionSheet: View {
             }
         }
         Section("Gym workouts") {
-            if gymTemplates.isEmpty { Text("None saved yet (Record → Gym → Save as template).").foregroundStyle(KXColor.inkSecondary) }
+            if gymTemplates.isEmpty { Text("None saved yet (Workout → Build a gym workout).").foregroundStyle(KXColor.inkSecondary) }
             ForEach(gymTemplates) { template in
                 Button {
                     add(.gymWorkout(name: template.name, exercises: template.items))
