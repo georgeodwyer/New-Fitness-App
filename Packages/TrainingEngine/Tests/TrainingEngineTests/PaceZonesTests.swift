@@ -60,16 +60,36 @@ final class PaceZonesTests: XCTestCase {
                        equipment: .fullGym, goalTimeSeconds: goal)
     }
 
-    func testGoalTimeSetsRacePaceAndIntervals() {
-        // Goal 1:40:00 for the half: 4:44 /km. Intervals about 5% faster: ~4:30 /km.
-        let zones = PaceZones(profile: halfProfile(race: 22 * 60 + 30, goal: 100 * 60))
-        let goalPerKm = 6000 / 21.0975
-        let race = zones.range(for: .halfMarathon)
-        XCTAssertEqual((race.fastest.secondsPerKm + race.slowest.secondsPerKm) / 2, goalPerKm, accuracy: 0.5)
-        let interval = zones.range(for: .interval)
-        XCTAssertEqual((interval.fastest.secondsPerKm + interval.slowest.secondsPerKm) / 2, goalPerKm * 0.95, accuracy: 0.5)
-        // Easy pace still comes from current fitness.
-        XCTAssertEqual(zones.range(for: .easy), PaceZones.fitness(halfProfile(race: 22 * 60 + 30, goal: nil)).range(for: .easy))
+    func testGoalStepsPacesAheadOfFitnessAndKeepsThemInOrder() {
+        // A 10K in 44:51 with a 40:00 goal: paces sit 3% ahead of current fitness, not at the goal.
+        let profile = AthleteProfile(runningExperience: .intermediate, recentRace: RaceResult(distanceMeters: 10000, timeSeconds: 44 * 60 + 51),
+                                     liftingExperience: .intermediate, goal: .faster10k, trainingDays: [.monday, .wednesday, .saturday],
+                                     equipment: .fullGym, goalTimeSeconds: 40 * 60)
+        let fitness = PaceZones.fitness(profile)
+        let zones = PaceZones(profile: profile)
+        XCTAssertEqual(zones.vdot, fitness.vdot * 1.03, accuracy: 0.01)
+        func middle(_ zone: PaceZone) -> Double {
+            let range = zones.range(for: zone)
+            return (range.fastest.secondsPerKm + range.slowest.secondsPerKm) / 2
+        }
+        // Faster than current fitness, slower than the goal.
+        XCTAssertLessThan(middle(.tenK), fitness.typicalPace(for: .tenK).secondsPerKm)
+        XCTAssertGreaterThan(middle(.tenK), 240)
+        // In order, fastest first.
+        let order: [PaceZone] = [.repetition, .interval, .fiveK, .tenK, .threshold, .halfMarathon, .marathon, .steady, .easy]
+        for (faster, slower) in zip(order, order.dropFirst()) {
+            XCTAssertLessThan(middle(faster), middle(slower), "\(faster) should be faster than \(slower)")
+        }
+    }
+
+    func testGoalWithinReachIsUsedAsIs() {
+        // A goal only 2% faster than predicted: paces follow the goal.
+        let predicted = PaceZones.fitness(halfProfile(race: 22 * 60 + 30, goal: nil)).predictedTime(distanceMeters: 21097.5)
+        let zones = PaceZones(profile: halfProfile(race: 22 * 60 + 30, goal: predicted * 0.98))
+        XCTAssertEqual(zones.predictedTime(distanceMeters: 21097.5), predicted * 0.98, accuracy: 3)
+        // A goal slower than current fitness never slows the paces down.
+        let slow = PaceZones(profile: halfProfile(race: 22 * 60 + 30, goal: predicted * 1.1))
+        XCTAssertEqual(slow.vdot, PaceZones.fitness(halfProfile(race: 22 * 60 + 30, goal: nil)).vdot, accuracy: 0.001)
     }
 
     func testNoGoalTimeKeepsFitnessPaces() {

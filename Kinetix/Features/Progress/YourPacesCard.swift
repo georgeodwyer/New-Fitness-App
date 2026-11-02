@@ -95,6 +95,20 @@ struct YourPacesCard: View {
                 .font(KXFont.caption)
                 .foregroundStyle(KXColor.inkSecondary)
                 .fixedSize(horizontal: false, vertical: true)
+            if let goal = GoalTime(profile: profile) {
+                Label {
+                    Text("Goal \(Units.formatMinutesSeconds(goal.goalSeconds)) (\(format.pace(goal.goalPace)))"
+                         + (goal.goalVDOT > PaceZones.fitness(profile).vdot * (1 + GoalTime.stepAhead)
+                            ? ". Your paces sit a little ahead of your current fitness and move towards it as you get fitter."
+                            : ". Your paces are set for it."))
+                        .fixedSize(horizontal: false, vertical: true)
+                } icon: {
+                    Image(systemName: "flag.checkered")
+                }
+                .font(KXFont.caption)
+                .foregroundStyle(KXColor.inkSecondary)
+                .accessibilityIdentifier("progress.paces.goal")
+            }
         }
         .kxCard()
         .accessibilityIdentifier("progress.paces")

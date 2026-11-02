@@ -90,22 +90,17 @@ public struct PaceZones: Codable, Equatable, Sendable {
     }
 
     /// Zones from the profile's race time, or a sensible default for the experience level.
-    /// With a goal time for the goal race, race-pace work follows the goal pace and intervals
-    /// run about 5% faster than it.
+    /// With a goal time for the goal race, every pace comes from one fitness level a little ahead
+    /// of current fitness (at most `GoalTime.stepAhead` faster), moving towards the goal as runs,
+    /// races and time trials show they're fitter. One level keeps the paces in order (5K faster
+    /// than 10K, repetition faster than intervals).
     public init(profile: AthleteProfile) {
         let fitness = Self.fitness(profile)
         guard let goal = GoalTime(profile: profile) else {
             self.init(vdot: fitness.vdot, ranges: fitness.ranges)
             return
         }
-        var ranges = PaceZone.allCases.reduce(into: [PaceZone: PaceRange]()) { $0[$1] = fitness.range(for: $1) }
-        let perKm = goal.goalPace.secondsPerKm
-        if let raceZone = goal.raceZone {
-            ranges[raceZone] = PaceRange(fastest: Pace(secondsPerKm: perKm - 3), slowest: Pace(secondsPerKm: perKm + 3))
-        }
-        let interval = perKm * (1 - GoalTime.intervalFaster)
-        ranges[.interval] = PaceRange(fastest: Pace(secondsPerKm: interval - 4), slowest: Pace(secondsPerKm: interval + 4))
-        self.init(vdot: fitness.vdot, ranges: ranges)
+        self.init(vdot: goal.trainingVDOT(fitness: fitness.vdot))
     }
 
     /// Zones from current fitness only (race time or experience), ignoring any goal time.
@@ -165,8 +160,8 @@ public struct PaceZones: Codable, Equatable, Sendable {
 
 /// A target time for the goal race, set against what current fitness predicts.
 public struct GoalTime: Equatable, Sendable {
-    /// Intervals run this much faster than goal race pace.
-    public static let intervalFaster = 0.05
+    /// Training paces sit at most this far ahead of current fitness (in VDOT) on the way to a goal.
+    public static let stepAhead = 0.03
     /// A goal more than this much faster than predicted counts as too optimistic.
     public static let optimisticBeyond = 0.05
 
@@ -187,6 +182,15 @@ public struct GoalTime: Equatable, Sendable {
     }
 
     public var goalPace: Pace { Pace(secondsPerKm: goalSeconds / (distanceMeters / 1000)) }
+
+    /// The fitness level the goal needs.
+    public var goalVDOT: Double { PaceZones.vdot(for: RaceResult(distanceMeters: distanceMeters, timeSeconds: goalSeconds)) }
+
+    /// The fitness level to train at: current fitness, stepped towards the goal by at most
+    /// `stepAhead` (never slower than current fitness).
+    public func trainingVDOT(fitness: Double) -> Double {
+        min(max(goalVDOT, fitness), fitness * (1 + Self.stepAhead))
+    }
 
     /// How much faster than predicted the goal is (0.04 = 4% faster; negative = slower).
     public var fasterThanPredicted: Double { (predictedSeconds - goalSeconds) / predictedSeconds }
