@@ -39,6 +39,8 @@ public struct PaceZones: Codable, Equatable, Sendable {
     /// With a goal time: the pace for goal-pace reps (the goal, or as close as fitness allows
     /// when it's still well out of reach).
     public var goalPaceRange: PaceRange? = nil
+    /// The goal race pace itself (goal-pace reps build towards it).
+    public var goalPace: Pace? = nil
 
     /// Fraction-of-VDOT bands for each zone (slow end, fast end).
     static let intensityBands: [PaceZone: (slow: Double, fast: Double)] = [
@@ -108,6 +110,7 @@ public struct PaceZones: Codable, Equatable, Sendable {
         let reach = max(min(goal.goalVDOT, fitness.vdot * (1 + GoalTime.goalPaceReach)), vdot)
         let perKm = PaceZones(vdot: reach).predictedTime(distanceMeters: goal.distanceMeters) / (goal.distanceMeters / 1000)
         goalPaceRange = PaceRange(fastest: Pace(secondsPerKm: perKm - 3), slowest: Pace(secondsPerKm: perKm + 3))
+        goalPace = goal.goalPace
     }
 
     /// Zones from current fitness only (race time or experience), ignoring any goal time.

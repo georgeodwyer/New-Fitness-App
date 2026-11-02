@@ -50,7 +50,7 @@ public struct BalanceRules: Codable, Equatable, Sendable {
     /// The values Kinetix was designed with (also used if the file can't be read).
     public static let defaults = BalanceRules(
         scheduling: Scheduling(noLowerBodyLiftDayBeforeHardRun: true, noLowerBodyLiftOnLongRunDay: true,
-                               pairLowerBodyLiftsWithHardRuns: false, noLowerBodyLiftOnHardRunDay: true),
+                               pairLowerBodyLiftsWithHardRuns: true, noLowerBodyLiftOnHardRunDay: false),
         load: Load(optimalRatioLow: 0.8, optimalRatioHigh: 1.3, minimumHistoryDays: 14),
         recovery: Recovery(poorReadinessBelow: 0.42, verySoreAtOrAbove: 5, restingHeartRateElevatedBpm: 7,
                            restingHeartRateMinimumReadings: 7, bodySignalCountsWhenReadinessBelow: 0.6),

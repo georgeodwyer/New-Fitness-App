@@ -32,6 +32,14 @@ final class PlanPrintoutTests: XCTestCase {
         format.timeZone = calendar.timeZone
         format.dateFormat = "EEE"
         let outline = generator.makeOutline(for: profile, startingOn: monday)
+        // The race is run at the goal pace range, and race week isn't more running than planned.
+        if let raceWeek = outline.weeks.indices.last(where: { outline.weeks[$0].startDate <= raceDay }),
+           let week = generator.generateWeek(raceWeek, outline: outline, profile: profile),
+           let race = week.sessions.first(where: { $0.title.lowercased().contains("race") || $0.plannedEffort >= 9 }) {
+            XCTAssertEqual(race.runStructure?.segments.first(where: { $0.kind == .work })?.targetPace, zones.goalPaceRange)
+            let total = week.sessions.compactMap(\.estimatedDistanceMeters).reduce(0, +)
+            XCTAssertLessThanOrEqual(total, outline.weeks[raceWeek].runVolumeMeters * 1.15)
+        }
         for index in outline.weeks.indices {
             let target = outline.weeks[index]
             guard let week = generator.generateWeek(index, outline: outline, profile: profile) else { continue }

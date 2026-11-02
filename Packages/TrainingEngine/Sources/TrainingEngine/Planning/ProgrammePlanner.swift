@@ -222,7 +222,15 @@ enum ProgrammePlanner {
         if !isPostProgramme, let withGoal = goalPaceReps(in: sessions, programmeWeek: week.programmeWeek, programme: programme,
                                                          zones: zones) {
             sessions = withGoal
-            notes.append("Goal-pace reps this week: the time at your goal pace builds each week before the taper.")
+            if let range = zones.goalPaceRange, let goal = zones.goalPace,
+               (range.fastest.secondsPerKm + range.slowest.secondsPerKm) / 2 - goal.secondsPerKm > 2 {
+                let now = Units.formatPace(Pace(secondsPerKm: (range.fastest.secondsPerKm + range.slowest.secondsPerKm) / 2), units: profile.units)
+                let target = Units.formatPace(goal, units: profile.units)
+                let unit = Units.paceUnitLabel(profile.units)
+                notes.append("Goal-pace reps this week at \(now)\(unit) for now, building towards your goal pace of \(target)\(unit) as your fitness improves.")
+            } else {
+                notes.append("Goal-pace reps this week at your goal pace: the time at goal pace builds each week before the taper.")
+            }
         }
         let written = sessions.count
         sessions = fit(sessions, to: weekCounts.runs)
@@ -234,8 +242,12 @@ enum ProgrammePlanner {
             event >= week.startDate && event < (calendar.date(byAdding: .day, value: 7, to: week.startDate) ?? event)
         } ?? false
 
-        let weekMeters = week.runVolumeMeters
         let shortest = rules.shortestRunMeters
+        // A race or time trial week: the race counts towards the week's running, so the runs
+        // around it stay short.
+        let weekMeters = sessions.contains(where: \.isRace)
+            ? max(week.runVolumeMeters - programme.timeTrialMeters, shortest * 2)
+            : week.runVolumeMeters
 
         // Long run cap: the programme (race programmes set their own; others also the Rules tab)
         // and, early on, their longest recent run.
@@ -395,7 +407,8 @@ enum ProgrammePlanner {
                 runs[i].meters = c.raceMeters
                 runs[i].structure = RunStructure(segments: [
                     RunSegment(kind: .work, length: .distance(meters: c.raceMeters),
-                               targetPace: c.raceIsEffort ? range(for: "steady", zones: c.zones) : c.zones.range(for: c.raceZone),
+                               targetPace: c.raceIsEffort ? range(for: "steady", zones: c.zones)
+                                   : (c.zones.goalPaceRange ?? c.zones.range(for: c.raceZone)),
                                label: c.raceLabel == "race" ? "Race" : "Time trial", paceIsGuide: c.raceIsEffort ? true : nil)
                 ])
                 let name = c.raceMeters == 5000 && c.raceLabel != "race" ? "5K" : c.programmeName

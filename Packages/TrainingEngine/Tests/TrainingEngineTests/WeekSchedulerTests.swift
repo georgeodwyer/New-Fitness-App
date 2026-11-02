@@ -32,14 +32,26 @@ final class WeekSchedulerTests: XCTestCase {
         XCTAssertNotNil(lowerDay)
     }
 
-    func testLegDaysNeverShareADayWithAHardRun() {
-        // Even with a double available, the lower-body lift stays off the intervals day.
+    func testLegDaysPairWithAHardRunButNeverTheLongRun() {
+        // Hard days hard: with a double, the lower-body lift can go on a quality day (evening),
+        // never on the long-run day or the day before a hard run.
         let days: [Weekday] = Weekday.allCases
         let result = WeekScheduler.schedule(days: days, doubleDays: 1, runs: [.long, .intervals, .tempo, .easy], lifts: [lower])
-        let hardDays = Set(result.placements.filter(\.isHardRun).map(\.weekday))
+        let longDay = result.placements.first { $0.item == .run(.long) }?.weekday
         let liftDay = result.placements.first { $0.loadsLowerBody }?.weekday
         XCTAssertNotNil(liftDay)
-        XCTAssertFalse(hardDays.contains(liftDay!))
+        XCTAssertNotEqual(liftDay, longDay)
+        XCTAssertEqual(WeekScheduler.violations(result.placements, days: days, doubleDays: 1), [])
+    }
+
+    func testHardRunsAreNotEitherSideOfTheLongRun() {
+        // Mon, Tue, Thu, Sat, Sun with two leg sessions and one double: intervals Tue (gym that
+        // evening), the other quality day Saturday, long run Sunday, easy Monday.
+        let days: [Weekday] = [.monday, .tuesday, .thursday, .saturday, .sunday]
+        let result = WeekScheduler.schedule(days: days, doubleDays: 1, runs: [.long, .intervals, .tempo, .easy],
+                                            lifts: [lower, templates.strength.sessions["lowerB"]!])
+        let hard = Set(result.placements.filter(\.isHardRun).map(\.weekday))
+        XCTAssertFalse(hard.contains(.monday) && hard.contains(.saturday), "Not hard on both sides of Sunday's long run")
         XCTAssertEqual(WeekScheduler.violations(result.placements, days: days, doubleDays: 1), [])
     }
 

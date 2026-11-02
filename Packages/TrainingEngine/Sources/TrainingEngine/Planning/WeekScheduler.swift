@@ -89,10 +89,17 @@ public enum WeekScheduler {
                         && !(BalanceRules.current.scheduling.noLowerBodyLiftOnHardRunDay
                              && (state.lifts[day]?.focus.loadsLowerBody ?? false))
                 }
-                let best = candidates.max { a, b in
-                    let sa = state.hardRunSpacing(for: a), sb = state.hardRunSpacing(for: b)
-                    return sa == sb ? a > b : sa < sb // ties → earlier day
+                // Furthest from the other hard days (long run included); then the day further from
+                // all of them in total (so not either side of the long run); then a leg day
+                // (hard days hard: the gym that evening); then the earlier day.
+                // The day after the long run is for easy running when there's a choice.
+                func key(_ day: Weekday) -> (Int, Int, Int, Int, Int) {
+                    let total = state.hardDays.map { $0.circularDistance(to: day) }.reduce(0, +)
+                    let paired = (state.lifts[day]?.focus.loadsLowerBody ?? false) ? 1 : 0
+                    let afterLong = state.runs[day.previous] == .long ? 0 : 1
+                    return (state.hardRunSpacing(for: day), afterLong, total, paired, -day.rawValue)
                 }
+                let best = candidates.max { key($0) < key($1) }
                 if let day = best {
                     state.addRun(type, on: day)
                 } else {
@@ -310,9 +317,8 @@ public enum WeekScheduler {
                 let afterLegs = placed.contains { $0.1 == day.previous && $0.0.focus.loadsLowerBody }
                 let lift = placed.first { $0.1 == day }?.0
                 if lift == nil { free += 1 } else { withLift += 1 }
-                if !afterLegs && !(lift?.focus.loadsLowerBody ?? false) {
-                    if lift == nil { nonLegFree += 1 }
-                }
+                let legsBlockHardRun = BalanceRules.current.scheduling.noLowerBodyLiftOnHardRunDay && (lift?.focus.loadsLowerBody ?? false)
+                if !afterLegs && !legsBlockHardRun && lift == nil { nonLegFree += 1 }
             }
             let doublesLeft = max(0, doubleDays - placed.filter { runs[$0.1] != nil }.count)
             let hardRoom = nonLegFree + doublesLeft
