@@ -183,6 +183,8 @@ public struct RunEngine: Sendable {
     /// Shorter window that reflects what the runner is doing now; decides "off pace".
     private var coachSmoother: PaceSmoother
     private var route: [RoutePoint] = []
+    /// Distance run when each route point was recorded (for counting laps from arriving at a track).
+    private var routeDistances: [Double] = []
     // Track mode
     private var track: TrackLock?
     private var pendingTrackLane: Int?
@@ -425,6 +427,7 @@ public struct RunEngine: Sendable {
         smoother.add(time: activeSeconds, distance: distance, speed: speed)
         coachSmoother.add(time: activeSeconds, distance: distance, speed: speed)
         route.append(RoutePoint(latitude: point.latitude, longitude: point.longitude, elapsed: activeSeconds, altitude: sample.altitude))
+        routeDistances.append(distance)
         tryPendingTrack()
 
         events += progressSegments()
@@ -472,6 +475,27 @@ public struct RunEngine: Sendable {
         }
     }
 
+    /// Laps count from when they ran onto the track, not from when track mode came on: back
+    /// through the route while it stays on the track (a few stray GPS points allowed).
+    private func arrivedOnTrackDistance(fit: TrackFit, lane: Int) -> Double {
+        var start = route.count
+        var strays = 0
+        var index = route.count - 1
+        while index >= 0 {
+            let point = route[index]
+            if fit.project(latitude: point.latitude, longitude: point.longitude, lane: lane).offset <= 20 {
+                start = index
+                strays = 0
+            } else {
+                strays += 1
+                if strays > 3 { break }
+            }
+            index -= 1
+        }
+        guard start < routeDistances.count else { return distance }
+        return routeDistances[start]
+    }
+
     private mutating func tryPendingTrack() {
         guard let lane = pendingTrackLane else { return }
         samplesSinceTrackTry += 1
@@ -483,7 +507,7 @@ public struct RunEngine: Sendable {
         track = TrackLock(fit: fit, lane: lane, direction: TrackLock.direction(of: points, fit: fit, lane: lane))
         trackLaneUsed = lane
         pendingTrackLane = nil
-        trackStartDistance = distance
+        trackStartDistance = arrivedOnTrackDistance(fit: fit, lane: lane)
         lastTrackPosition = nil
         trackProgress = 0
         trackCounted = 0

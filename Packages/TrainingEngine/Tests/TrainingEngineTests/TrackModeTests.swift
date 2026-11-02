@@ -65,8 +65,10 @@ final class TrackModeTests: XCTestCase {
             }
         }
         XCTAssertEqual(onTrack.snapshot().trackLane, 1)
+        // Laps count from arriving at the track: the finding lap (raw GPS, ~450 m) plus two on the lane.
         let lapsOnTrack = onTrack.snapshot().trackLaps ?? 0
-        XCTAssertEqual(lapsOnTrack * 400, 177 * 4.5, accuracy: 12, "Two laps on the track measure close to 800 m")
+        XCTAssertEqual(lapsOnTrack, onTrack.summary().distanceMeters / 400, accuracy: 0.05, "Every lap on the track counts")
+        XCTAssertGreaterThan(lapsOnTrack, 3)
         // Plain GPS adds distance from the wobble.
         XCTAssertGreaterThan(gps.summary().distanceMeters, onTrack.summary().distanceMeters)
         XCTAssertEqual(onTrack.summary().trackLane, 1)
