@@ -125,6 +125,7 @@
 		B86925D4CFEAF0F0AB267E19 /* DesignGalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF24C085F57A681388D5C38D /* DesignGalleryView.swift */; };
 		B9DF27A2A87851CD83A8AA2E /* RoutePlannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6FACB92EC2C6DF95CCBEFF5 /* RoutePlannerView.swift */; };
 		BAF5F5CDD35377946754A4BE /* DashboardCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D6CEBF47C9E4CCE5F22FE91 /* DashboardCards.swift */; };
+		BC6C947552CF98A62CE6777C /* OwnWorkoutsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65CF5F8A47E247BCE4E704E3 /* OwnWorkoutsCard.swift */; };
 		BD17DBB64F9EEE349E1919E5 /* PlanPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2388FFC3629A913F08C12797 /* PlanPreviewView.swift */; };
 		BD94D0B027551866392B9A74 /* ShareService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0194D5106F49F620FDB86E8 /* ShareService.swift */; };
 		BDC6DDDC3E501DEEBDC63BE6 /* UserProfileModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4869AF91B0E573C72D5565D /* UserProfileModel.swift */; };
@@ -327,6 +328,7 @@
 		5C5F896841CF5371E58D2E96 /* KXSwipeToDelete.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXSwipeToDelete.swift; sourceTree = "<group>"; };
 		624C995FD738D1EED4FEE350 /* CustomScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomScreenView.swift; sourceTree = "<group>"; };
 		626F847EE3778CA53D1E28E9 /* SessionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionDetailView.swift; sourceTree = "<group>"; };
+		65CF5F8A47E247BCE4E704E3 /* OwnWorkoutsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OwnWorkoutsCard.swift; sourceTree = "<group>"; };
 		68BA25507C64D36A65136666 /* ProgressSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressSummaryView.swift; sourceTree = "<group>"; };
 		68F6AC05A25C4370A18ACAF3 /* KinetixWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KinetixWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6CB156067CAAF579368CC276 /* LoadTrendCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadTrendCard.swift; sourceTree = "<group>"; };
@@ -474,6 +476,7 @@
 			isa = PBXGroup;
 			children = (
 				BDC72FB367FDEB3A2329FA4E /* MarkDoneSheets.swift */,
+				65CF5F8A47E247BCE4E704E3 /* OwnWorkoutsCard.swift */,
 				22F7BDD03DC4A48D642C2103 /* PausePlanViews.swift */,
 				EDB23F98437C808EBB58BEF7 /* PlanBuilderView.swift */,
 				9379EA201DE82CD3ADB9493E /* PlanChangesView.swift */,
@@ -1192,6 +1195,7 @@
 				CD0413479485C96BC3B7F758 /* OnboardingFlowView.swift in Sources */,
 				B29A94D91EADFC17D2BA06B6 /* OnboardingModel.swift in Sources */,
 				B3732468744D9B820C1E44A5 /* OnboardingSteps.swift in Sources */,
+				BC6C947552CF98A62CE6777C /* OwnWorkoutsCard.swift in Sources */,
 				12D872ADCBB025ADE604F9BA /* PaceUpdateCard.swift in Sources */,
 				7AC10FAFB65860215645CCEA /* PausePlanViews.swift in Sources */,
 				31ED552C55B36D3CBDB1CD53 /* Persistence.swift in Sources */,
