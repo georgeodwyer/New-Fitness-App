@@ -36,6 +36,9 @@ public enum PaceZone: String, Codable, CaseIterable, Sendable {
 public struct PaceZones: Codable, Equatable, Sendable {
     public let vdot: Double
     public let ranges: [PaceZone: PaceRange]
+    /// With a goal time: the pace for goal-pace reps (the goal, or as close as fitness allows
+    /// when it's still well out of reach).
+    public var goalPaceRange: PaceRange? = nil
 
     /// Fraction-of-VDOT bands for each zone (slow end, fast end).
     static let intensityBands: [PaceZone: (slow: Double, fast: Double)] = [
@@ -101,6 +104,10 @@ public struct PaceZones: Codable, Equatable, Sendable {
             return
         }
         self.init(vdot: goal.trainingVDOT(fitness: fitness.vdot))
+        // Goal-pace reps: the goal pace, unless that's more than 5% beyond current fitness.
+        let reach = max(min(goal.goalVDOT, fitness.vdot * (1 + GoalTime.goalPaceReach)), vdot)
+        let perKm = PaceZones(vdot: reach).predictedTime(distanceMeters: goal.distanceMeters) / (goal.distanceMeters / 1000)
+        goalPaceRange = PaceRange(fastest: Pace(secondsPerKm: perKm - 3), slowest: Pace(secondsPerKm: perKm + 3))
     }
 
     /// Zones from current fitness only (race time or experience), ignoring any goal time.
@@ -162,6 +169,8 @@ public struct PaceZones: Codable, Equatable, Sendable {
 public struct GoalTime: Equatable, Sendable {
     /// Training paces sit at most this far ahead of current fitness (in VDOT) on the way to a goal.
     public static let stepAhead = 0.03
+    /// Goal-pace reps run at the goal pace when it's within this much (in VDOT) of current fitness.
+    public static let goalPaceReach = 0.05
     /// A goal more than this much faster than predicted counts as too optimistic.
     public static let optimisticBeyond = 0.05
 

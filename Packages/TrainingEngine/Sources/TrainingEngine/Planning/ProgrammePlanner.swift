@@ -218,6 +218,12 @@ enum ProgrammePlanner {
         let mix = MixBuilder.sessionCounts(profile: profile, rules: planRules)
         let weekCounts = Self.counts(profile: profile, programme: programme, rules: planRules)
         var sessions = isPostProgramme ? [] : programme.sessions(inWeek: week.programmeWeek ?? 1)
+        // A goal time: the weeks before the taper swap the tempo session for goal-pace reps.
+        if !isPostProgramme, let withGoal = goalPaceReps(in: sessions, programmeWeek: week.programmeWeek, programme: programme,
+                                                         zones: zones) {
+            sessions = withGoal
+            notes.append("Goal-pace reps this week: the time at your goal pace builds each week before the taper.")
+        }
         let written = sessions.count
         sessions = fit(sessions, to: weekCounts.runs)
         if sessions.count < written {
@@ -539,7 +545,7 @@ enum ProgrammePlanner {
             switch zone {
             case "interval", "repetition", "fiveK", "hill": self = .fast
             case "threshold", "tenK": self = .threshold
-            case "halfMarathon", "marathon", "steady": self = .sustained
+            case "halfMarathon", "marathon", "steady", "goal": self = .sustained
             default: self = .easy
             }
         }
@@ -570,9 +576,59 @@ enum ProgrammePlanner {
         return min(written, max(allowed, written >= 4 ? 2 : 1))
     }
 
+    // MARK: Goal-pace reps
+
+    /// Reps at goal race pace, building week by week (distance per rep, number of reps, recovery
+    /// in seconds), ending with the most time at goal pace in the last week before the taper.
+    static func goalPaceProgression(raceMeters: Double) -> [(reps: Int, meters: Double, recovery: Double)] {
+        switch raceMeters {
+        case ..<7_500:
+            return [(8, 400, 90), (6, 600, 90), (5, 800, 120), (4, 1_000, 120), (3, 1_200, 150), (3, 1_600, 180)]
+        case ..<15_000:
+            return [(6, 400, 90), (5, 600, 90), (5, 800, 120), (4, 1_000, 120), (3, 1_500, 150), (2, 2_000, 180)]
+        case ..<30_000:
+            return [(5, 1_000, 90), (4, 1_500, 120), (3, 2_000, 120), (3, 3_000, 150), (2, 4_000, 180), (2, 5_000, 180)]
+        default:
+            return [(3, 2_000, 120), (3, 3_000, 120), (2, 5_000, 180), (3, 4_000, 180), (2, 6_000, 180), (1, 12_000, 0)]
+        }
+    }
+
+    /// The week's sessions with the tempo session swapped for goal-pace reps, in the (up to six,
+    /// not counting easier weeks) weeks before the taper of a race programme, when there's a goal
+    /// time. nil when this week doesn't have them.
+    static func goalPaceReps(in sessions: [ProgrammeSession], programmeWeek: Int?, programme: Programme,
+                             zones: PaceZones) -> [ProgrammeSession]? {
+        guard let number = programmeWeek, zones.goalPaceRange != nil, let race = programme.raceDistanceMeters,
+              let firstTaper = programme.weeks.filter({ $0.phase == .taper }).map(\.week).min() else { return nil }
+        let block = programme.weeks
+            .filter { $0.week < firstTaper && $0.week >= firstTaper - 6 && !$0.isDeload && !$0.isRaceWeek }
+            .map(\.week).sorted()
+        guard let position = block.firstIndex(of: number),
+              let index = sessions.firstIndex(where: { $0.type == "tempo" }) else { return nil }
+        let table = goalPaceProgression(raceMeters: race)
+        let step = table[max(0, table.count - block.count) + position]
+        var session = sessions[index]
+        let rep = WorkoutStepSpec(meters: step.meters, zone: "goal", effort: false)
+        let recovery = step.recovery > 0
+            ? WorkoutStepSpec(seconds: step.recovery, zone: "easy", effort: false, recovery: true, label: "Recovery jog") : nil
+        session.name = "Goal-pace reps"
+        session.parts = [WorkoutPart(kind: "reps", repeats: step.reps, steps: [rep], recovery: recovery)]
+        let length = step.meters >= 1000 ? (step.meters.truncatingRemainder(dividingBy: 1000) == 0
+            ? "\(Int(step.meters / 1000)) km" : String(format: "%.1f km", step.meters / 1000)) : "\(Int(step.meters)) m"
+        session.text = step.reps > 1 ? "\(step.reps) x \(length) @ goal pace, \(Int(step.recovery)) s jog between"
+                                     : "\(length) @ goal pace"
+        session.note = "At your goal race pace. The time at goal pace builds each week."
+        var result = sessions
+        result[index] = session
+        return result
+    }
+
     private static func pace(for zone: String, zones: PaceZones) -> Pace {
         switch zone {
         case "hill": return zones.typicalPace(for: .threshold)
+        case "goal":
+            guard let goal = zones.goalPaceRange else { return zones.typicalPace(for: .tenK) }
+            return Pace(secondsPerKm: (goal.fastest.secondsPerKm + goal.slowest.secondsPerKm) / 2)
         case "recovery": return Pace(secondsPerKm: zones.range(for: .easy).slowest.secondsPerKm + 15)
         default: return zones.typicalPace(for: PaceZone(rawValue: zone) ?? .easy)
         }
@@ -586,6 +642,7 @@ enum ProgrammePlanner {
     private static func range(for zone: String, zones: PaceZones) -> PaceRange? {
         switch zone {
         case "hill": return nil
+        case "goal": return zones.goalPaceRange ?? zones.range(for: .tenK)
         case "recovery":
             let easy = zones.range(for: .easy)
             return PaceRange(fastest: easy.slowest, slowest: Pace(secondsPerKm: easy.slowest.secondsPerKm + 30))
@@ -605,6 +662,7 @@ enum ProgrammePlanner {
         case "fiveK": return "5K pace"
         case "interval": return "Interval pace"
         case "repetition": return "Fast"
+        case "goal": return "Goal pace"
         case "hill": return "Uphill"
         default: return zone
         }
@@ -621,6 +679,7 @@ enum ProgrammePlanner {
         case "fiveK": return "5K"
         case "interval": return "I"
         case "repetition": return "R"
+        case "goal": return "goal"
         case "hill": return "uphill"
         default: return zone
         }

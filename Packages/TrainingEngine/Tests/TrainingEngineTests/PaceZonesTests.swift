@@ -107,4 +107,53 @@ final class PaceZonesTests: XCTestCase {
         XCTAssertEqual(optimistic.fasterThanPredicted, 0.08, accuracy: 0.001)
         XCTAssertEqual(optimistic.realisticRange.upperBound, predicted, accuracy: 0.01)
     }
+
+    // MARK: Goal-pace reps
+
+    private func tenKProfile(goal: Double?) -> AthleteProfile {
+        AthleteProfile(runningExperience: .intermediate, recentRace: RaceResult(distanceMeters: 10000, timeSeconds: 44 * 60 + 51),
+                       liftingExperience: .intermediate, goal: .faster10k, trainingDays: [.monday, .wednesday, .saturday, .sunday],
+                       equipment: .fullGym, goalTimeSeconds: goal)
+    }
+
+    func testGoalPaceRepsBuildBeforeTheTaper() throws {
+        let programme = try XCTUnwrap(TestSupport.bundledTemplates.programmes.programme(for: .faster10k))
+        let zones = PaceZones(profile: tenKProfile(goal: 41 * 60))
+        func goalSession(_ week: Int) -> ProgrammeSession? {
+            ProgrammePlanner.goalPaceReps(in: programme.sessions(inWeek: week), programmeWeek: week, programme: programme, zones: zones)?
+                .first { $0.name == "Goal-pace reps" }
+        }
+        XCTAssertNil(goalSession(2), "Not in the base weeks")
+        XCTAssertNil(goalSession(8), "Not in an easier week")
+        XCTAssertNil(goalSession(11), "Not in the taper")
+        let first = try XCTUnwrap(goalSession(5))
+        let last = try XCTUnwrap(goalSession(10))
+        func total(_ session: ProgrammeSession) -> Double {
+            session.parts.reduce(0) { $0 + Double($1.repeats ?? 1) * ($1.steps?.first?.meters ?? 0) }
+        }
+        XCTAssertGreaterThan(total(last), total(first), "More time at goal pace by the end")
+        XCTAssertEqual(last.parts.first?.repeats, 2)
+        XCTAssertEqual(last.parts.first?.steps?.first?.meters, 2000)
+        // The week still has its intervals.
+        let week10 = try XCTUnwrap(ProgrammePlanner.goalPaceReps(in: programme.sessions(inWeek: 10), programmeWeek: 10,
+                                                                 programme: programme, zones: zones))
+        XCTAssertTrue(week10.contains { $0.type == "intervals" })
+        // No goal time: no goal-pace reps.
+        XCTAssertNil(ProgrammePlanner.goalPaceReps(in: programme.sessions(inWeek: 10), programmeWeek: 10, programme: programme,
+                                                   zones: PaceZones(profile: tenKProfile(goal: nil))))
+    }
+
+    func testGoalPaceIsTheGoalWhenWithinReachElseAsCloseAsFitnessAllows() throws {
+        // 43:30 is within 5% of current fitness: reps at goal pace, 4:21 /km.
+        let near = try XCTUnwrap(PaceZones(profile: tenKProfile(goal: 43 * 60 + 30)).goalPaceRange)
+        XCTAssertEqual((near.fastest.secondsPerKm + near.slowest.secondsPerKm) / 2, 261, accuracy: 1)
+        // 40:00 is further: reps sit between current 10K pace and the goal.
+        let far = try XCTUnwrap(PaceZones(profile: tenKProfile(goal: 40 * 60)).goalPaceRange)
+        let middle = (far.fastest.secondsPerKm + far.slowest.secondsPerKm) / 2
+        XCTAssertGreaterThan(middle, 240)
+        XCTAssertLessThan(middle, (44 * 60 + 51) / 10)
+        // Intervals stay faster than goal-pace reps.
+        let intervals = PaceZones(profile: tenKProfile(goal: 43 * 60 + 30)).range(for: .interval)
+        XCTAssertLessThan(intervals.slowest.secondsPerKm, near.fastest.secondsPerKm)
+    }
 }
