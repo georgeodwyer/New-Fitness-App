@@ -91,6 +91,9 @@ extension UserProfileModel: SyncableModel {
         goalTimeSeconds = p.goalTimeSeconds
         recoveryRunDayRaw = p.recoveryRunDay?.rawValue
         longRunDayRaw = p.longRunDay?.rawValue
+        planStyleRaw = p.planStyle?.rawValue
+        ownGymWorkoutsData = p.ownGymWorkouts.map { StoredJSON.encode($0) }
+        ownRunWorkoutsData = p.ownRunWorkouts.map { StoredJSON.encode($0) }
         createdAt = payload.createdAt
     }
 

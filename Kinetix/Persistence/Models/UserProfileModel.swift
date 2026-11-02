@@ -46,6 +46,11 @@ final class UserProfileModel: SyncTracked {
     var recoveryRunDayRaw: Int?
     /// The day they want their long run (nil = the weekend).
     var longRunDayRaw: Int?
+    /// Kind of plan (Kinetix builds both, own gym, own runs, fully custom); nil = Kinetix.
+    var planStyleRaw: String?
+    /// Encoded `[Int: OwnGymWorkout]` (Gym 1, Gym 2…) and `[RunRole: CustomRunWorkout]`.
+    var ownGymWorkoutsData: Data?
+    var ownRunWorkoutsData: Data?
 
     init(profile: AthleteProfile, id: UUID = UUID(), now: Date = .now) {
         self.id = id
@@ -78,6 +83,9 @@ final class UserProfileModel: SyncTracked {
         self.goalTimeSeconds = profile.goalTimeSeconds
         self.recoveryRunDayRaw = profile.recoveryRunDay?.rawValue
         self.longRunDayRaw = profile.longRunDay?.rawValue
+        self.planStyleRaw = profile.planStyle?.rawValue
+        self.ownGymWorkoutsData = profile.ownGymWorkouts.map { StoredJSON.encode($0) }
+        self.ownRunWorkoutsData = profile.ownRunWorkouts.map { StoredJSON.encode($0) }
     }
 
     /// The engine's view of this profile.
@@ -110,6 +118,9 @@ final class UserProfileModel: SyncTracked {
                 recoveryRunDay: recoveryRunDayRaw.flatMap(Weekday.init(rawValue:)),
                 longRunDay: longRunDayRaw.flatMap(Weekday.init(rawValue:))
             )
+            .withPlanStyle(planStyleRaw.flatMap(PlanStyle.init(rawValue:)),
+                           gym: StoredJSON.decode([Int: OwnGymWorkout].self, from: ownGymWorkoutsData),
+                           runs: StoredJSON.decode([RunRole: CustomRunWorkout].self, from: ownRunWorkoutsData))
         }
         set {
             runningExperienceRaw = newValue.runningExperience.rawValue
@@ -137,9 +148,22 @@ final class UserProfileModel: SyncTracked {
             goalTimeSeconds = newValue.goalTimeSeconds
             recoveryRunDayRaw = newValue.recoveryRunDay?.rawValue
             longRunDayRaw = newValue.longRunDay?.rawValue
+            planStyleRaw = newValue.planStyle?.rawValue
+            ownGymWorkoutsData = newValue.ownGymWorkouts.map { StoredJSON.encode($0) }
+            ownRunWorkoutsData = newValue.ownRunWorkouts.map { StoredJSON.encode($0) }
             touch()
         }
     }
 
     var units: UnitSystem { UnitSystem(rawValue: unitsRaw) ?? .metric }
+}
+
+extension AthleteProfile {
+    func withPlanStyle(_ style: PlanStyle?, gym: [Int: OwnGymWorkout]?, runs: [RunRole: CustomRunWorkout]?) -> AthleteProfile {
+        var copy = self
+        copy.planStyle = style
+        copy.ownGymWorkouts = gym
+        copy.ownRunWorkouts = runs
+        return copy
+    }
 }

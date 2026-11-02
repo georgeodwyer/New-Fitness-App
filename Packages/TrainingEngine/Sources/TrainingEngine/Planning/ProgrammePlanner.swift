@@ -356,10 +356,16 @@ enum ProgrammePlanner {
             guard case .lift(let template) = placement.item else { continue }
             let date = calendar.date(for: placement.weekday, inWeekStarting: week.startDate)
             if let notBefore, date < calendar.startOfDay(for: notBefore) { continue }
-            let prescription = StrengthBuilder.prescription(for: template, context: strengthContext)
-            let totalSets = prescription.exercises.reduce(0) { $0 + $1.sets }
             var effort = planRules.effort("strength")
             if strengthWeek.isRecoveryWeek || week.phase == .taper { effort -= 1 }
+            if profile.style == .ownGym {
+                generated.append(OwnWorkouts.gymSession(template: template, date: date, slot: placement.slot, profile: profile,
+                                                        workingWeights: workingWeights,
+                                                        lighter: strengthWeek.isRecoveryWeek || week.phase == .taper, effort: effort))
+                continue
+            }
+            let prescription = StrengthBuilder.prescription(for: template, context: strengthContext)
+            let totalSets = prescription.exercises.reduce(0) { $0 + $1.sets }
             generated.append(GeneratedSession(
                 date: date, slot: placement.slot, kind: .strength(template.focus), isKey: false, title: template.name,
                 summary: "\(prescription.exercises.count) exercises · \(totalSets) sets",
@@ -368,6 +374,9 @@ enum ProgrammePlanner {
             ))
         }
         generated.sort { $0.date == $1.date ? $0.slot.rawValue > $1.slot.rawValue : $0.date < $1.date }
+        if profile.style == .ownRuns {
+            generated = OwnWorkouts.applyRunRoles(generated, linked: profile.ownRunWorkouts ?? [:], zones: zones, units: profile.units)
+        }
         let plannedRunMeters = generated.compactMap(\.estimatedDistanceMeters).reduce(0, +)
         return GeneratedWeek(target: week, sessions: generated, plannedRunMeters: plannedRunMeters, notes: notes)
     }

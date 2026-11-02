@@ -153,6 +153,14 @@ public struct AthleteProfile: Codable, Equatable, Sendable {
     public var recoveryRunDay: Weekday?
     /// The day they want their long run (nil = the weekend, as before).
     public var longRunDay: Weekday?
+    /// What kind of plan they want (nil = Kinetix builds runs and gym, as before).
+    public var planStyle: PlanStyle?
+    /// Their own gym workouts linked to the gym days (1 = Gym 1).
+    public var ownGymWorkouts: [Int: OwnGymWorkout]?
+    /// Their own run workouts linked to run roles (long, quality, easy).
+    public var ownRunWorkouts: [RunRole: CustomRunWorkout]?
+
+    public var style: PlanStyle { planStyle ?? .kinetix }
 
     public static func swapKey(day: String, exerciseId: String) -> String { "\(day)|\(exerciseId)" }
 
@@ -248,6 +256,9 @@ extension AthleteProfile {
         if goalTimeSeconds.map({ Int($0) }) != other.goalTimeSeconds.map({ Int($0) }) { changes.append("target time") }
         if hasRecoveryRunDay && effectiveRecoveryRunDay != other.effectiveRecoveryRunDay { changes.append("recovery run day") }
         if longRunDay != other.longRunDay { changes.append("long run day") }
+        if style != other.style { changes.append("plan type") }
+        if ownGymWorkouts != other.ownGymWorkouts { changes.append("your gym workouts") }
+        if ownRunWorkouts != other.ownRunWorkouts { changes.append("your run workouts") }
         return changes
     }
 }

@@ -274,10 +274,16 @@ public struct PlanGenerator: Sendable {
                 ))
 
             case .lift(let template):
-                let prescription = StrengthBuilder.prescription(for: template, context: strengthContext)
-                let totalSets = prescription.exercises.reduce(0) { $0 + $1.sets }
                 var effort = rules.effort("strength")
                 if week.isRecoveryWeek || week.phase == .taper { effort -= 1 }
+                if profile.style == .ownGym {
+                    sessions.append(OwnWorkouts.gymSession(template: template, date: date, slot: placement.slot, profile: profile,
+                                                           workingWeights: workingWeights,
+                                                           lighter: week.isRecoveryWeek || week.phase == .taper, effort: effort))
+                    continue
+                }
+                let prescription = StrengthBuilder.prescription(for: template, context: strengthContext)
+                let totalSets = prescription.exercises.reduce(0) { $0 + $1.sets }
                 sessions.append(GeneratedSession(
                     date: date,
                     slot: placement.slot,
@@ -299,6 +305,9 @@ public struct PlanGenerator: Sendable {
         if week.isRecoveryWeek { notes.append("Recovery week: volume is down about 20% so your body can absorb the last few weeks.") }
         if week.phase == .taper && index == outline.weeks.count - 1 && outline.eventDate != nil {
             notes.append("Race week: sessions are short and sharp so you arrive fresh.")
+        }
+        if profile.style == .ownRuns {
+            sessions = OwnWorkouts.applyRunRoles(sessions, linked: profile.ownRunWorkouts ?? [:], zones: zones, units: profile.units)
         }
         return GeneratedWeek(target: week, sessions: sessions, plannedRunMeters: plannedRunMeters, notes: notes)
     }

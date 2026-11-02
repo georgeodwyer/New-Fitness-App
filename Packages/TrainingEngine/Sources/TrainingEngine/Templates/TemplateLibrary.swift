@@ -108,6 +108,10 @@ public struct TemplateLibrary: Sendable {
     /// lift more often than it has days), or the built-in split for that many sessions.
     public func liftTemplates(for profile: AthleteProfile, count: Int) -> [StrengthSessionTemplate] {
         guard count > 0 else { return [] }
+        // Their own gym workouts: "Gym 1", "Gym 2"… placed by what the linked workouts work.
+        if profile.style == .ownGym {
+            return OwnWorkouts.gymTemplates(count: count, linked: profile.ownGymWorkouts ?? [:], exercises: exercises)
+        }
         if let code = profile.splitCode, let days = programmes.strength?.split(code)?.days, !days.isEmpty {
             return (0..<count).map { days[$0 % days.count] }
         }
