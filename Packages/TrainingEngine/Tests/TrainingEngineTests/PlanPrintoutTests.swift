@@ -8,13 +8,14 @@ final class PlanPrintoutTests: XCTestCase {
         let monday = TestSupport.monday
         let generator = PlanGenerator(templates: TestSupport.bundledTemplates, calendar: calendar)
         let raceDay = calendar.date(byAdding: .day, value: 11 * 7 + 5, to: monday)! // Saturday of week 12
-        // An intermediate runner: 5K in 22:30, about 30 km a week, longest run 12 km, going for sub-21.
+        // An intermediate runner: 5K in 22:30, about 20 km a week, longest run 8 km, going for sub-21.
         var profile = TestSupport.profile(running: .intermediate, goal: .faster5k, event: raceDay,
                                           days: [.monday, .tuesday, .thursday, .saturday, .sunday], doubles: 1,
                                           race: RaceResult(distanceMeters: 5000, timeSeconds: 22 * 60 + 30))
-        profile.weeklyRunMeters = 30_000
-        profile.longestRecentRunMeters = 12_000
-        profile.goalTimeSeconds = 20 * 60 + 55
+        profile.weeklyRunMeters = 20_000
+        profile.longestRecentRunMeters = 8_000
+        profile.goalTimeSeconds = 20 * 60 + 59
+        profile.longRunDay = .sunday
         profile.liftSessionsPerWeek = 2
         profile.splitCode = "runner2"
 
