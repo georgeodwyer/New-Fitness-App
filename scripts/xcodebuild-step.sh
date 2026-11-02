@@ -4,9 +4,9 @@
 # Usage: xcodebuild-step.sh <logfile> <xcodebuild args...>
 set -uo pipefail
 log="$1"; shift
-xcodebuild "$@" > "$log" 2>&1
-status=$?
-grep -E "error:|Test Case .* (passed|failed)|\*\* (BUILD|TEST|TEST BUILD|TEST EXECUTE)" "$log" || true
+# Progress as it happens (a test that hangs shows as the last one started).
+xcodebuild "$@" 2>&1 | tee "$log" | grep --line-buffered -E "error:|Test Case .* (started|passed|failed)|\*\* (BUILD|TEST|TEST BUILD|TEST EXECUTE)"
+status=${PIPESTATUS[0]}
 if [ "$status" -ne 0 ]; then
   echo "---- last 80 lines of $log ----"
   tail -n 80 "$log"

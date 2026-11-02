@@ -139,9 +139,12 @@ public struct TrackFit: Codable, Equatable, Sendable {
 public enum TrackDetector {
     /// Fits the 400 m track shape to GPS points covering about a lap. Returns nil if they don't
     /// look like a track (too far off the shape, or not most of the way round).
-    public static func fit(_ points: [(latitude: Double, longitude: Double)], maxResidual: Double = 7,
+    public static func fit(_ all: [(latitude: Double, longitude: Double)], maxResidual: Double = 7,
                            minCoverage: Double = 0.75) -> TrackFit? {
-        guard points.count >= 20 else { return nil }
+        guard all.count >= 20 else { return nil }
+        // At most about 90 points (evenly spaced) keeps the search quick on a watch.
+        let every = max(1, all.count / 90)
+        let points = Swift.stride(from: 0, to: all.count, by: every).map { all[$0] }
         let lat0 = points.map(\.latitude).reduce(0, +) / Double(points.count)
         let lon0 = points.map(\.longitude).reduce(0, +) / Double(points.count)
         let mLon = 111_320 * cos(lat0 * .pi / 180), mLat = 110_540.0

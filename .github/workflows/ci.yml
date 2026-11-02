@@ -78,10 +78,12 @@ jobs:
             -derivedDataPath DerivedData CODE_SIGNING_ALLOWED=NO
 
       - name: App unit tests
+        timeout-minutes: 20
         run: |
           ./scripts/xcodebuild-step.sh unit-tests.log test-without-building \
             -project Kinetix.xcodeproj -scheme Kinetix -destination "id=$UDID" \
-            -derivedDataPath DerivedData -only-testing:KinetixTests
+            -derivedDataPath DerivedData -only-testing:KinetixTests \
+            -test-timeouts-enabled YES -default-test-execution-time-allowance 120
 
       # Opens the calendar from Today and the Plan tab (it has crashed on devices before).
       - name: Calendar UI test
