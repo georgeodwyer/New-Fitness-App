@@ -162,13 +162,17 @@ final class StrengthServiceTests: XCTestCase {
 
     func testWeeklyCheckInMakesNextWeekLighter() throws {
         let context = try makeContext()
-        let sessions = try context.fetch(FetchDescriptor<PlannedSessionModel>(sortBy: [SortDescriptor(\.date)]))
-            .filter { !$0.isSoftDeleted && $0.status == .planned }
-        let gym = try XCTUnwrap(sessions.first { $0.strengthPrescription?.exercises.contains { $0.role == .accessory && $0.sets > 2 } == true })
-        let setsBefore = gym.strengthPrescription!.exercises.reduce(0) { $0 + $1.sets }
+        let gym = PlannedSessionModel(date: monday, slot: .morning, kind: .strength(.upper), isKey: false, plannedDurationMinutes: 50,
+                                      plannedEffort: 6, strength: StrengthPrescription(exercises: [
+                                          ExercisePrescription(exerciseId: "barbell-bench-press", name: "Bench", role: .main, sets: 3,
+                                                               repRange: RepRange(6, 8), weightKg: 80, restSeconds: 150),
+                                          ExercisePrescription(exerciseId: "dumbbell-curl", name: "Curl", role: .accessory, sets: 3,
+                                                               repRange: RepRange(10, 12), weightKg: 12, restSeconds: 60)
+                                      ]))
+        context.insert(gym)
         let changed = WeeklyCheckInService.adjust([gym], feel: .tooMuch, in: context)
         XCTAssertEqual(changed, 1)
-        XCTAssertLessThan(gym.strengthPrescription!.exercises.reduce(0) { $0 + $1.sets }, setsBefore)
+        XCTAssertEqual(gym.strengthPrescription?.exercises.map(\.sets), [3, 2])
         XCTAssertEqual(WeeklyCheckInService.adjust([gym], feel: .aboutRight, in: context), 0)
     }
 }
