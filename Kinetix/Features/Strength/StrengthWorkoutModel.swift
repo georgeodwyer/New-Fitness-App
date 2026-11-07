@@ -44,6 +44,7 @@ final class StrengthWorkoutModel {
         let runs = (try? context.fetch(FetchDescriptor<RunLogModel>())) ?? []
         zones = StrainService.zones(profile: profile, runs: runs)
         refreshLastTime()
+        baseline = WorkoutChangeService.baseline(log)
         WorkoutActivityController.shared.start(title: log.title.isEmpty ? "Strength" : log.title, kind: "strength",
                                                state: lockScreenState)
         startHeartRateAndWatch()
@@ -502,8 +503,28 @@ final class StrengthWorkoutModel {
         ((try? context.fetch(FetchDescriptor<UserProfileModel>())) ?? []).first { !$0.isSoftDeleted }?.profile.equipment ?? .fullGym
     }
 
+    // MARK: Changes to keep
+
+    /// The workout as it started (to spot what's been added, dropped or changed).
+    @ObservationIgnored private var baseline = WorkoutChangeService.Baseline(sets: [:], names: [:])
+    /// Exercises swapped in or out (a swap asks about keeping it there and then).
+    @ObservationIgnored private var swappedIds: Set<String> = []
+
+    /// What's changed since the start that could be kept for next time.
+    var changesToKeep: [WorkoutChange] {
+        guard WorkoutChangeService.targetName(for: log, context: context) != nil else { return [] }
+        return WorkoutChangeService.changes(since: baseline, log: log, swapped: swappedIds)
+    }
+
+    var keepTargetName: String? { WorkoutChangeService.targetName(for: log, context: context) }
+
+    func keep(_ changes: [WorkoutChange]) {
+        WorkoutChangeService.keep(changes, log: log, context: context)
+    }
+
     func swap(_ group: ExerciseGroup, to exercise: ExerciseDefinition) {
         let fromId = group.first.exerciseId
+        swappedIds.formUnion([fromId, exercise.id])
         let fromName = group.name
         WorkoutEditService.swap(key: group.key, to: exercise, in: log, context: context)
         refreshLastTime()

@@ -8,6 +8,11 @@ struct StrengthSummaryView: View {
     let units: UnitSystem
     /// The saved workout (for "Upload to Strava").
     var log: StrengthLogModel? = nil
+    /// Changes made in the workout that can be kept for next time.
+    var changes: [WorkoutChange] = []
+    /// Where they'd be kept ("your Push sessions").
+    var keepTarget: String? = nil
+    var onKeep: ([WorkoutChange]) -> Void = { _ in }
     let onDone: () -> Void
 
     @Environment(\.modelContext) private var context
@@ -15,6 +20,9 @@ struct StrengthSummaryView: View {
     @State private var settings = IntegrationSettings.shared
     @State private var uploading = false
     @State private var uploadError: String?
+    /// The changes ticked to keep (all to start with).
+    @State private var keeping: Set<String>?
+    @State private var kept = false
 
     private var format: DisplayFormat { DisplayFormat(units: units) }
 
@@ -75,6 +83,7 @@ struct StrengthSummaryView: View {
                 }
                 .kxCard()
                 }
+                if !changes.isEmpty, let keepTarget { keepCard(keepTarget) }
                 if let log { SaveAsTemplateButton(source: .gym(log)) }
             }
             .padding(KXSpacing.screenMargin)
@@ -86,6 +95,38 @@ struct StrengthSummaryView: View {
                 .background(KXColor.background)
         }
         .background(KXColor.background.ignoresSafeArea())
+    }
+
+    /// "You changed this workout": keep any of it for next time?
+    private func keepCard(_ target: String) -> some View {
+        let ticked = keeping ?? Set(changes.map(\.id))
+        return VStack(alignment: .leading, spacing: KXSpacing.sm) {
+            KXSectionHeader("You changed this workout", subtitle: kept ? nil : "Keep any of it in \(target)?")
+            if kept {
+                Label("Kept for next time", systemImage: "checkmark.circle.fill")
+                    .font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink).symbolRenderingMode(.multicolor)
+            } else {
+                ForEach(changes) { change in
+                    Toggle(isOn: Binding(get: { ticked.contains(change.id) }, set: { on in
+                        var set = ticked
+                        if on { set.insert(change.id) } else { set.remove(change.id) }
+                        keeping = set
+                    })) {
+                        Text(change.text).font(KXFont.callout).foregroundStyle(KXColor.ink)
+                    }
+                    .tint(KXColor.accent)
+                }
+                Button("Keep for next time") {
+                    onKeep(changes.filter { ticked.contains($0.id) })
+                    withAnimation { kept = true }
+                }
+                .buttonStyle(.kx(.secondary, fullWidth: true))
+                .disabled(ticked.isEmpty)
+                .accessibilityIdentifier("strength.keepChanges")
+                Text("Not ticked, or not kept: just this time.").font(KXFont.caption).foregroundStyle(KXColor.inkTertiary)
+            }
+        }
+        .kxCard()
     }
 
     private func stravaCard(_ log: StrengthLogModel) -> some View {

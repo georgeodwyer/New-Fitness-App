@@ -14,6 +14,8 @@ struct StrengthWorkoutView: View {
     @State private var showFinish = false
     @State private var showLeave = false
     @State private var summary: StrengthService.Summary?
+    /// What changed in the workout, offered on the summary to keep for next time.
+    @State private var changesAtFinish: [WorkoutChange] = []
     @State private var showPicker = false
     @State private var swapGroup: StrengthWorkoutModel.ExerciseGroup?
     /// 0 = exercises, 1 = heart rate.
@@ -32,7 +34,8 @@ struct StrengthWorkoutView: View {
         if discarded {
             KXColor.background.ignoresSafeArea()
         } else if let summary {
-            StrengthSummaryView(summary: summary, units: units, log: model.log, onDone: onClose)
+            StrengthSummaryView(summary: summary, units: units, log: model.log, changes: changesAtFinish,
+                                keepTarget: model.keepTargetName, onKeep: { model.keep($0) }, onDone: onClose)
         } else {
             workout
         }
@@ -73,6 +76,7 @@ struct StrengthWorkoutView: View {
             FinishWorkoutSheet(defaultEffort: model.planned?.plannedEffort ?? 7, completedSets: model.completedSets, totalSets: model.totalSets) { effort in
                 showFinish = false
                 model.endSetTimer()
+                changesAtFinish = model.changesToKeep
                 summary = StrengthService.finish(model.log, planned: model.planned, effort: effort, units: units, in: context)
             }
             .presentationDetents([.medium])

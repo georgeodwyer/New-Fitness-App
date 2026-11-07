@@ -118,4 +118,25 @@ final class GymTests: XCTestCase {
         try logCopy.apply(log.syncRecord(), context: context)
         XCTAssertTrue(logCopy.isRecorded)
     }
+
+    func testChangesInASavedWorkoutCanBeKept() throws {
+        let context = try makeContext()
+        let template = GymTemplateModel(name: "Push day", items: [bench, pushUp])
+        context.insert(template)
+        let log = GymService.start(title: "Push day", items: template.items, linkedPlanned: nil, templateId: template.id, in: context)
+        let baseline = WorkoutChangeService.baseline(log)
+        // One more bench set, push-ups dropped, curls added.
+        StrengthService.addSet(after: try XCTUnwrap(log.orderedSets.last { $0.exerciseId == bench.exerciseId }), to: log, in: context)
+        GymService.removeExercise(key: try XCTUnwrap(log.orderedSets.first { $0.exerciseId == pushUp.exerciseId }).progressionKey,
+                                  from: log, in: context)
+        GymService.addExercise(GymTemplateItem(exerciseId: "dumbbell-curl", name: "Dumbbell Curl", sets: 3, repsLow: 10, repsHigh: 12),
+                               to: log, in: context)
+        let changes = WorkoutChangeService.changes(since: baseline, log: log, swapped: [])
+        XCTAssertEqual(Set(changes.map(\.id)), ["sets-barbell-bench-press", "removed-push-up", "added-dumbbell-curl"])
+        XCTAssertEqual(WorkoutChangeService.targetName(for: log, context: context), "\u{201C}Push day\u{201D}")
+
+        WorkoutChangeService.keep(changes, log: log, context: context)
+        XCTAssertEqual(template.items.map(\.exerciseId), ["barbell-bench-press", "dumbbell-curl"])
+        XCTAssertEqual(template.items.first?.sets, 4)
+    }
 }

@@ -159,4 +159,16 @@ final class StrengthServiceTests: XCTestCase {
         XCTAssertEqual(session.status, .completed)
         XCTAssertEqual(PlanService.workingWeights(in: context), before, "Weights stay the same")
     }
+
+    func testWeeklyCheckInMakesNextWeekLighter() throws {
+        let context = try makeContext()
+        let sessions = try context.fetch(FetchDescriptor<PlannedSessionModel>(sortBy: [SortDescriptor(\.date)]))
+            .filter { !$0.isSoftDeleted && $0.status == .planned }
+        let gym = try XCTUnwrap(sessions.first { $0.strengthPrescription?.exercises.contains { $0.role == .accessory && $0.sets > 2 } == true })
+        let setsBefore = gym.strengthPrescription!.exercises.reduce(0) { $0 + $1.sets }
+        let changed = WeeklyCheckInService.adjust([gym], feel: .tooMuch, in: context)
+        XCTAssertEqual(changed, 1)
+        XCTAssertLessThan(gym.strengthPrescription!.exercises.reduce(0) { $0 + $1.sets }, setsBefore)
+        XCTAssertEqual(WeeklyCheckInService.adjust([gym], feel: .aboutRight, in: context), 0)
+    }
 }

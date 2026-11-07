@@ -51,6 +51,8 @@ final class UserProfileModel: SyncTracked {
     /// Encoded `[Int: OwnGymWorkout]` (Gym 1, Gym 2…) and `[RunRole: CustomRunWorkout]`.
     var ownGymWorkoutsData: Data?
     var ownRunWorkoutsData: Data?
+    /// Encoded `[String: PlanDayChange]`: changes to plan gym days kept for next time.
+    var planDayChangesData: Data?
 
     init(profile: AthleteProfile, id: UUID = UUID(), now: Date = .now) {
         self.id = id
@@ -86,6 +88,7 @@ final class UserProfileModel: SyncTracked {
         self.planStyleRaw = profile.planStyle?.rawValue
         self.ownGymWorkoutsData = profile.ownGymWorkouts.map { StoredJSON.encode($0) }
         self.ownRunWorkoutsData = profile.ownRunWorkouts.map { StoredJSON.encode($0) }
+        self.planDayChangesData = profile.planDayChanges.map { StoredJSON.encode($0) }
     }
 
     /// The engine's view of this profile.
@@ -121,6 +124,7 @@ final class UserProfileModel: SyncTracked {
             .withPlanStyle(planStyleRaw.flatMap(PlanStyle.init(rawValue:)),
                            gym: StoredJSON.decode([Int: OwnGymWorkout].self, from: ownGymWorkoutsData),
                            runs: StoredJSON.decode([RunRole: CustomRunWorkout].self, from: ownRunWorkoutsData))
+            .withPlanDayChanges(StoredJSON.decode([String: PlanDayChange].self, from: planDayChangesData))
         }
         set {
             runningExperienceRaw = newValue.runningExperience.rawValue
@@ -151,6 +155,7 @@ final class UserProfileModel: SyncTracked {
             planStyleRaw = newValue.planStyle?.rawValue
             ownGymWorkoutsData = newValue.ownGymWorkouts.map { StoredJSON.encode($0) }
             ownRunWorkoutsData = newValue.ownRunWorkouts.map { StoredJSON.encode($0) }
+            planDayChangesData = newValue.planDayChanges.map { StoredJSON.encode($0) }
             touch()
         }
     }
@@ -159,6 +164,12 @@ final class UserProfileModel: SyncTracked {
 }
 
 extension AthleteProfile {
+    func withPlanDayChanges(_ changes: [String: PlanDayChange]?) -> AthleteProfile {
+        var copy = self
+        copy.planDayChanges = changes
+        return copy
+    }
+
     func withPlanStyle(_ style: PlanStyle?, gym: [Int: OwnGymWorkout]?, runs: [RunRole: CustomRunWorkout]?) -> AthleteProfile {
         var copy = self
         copy.planStyle = style

@@ -64,6 +64,16 @@ enum StrengthBuilder {
                                 accessory: SetScheme(sets: 3, repsLow: 8, repsHigh: 12, restSeconds: 75))
         var exercises: [ExercisePrescription] = []
         var used = Set<String>()
+        // What they've changed on this day and kept.
+        let change = context.profile.planDayChanges?[session.name]
+        func adjusted(_ sets: Int) -> Int {
+            if context.week.phase == .taper {
+                return max(1, Int((Double(sets) * templates.strength.taperSetMultiplier).rounded()))
+            } else if context.week.isRecoveryWeek {
+                return max(2, sets - 1)
+            }
+            return sets
+        }
 
         for slot in session.slots {
             guard var exercise = templates.exercise(for: slot, equipment: context.profile.equipment) else { continue }
@@ -74,6 +84,7 @@ enum StrengthBuilder {
             }
             guard !used.contains(exercise.id) else { continue }
             used.insert(exercise.id)
+            if change?.removed.contains(exercise.id) == true { continue }
 
             var scheme = slot.role == .main ? goalPrescription.main : goalPrescription.accessory
             // The coach's sets/reps/rest for this exercise, where written.
@@ -81,12 +92,8 @@ enum StrengthBuilder {
             if let low = slot.repsLow { scheme.repsLow = low }
             if let high = slot.repsHigh { scheme.repsHigh = max(high, scheme.repsLow) }
             if let rest = slot.restSeconds { scheme.restSeconds = rest }
-            var sets = scheme.sets
-            if context.week.phase == .taper {
-                sets = max(1, Int((Double(sets) * templates.strength.taperSetMultiplier).rounded()))
-            } else if context.week.isRecoveryWeek {
-                sets = max(2, sets - 1)
-            }
+            if let kept = change?.sets[exercise.id] { scheme.sets = kept }
+            let sets = adjusted(scheme.sets)
 
             let reps: RepRange
             let weight: Double?
@@ -112,6 +119,19 @@ enum StrengthBuilder {
                 weightKg: weight,
                 restSeconds: scheme.restSeconds
             ))
+        }
+        // Exercises they added to this day and kept.
+        for item in change?.added ?? [] where used.insert(item.exerciseId).inserted {
+            let definition = templates.exercise(id: item.exerciseId)
+            let reps = RepRange(item.repsLow, item.repsHigh)
+            var weight: Double?
+            if !item.isBodyweight {
+                weight = context.workingWeights["\(item.exerciseId).accessory"]
+                    ?? definition.flatMap { startingWeight(for: $0, role: .accessory, reps: reps, profile: context.profile) } ?? 0
+            }
+            exercises.append(ExercisePrescription(exerciseId: item.exerciseId, name: item.name, role: .accessory,
+                                                  sets: adjusted(change?.sets[item.exerciseId] ?? item.sets), repRange: reps,
+                                                  weightKg: weight, restSeconds: item.restSeconds))
         }
         return StrengthPrescription(exercises: exercises)
     }

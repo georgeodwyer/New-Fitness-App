@@ -18,19 +18,29 @@ enum WhatsNew {
     }
 
     static let releases: [Release] = [
-        Release(id: "2026-11-functional-2", title: "What's new", items: [
+        Release(id: "2026-11-feedback-1", title: "What's new", items: [
             Item(symbol: "figure.strengthtraining.functional", title: "Functional workouts",
                  detail: "Circuits and Hyrox in the Workout tab: rounds, intervals, EMOM and AMRAP, with run pace targets and the Apple Watch."),
+            Item(symbol: "books.vertical", title: "Workout bank",
+                 detail: "Browse every Kinetix gym session in the Workout tab and start one, or save it as your own."),
+            Item(symbol: "chart.line.uptrend.xyaxis", title: "Progress for your lifts",
+                 detail: "Graphs for your main lifts (or ones you choose), and every lift listed by name."),
+            Item(symbol: "trophy", title: "Achievements",
+                 detail: "Earn badges for check-ins, runs, distance, gym sessions, records and weeks in a row. See them in Settings."),
+            Item(symbol: "arrow.triangle.2.circlepath", title: "Keep your changes",
+                 detail: "Added an exercise or a set? The summary asks whether to keep it for next time."),
+            Item(symbol: "bubble.left.and.text.bubble.right", title: "Weekly check-in",
+                 detail: "Tell Kinetix how the week went and it can make next week lighter or a little harder."),
             Item(symbol: "plus.circle", title: "Extra rest on the watch",
                  detail: "In a run's recovery, tap +30 S on the watch for more rest."),
             Item(symbol: "dumbbell", title: "Gym sessions carry on from last time",
-                 detail: "Your own gym days now fill in the sets, reps and weights you did last time."),
+                 detail: "Your own gym days fill in the sets, reps and weights you did last time."),
+            Item(symbol: "heart.text.square", title: "Recovery without a watch",
+                 detail: "Your check-in now makes the whole score when there's no watch data, and a really bad answer always shows."),
             Item(symbol: "ellipsis.circle", title: "A tidier Plan tab",
                  detail: "Week review, rearrange, build my plan and pause are in the ••• menu at the top."),
-            Item(symbol: "speaker.wave.2", title: "Audio fixes",
-                 detail: "Music comes back to full volume after a cue, and paces are read out properly."),
-            Item(symbol: "slider.horizontal.3", title: "Check-in sliders",
-                 detail: "Every slider now goes from worst on the left to best on the right.")
+            Item(symbol: "speaker.wave.2", title: "Fixes",
+                 detail: "Music comes back to full volume after a cue, paces are read out properly, check-in sliders all run worst to best, and Rearrange week has Cancel.")
         ])
     ]
 

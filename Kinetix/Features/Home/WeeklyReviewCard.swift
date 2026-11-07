@@ -151,6 +151,10 @@ struct WeeklyReviewCard: View {
                     }
                 }
             }
+            if WeeklyReviewData.isReviewTime() {
+                Divider().overlay(KXColor.border)
+                WeeklyCheckInView(weekStart: data.weekStart, nextWeek: data.nextWeek)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .kxCard()

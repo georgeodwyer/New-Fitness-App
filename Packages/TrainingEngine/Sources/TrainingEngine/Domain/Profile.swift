@@ -159,6 +159,9 @@ public struct AthleteProfile: Codable, Equatable, Sendable {
     public var ownGymWorkouts: [Int: OwnGymWorkout]?
     /// Their own run workouts linked to run roles (long, quality, easy).
     public var ownRunWorkouts: [RunRole: CustomRunWorkout]?
+    /// Changes to a plan gym day kept for next time ("Push" → an extra exercise, 4 sets of
+    /// bench instead of 3, curls dropped), by the day's name.
+    public var planDayChanges: [String: PlanDayChange]?
 
     public var style: PlanStyle { planStyle ?? .kinetix }
 
@@ -259,6 +262,7 @@ extension AthleteProfile {
         if style != other.style { changes.append("plan type") }
         if ownGymWorkouts != other.ownGymWorkouts { changes.append("your gym workouts") }
         if ownRunWorkouts != other.ownRunWorkouts { changes.append("your run workouts") }
+        if planDayChanges != other.planDayChanges { changes.append("your gym days") }
         return changes
     }
 }

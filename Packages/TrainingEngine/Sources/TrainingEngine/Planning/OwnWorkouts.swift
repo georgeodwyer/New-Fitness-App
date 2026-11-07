@@ -174,3 +174,20 @@ public enum OwnWorkouts {
         return result
     }
 }
+
+/// A plan gym day as they like it: exercises added, sets changed, exercises dropped. Applied
+/// every week when the day's session is built.
+public struct PlanDayChange: Codable, Equatable, Sendable {
+    public var added: [GymTemplateItem]
+    /// Exercise id → sets.
+    public var sets: [String: Int]
+    public var removed: [String]
+
+    public init(added: [GymTemplateItem] = [], sets: [String: Int] = [:], removed: [String] = []) {
+        self.added = added
+        self.sets = sets
+        self.removed = removed
+    }
+
+    public var isEmpty: Bool { added.isEmpty && sets.isEmpty && removed.isEmpty }
+}
