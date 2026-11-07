@@ -14,6 +14,8 @@ struct RootView: View {
     /// A run that was recording when Kinetix stopped, offered to save or discard.
     @State private var interruptedRun: RunLogModel?
     @State private var showStoreRecovered = Persistence.recoveredFromBrokenStore
+    /// "What's new" after an update (once per release).
+    @State private var whatsNew: WhatsNew.Release?
 
     var body: some View {
         ZStack {
@@ -31,6 +33,16 @@ struct RootView: View {
             let seconds = LaunchOptions().isUITesting ? 0.2 : 1.4
             try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
             withAnimation(.easeOut(duration: 0.35)) { showSplash = false }
+            if !LaunchOptions().isUITesting {
+                whatsNew = WhatsNew.pending(isNewInstall: profiles.isEmpty)
+            }
+        }
+        .sheet(item: $whatsNew) { release in
+            WhatsNewView(release: release) {
+                WhatsNew.markSeen(release)
+                whatsNew = nil
+            }
+            .interactiveDismissDisabled()
         }
         .environment(router)
         .tint(KXColor.accent)

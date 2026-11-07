@@ -189,7 +189,17 @@ struct RunLiveView: View {
                 HStack(alignment: .lastTextBaseline) {
                     heartRateReading
                     Spacer(minLength: 4)
-                    if let next = snapshot?.nextSegment {
+                    if workout.canAddRest {
+                        Button {
+                            workout.addRest()
+                        } label: {
+                            Text("+30 S").font(WatchFont.title(14)).foregroundStyle(.black)
+                                .padding(.horizontal, 10).padding(.vertical, 5)
+                                .background(WatchColor.run, in: Capsule())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("30 seconds more rest")
+                    } else if let next = snapshot?.nextSegment {
                         VStack(alignment: .trailing, spacing: 0) {
                             Text("NEXT").font(WatchFont.unit).foregroundStyle(WatchColor.inkSecondary)
                             Text(next.label ?? next.kind.displayName).font(WatchFont.title(13)).lineLimit(1)
@@ -205,7 +215,7 @@ struct RunLiveView: View {
             status(snapshot)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .contain)
     }
 
     /// "168 BPM · Z4", coloured by zone.

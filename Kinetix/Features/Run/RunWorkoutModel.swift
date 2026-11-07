@@ -217,6 +217,16 @@ final class RunWorkoutModel {
         publishToWatch()
     }
 
+    /// In a recovery step: 30 seconds more rest.
+    var canAddRest: Bool { phase == .running && engine.canAddRest }
+
+    func addRest() {
+        guard engine.addRest(seconds: 30, at: clockNow()) else { return }
+        snapshot = engine.snapshot()
+        voice.speak("30 seconds more rest.")
+        publishToWatch()
+    }
+
     // MARK: Track mode
 
     /// The GPS looks like a running track and track mode isn't on: offered on the run screen.
@@ -420,6 +430,7 @@ final class RunWorkoutModel {
         case .lap: markLap()
         case .undo: undoLastControl()
         case .startSet, .finishSet, .sync, .next: break // gym / functional only, or handled by the mirror link
+        case .addRest: addRest()
         case .useTrack: useTrack(lane: trackLane)
         case .stopTrack: stopTrack()
         case .end: watchEndRequests += 1

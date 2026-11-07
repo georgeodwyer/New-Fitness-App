@@ -1,44 +1,91 @@
 import SwiftUI
 import SwiftData
+import Charts
 import TrainingEngine
 
-/// Strength progress: weekly volume, each lift's working weight and best, and every session.
+/// Strength progress: the lifts they track (estimated 1-rep max over time), weekly volume,
+/// every lift they've done, and every session.
 struct StrengthProgressView: View {
     let units: UnitSystem
 
-    @Query(sort: \ExerciseStateModel.exerciseName) private var states: [ExerciseStateModel]
-    @Query private var records: [PersonalRecordModel]
     @Query(filter: #Predicate<StrengthLogModel> { $0.isFinished }, sort: \StrengthLogModel.startedAt, order: .reverse)
     private var workouts: [StrengthLogModel]
+    @Query(filter: #Predicate<SetLogModel> { $0.completedAt != nil }) private var doneSets: [SetLogModel]
+    @Query(filter: #Predicate<CustomExerciseModel> { $0.deletedAt == nil }) private var customExercises: [CustomExerciseModel]
+    /// The lifts shown with graphs (exercise ids, comma separated); empty = the main lifts.
+    @AppStorage("progress.trackedLifts") private var trackedRaw = ""
+    @State private var choosing = false
 
     private var format: DisplayFormat { DisplayFormat(units: units) }
     private var finished: [StrengthLogModel] { workouts.filter { !$0.isSoftDeleted } }
 
-    /// One row per exercise (main role preferred), only for exercises that have been trained.
-    private var trainedLifts: [ExerciseStateModel] {
-        let trained = Set(records.map(\.recordKey))
-        var seen = Set<String>()
-        return states
-            .filter { !$0.isSoftDeleted && trained.contains($0.exerciseId) }
-            .sorted { lhs, rhs in lhs.progressionKey.hasSuffix(".main") && !rhs.progressionKey.hasSuffix(".main") }
-            .filter { seen.insert($0.exerciseId).inserted }
-            .sorted { $0.exerciseName < $1.exerciseName }
+    /// Shown first when they haven't chosen: the big lifts.
+    static let mainLifts = ["barbell-back-squat", "barbell-bench-press", "barbell-deadlift", "barbell-overhead-press"]
+
+    /// One lift's history: its best estimated 1RM each session.
+    struct Lift: Identifiable {
+        let id: String
+        let name: String
+        let points: [(date: Date, e1rm: Double)]
+        let isBodyweight: Bool
+        let sessions: Int
+        var best: Double? { points.map(\.e1rm).max() }
+        var latest: Double? { points.last?.e1rm }
+        /// Change over the last 12 weeks (latest against the first in that time).
+        var change: Double? {
+            let since = Date.now.addingTimeInterval(-84 * 86_400)
+            guard let first = points.first(where: { $0.date >= since }), let latest, points.count >= 2 else { return nil }
+            return latest - first.e1rm
+        }
     }
 
-    private func best(_ kind: RecordKind, for exerciseId: String) -> Double? {
-        records.first { $0.recordKey == exerciseId && $0.kindRaw == kind.rawValue && !$0.isSoftDeleted }?.value
+    private func name(of id: String, fallback: String) -> String {
+        if let library = PlanService.templates.exercise(id: id) { return library.name }
+        if let custom = customExercises.first(where: { $0.exerciseId == id }) { return custom.name }
+        return fallback.isEmpty ? id.replacingOccurrences(of: "-", with: " ").capitalized : fallback
+    }
+
+    /// Every lift done, most-done first.
+    private var lifts: [Lift] {
+        let sets = doneSets.filter { set in
+            guard let session = set.session else { return false }
+            return !set.isSoftDeleted && !session.isSoftDeleted && session.isFinished
+        }
+        return Dictionary(grouping: sets, by: \.exerciseId).map { id, sets in
+            let bySession = Dictionary(grouping: sets) { $0.session?.id }
+            let points = bySession.values.compactMap { group -> (date: Date, e1rm: Double)? in
+                guard let date = group.first?.session?.startedAt else { return nil }
+                let best = group.map { StrengthMath.estimatedOneRepMax(weightKg: $0.actualWeightKg, reps: $0.actualReps) }.max() ?? 0
+                return best > 0 ? (date, best) : nil
+            }.sorted { $0.date < $1.date }
+            let fallback = sets.first { !$0.exerciseName.isEmpty }?.exerciseName ?? ""
+            return Lift(id: id, name: name(of: id, fallback: fallback), points: points,
+                        isBodyweight: sets.allSatisfy(\.isBodyweight), sessions: bySession.count)
+        }
+        .sorted { $0.sessions != $1.sessions ? $0.sessions > $1.sessions : $0.name < $1.name }
+    }
+
+    private var trackedIds: [String] {
+        let chosen = trackedRaw.split(separator: ",").map(String.init)
+        if !chosen.isEmpty { return chosen }
+        let done = Set(lifts.map(\.id))
+        let main = Self.mainLifts.filter(done.contains)
+        return main.isEmpty ? Array(lifts.filter { !$0.isBodyweight }.prefix(3).map(\.id)) : main
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: KXSpacing.xl) {
+            trackedSection
             WeeklyBarChart(title: "Weekly volume", weeks: weeklyVolume, unitLabel: format.volumeUnit,
                            seriesName: "Lifting", color: KXColor.lift, valueFormatter: { format.volume($0) },
                            scale: { units == .metric ? $0 / 1000 : Units.kgToLb($0) })
             liftsSection
             historyCard
         }
-        .navigationDestination(for: ExerciseStateModel.self) { state in
-            ExerciseHistoryView(exerciseId: state.exerciseId, name: state.exerciseName)
+        .sheet(isPresented: $choosing) {
+            ChooseLiftsSheet(lifts: lifts.map { ($0.id, $0.name) }, selected: Set(trackedIds)) { ids in
+                trackedRaw = ids.joined(separator: ",")
+            }
         }
     }
 
@@ -46,26 +93,60 @@ struct StrengthProgressView: View {
         TrainingHistory.weekly(finished.map { (date: $0.startedAt, value: $0.volumeKg) }, weeks: 12, today: .now, calendar: .kinetix)
     }
 
+    // MARK: Tracked lifts
+
+    private var trackedSection: some View {
+        let byId = Dictionary(lifts.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+        let tracked = trackedIds.compactMap { byId[$0] }
+        return VStack(alignment: .leading, spacing: KXSpacing.md) {
+            KXSectionHeader("Your lifts", subtitle: "Estimated 1-rep max, best set each session") {
+                Button("Choose") { choosing = true }
+                    .font(KXFont.captionEmphasis)
+                    .foregroundStyle(KXColor.accent)
+                    .disabled(lifts.isEmpty)
+                    .accessibilityIdentifier("progress.chooseLifts")
+            }
+            if tracked.isEmpty {
+                KXEmptyState(symbol: "chart.line.uptrend.xyaxis", title: "No lifts to show yet",
+                             message: "Finish a gym session and your squat, bench, deadlift and overhead press show here with a graph. Tap Choose to pick others.")
+            }
+            ForEach(tracked) { lift in
+                NavigationLink {
+                    ExerciseHistoryView(exerciseId: lift.id, name: lift.name)
+                } label: {
+                    LiftTrendRow(lift: lift, format: format, units: units)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("progress.trackedLift")
+            }
+        }
+        .kxCard()
+    }
+
+    // MARK: All lifts
+
     private var liftsSection: some View {
         VStack(alignment: .leading, spacing: KXSpacing.md) {
-            KXSectionHeader("Lifts", subtitle: "Working weight and best estimated 1-rep max")
-            if trainedLifts.isEmpty {
+            KXSectionHeader("All lifts", subtitle: "\(lifts.count) exercise\(lifts.count == 1 ? "" : "s") · tap for history")
+            if lifts.isEmpty {
                 KXEmptyState(symbol: "dumbbell", title: "No lifts yet",
-                             message: "Finish a strength session to see your working weights, records and progress here.")
+                             message: "Finish a strength session to see your lifts, records and progress here.")
             }
-            ForEach(trainedLifts) { state in
-                NavigationLink(value: state) {
+            ForEach(lifts) { lift in
+                NavigationLink {
+                    ExerciseHistoryView(exerciseId: lift.id, name: lift.name)
+                } label: {
                     HStack {
                         VStack(alignment: .leading, spacing: KXSpacing.xxs) {
-                            Text(state.exerciseName).font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink)
-                            Text("Working \(format.weight(state.workingWeightKg))")
+                            Text(lift.name).font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink)
+                            Text("\(lift.sessions) session\(lift.sessions == 1 ? "" : "s")")
                                 .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
                         }
                         Spacer()
-                        if let e1rm = best(.estimatedOneRepMax, for: state.exerciseId) {
+                        if let best = lift.best, !lift.isBodyweight {
                             VStack(alignment: .trailing, spacing: 0) {
-                                Text(format.weight(e1rm)).font(KXFont.bodyEmphasis.monospacedDigit()).foregroundStyle(KXColor.ink)
-                                Text("est. 1RM").font(KXFont.caption2).foregroundStyle(KXColor.inkSecondary)
+                                Text(format.weight(best)).font(KXFont.bodyEmphasis.monospacedDigit()).foregroundStyle(KXColor.ink)
+                                Text("best est. 1RM").font(KXFont.caption2).foregroundStyle(KXColor.inkSecondary)
                             }
                         }
                         Image(systemName: "chevron.right").font(KXFont.caption).foregroundStyle(KXColor.inkTertiary)
@@ -130,6 +211,101 @@ struct StrengthProgressView: View {
             }
         }
         .kxCard()
+    }
+}
+
+/// A tracked lift: name, latest and best estimated 1RM, change over 12 weeks and a small graph.
+private struct LiftTrendRow: View {
+    let lift: StrengthProgressView.Lift
+    let format: DisplayFormat
+    let units: UnitSystem
+
+    private func display(_ kg: Double) -> Double { units == .metric ? kg : Units.kgToLb(kg) }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: KXSpacing.xs) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(lift.name).font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink)
+                Spacer()
+                if let latest = lift.latest {
+                    Text(format.weight(latest)).font(KXFont.bodyEmphasis.monospacedDigit()).foregroundStyle(KXColor.ink)
+                }
+                Image(systemName: "chevron.right").font(KXFont.caption).foregroundStyle(KXColor.inkTertiary).accessibilityHidden(true)
+            }
+            HStack(spacing: KXSpacing.sm) {
+                if let best = lift.best { Text("Best \(format.weight(best))") }
+                if let change = lift.change, abs(change) >= 0.5 {
+                    Text("\(change > 0 ? "▲" : "▼") \(format.weight(abs(change))) in 12 weeks")
+                        .foregroundStyle(change > 0 ? KXColor.success : KXColor.warning)
+                }
+            }
+            .font(KXFont.caption)
+            .foregroundStyle(KXColor.inkSecondary)
+            if lift.points.count >= 2 {
+                Chart(Array(lift.points.suffix(20).enumerated()), id: \.offset) { _, point in
+                    LineMark(x: .value("Date", point.date), y: .value("Est. 1RM", display(point.e1rm)))
+                        .foregroundStyle(KXColor.lift)
+                        .interpolationMethod(.monotone)
+                    PointMark(x: .value("Date", point.date), y: .value("Est. 1RM", display(point.e1rm)))
+                        .foregroundStyle(KXColor.lift)
+                        .symbolSize(18)
+                }
+                .chartYScale(domain: .automatic(includesZero: false))
+                .chartXAxis(.hidden)
+                .frame(height: 70)
+                .accessibilityHidden(true)
+            } else {
+                Text("A graph appears after two sessions.").font(KXFont.caption).foregroundStyle(KXColor.inkTertiary)
+            }
+        }
+        .padding(.vertical, KXSpacing.xs)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+    }
+}
+
+/// Pick the lifts shown with graphs.
+private struct ChooseLiftsSheet: View {
+    let lifts: [(id: String, name: String)]
+    @State var selected: Set<String>
+    let onSave: ([String]) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    ForEach(lifts, id: \.id) { lift in
+                        Button {
+                            if selected.contains(lift.id) { selected.remove(lift.id) } else { selected.insert(lift.id) }
+                        } label: {
+                            HStack {
+                                Text(lift.name).foregroundStyle(KXColor.ink)
+                                Spacer()
+                                if selected.contains(lift.id) {
+                                    Image(systemName: "checkmark").foregroundStyle(KXColor.accent)
+                                }
+                            }
+                        }
+                    }
+                } footer: {
+                    Text("Your lifts show at the top of Progress with a graph of your estimated 1-rep max.")
+                }
+            }
+            .navigationTitle("Choose lifts")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        // Keep the order of the list (most done first).
+                        onSave(lifts.map(\.id).filter(selected.contains))
+                        dismiss()
+                    }
+                    .disabled(selected.isEmpty)
+                }
+            }
+        }
     }
 }
 

@@ -27,6 +27,26 @@ final class RunEngineTests: XCTestCase {
         RunStructure(segments: [RunSegment(kind: .steady, length: .distance(meters: meters), targetPace: target ?? self.target, label: "Tempo")])
     }
 
+    // MARK: Extra rest
+
+    func testExtraRestLengthensATimedRecovery() {
+        let structure = RunStructure(segments: [
+            RunSegment(kind: .recovery, length: .duration(seconds: 60)),
+            RunSegment(kind: .work, length: .duration(seconds: 60))
+        ])
+        var engine = RunEngine(structure: structure)
+        _ = engine.start(at: start)
+        _ = engine.tick(at: start.addingTimeInterval(30))
+        XCTAssertTrue(engine.canAddRest)
+        XCTAssertTrue(engine.addRest(at: start.addingTimeInterval(30)))
+        _ = engine.tick(at: start.addingTimeInterval(70))
+        XCTAssertEqual(engine.snapshot().segment?.kind, .recovery, "Still resting after the original 60 s")
+        _ = engine.tick(at: start.addingTimeInterval(91))
+        XCTAssertEqual(engine.snapshot().segment?.kind, .work)
+        XCTAssertFalse(engine.canAddRest)
+        XCTAssertFalse(engine.addRest(at: start.addingTimeInterval(92)), "Only in a recovery")
+    }
+
     // MARK: Distance, smoothing, splits
 
     func testDistanceAccurateWithRealisticGPSNoise() {
@@ -85,7 +105,7 @@ final class RunEngineTests: XCTestCase {
         XCTAssertEqual(found.count, 2, "\(found.map(\.0))")
         XCTAssertTrue(found.allSatisfy { $0.1.direction == .tooFast })
         XCTAssertTrue(found[0].1.message.hasPrefix("Ease off, you're running too fast"))
-        XCTAssertTrue(found[0].1.message.contains("4:40 to 4:50 per kilometre"))
+        XCTAssertTrue(found[0].1.message.contains("4 40 to 4 50 per kilometre"))
         // The 10 s average takes a few seconds to cross the threshold, then 20 s must pass.
         XCTAssertGreaterThanOrEqual(found[0].0, 80)
         XCTAssertLessThan(found[0].0, 95)
@@ -257,7 +277,7 @@ final class RunEngineTests: XCTestCase {
         _ = engine.start(at: start)
         let events = engine.skipSegment(at: start.addingTimeInterval(30))
         XCTAssertEqual(engine.snapshot().segmentIndex, 1)
-        XCTAssertTrue(events.first?.announcement.hasPrefix("Main set. 1 kilometre at 4:40 to 4:50 per kilometre") ?? false)
+        XCTAssertTrue(events.first?.announcement.hasPrefix("Main set. 1 kilometre at 4 40 to 4 50 per kilometre") ?? false)
     }
 
     func testManualLapsOnAFreeRun() {
@@ -386,5 +406,15 @@ final class AnnouncerTests: XCTestCase {
         XCTAssertEqual(Announcer.distanceText(800, units: .metric), "800 metres")
         XCTAssertEqual(Announcer.distanceText(5000, units: .metric), "5 kilometres")
         XCTAssertEqual(Announcer.distanceText(1609.344, units: .imperial), "1 mile")
+    }
+
+    func testPacesAndTimesAreNeverReadAsClockTimes() {
+        XCTAssertEqual(Announcer.paceText(Pace(secondsPerKm: 300), units: .metric), "5 minutes")
+        XCTAssertEqual(Announcer.paceText(Pace(secondsPerKm: 270), units: .metric), "4 30")
+        XCTAssertEqual(Announcer.paceText(Pace(secondsPerKm: 245), units: .metric), "4 oh 5")
+        XCTAssertEqual(Announcer.spokenTime(252), "4 minutes 12 seconds")
+        XCTAssertEqual(Announcer.spokenTime(3720), "1 hour 2 minutes")
+        XCTAssertFalse(Announcer.paceCue(.tooSlow, target: PaceRange(fastest: Pace(secondsPerKm: 300), slowest: Pace(secondsPerKm: 300)),
+                                         units: .metric).contains(":"))
     }
 }

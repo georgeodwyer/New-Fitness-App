@@ -17,6 +17,10 @@ struct WeekRearrangeView: View {
     @State private var message: String?
     @State private var warning: String?
     @State private var targeted: Date?
+    /// The two weeks as they were when this opened, for Cancel.
+    @State private var original: [UUID: SessionRestorePoint] = [:]
+    @State private var openedAt = Date()
+    @State private var confirmCancel = false
 
     private let calendar = Calendar.kinetix
     private var today: Date { calendar.startOfDay(for: .now) }
@@ -74,8 +78,21 @@ struct WeekRearrangeView: View {
             .background(KXColor.background.ignoresSafeArea())
             .navigationTitle("Rearrange week")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { if hasChanges { confirmCancel = true } else { dismiss() } }
+                        .accessibilityIdentifier("rearrange.cancel")
+                }
+                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
+            }
             .onChange(of: weekOffset) { _, _ in message = nil; warning = nil }
+            .onAppear(perform: rememberWeeks)
+            .confirmationDialog("Undo your changes?", isPresented: $confirmCancel, titleVisibility: .visible) {
+                Button("Undo changes", role: .destructive) { cancelChanges() }
+                Button("Keep changes") { dismiss() }
+            } message: {
+                Text("Puts this week and next back as they were before you opened this.")
+            }
         }
         .tint(KXColor.accent)
     }
@@ -160,6 +177,40 @@ struct WeekRearrangeView: View {
         }
         if session.slot == .evening { parts.append("evening") }
         return parts.joined(separator: " · ")
+    }
+
+    // MARK: Cancel
+
+    /// This week and next, from Monday: the sessions Rearrange can change.
+    private var twoWeeks: [PlannedSessionModel] {
+        let monday = calendar.startOfISOWeek(for: today)
+        let end = calendar.date(byAdding: .day, value: 14, to: monday) ?? monday
+        let activeID = plans.first?.id
+        return sessions.filter { !$0.isSoftDeleted && $0.plan?.id == activeID && $0.date >= monday && $0.date < end }
+    }
+
+    private func rememberWeeks() {
+        guard original.isEmpty else { return }
+        openedAt = Date()
+        original = Dictionary(twoWeeks.map { ($0.id, SessionRestorePoint($0)) }, uniquingKeysWith: { first, _ in first })
+    }
+
+    private var hasChanges: Bool {
+        sessions.contains { session in original[session.id].map { $0 != SessionRestorePoint(session) } ?? false }
+    }
+
+    /// Puts both weeks back as they were and drops the change notes made since.
+    private func cancelChanges() {
+        for session in sessions {
+            guard let point = original[session.id], point != SessionRestorePoint(session) else { continue }
+            point.restore(session)
+        }
+        let start = openedAt
+        let notes = (try? context.fetch(FetchDescriptor<PlanChangeModel>(predicate: #Predicate { $0.createdAt >= start }))) ?? []
+        for note in notes where !note.isSoftDeleted { note.softDelete() }
+        try? context.save()
+        SyncService.shared.requestSync()
+        dismiss()
     }
 
     private func drop(_ id: UUID, on day: Date) -> Bool {

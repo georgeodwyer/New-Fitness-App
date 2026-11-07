@@ -2,8 +2,22 @@ import Foundation
 
 /// Builds the spoken phrases. Written to sound natural through text-to-speech.
 public enum Announcer {
+    /// A pace as it should be said: "4 30", "4 oh 5", "5 minutes". (Written "5:00", speech
+    /// reads it as a time of day: "five o'clock".)
     public static func paceText(_ pace: Pace, units: UnitSystem) -> String {
-        Units.formatPace(pace, units: units)
+        let total = Int(pace.seconds(per: units).rounded())
+        let minutes = total / 60, seconds = total % 60
+        if seconds == 0 { return minutes == 1 ? "1 minute" : "\(minutes) minutes" }
+        return seconds < 10 ? "\(minutes) oh \(seconds)" : "\(minutes) \(seconds)"
+    }
+
+    /// A time as it should be said ("4 minutes 12 seconds", "1 hour 2 minutes").
+    public static func spokenTime(_ seconds: Double) -> String {
+        let total = Int(seconds.rounded())
+        guard total >= 3600 else { return durationText(Double(total)) }
+        let hours = total / 3600, minutes = (total % 3600) / 60
+        let h = hours == 1 ? "1 hour" : "\(hours) hours"
+        return minutes == 0 ? h : "\(h) \(minutes) minute\(minutes == 1 ? "" : "s")"
     }
 
     static func perUnit(_ units: UnitSystem) -> String {
@@ -83,12 +97,12 @@ public enum Announcer {
 
     public static func split(_ split: Split, units: UnitSystem) -> String {
         let unit = units == .metric ? "Kilometre" : "Mile"
-        return "\(unit) \(split.index). \(Units.formatMinutesSeconds(split.durationSeconds)). Average pace \(paceText(split.averagePace, units: units)) \(perUnit(units))."
+        return "\(unit) \(split.index). \(spokenTime(split.durationSeconds)). Average pace \(paceText(split.averagePace, units: units)) \(perUnit(units))."
     }
 
     public static func lap(_ lap: Lap, units: UnitSystem) -> String {
         let pace = lap.pace.map { " Pace \(paceText($0, units: units)) \(perUnit(units))." } ?? ""
-        return "Lap \(lap.index). \(Units.formatMinutesSeconds(lap.durationSeconds)).\(pace)"
+        return "Lap \(lap.index). \(spokenTime(lap.durationSeconds)).\(pace)"
     }
 
     public static let undone = "Undone."

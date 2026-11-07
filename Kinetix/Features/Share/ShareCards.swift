@@ -273,12 +273,11 @@ struct ShareCardView: View {
                 if options.heartRate, details.hasHeartRate { heartRatePanel(details) }
                 if options.effortsAndElevation, details.hasEffortsOrElevation { effortsPanel(details) }
             }
-            Spacer(minLength: 0)
+            // The logo sits just under whatever's last; no background, so it's a sticker.
             brand
         }
         .padding(22)
-        .frame(width: Self.size.width, height: Self.size.height, alignment: .topLeading)
-        .background(CardColor.ground)
+        .frame(width: Self.size.width, alignment: .topLeading)
     }
 
     private func panel<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {

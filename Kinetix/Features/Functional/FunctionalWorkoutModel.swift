@@ -344,7 +344,7 @@ final class FunctionalWorkoutModel {
                 record = FunctionalRecord(session: session)
                 endedAt = endedAt ?? Date()
                 alertWatch(.complete)
-                voice.speak("Workout done. \(Units.formatMinutesSeconds(totalSeconds))")
+                voice.speak("Workout done. \(Announcer.spokenTime(totalSeconds))")
                 haptic(.success)
             }
             return
@@ -370,7 +370,7 @@ final class FunctionalWorkoutModel {
         if let speed = treadmillSpeed(for: station) {
             text += ", treadmill \(speed.replacingOccurrences(of: "km/h", with: "kilometres an hour"))"
         } else if let range = paceRange(for: station) {
-            text += " at \(Units.formatPace(range.fastest, units: units)) pace"
+            text += " at \(Announcer.paceText(range.fastest, units: units)) pace"
         }
         voice.speak(text)
     }
@@ -409,10 +409,10 @@ final class FunctionalWorkoutModel {
         switch position {
         case .onTarget: return
         case .tooSlow:
-            voice.speak("Speed up. Target \(Units.formatPace(range.slowest, units: units))")
+            voice.speak("Speed up. Target \(Announcer.paceText(range.slowest, units: units))")
             alertWatch(.speedUp)
         case .tooFast:
-            voice.speak("Ease off. Target \(Units.formatPace(range.fastest, units: units))")
+            voice.speak("Ease off. Target \(Announcer.paceText(range.fastest, units: units))")
             alertWatch(.easeOff)
         }
         lastPaceCueAt = now

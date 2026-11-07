@@ -60,6 +60,16 @@ struct RecordView: View {
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("record.functional")
 
+                    NavigationLink {
+                        WorkoutBankView()
+                    } label: {
+                        Label("Browse the workout bank", systemImage: "books.vertical")
+                            .font(KXFont.captionEmphasis)
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.kx(.outlined, fullWidth: true))
+                    .accessibilityIdentifier("record.bank")
+
                     // Build your own: saved here, linked to your plan from the Plan tab.
                     HStack(spacing: KXSpacing.sm) {
                         NavigationLink {

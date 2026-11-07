@@ -170,3 +170,58 @@ public struct TemplateLibrary: Sendable {
         }
     }
 }
+
+// MARK: - Workout bank
+
+/// One of Kinetix's gym sessions, ready to start or save as your own.
+public struct BankWorkout: Identifiable, Equatable, Sendable {
+    public var id: String
+    public var name: String
+    public var focus: StrengthFocus
+    public var items: [GymTemplateItem]
+}
+
+/// A split's sessions ("Push / Pull / Legs": Push, Pull, Legs).
+public struct BankGroup: Identifiable, Equatable, Sendable {
+    public var id: String
+    public var name: String
+    /// Who it suits, from the workbook.
+    public var suits: String
+    public var workouts: [BankWorkout]
+}
+
+extension TemplateLibrary {
+    /// Every gym session in Kinetix's splits, with exercises for this equipment and sets/reps
+    /// for this goal (the same choices the plan would make).
+    public func workoutBank(equipment: Equipment, goal: TrainingGoal) -> [BankGroup] {
+        let goalPrescription = prescription(for: goal)
+            ?? GoalPrescription(main: SetScheme(sets: 3, repsLow: 6, repsHigh: 8, restSeconds: 120),
+                                accessory: SetScheme(sets: 3, repsLow: 8, repsHigh: 12, restSeconds: 75))
+        let splits = (programmes.strength?.splits ?? []).filter(\.shown)
+        return splits.map { split in
+            BankGroup(id: split.code, name: split.name, suits: split.suits, workouts: split.days.enumerated().map { index, day in
+                BankWorkout(id: "\(split.code)-\(index)", name: day.name, focus: day.focus,
+                            items: bankItems(day, equipment: equipment, prescription: goalPrescription))
+            })
+        }
+    }
+
+    func bankItems(_ session: StrengthSessionTemplate, equipment: Equipment, prescription: GoalPrescription) -> [GymTemplateItem] {
+        var used = Set<String>()
+        return session.slots.compactMap { slot in
+            guard let exercise = exercise(for: slot, equipment: equipment), used.insert(exercise.id).inserted else { return nil }
+            var scheme = slot.role == .main ? prescription.main : prescription.accessory
+            if let sets = slot.sets { scheme.sets = sets }
+            if let low = slot.repsLow { scheme.repsLow = low }
+            if let high = slot.repsHigh { scheme.repsHigh = max(high, scheme.repsLow) }
+            if let rest = slot.restSeconds { scheme.restSeconds = rest }
+            let bodyweight = exercise.loading == .bodyweight
+            if bodyweight, slot.repsLow == nil, slot.repsHigh == nil {
+                scheme.repsLow = strength.bodyweightReps.repsLow
+                scheme.repsHigh = strength.bodyweightReps.repsHigh
+            }
+            return GymTemplateItem(exerciseId: exercise.id, name: exercise.name, sets: scheme.sets, repsLow: scheme.repsLow,
+                                   repsHigh: scheme.repsHigh, restSeconds: scheme.restSeconds, isBodyweight: bodyweight)
+        }
+    }
+}

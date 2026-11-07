@@ -44,8 +44,8 @@ struct CheckInCard: View {
                         .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Your score logged").font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink)
-                        Text("Sleep \(checkIn.sleep) · " + (checkIn.legSoreness.map { "legs \($0) · upper body \(checkIn.soreness)" }
-                                                             ?? "soreness \(checkIn.soreness)") + " · energy \(checkIn.energy)"
+                        Text("Sleep \(checkIn.sleep) · " + (checkIn.legSoreness.map { "legs \(6 - $0) · upper body \(6 - checkIn.soreness)" }
+                                                             ?? "soreness \(6 - checkIn.soreness)") + " · energy \(checkIn.energy)"
                              + (checkIn.isPoor ? " · plan eased" : ""))
                             .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
                     }
@@ -72,8 +72,10 @@ struct CheckInCard: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityIdentifier("checkIn.sleepSuggestion")
                 }
-                ratingRow("Legs", value: $legSoreness, low: "Fresh", high: "Very sore", symbol: "figure.run")
-                ratingRow("Upper body", value: $soreness, low: "Fresh", high: "Very sore", symbol: "bandage")
+                // Soreness is stored 1 (fresh) to 5 (very sore); shown the other way round so every
+                // slider has the worst on the left and the best on the right.
+                ratingRow("Legs", value: feel($legSoreness), low: "Very sore", high: "Fresh", symbol: "figure.run")
+                ratingRow("Upper body", value: feel($soreness), low: "Very sore", high: "Fresh", symbol: "bandage")
                 ratingRow("Energy", value: $energy, low: "Drained", high: "Buzzing", symbol: "bolt")
                 Button("Save my score") {
                     onSave(RecoveryCheckIn(sleep: sleep, soreness: soreness, energy: energy, legSoreness: legSoreness))
@@ -109,6 +111,11 @@ struct CheckInCard: View {
         .font(KXFont.caption)
         .foregroundStyle(KXColor.ink)
         .accessibilityLabel("Resting heart rate \(signal.description)\(signal.isElevated ? ", higher than usual" : "")")
+    }
+
+    /// Soreness as a "how do they feel" score: 5 = fresh, 1 = very sore.
+    private func feel(_ soreness: Binding<Int>) -> Binding<Int> {
+        Binding(get: { 6 - soreness.wrappedValue }, set: { soreness.wrappedValue = 6 - $0 })
     }
 
     /// A 1–5 slider with the value beside it and what each end means underneath.

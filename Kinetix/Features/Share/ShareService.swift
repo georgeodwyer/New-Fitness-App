@@ -25,7 +25,7 @@ enum ShareService {
                        options: ShareDetailOptions = ShareDetailOptions()) -> UIImage? {
         let renderer = ImageRenderer(content: ShareCardView(data: data, style: style, mapImage: mapImage, photo: photo, options: options))
         renderer.scale = 3
-        renderer.isOpaque = style != .sticker
+        renderer.isOpaque = style != .sticker && style != .details
         return renderer.uiImage
     }
 

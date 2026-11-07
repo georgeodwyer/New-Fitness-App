@@ -36,6 +36,34 @@ final class StrengthServiceTests: XCTestCase {
         XCTAssertEqual(resumed.id, log.id, "An unfinished workout is resumed, not duplicated")
     }
 
+    func testOwnGymDayCarriesOnFromLastTime() throws {
+        let context = try makeContext()
+        // Last time, in their own workout: 4 sets of bench.
+        let bench = GymTemplateItem(exerciseId: "barbell-bench-press", name: "Barbell Bench Press", sets: 3, repsLow: 6, repsHigh: 10)
+        let earlier = GymService.start(title: "Push", items: [bench], linkedPlanned: nil, in: context, now: monday.addingTimeInterval(-7 * 86_400))
+        let key = try XCTUnwrap(earlier.orderedSets.first?.progressionKey)
+        StrengthService.addSet(after: try XCTUnwrap(earlier.orderedSets.last), to: earlier, in: context)
+        for set in earlier.orderedSets where set.progressionKey == key {
+            set.actualWeightKg = 60
+            set.actualReps = 8
+            set.completedAt = monday.addingTimeInterval(-7 * 86_400)
+        }
+        earlier.isFinished = true
+        try context.save()
+
+        // This week's "Gym 1" day with the same workout linked (no plan working weight).
+        let day = PlannedSessionModel(date: monday, slot: .morning, kind: .strength(.push), isKey: false, plannedDurationMinutes: 50,
+                                      plannedEffort: 6, strength: StrengthPrescription(exercises: [
+                                          ExercisePrescription(exerciseId: bench.exerciseId, name: bench.name, role: .main, sets: 3,
+                                                               repRange: RepRange(6, 10), weightKg: 0, restSeconds: 120)
+                                      ]))
+        day.title = "Gym 1 · Push"
+        context.insert(day)
+        let log = StrengthService.startOrResume(day, in: context, now: monday)
+        XCTAssertEqual(log.sets.count, 4, "As many sets as last time")
+        XCTAssertTrue(log.sets.allSatisfy { $0.actualWeightKg == 60 && $0.actualReps == 8 })
+    }
+
     func testRemovingASetRenumbersTheRest() throws {
         let context = try makeContext()
         let session = try XCTUnwrap(strengthSessions(in: context).first)

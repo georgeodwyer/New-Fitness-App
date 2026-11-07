@@ -215,6 +215,28 @@ final class RunWorkoutManager: NSObject {
         snapshot = engine.snapshot()
     }
 
+    // MARK: Extra rest
+
+    /// In a recovery step: "+30 s" gives more rest.
+    var canAddRest: Bool {
+        guard phase == .running else { return false }
+        if isMirroring { return snapshot?.segment?.kind == .recovery && snapshot?.isWaitingForNextStep != true }
+        return engine?.canAddRest ?? false
+    }
+
+    func addRest() {
+        guard canAddRest else { return }
+        if isMirroring {
+            sendToPhone(.command(.addRest))
+        } else if var engine {
+            guard engine.addRest(seconds: 30, at: Date()) else { return }
+            self.engine = engine
+            snapshot = engine.snapshot()
+            if voiceEnabled { speak("30 seconds more rest.") }
+        }
+        WKInterfaceDevice.current().play(.click)
+    }
+
     // MARK: Gestures (double tap, crown) and undo
 
     /// Runs a gesture's action. Skips, laps and pauses can be undone for a few seconds.

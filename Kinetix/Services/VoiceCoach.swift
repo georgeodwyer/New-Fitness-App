@@ -83,8 +83,19 @@ final class VoiceCoach: NSObject, AVSpeechSynthesizerDelegate {
         }
     }
 
-    private func releaseAudio() {
-        // Lets the user's music return to full volume.
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+    /// Lets the user's music return to full volume. Ending the audio session fails while the
+    /// speech is still letting go of it (the music then stays quiet), so try again a few times.
+    private func releaseAudio(attempt: Int = 1) {
+        guard !synthesizer.isSpeaking else { return }
+        do {
+            try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        } catch {
+            guard attempt < 6 else { return }
+            deactivateTask = Task { @MainActor [weak self] in
+                try? await Task.sleep(for: .seconds(0.5))
+                guard let self, !Task.isCancelled else { return }
+                self.releaseAudio(attempt: attempt + 1)
+            }
+        }
     }
 }

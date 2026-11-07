@@ -41,6 +41,8 @@ public enum MirrorCommand: String, Codable, Sendable {
     case useTrack, stopTrack
     /// Functional: this station is done, on to the next.
     case next
+    /// Runs: 30 seconds more rest in this recovery.
+    case addRest
 }
 
 /// What the watch should tap the wrist for.

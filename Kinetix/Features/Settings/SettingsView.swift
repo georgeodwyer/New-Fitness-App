@@ -33,6 +33,11 @@ struct SettingsView: View {
                         .listRowBackground(Color.clear)
                 }
                 Section {
+                    AchievementsCard()
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                }
+                Section {
                     Picker("Appearance", selection: $appearance) {
                         Text("Dark").tag(AppearanceChoice.dark.rawValue)
                         Text("Light").tag(AppearanceChoice.light.rawValue)

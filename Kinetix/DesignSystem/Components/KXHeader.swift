@@ -9,6 +9,8 @@ struct KXScreenHeader: View {
     var onEditDashboard: (() -> Void)?
     /// Shows a calendar button (Plan).
     var onCalendar: (() -> Void)? = nil
+    /// Items for a ••• menu (Plan: week review, rearrange, build my plan, pause).
+    var menu: [KXMenuItem] = []
 
     var body: some View {
         HStack(alignment: .bottom, spacing: KXSpacing.md) {
@@ -27,6 +29,24 @@ struct KXScreenHeader: View {
             if let onNotifications {
                 KXIconButton(systemImage: "bell", accessibilityLabel: "Plan updates", size: 36, action: onNotifications)
             }
+            if !menu.isEmpty {
+                Menu {
+                    ForEach(menu) { item in
+                        Button(role: item.isDestructive ? .destructive : nil, action: item.action) {
+                            Label(item.title, systemImage: item.symbol)
+                        }
+                        .accessibilityIdentifier(item.id)
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(KXColor.ink)
+                        .frame(width: 36, height: 36)
+                        .background(KXColor.surface, in: Circle())
+                }
+                .accessibilityLabel("More")
+                .accessibilityIdentifier("header.more")
+            }
             if let onEditDashboard {
                 Menu {
                     Button(action: onEditDashboard) {
@@ -44,6 +64,16 @@ struct KXScreenHeader: View {
             }
         }
     }
+}
+
+/// One option in a screen header's ••• menu.
+struct KXMenuItem: Identifiable {
+    /// Also the accessibility identifier.
+    let id: String
+    let title: String
+    let symbol: String
+    var isDestructive = false
+    let action: () -> Void
 }
 
 /// The KINETIX wordmark: black in light mode, white in dark mode.

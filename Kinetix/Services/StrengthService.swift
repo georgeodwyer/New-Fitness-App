@@ -43,13 +43,28 @@ enum StrengthService {
         context.insert(log)
         let weights = PlanService.workingWeights(in: context)
         let prescription = session.strengthPrescription?.exercises ?? []
+        // Their own gym workout linked to a "Gym n" day: carry on exactly from last time (sets,
+        // reps and weights), like starting it from the Workout tab.
+        let isOwnWorkout = session.gymSlotNumber != nil
         for (order, exercise) in prescription.enumerated() {
             // Use the latest working weight (progression may have moved on since the plan was generated).
-            let weight = exercise.weightKg.map { weights[exercise.progressionKey] ?? $0 } ?? 0
-            // Reps climb one at a time from last time (not straight to the top of the range).
+            let planned = exercise.weightKg.map { weights[exercise.progressionKey] ?? $0 } ?? 0
             let previous = GymService.previousSets(exerciseId: exercise.exerciseId, excluding: log, in: context)
-            for index in 0..<exercise.sets {
-                let reps = RepTarget.reps(setIndex: index, range: exercise.repRange, weightKg: weight, previous: previous)
+            let isBodyweight = exercise.weightKg == nil
+            let setCount = isOwnWorkout && !previous.isEmpty ? previous.count : exercise.sets
+            for index in 0..<setCount {
+                let last = previous.isEmpty ? nil : previous[min(index, previous.count - 1)]
+                let weight: Double
+                let reps: Int
+                if isOwnWorkout, let last {
+                    weight = isBodyweight ? 0 : last.weightKg
+                    reps = last.reps
+                } else {
+                    // No working weight yet (never done in a plan session): start from last time.
+                    weight = planned > 0 || isBodyweight ? planned : (last?.weightKg ?? 0)
+                    // Reps climb one at a time from last time (not straight to the top of the range).
+                    reps = RepTarget.reps(setIndex: index, range: exercise.repRange, weightKg: weight, previous: previous)
+                }
                 let set = SetLogModel(exerciseId: exercise.exerciseId, setIndex: index, targetReps: reps, targetWeightKg: weight, now: now)
                 set.progressionKey = exercise.progressionKey
                 set.exerciseName = exercise.name
@@ -57,7 +72,7 @@ enum StrengthService {
                 set.repRangeLower = exercise.repRange.lower
                 set.repRangeUpper = exercise.repRange.upper
                 set.restSeconds = exercise.restSeconds
-                set.isBodyweight = exercise.weightKg == nil
+                set.isBodyweight = isBodyweight
                 context.insert(set)
                 set.session = log
             }

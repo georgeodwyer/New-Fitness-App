@@ -72,6 +72,12 @@ struct GymSetupView: View {
                     }
                     .buttonStyle(.kx(.secondary, fullWidth: true))
                     .accessibilityIdentifier("gym.newTemplate")
+                    NavigationLink {
+                        WorkoutBankView()
+                    } label: {
+                        Label("Browse the workout bank", systemImage: "books.vertical")
+                    }
+                    .buttonStyle(.kx(.outlined, fullWidth: true))
                 }
                 .kxCard()
             }

@@ -156,11 +156,26 @@ struct PlanView: View {
         previews = await PlanService.previewWeeksInBackground(for: plan, profile: profile, in: context)
     }
 
+    /// The ••• menu at the top: everything you can do to the plan.
+    private var menuItems: [KXMenuItem] {
+        guard let outline else { return [] }
+        var items = [
+            KXMenuItem(id: "plan.weekReview", title: "Week review & next week", symbol: "calendar.badge.checkmark") { showReview = true },
+            KXMenuItem(id: "plan.rearrange", title: "Rearrange this week or next", symbol: "arrow.up.arrow.down") { showRearrange = true },
+            KXMenuItem(id: "plan.builder", title: outline.customPlan == nil ? "Build my own plan" : "Edit my plan",
+                       symbol: "square.and.pencil") { showBuilder = true }
+        ]
+        if let plan = plans.first, !plan.isPaused {
+            items.append(KXMenuItem(id: "plan.pause", title: "Pause plan (ill, injured or away)", symbol: "pause.circle") { showPause = true })
+        }
+        return items
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: KXSpacing.xl) {
-                    KXScreenHeader(title: "Training Plan", onCalendar: calendarAction)
+                    KXScreenHeader(title: "Training Plan", onCalendar: calendarAction, menu: menuItems)
                     if let plan = plans.first, plan.isPaused { PausedPlanCard(plan: plan) }
                     if profiles.isEmpty {
                         PlanIntroCard { showOnboarding = true }
@@ -182,36 +197,6 @@ struct PlanView: View {
                     if let outline {
                         RaceCountdownCard(outline: outline, profile: profiles.first?.profile)
                         WeeklyDistanceCard(outline: outline, runs: runs, format: format, sessions: plans.first?.sessions ?? [])
-                        Button {
-                            showReview = true
-                        } label: {
-                            Label("Week review & next week", systemImage: "calendar.badge.checkmark")
-                        }
-                        .buttonStyle(.kx(.outlined, fullWidth: true))
-                        .accessibilityIdentifier("plan.weekReview")
-                        Button {
-                            showRearrange = true
-                        } label: {
-                            Label("Rearrange this week or next", systemImage: "arrow.up.arrow.down")
-                        }
-                        .buttonStyle(.kx(.outlined, fullWidth: true))
-                        .accessibilityIdentifier("plan.rearrange")
-                        Button {
-                            showBuilder = true
-                        } label: {
-                            Label(outline.customPlan == nil ? "Build my own plan" : "Edit my plan", systemImage: "square.and.pencil")
-                        }
-                        .buttonStyle(.kx(.outlined, fullWidth: true))
-                        .accessibilityIdentifier("plan.builder")
-                        if let plan = plans.first, !plan.isPaused {
-                            Button {
-                                showPause = true
-                            } label: {
-                                Label("Pause plan (ill, injured or away)", systemImage: "pause.circle")
-                            }
-                            .buttonStyle(.kx(.outlined, fullWidth: true))
-                            .accessibilityIdentifier("plan.pause")
-                        }
                     }
                     if weeks.isEmpty && !profiles.isEmpty {
                         Text("No sessions planned yet.")

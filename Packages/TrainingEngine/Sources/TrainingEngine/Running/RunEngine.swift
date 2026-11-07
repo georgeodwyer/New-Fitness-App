@@ -166,7 +166,7 @@ public struct RunSummary: Codable, Equatable, Sendable {
 /// ~15 s of each segment are ignored while the rolling average catches up.
 public struct RunEngine: Sendable {
     public private(set) var config: CoachingConfig
-    public let segments: [RunSegment]
+    public private(set) var segments: [RunSegment]
 
     // Clock
     private var startDate: Date?
@@ -207,6 +207,10 @@ public struct RunEngine: Sendable {
     private var segmentResults: [SegmentResult] = []
     private var segmentInTarget: Double = 0
     private var segmentMeasured: Double = 0
+    /// Extra rest added to a distance recovery (seconds to wait once the distance is done).
+    private var extraRestSeconds: Double = 0
+    /// When the current distance recovery's distance was reached (for extra rest).
+    private var restDistanceDoneAt: Double?
 
     // Splits
     private var splits: [Split] = []
@@ -303,6 +307,25 @@ public struct RunEngine: Sendable {
         undoPoint = point
         undoPoint?.resultCountAfter = segmentResults.count
         return events
+    }
+
+    /// In a recovery step: "+30 s" can give more rest.
+    public var canAddRest: Bool { currentSegment?.kind == .recovery && !waitingForNextStep }
+
+    /// Extra rest: the recovery step lasts `seconds` longer (a timed recovery gets longer; a
+    /// distance one, e.g. a 200 m jog, waits that long once the distance is done). Returns
+    /// false outside a recovery step.
+    @discardableResult
+    public mutating func addRest(seconds: Double = 30, at date: Date) -> Bool {
+        advanceClock(to: date)
+        guard canAddRest, let segment = currentSegment else { return false }
+        switch segment.length {
+        case .duration(let length):
+            segments[segmentIndex].length = .duration(seconds: length + seconds)
+        case .distance:
+            extraRestSeconds += seconds
+        }
+        return true
     }
 
     /// Whether "Next step" would skip a step (true) or there are no steps left, so the
@@ -652,7 +675,16 @@ public struct RunEngine: Sendable {
             let done: Bool
             switch segment.length {
             case .duration(let seconds): done = activeSeconds - segmentStartActive >= seconds
-            case .distance(let meters): done = distance - segmentStartDistance >= meters
+            case .distance(let meters):
+                let covered = distance - segmentStartDistance >= meters
+                if covered, extraRestSeconds > 0 {
+                    // Extra rest asked for: hold the step that much longer once the distance is done.
+                    let reached = restDistanceDoneAt ?? activeSeconds
+                    restDistanceDoneAt = reached
+                    done = activeSeconds - reached >= extraRestSeconds
+                } else {
+                    done = covered
+                }
             }
             guard done else { break }
             // Steps that don't move on by themselves: say so once and wait for Next step (the
@@ -677,6 +709,8 @@ public struct RunEngine: Sendable {
         segmentResults.append(currentSegmentResult(segment))
         segmentInTarget = 0
         segmentMeasured = 0
+        extraRestSeconds = 0
+        restDistanceDoneAt = nil
         resetCoach()
 
         if waitingForNextStep {

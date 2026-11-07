@@ -75,7 +75,7 @@ struct ShareSessionView: View {
                         }
                         .kxCard()
                     }
-                    if style == .sticker {
+                    if style == .sticker || style == .details {
                         Text("A transparent sticker: share it to Instagram Stories and lay it over your own photo.")
                             .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
                     }
@@ -113,7 +113,7 @@ struct ShareSessionView: View {
 
     private var preview: some View {
         ZStack {
-            if style == .sticker {
+            if style == .sticker || style == .details {
                 // A dark backdrop so the sticker is visible.
                 RoundedRectangle(cornerRadius: KXRadius.md).fill(CardColor.surfaceTint)
             }
@@ -149,7 +149,8 @@ struct ShareSessionView: View {
                     .buttonStyle(.kx(.outlined, fullWidth: true))
                     if ShareService.canShareToInstagramStories {
                         Button {
-                            if let sticker = ShareService.render(data, style: .sticker, mapImage: nil, photo: nil) {
+                            if let sticker = ShareService.render(data, style: style == .details ? .details : .sticker, mapImage: nil,
+                                                                 photo: nil, options: options) {
                                 ShareService.shareToInstagramStories(sticker: sticker, background: style == .photo ? photo : nil)
                             }
                         } label: {
