@@ -98,7 +98,7 @@ jobs:
           SAMPLER=$!
           ./scripts/xcodebuild-step.sh calendar-ui-test.log test-without-building \
             -project Kinetix.xcodeproj -scheme Kinetix -destination "id=$UDID" \
-            -derivedDataPath DerivedData -only-testing:KinetixUITests/CalendarTests \
+            -derivedDataPath DerivedData -only-testing:KinetixUITests/CalendarTests -only-testing:KinetixUITests/FunctionalUITests \
             && status=0 || status=$?
           kill $SAMPLER 2>/dev/null || true
           if [ "$status" -ne 0 ]; then
