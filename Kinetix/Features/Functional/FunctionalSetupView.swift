@@ -13,6 +13,13 @@ struct FunctionalSetupView: View {
     @State private var division: HyroxDivision = .openMen
     @State private var treadmill = false
     @State private var pickedDivision = false
+    /// The Hyrox race for the chosen division: kept, not rebuilt on every redraw (a new one
+    /// each time made the builder link look new, and the screen redrew itself forever).
+    @State private var race = HyroxSimulation.workout(division: .openMen)
+    /// What the builder opens with (opened from here, not rebuilt with the screen).
+    @State private var editorTemplate: FunctionalTemplateModel?
+    @State private var editorInitial: FunctionalWorkout?
+    @State private var showEditor = false
 
     private var units: UnitSystem { profiles.first?.units ?? UnitPreference.stored }
 
@@ -48,8 +55,9 @@ struct FunctionalSetupView: View {
                             templateRow(template)
                         }
                     }
-                    NavigationLink {
-                        FunctionalEditorView(template: nil)
+                    Button {
+                        // Made once here, so the builder keeps the same workout while it's open.
+                        openEditor(template: nil, initial: FunctionalWorkout(name: "", format: .rounds(3)))
                     } label: {
                         Label("Build a functional workout", systemImage: "plus")
                     }
@@ -67,12 +75,23 @@ struct FunctionalSetupView: View {
             guard !pickedDivision else { return }
             pickedDivision = true
             if let saved = profiles.first?.profile.hyroxDivision { division = saved }
+            race = HyroxSimulation.workout(division: division, treadmill: treadmill)
+        }
+        .onChange(of: division) { _, _ in race = HyroxSimulation.workout(division: division, treadmill: treadmill) }
+        .onChange(of: treadmill) { _, _ in race = HyroxSimulation.workout(division: division, treadmill: treadmill) }
+        .navigationDestination(isPresented: $showEditor) {
+            FunctionalEditorView(template: editorTemplate, initial: editorInitial)
         }
     }
 
+    private func openEditor(template: FunctionalTemplateModel?, initial: FunctionalWorkout?) {
+        editorTemplate = template
+        editorInitial = initial
+        showEditor = true
+    }
+
     private var hyroxCard: some View {
-        let race = HyroxSimulation.workout(division: division, treadmill: treadmill)
-        return VStack(alignment: .leading, spacing: KXSpacing.md) {
+        VStack(alignment: .leading, spacing: KXSpacing.md) {
             HStack {
                 Image(systemName: "flag.checkered")
                     .foregroundStyle(KXColor.functional)
@@ -107,9 +126,9 @@ struct FunctionalSetupView: View {
                 }
                 .buttonStyle(.kx(.primary, fullWidth: true))
                 .accessibilityIdentifier("functional.hyrox.start")
-                NavigationLink {
-                    FunctionalEditorView(template: nil, initial: FunctionalWorkout(name: "My Hyrox simulation", format: race.format,
-                                                                                    stations: race.stations))
+                Button {
+                    openEditor(template: nil, initial: FunctionalWorkout(name: "My Hyrox simulation", format: race.format,
+                                                                         stations: race.stations))
                 } label: {
                     Label("Edit a copy", systemImage: "square.on.square").frame(maxWidth: .infinity)
                 }
@@ -122,8 +141,8 @@ struct FunctionalSetupView: View {
     private func templateRow(_ template: FunctionalTemplateModel) -> some View {
         let workout = template.workout
         return HStack(spacing: KXSpacing.md) {
-            NavigationLink {
-                FunctionalEditorView(template: template)
+            Button {
+                openEditor(template: template, initial: nil)
             } label: {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(workout.name).font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink)
