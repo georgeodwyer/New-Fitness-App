@@ -73,6 +73,7 @@
 		69CF5E31BCF438B10AAEFD2E /* HealthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 130A6B35CC5FB984FCCD948F /* HealthService.swift */; };
 		6A5C33C319519EE85058D5AF /* KXSpacing.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2EEE532F379E91567B19BF6 /* KXSpacing.swift */; };
 		6AB0A803B59FF266099C71B8 /* Formatters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03230B905B53975A34E0C37E /* Formatters.swift */; };
+		6B589E95D8E4572AFBCD32BA /* FunctionalLiveView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F05218B0446B71B66143DCA9 /* FunctionalLiveView.swift */; };
 		6B6C655E71CA57EA30150748 /* RunListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A29407132DCE8269B5454E50 /* RunListView.swift */; };
 		6E7327BE2BAC15C40A64397A /* CalendarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A1F79A98C11CFA85E3E4C1 /* CalendarTests.swift */; };
 		6F2333E9AC60E44595804758 /* BalanceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E677E3A17BFA4777DEC73596 /* BalanceService.swift */; };
@@ -450,6 +451,7 @@
 		EB27DBF74434135E36364597 /* StrengthSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrengthSummaryView.swift; sourceTree = "<group>"; };
 		EB5ABC7399477B7DC54BACD0 /* KinetixWidgetsBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KinetixWidgetsBundle.swift; sourceTree = "<group>"; };
 		EDB23F98437C808EBB58BEF7 /* PlanBuilderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanBuilderView.swift; sourceTree = "<group>"; };
+		F05218B0446B71B66143DCA9 /* FunctionalLiveView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FunctionalLiveView.swift; sourceTree = "<group>"; };
 		F0B148FD2061C24465AF19AE /* DoneTodayCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DoneTodayCard.swift; sourceTree = "<group>"; };
 		F2EEE532F379E91567B19BF6 /* KXSpacing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXSpacing.swift; sourceTree = "<group>"; };
 		F327708828E05100B42EDD57 /* TrainingProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingProfileView.swift; sourceTree = "<group>"; };
@@ -555,6 +557,7 @@
 			children = (
 				B86E9E847C741EE0B68892BC /* Assets.xcassets */,
 				624C995FD738D1EED4FEE350 /* CustomScreenView.swift */,
+				F05218B0446B71B66143DCA9 /* FunctionalLiveView.swift */,
 				59C34693744398934B3DC293 /* GymLiveView.swift */,
 				0D09E7C2A3E3650F504BB2DD /* Info.plist */,
 				EA669D15368E1CA7DFE58741 /* KinetixWatch.entitlements */,
@@ -1304,6 +1307,7 @@
 			files = (
 				E78EBCB145C6F70B2CC85C94 /* CustomScreenView.swift in Sources */,
 				6AB0A803B59FF266099C71B8 /* Formatters.swift in Sources */,
+				6B589E95D8E4572AFBCD32BA /* FunctionalLiveView.swift in Sources */,
 				D11DEB954AE20FA65C016D3A /* GymLiveView.swift in Sources */,
 				DA069B8EE244D1C28E2ABD3B /* KinetixWatchApp.swift in Sources */,
 				CDA1CB42056E07E388219316 /* RunExtras.swift in Sources */,
