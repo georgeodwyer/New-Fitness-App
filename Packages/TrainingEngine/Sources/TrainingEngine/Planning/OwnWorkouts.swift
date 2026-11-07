@@ -26,10 +26,13 @@ public enum PlanStyle: String, Codable, CaseIterable, Sendable {
 public struct OwnGymWorkout: Codable, Equatable, Sendable {
     public var name: String
     public var exercises: [GymTemplateItem]
+    /// A functional workout (circuit / Hyrox) linked instead of a gym workout.
+    public var functional: FunctionalWorkout?
 
-    public init(name: String, exercises: [GymTemplateItem]) {
+    public init(name: String, exercises: [GymTemplateItem], functional: FunctionalWorkout? = nil) {
         self.name = name
         self.exercises = exercises
+        self.functional = functional
     }
 }
 
@@ -52,8 +55,8 @@ public enum OwnWorkouts {
     public static func gymTemplates(count: Int, linked: [Int: OwnGymWorkout], exercises: [ExerciseDefinition]) -> [StrengthSessionTemplate] {
         (0..<count).map { index in
             let name = "Gym \(index + 1)"
-            guard let workout = linked[index + 1] else {
-                // Not linked yet: treated as working everything (kept away from hard runs).
+            guard let workout = linked[index + 1], workout.functional == nil else {
+                // Not linked yet, or a functional workout: treated as working everything (kept away from hard runs).
                 return StrengthSessionTemplate(name: name, focus: .fullBody, slots: [])
             }
             let slots = workout.exercises.map { item in
@@ -97,7 +100,8 @@ public enum OwnWorkouts {
     /// weights; one set fewer in easier weeks), or nil when it isn't linked yet.
     public static func gymPrescription(slotName: String, linked: [Int: OwnGymWorkout], workingWeights: [String: Double],
                                        lighter: Bool) -> (title: String, prescription: StrengthPrescription?) {
-        guard let number = Int(slotName.replacingOccurrences(of: "Gym ", with: "")), let workout = linked[number] else {
+        guard let number = Int(slotName.replacingOccurrences(of: "Gym ", with: "")), let workout = linked[number],
+              workout.functional == nil else {
             return (slotName, nil)
         }
         let prescription = StrengthPrescription(exercises: workout.exercises.map { item in
@@ -113,6 +117,14 @@ public enum OwnWorkouts {
     /// A "Gym n" day as a session: the linked workout, or a placeholder to choose one.
     public static func gymSession(template: StrengthSessionTemplate, date: Date, slot: SessionSlot, profile: AthleteProfile,
                                   workingWeights: [String: Double], lighter: Bool, effort: Double) -> GeneratedSession {
+        if let number = Int(template.name.replacingOccurrences(of: "Gym ", with: "")),
+           let functional = profile.ownGymWorkouts?[number]?.functional {
+            // A functional workout: opens as one (the app finds it by the day's number).
+            return GeneratedSession(date: date, slot: slot, kind: .strength(.fullBody), isKey: false,
+                                    title: "\(template.name) · \(functional.name)", summary: "Functional · \(functional.summary)",
+                                    plannedDurationMinutes: functional.estimatedMinutes, plannedEffort: max(effort, 7),
+                                    estimatedDistanceMeters: nil, runStructure: nil, strength: nil)
+        }
         let linked = gymPrescription(slotName: template.name, linked: profile.ownGymWorkouts ?? [:], workingWeights: workingWeights,
                                      lighter: lighter)
         if let prescription = linked.prescription {

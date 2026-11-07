@@ -71,7 +71,9 @@ struct SessionDetailView: View {
                 }
                 if let structure = session.runStructure { runCard(structure) }
                 if let strength = session.strengthPrescription { strengthCard(strength) }
-                if session.kind.discipline == .strength, session.strengthPrescription == nil {
+                if let functional = session.functionalWorkout(profile: profiles.first?.profile) {
+                    FunctionalPlanCard(workout: functional, units: profiles.first?.units ?? UnitPreference.stored)
+                } else if session.kind.discipline == .strength, session.strengthPrescription == nil {
                     LinkGymWorkoutCard(session: session)
                 }
                 if session.kind == .crossTraining {
@@ -193,6 +195,36 @@ struct SessionDetailView: View {
 }
 
 /// A "Gym n" day with no workout linked: link a saved gym workout to it for every week.
+/// A session that opens as a functional workout: its format and stations.
+private struct FunctionalPlanCard: View {
+    let workout: FunctionalWorkout
+    let units: UnitSystem
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: KXSpacing.sm) {
+            KXOverline("Functional workout", color: KXColor.functional)
+            Text(workout.summary).font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
+            ForEach(Array(workout.stations.enumerated()), id: \.offset) { _, station in
+                HStack(spacing: KXSpacing.sm) {
+                    Image(systemName: FunctionalEditorView.symbol(for: station.kind))
+                        .foregroundStyle(station.kind == .rest ? KXColor.inkTertiary : KXColor.functional)
+                        .frame(width: 22)
+                        .accessibilityHidden(true)
+                    Text(station.title).font(KXFont.callout).foregroundStyle(KXColor.ink)
+                    Spacer()
+                    if let kg = station.weightKg, kg > 0 {
+                        Text(DisplayFormat(units: units).weight(kg)).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+                    }
+                }
+                .accessibilityElement(children: .combine)
+            }
+            Text("Starts as a functional workout: tap Next as you finish each station.")
+                .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+        }
+        .kxCard()
+    }
+}
+
 private struct LinkGymWorkoutCard: View {
     let session: PlannedSessionModel
     @Environment(\.modelContext) private var context
@@ -200,6 +232,8 @@ private struct LinkGymWorkoutCard: View {
     @Query(filter: #Predicate<UserProfileModel> { $0.deletedAt == nil }) private var profiles: [UserProfileModel]
     @Query(filter: #Predicate<GymTemplateModel> { $0.deletedAt == nil }, sort: \GymTemplateModel.createdAt, order: .reverse)
     private var templates: [GymTemplateModel]
+    @Query(filter: #Predicate<FunctionalTemplateModel> { $0.deletedAt == nil }, sort: \FunctionalTemplateModel.createdAt, order: .reverse)
+    private var functionalTemplates: [FunctionalTemplateModel]
 
     private var slot: Int? { Int(session.title.replacingOccurrences(of: "Gym ", with: "").prefix { $0.isNumber }) }
 
@@ -209,14 +243,23 @@ private struct LinkGymWorkoutCard: View {
             Text("Link one of your saved gym workouts to \(session.title). It's used every week, and Kinetix places it around your runs.")
                 .font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
                 .fixedSize(horizontal: false, vertical: true)
-            if templates.isEmpty {
+            if templates.isEmpty && functionalTemplates.isEmpty {
                 Text("No saved gym workouts yet. Build one in the Workout tab, or start this session and add exercises as you go.")
                     .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             } else {
                 Menu {
                     ForEach(templates) { template in
-                        Button(template.name) { link(template) }
+                        Button(template.name) { link(OwnGymWorkout(name: template.name, exercises: template.items)) }
+                    }
+                    if !functionalTemplates.isEmpty {
+                        Section("Functional") {
+                            ForEach(functionalTemplates) { template in
+                                Button(template.name) {
+                                    link(OwnGymWorkout(name: template.name, exercises: [], functional: template.workout))
+                                }
+                            }
+                        }
                     }
                 } label: {
                     Label("Choose a workout", systemImage: "dumbbell")
@@ -228,11 +271,11 @@ private struct LinkGymWorkoutCard: View {
         .kxCard(.accent)
     }
 
-    private func link(_ template: GymTemplateModel) {
+    private func link(_ workout: OwnGymWorkout) {
         guard let slot, let model = profiles.first else { return }
         var profile = model.profile
         var links = profile.ownGymWorkouts ?? [:]
-        links[slot] = OwnGymWorkout(name: template.name, exercises: template.items)
+        links[slot] = workout
         profile.ownGymWorkouts = links
         model.profile = profile
         try? context.save()

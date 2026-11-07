@@ -267,3 +267,28 @@ extension TrainingPlanModel {
         weekNotesData = all.isEmpty ? nil : StoredJSON.encode(all)
     }
 }
+
+extension PlannedSessionModel {
+    /// "Gym 2 · …" → 2.
+    var gymSlotNumber: Int? {
+        guard title.hasPrefix("Gym ") else { return nil }
+        return Int(title.dropFirst(4).prefix { $0.isNumber })
+    }
+
+    /// The functional workout this session opens as: a functional workout linked to its gym
+    /// day, or a Hyrox compromised run (runs plus race stations). Nil for everything else.
+    func functionalWorkout(profile: AthleteProfile?) -> FunctionalWorkout? {
+        switch kind {
+        case .strength:
+            guard strengthPrescription == nil, let number = gymSlotNumber,
+                  var workout = profile?.ownGymWorkouts?[number]?.functional else { return nil }
+            workout.name = title
+            return workout
+        case .run:
+            guard let structure = runStructure else { return nil }
+            return HyroxSimulation.compromisedRun(structure, title: title, division: profile?.hyroxDivision ?? .openMen)
+        default:
+            return nil
+        }
+    }
+}

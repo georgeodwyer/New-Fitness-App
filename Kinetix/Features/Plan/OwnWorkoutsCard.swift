@@ -11,6 +11,8 @@ struct OwnWorkoutsCard: View {
     private var gymTemplates: [GymTemplateModel]
     @Query(filter: #Predicate<RunTemplateModel> { $0.deletedAt == nil }, sort: \RunTemplateModel.createdAt, order: .reverse)
     private var runTemplates: [RunTemplateModel]
+    @Query(filter: #Predicate<FunctionalTemplateModel> { $0.deletedAt == nil }, sort: \FunctionalTemplateModel.createdAt, order: .reverse)
+    private var functionalTemplates: [FunctionalTemplateModel]
     @State private var message: String?
 
     private var profile: AthleteProfile? { profiles.first?.profile }
@@ -20,7 +22,7 @@ struct OwnWorkoutsCard: View {
             VStack(alignment: .leading, spacing: KXSpacing.sm) {
                 KXOverline(profile.style == .ownGym ? "Your gym workouts" : "Your run workouts")
                 Text(profile.style == .ownGym
-                     ? "Link a saved gym workout to each gym day. Kinetix places them so leg days stay away from your hard runs."
+                     ? "Link a saved gym or functional workout to each gym day. Kinetix places them so leg days stay away from your hard runs."
                      : "Link a saved run workout to each kind of run. Anything not linked stays as Kinetix's session.")
                     .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -54,7 +56,16 @@ struct OwnWorkoutsCard: View {
                         link(gym: slot, to: OwnGymWorkout(name: template.name, exercises: template.items))
                     }
                 }
-                if gymTemplates.isEmpty {
+                if !functionalTemplates.isEmpty {
+                    Section("Functional") {
+                        ForEach(functionalTemplates) { template in
+                            Button(template.name) {
+                                link(gym: slot, to: OwnGymWorkout(name: template.name, exercises: [], functional: template.workout))
+                            }
+                        }
+                    }
+                }
+                if gymTemplates.isEmpty && functionalTemplates.isEmpty {
                     Text("No saved gym workouts yet: build one in Workout")
                 }
                 if linked != nil {

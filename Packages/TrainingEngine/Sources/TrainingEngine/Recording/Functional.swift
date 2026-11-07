@@ -178,6 +178,80 @@ public enum HyroxSimulation {
         }
         return FunctionalWorkout(name: "Hyrox simulation", format: .rounds(1), stations: all)
     }
+
+    /// A plan's compromised run ("4 × 1 km @ HM, 2 min station between") as a functional
+    /// workout: the runs at their paces, and each "Station work" gap a race station in race
+    /// order (for its time, at the division's weight). Nil when the run has no station work.
+    public static func compromisedRun(_ structure: RunStructure, title: String, division: HyroxDivision = .openMen) -> FunctionalWorkout? {
+        guard structure.segments.contains(where: { $0.label == "Station work" }) else { return nil }
+        let race = workout(division: division).stations.filter { $0.kind != .run }
+        var stations: [FunctionalStation] = []
+        var next = 0
+        for segment in structure.segments {
+            let target: FunctionalTarget
+            switch segment.length {
+            case .distance(let meters): target = .meters(meters)
+            case .duration(let seconds): target = .seconds(seconds)
+            }
+            if segment.label == "Station work" {
+                var station = race[next % race.count]
+                station.id = UUID()
+                station.target = .seconds(target.timedSeconds ?? 120)
+                stations.append(station)
+                next += 1
+                continue
+            }
+            let name: String
+            switch segment.kind {
+            case .warmUp: name = "Warm-up run"
+            case .coolDown: name = "Cool-down run"
+            case .recovery: name = "Jog"
+            case .work, .steady: name = "Run"
+            }
+            stations.append(FunctionalStation(kind: .run, name: name, target: target,
+                                              pace: segment.targetPace.map { .fixed(.range($0)) }))
+        }
+        return FunctionalWorkout(name: title, format: .rounds(1), stations: stations)
+    }
+}
+
+extension FunctionalTarget {
+    /// The time, for a timed target.
+    public var timedSeconds: Double? { if case .seconds(let s) = self { return s } else { return nil } }
+}
+
+extension FunctionalWorkout {
+    /// Roughly how long it takes, in minutes (for the plan): clock formats exactly, rounds
+    /// from typical speeds (runs 5:30/km, ergs 4:30/km, carries and sleds slower).
+    public var estimatedMinutes: Double {
+        let seconds: Double
+        switch format {
+        case .intervals(let work, let rest, let rounds): seconds = (work + rest) * Double(stations.count * rounds)
+        case .emom(let every, let rounds): seconds = every * Double(rounds)
+        case .amrap(let cap): seconds = cap
+        case .rounds(let rounds):
+            let one = stations.reduce(0.0) { total, station in
+                switch station.target {
+                case .seconds(let s): return total + s
+                case .reps(let r): return total + Double(r) * 3
+                case .calories(let c): return total + Double(c) * 4
+                case .meters(let m):
+                    let perMeter: Double
+                    switch station.kind {
+                    case .run: perMeter = 0.33
+                    case .ski, .row, .bike: perMeter = 0.27
+                    case .sledPush, .sledPull: perMeter = 2.4
+                    case .burpeeBroadJumps: perMeter = 3
+                    case .sandbagLunges: perMeter = 2.4
+                    default: perMeter = 0.9
+                    }
+                    return total + m * perMeter
+                }
+            }
+            seconds = one * Double(max(rounds, 1))
+        }
+        return max(5, (seconds / 60 / 5).rounded() * 5)
+    }
 }
 
 // MARK: - Doing it

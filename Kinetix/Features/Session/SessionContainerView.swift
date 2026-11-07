@@ -18,14 +18,12 @@ struct SessionContainerView: View {
 
     var body: some View {
         Group {
-            if let functional = session.functional {
-                if let functionalModel = router.functionalModel {
-                    FunctionalWorkoutView(model: functionalModel) { close() }
-                } else {
-                    ProgressView().onAppear {
-                        router.functionalModel = FunctionalWorkoutModel(workout: functional, templateId: session.functionalTemplateId,
-                                                                        units: units, settings: coachingSettings.first, context: context)
-                    }
+            if let functionalModel = router.functionalModel {
+                FunctionalWorkoutView(model: functionalModel) { close() }
+            } else if let functional = session.functional {
+                ProgressView().onAppear {
+                    router.functionalModel = FunctionalWorkoutModel(workout: functional, templateId: session.functionalTemplateId,
+                                                                    units: units, settings: coachingSettings.first, context: context)
                 }
             } else {
             switch session.kind {
@@ -61,7 +59,18 @@ struct SessionContainerView: View {
         return try? context.fetch(FetchDescriptor<PlannedSessionModel>(predicate: #Predicate { $0.id == id })).first
     }
 
+    /// A planned session that's a functional workout (linked to a gym day, or a Hyrox
+    /// compromised run) opens as one.
+    private func startPlannedFunctional() -> Bool {
+        guard session.custom == nil, session.strengthLogId == nil, let planned = plannedSession(),
+              let workout = planned.functionalWorkout(profile: profiles.first?.profile) else { return false }
+        router.functionalModel = FunctionalWorkoutModel(workout: workout, templateId: nil, planned: planned, units: units,
+                                                        settings: coachingSettings.first, context: context)
+        return true
+    }
+
     private func startStrength() {
+        if startPlannedFunctional() { return }
         if let logId = session.strengthLogId {
             guard let log = try? context.fetch(FetchDescriptor<StrengthLogModel>(predicate: #Predicate { $0.id == logId })).first else {
                 close(); return
@@ -85,6 +94,7 @@ struct SessionContainerView: View {
     }
 
     private func startRun() {
+        if startPlannedFunctional() { return }
         // The simulated-GPS switch only counts in test builds (it may linger from a TestFlight install).
         let speed = DeveloperSettings.launchSimulationSpeed ?? (simulateGPS && BuildChannel.isTesting ? simulationSpeed : nil)
         router.runModel = RunWorkoutModel(

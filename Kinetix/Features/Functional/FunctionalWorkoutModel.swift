@@ -17,6 +17,8 @@ final class FunctionalWorkoutModel {
     let heartRateZones: HeartRateZones
     /// The saved workout it came from, if any.
     let templateId: UUID?
+    /// The plan session it was started from (marked done when it's saved).
+    let planned: PlannedSessionModel?
     private let context: ModelContext
 
     /// Updated every half second so the clocks move.
@@ -52,11 +54,13 @@ final class FunctionalWorkoutModel {
     @ObservationIgnored private let paceTolerance: Double
     @ObservationIgnored private let paceCuesEnabled: Bool
 
-    init(workout: FunctionalWorkout, templateId: UUID?, units: UnitSystem, settings: CoachingSettingsModel?, context: ModelContext) {
+    init(workout: FunctionalWorkout, templateId: UUID?, planned: PlannedSessionModel? = nil, units: UnitSystem,
+         settings: CoachingSettingsModel?, context: ModelContext) {
         let start = Date()
         self.session = FunctionalSession(workout: workout, startedAt: start)
         self.units = units
         self.templateId = templateId
+        self.planned = planned
         self.context = context
         let profile = ((try? context.fetch(FetchDescriptor<UserProfileModel>())) ?? []).first { !$0.isSoftDeleted }?.profile
         self.paceZones = profile.map { PaceZones(profile: $0) }
@@ -259,8 +263,9 @@ final class FunctionalWorkoutModel {
         let log = StrengthLogModel(plannedSessionId: nil, startedAt: session.startedAt)
         let trimmed = title.trimmingCharacters(in: .whitespaces)
         log.title = trimmed.isEmpty ? workout.name : trimmed
-        log.isRecorded = true
+        log.isRecorded = planned == nil
         log.templateId = templateId
+        log.plannedSessionId = planned?.id
         log.functionalData = StoredJSON.encode(record)
         let duration = min((endedAt ?? end).timeIntervalSince(session.startedAt), 4 * 3600)
         log.durationSeconds = duration
@@ -276,6 +281,7 @@ final class FunctionalWorkoutModel {
             template.lastUsedAt = end
             template.touch(now: end)
         }
+        if let planned { planned.status = .completed }
         try? context.save()
         SyncService.shared.requestSync()
         ActivityExportService.strengthFinished(log, units: units, in: context)

@@ -106,4 +106,34 @@ final class FunctionalTests: XCTestCase {
         XCTAssertEqual(record.lines().first, "R1 Run 400 m  1:30")
         XCTAssertEqual(Pace(secondsPerKm: 240).kilometresPerHour, 15)
     }
+
+    func testCompromisedRunBecomesRunsAndRaceStations() throws {
+        let hm = PaceRange(fastest: Pace(secondsPerKm: 290), slowest: Pace(secondsPerKm: 300))
+        var segments = [RunSegment(kind: .warmUp, length: .duration(seconds: 600))]
+        for index in 0..<3 {
+            segments.append(RunSegment(kind: .work, length: .distance(meters: 1000), targetPace: hm))
+            if index < 2 { segments.append(RunSegment(kind: .recovery, length: .duration(seconds: 120), label: "Station work")) }
+        }
+        let workout = try XCTUnwrap(HyroxSimulation.compromisedRun(RunStructure(segments: segments), title: "Compromised run",
+                                                                   division: .proMen))
+        XCTAssertEqual(workout.stations.map(\.kind), [.run, .run, .ski, .run, .sledPush, .run])
+        XCTAssertEqual(workout.stations[2].target, .seconds(120))
+        XCTAssertEqual(workout.stations[4].weightKg, 202)
+        XCTAssertEqual(workout.stations[1].pace, .fixed(.range(hm)))
+        XCTAssertNil(HyroxSimulation.compromisedRun(RunStructure(segments: [segments[0]]), title: "Easy"))
+        XCTAssertEqual(workout.estimatedMinutes, 30)
+    }
+
+    func testFunctionalWorkoutLinkedToAGymDay() {
+        let circuit = FunctionalWorkout(name: "Engine", format: .amrap(cap: 1800), stations: [FunctionalStation(kind: .row)])
+        var profile = TestSupport.profile(goal: .hyrox)
+        profile.ownGymWorkouts = [1: OwnGymWorkout(name: "Engine", exercises: [], functional: circuit)]
+        let template = OwnWorkouts.gymTemplates(count: 1, linked: profile.ownGymWorkouts ?? [:], exercises: [])[0]
+        XCTAssertEqual(template.focus, .fullBody)
+        let session = OwnWorkouts.gymSession(template: template, date: Date(timeIntervalSince1970: 0), slot: .morning, profile: profile,
+                                             workingWeights: [:], lighter: false, effort: 6)
+        XCTAssertEqual(session.title, "Gym 1 · Engine")
+        XCTAssertNil(session.strength)
+        XCTAssertEqual(session.plannedDurationMinutes, 30)
+    }
 }
