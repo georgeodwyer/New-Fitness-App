@@ -66,6 +66,12 @@ enum StrengthService {
                     reps = RepTarget.reps(setIndex: index, range: exercise.repRange, weightKg: weight, previous: previous)
                 }
                 let set = SetLogModel(exerciseId: exercise.exerciseId, setIndex: index, targetReps: reps, targetWeightKg: weight, now: now)
+                // The sets fill in with what they did last time; the suggestion (from progression)
+                // shows above them.
+                if let last {
+                    set.actualReps = last.reps
+                    set.actualWeightKg = isBodyweight ? 0 : last.weightKg
+                }
                 set.progressionKey = exercise.progressionKey
                 set.exerciseName = exercise.name
                 set.exerciseOrder = order

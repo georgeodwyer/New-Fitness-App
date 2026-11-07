@@ -72,6 +72,29 @@ final class ProgressionTests: XCTestCase {
         XCTAssertEqual(decision.newState.workingWeightKg, 100)
     }
 
+    func testWeightStaysUntilEverySetReachesTheTarget() {
+        // Programmed 3 × 8 @ 80 (range 6–8): 8, 8, 6 holds at 80 kg.
+        let bench = Progression.evaluate(exerciseName: "Bench", loading: .barbell, region: .upper, repRange: RepRange(6, 8),
+                                         prescribedSets: 3, state: ProgressionState(workingWeightKg: 80),
+                                         sets: [8, 8, 6].map { SetResult(weightKg: 80, reps: $0) })
+        XCTAssertEqual(bench.change, .hold)
+        XCTAssertEqual(bench.newState.workingWeightKg, 80)
+        // All three at 8: up.
+        let next = Progression.evaluate(exerciseName: "Bench", loading: .barbell, region: .upper, repRange: RepRange(6, 8),
+                                        prescribedSets: 3, state: ProgressionState(workingWeightKg: 80),
+                                        sets: [8, 8, 8].map { SetResult(weightKg: 80, reps: $0) })
+        XCTAssertEqual(next.newState.workingWeightKg, 82.5)
+    }
+
+    func testOneLighterSetHoldsTheWorkingWeight() {
+        // Two sets at 100, the last dropped to 90: no increase, and the weight stays 100 (not 90).
+        let decision = evaluate(sets: [SetResult(weightKg: 100, reps: 8), SetResult(weightKg: 100, reps: 8),
+                                       SetResult(weightKg: 90, reps: 8)])
+        XCTAssertEqual(decision.change, .hold)
+        XCTAssertEqual(decision.newState.workingWeightKg, 100)
+        XCTAssertTrue(decision.reason.contains("2 of 3 sets at that weight"))
+    }
+
     func testNothingLoggedChangesNothing() {
         let state = ProgressionState(workingWeightKg: 100, stallCount: 1)
         let decision = evaluate(state: state, sets: [SetResult(weightKg: 100, reps: 8, completed: false)])

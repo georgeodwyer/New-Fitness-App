@@ -98,17 +98,24 @@ public enum Progression {
             return ProgressionDecision(newState: state, change: .none, reason: reason)
         }
 
-        // Base the next step on what was actually lifted (the lightest working set).
-        let base = done.compactMap(\.weightKg).min() ?? state.workingWeightKg
-        let rpes = done.compactMap(\.rpe)
+        // The weight to judge against: the working weight, or what they chose instead when every
+        // set was lighter (or heavier). One lighter set doesn't pull the weight down.
+        let weights = done.compactMap(\.weightKg)
+        let working = state.workingWeightKg
+        let lightest = weights.min() ?? working
+        let allLighter = working > 0 && !weights.isEmpty && weights.allSatisfy { $0 < working - 0.01 }
+        let base = working <= 0 || allLighter ? lightest : max(working, lightest)
+        // Only sets at that weight count: every prescribed set must reach the top of the range there.
+        let atWeight = done.filter { ($0.weightKg ?? base) >= base - 0.01 }
+        let rpes = atWeight.compactMap(\.rpe)
         let averageRPE = rpes.isEmpty ? nil : rpes.reduce(0, +) / Double(rpes.count)
-        let allSetsDone = done.count >= prescribedSets
-        let hitTop = allSetsDone && done.allSatisfy { $0.reps >= repRange.upper }
+        let allSetsDone = atWeight.count >= prescribedSets
+        let hitTop = allSetsDone && atWeight.allSatisfy { $0.reps >= repRange.upper }
         // Only failed reps count against you. Sets not done (a session cut short) just hold the weight.
-        let missed = done.contains { $0.reps < repRange.lower }
+        let missed = atWeight.contains { $0.reps < repRange.lower }
         let effortOK = averageRPE.map { $0 <= rules.maxRPEForIncrease } ?? true
         let weightText = { (kg: Double) in Units.formatWeight(kg: kg, units: units) + " " + Units.weightUnitLabel(units) }
-        let setsText = "\(done.count)×\(repRange.upper)"
+        let setsText = "\(atWeight.count)×\(repRange.upper)"
 
         if hitTop && effortOK {
             let step = rules.increment(loading: loading, region: region)
@@ -150,7 +157,7 @@ public enum Progression {
             return ProgressionDecision(
                 newState: ProgressionState(workingWeightKg: base, stallCount: state.stallCount),
                 change: .hold,
-                reason: "\(exerciseName): staying at \(weightText(base)). You did \(done.count) of \(prescribedSets) sets, so finish them all to earn an increase."
+                reason: "\(exerciseName): staying at \(weightText(base)). You did \(atWeight.count) of \(prescribedSets) sets at that weight, so do them all to earn an increase."
             )
         }
 

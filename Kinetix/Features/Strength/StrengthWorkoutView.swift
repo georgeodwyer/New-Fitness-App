@@ -397,7 +397,7 @@ private struct ExerciseCard: View {
                     if isFolded {
                         Text(group.isComplete ? doneSummary : targetText).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
                     } else {
-                        Text(targetText).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+                        Text(targetText).font(KXFont.captionEmphasis).foregroundStyle(KXColor.ink)
                         if let lastTime = model.lastTime[group.first.exerciseId] {
                             Label(lastTime, systemImage: "clock.arrow.circlepath")
                                 .font(KXFont.caption)
@@ -516,7 +516,7 @@ private struct ExerciseCard: View {
         let first = group.first
         let reps = "\(group.sets.count) × \(first.repRangeLower)–\(first.repRangeUpper)"
         let load = first.isBodyweight ? "bodyweight" : format.load(first.targetWeightKg)
-        return "Target \(reps) @ \(load) · rest \(Units.formatMinutesSeconds(Double(first.restSeconds)))"
+        return "Suggested \(reps) @ \(load) · rest \(Units.formatMinutesSeconds(Double(first.restSeconds)))"
     }
 
     /// "3 sets · 60 kg × 8, 8, 7"
