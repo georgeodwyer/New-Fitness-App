@@ -109,6 +109,12 @@ final class WatchMirrorService: NSObject {
         send(.gymFrame(frame))
     }
 
+    /// Sends the functional workout to the watch.
+    func publish(_ frame: FunctionalMirrorFrame) {
+        guard frame.sessionId == runId else { return }
+        send(.functionalFrame(frame))
+    }
+
     /// The run is over: the watch stops and goes back to its list.
     func end(saved: Bool) {
         guard let runId else { return }
@@ -141,7 +147,7 @@ final class WatchMirrorService: NSObject {
     private func send(_ message: MirrorMessage) {
         let data = message.encoded()
         switch message {
-        case .frame, .gymFrame: lastFrame = data
+        case .frame, .gymFrame, .functionalFrame: lastFrame = data
         case .ended: lastFrame = nil
         default: break
         }
@@ -180,7 +186,7 @@ final class WatchMirrorService: NSObject {
             } else {
                 send(.ended(runId: nil, saved: false))
             }
-        case .frame, .gymFrame, .ended:
+        case .frame, .gymFrame, .functionalFrame, .ended:
             break
         }
     }

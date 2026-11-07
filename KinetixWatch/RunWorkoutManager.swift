@@ -88,6 +88,11 @@ final class RunWorkoutManager: NSObject {
     private(set) var isGym = false
     /// The phone's gym session right now.
     private(set) var gymFrame: GymMirrorFrame?
+    /// Showing a functional workout (circuit / Hyrox) from the phone.
+    private(set) var isFunctional = false
+    /// The phone's functional workout right now.
+    private(set) var functionalFrame: FunctionalMirrorFrame?
+    @ObservationIgnored private var pendingFunctionalCommandAt: Date?
     /// The watch's own latest heart rate (shown on the gym screen).
     private(set) var liveHeartRate: Double?
     /// Heart-rate history, cadence, climb and calories for custom screens.
@@ -217,6 +222,10 @@ final class RunWorkoutManager: NSObject {
         guard phase == .running else { return }
         if isGym {
             if action != .off { gymPrimary() }
+            return
+        }
+        if isFunctional {
+            if action != .off { functionalNext() }
             return
         }
         switch action {
@@ -360,6 +369,9 @@ final class RunWorkoutManager: NSObject {
         mirrorRunId = nil
         isGym = false
         gymFrame = nil
+        isFunctional = false
+        functionalFrame = nil
+        pendingFunctionalCommandAt = nil
         trackSuggestedHere = false
         trackDismissed = false
         dismissedPhoneSuggestion = false
@@ -518,8 +530,10 @@ final class RunWorkoutManager: NSObject {
         reset()
         mode = .mirroring
         isGym = configuration.activityType == .traditionalStrengthTraining
+        isFunctional = configuration.activityType == .functionalStrengthTraining
         phase = .running
-        option = WatchRunOption(id: UUID(), source: .free, title: isGym ? "Gym on iPhone" : "Run on iPhone")
+        option = WatchRunOption(id: UUID(), source: .free,
+                                title: isGym ? "Gym on iPhone" : (isFunctional ? "Workout on iPhone" : "Run on iPhone"))
         let start = Date()
         startedAt = start
         extras.start(at: start)
@@ -559,10 +573,12 @@ final class RunWorkoutManager: NSObject {
         case .ended(let runId, let saved):
             if let runId { endedMirrorRuns.insert(runId) }
             guard isMirroring, runId == nil || runId == mirrorRunId || mirrorRunId == nil else { return }
-            let what = isGym ? "Gym session" : "Run"
+            let what = isGym ? "Gym session" : (isFunctional ? "Workout" : "Run")
             Task { await finishMirroring(notice: saved ? "\(what) finished on your iPhone." : "\(what) discarded on your iPhone.") }
         case .gymFrame(let frame):
             receiveGym(frame)
+        case .functionalFrame(let frame):
+            receiveFunctional(frame)
         case .command, .heartRate:
             break
         }
@@ -594,6 +610,55 @@ final class RunWorkoutManager: NSObject {
         if option?.title != frame.title {
             option = WatchRunOption(id: frame.sessionId, source: .free, title: frame.title)
         }
+    }
+
+    private func receiveFunctional(_ frame: FunctionalMirrorFrame) {
+        guard !endedMirrorRuns.contains(frame.sessionId) else { return }
+        guard isMirroring else {
+            // The phone's workout is on and the app is open but wasn't woken for it: join in.
+            guard phase == .idle || phase == .finished, frame.isFresh(at: Date()) || isLookingForPhoneWorkout else { return }
+            isLookingForPhoneWorkout = false
+            let configuration = HKWorkoutConfiguration()
+            configuration.activityType = .functionalStrengthTraining
+            configuration.locationType = .indoor
+            Task { await startMirroring(configuration: configuration) }
+            return
+        }
+        guard isFunctional else { return }
+        mirrorRunId = frame.sessionId
+        lastFrameAt = Date()
+        isPhoneLinkStale = false
+        pendingFunctionalCommandAt = nil
+        mirrorUnits = frame.units
+        functionalFrame = frame
+        if option?.title != frame.title {
+            option = WatchRunOption(id: frame.sessionId, source: .free, title: frame.title)
+        }
+        let device = WKInterfaceDevice.current()
+        for alert in frame.alerts {
+            switch alert {
+            case .speedUp: device.play(.directionUp)
+            case .easeOff: device.play(.directionDown)
+            case .newStep: Self.goBuzz()
+            case .split: device.play(.click)
+            case .complete: device.play(.success)
+            }
+        }
+    }
+
+    /// Next station (button, double tap or the crown).
+    func functionalNext() {
+        guard isFunctional, let frame = functionalFrame, !frame.isFinished, !frame.nextDisabled else { return }
+        sendToPhone(.command(.next))
+        pendingFunctionalCommandAt = Date()
+        WKInterfaceDevice.current().play(.success)
+    }
+
+    func functionalUndo() {
+        guard isFunctional, functionalFrame?.canUndo == true else { return }
+        sendToPhone(.command(.undo))
+        pendingFunctionalCommandAt = Date()
+        WKInterfaceDevice.current().play(.retry)
     }
 
     /// "Join iPhone workout": the watch app was closed during a session on the phone. Ask the
@@ -664,9 +729,10 @@ final class RunWorkoutManager: NSObject {
         let silence = Date().timeIntervalSince(lastFrameAt)
         // A gym session: the phone often sits locked on a bench and goes quiet, which is fine.
         // Only say it's lost when a Start/Finish set hasn't been confirmed, or after a long time.
-        if isGym {
-            let unconfirmed = pendingGymCommandAt.map { Date().timeIntervalSince($0) > 12 } ?? false
-            isPhoneLinkStale = unconfirmed || silence > 180
+        if isGym || isFunctional {
+            let pending = isGym ? pendingGymCommandAt : pendingFunctionalCommandAt
+            let unconfirmed = pending.map { Date().timeIntervalSince($0) > 12 } ?? false
+            isPhoneLinkStale = unconfirmed || silence > (isGym ? 180 : 30)
         } else {
             isPhoneLinkStale = silence > 15
         }
@@ -677,7 +743,7 @@ final class RunWorkoutManager: NSObject {
         }
         // The phone has gone quiet for a long time (its app was closed): stop showing the run.
         // A gym session keeps going (and keeps heart rate) for longer: lifting can be quiet.
-        if silence > (isGym ? 3 * 3600 : 600) {
+        if silence > (isGym || isFunctional ? 3 * 3600 : 600) {
             Task { await finishMirroring(notice: isGym ? "Lost touch with your iPhone. Check your gym session there."
                                                       : "Lost touch with your iPhone. Check the run there.") }
         }
@@ -686,8 +752,9 @@ final class RunWorkoutManager: NSObject {
     /// End pressed on the watch: the phone finishes the run and asks how hard it was.
     private func endMirroredRun() async {
         guard isMirroring else { return }
-        if isGym {
-            await finishMirroring(notice: "Stopped showing your gym session. Carry on on your iPhone.")
+        if isGym || isFunctional {
+            await finishMirroring(notice: isGym ? "Stopped showing your gym session. Carry on on your iPhone."
+                                                : "Stopped showing your workout. Carry on on your iPhone.")
             return
         }
         if isPhoneLinkStale {

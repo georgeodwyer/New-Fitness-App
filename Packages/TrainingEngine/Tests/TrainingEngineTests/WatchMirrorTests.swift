@@ -84,4 +84,18 @@ final class WatchMirrorTests: XCTestCase {
         XCTAssertFalse(frame.isComplete)
         XCTAssertEqual(MirrorMessage.decode(MirrorMessage.command(.finishSet).encoded()), .command(.finishSet))
     }
+
+    func testFunctionalFrameRoundTrips() throws {
+        let frame = FunctionalMirrorFrame(sessionId: UUID(), title: "Hyrox simulation", station: "Run", detail: "1 km · 4:00/km",
+                                          progress: "Station 3 of 16", phaseLabel: nil,
+                                          clockStartedAt: Date(timeIntervalSince1970: 1_000), clockEndsAt: nil,
+                                          startedAt: Date(timeIntervalSince1970: 500), next: "Sled pull 50 m", meters: 420,
+                                          currentPace: Pace(secondsPerKm: 250), pacePosition: .tooSlow, canUndo: true,
+                                          nextDisabled: false, isFinished: false, units: .metric, alerts: [.newStep],
+                                          zoneStarts: [95, 114, 133, 152, 171], maxHeartRate: 190, sentAt: Date(timeIntervalSince1970: 1_005))
+        let decoded = try XCTUnwrap(MirrorMessage.decode(MirrorMessage.functionalFrame(frame).encoded()))
+        XCTAssertEqual(decoded, .functionalFrame(frame))
+        XCTAssertEqual(frame.zone(for: 160), 4)
+        XCTAssertEqual(MirrorMessage.decode(MirrorMessage.command(.next).encoded()), .command(.next))
+    }
 }

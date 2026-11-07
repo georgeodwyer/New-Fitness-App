@@ -19,6 +19,8 @@ public enum MirrorMessage: Codable, Equatable, Sendable {
     case heartRate(bpm: Double, at: Date)
     /// Phone → watch: the gym session right now (when something changes, and every few seconds).
     case gymFrame(GymMirrorFrame)
+    /// Phone → watch: the functional workout right now (when something changes, and every few seconds).
+    case functionalFrame(FunctionalMirrorFrame)
 
     public func encoded() -> Data { (try? WatchCoding.encoder.encode(self)) ?? Data() }
     public static func decode(_ data: Data) -> MirrorMessage? { try? WatchCoding.decoder.decode(MirrorMessage.self, from: data) }
@@ -37,6 +39,8 @@ public enum MirrorCommand: String, Codable, Sendable {
     case sync
     /// Track mode on (lane 1; the lane can be changed on the phone) or off.
     case useTrack, stopTrack
+    /// Functional: this station is done, on to the next.
+    case next
 }
 
 /// What the watch should tap the wrist for.
@@ -133,6 +137,79 @@ public struct GymMirrorFrame: Codable, Equatable, Sendable {
     }
 
     public var isComplete: Bool { setsTotal > 0 && setsDone >= setsTotal }
+
+    /// Recent enough to show (or to start showing) on the watch.
+    public func isFresh(at now: Date, maxAgeSeconds: Double = 20) -> Bool {
+        now.timeIntervalSince(sentAt) <= maxAgeSeconds
+    }
+
+    /// 0 below zone 1, else 1–5.
+    public func zone(for bpm: Double) -> Int {
+        zoneStarts.lastIndex { bpm >= $0 }.map { $0 + 1 } ?? 0
+    }
+}
+
+/// The phone's functional workout (circuit / Hyrox style), for the watch to show: the station,
+/// its clock, the run pace against target, and Next.
+public struct FunctionalMirrorFrame: Codable, Equatable, Sendable {
+    public var sessionId: UUID
+    public var title: String
+    /// e.g. "Wall balls" (nil when finished).
+    public var station: String?
+    /// e.g. "100 reps · 6 kg" or "1 km · 4:00/km"
+    public var detail: String?
+    /// e.g. "Round 2 of 4 · 3/8"
+    public var progress: String
+    /// "Rest", "Done · wait for the minute", nil while working.
+    public var phaseLabel: String?
+    /// The station clock counts up from here…
+    public var clockStartedAt: Date?
+    /// …or down to here (timed windows, rests, the AMRAP cap).
+    public var clockEndsAt: Date?
+    public var startedAt: Date
+    /// What's after this station.
+    public var next: String?
+    /// Run stations outside: metres so far and the pace now, with where it sits against the target.
+    public var meters: Double?
+    public var currentPace: Pace?
+    public var pacePosition: PaceRange.Position?
+    public var canUndo: Bool
+    /// Next is pointless right now (EMOM, waiting for the next minute).
+    public var nextDisabled: Bool
+    public var isFinished: Bool
+    public var units: UnitSystem
+    public var alerts: [MirrorAlert]
+    /// Where each heart-rate zone starts (zones 1–5), and max heart rate.
+    public var zoneStarts: [Double]
+    public var maxHeartRate: Double
+    public var sentAt: Date
+
+    public init(sessionId: UUID, title: String, station: String?, detail: String?, progress: String, phaseLabel: String?,
+                clockStartedAt: Date?, clockEndsAt: Date?, startedAt: Date, next: String?, meters: Double?, currentPace: Pace?,
+                pacePosition: PaceRange.Position?, canUndo: Bool, nextDisabled: Bool, isFinished: Bool, units: UnitSystem,
+                alerts: [MirrorAlert], zoneStarts: [Double], maxHeartRate: Double, sentAt: Date) {
+        self.sessionId = sessionId
+        self.title = title
+        self.station = station
+        self.detail = detail
+        self.progress = progress
+        self.phaseLabel = phaseLabel
+        self.clockStartedAt = clockStartedAt
+        self.clockEndsAt = clockEndsAt
+        self.startedAt = startedAt
+        self.next = next
+        self.meters = meters
+        self.currentPace = currentPace
+        self.pacePosition = pacePosition
+        self.canUndo = canUndo
+        self.nextDisabled = nextDisabled
+        self.isFinished = isFinished
+        self.units = units
+        self.alerts = alerts
+        self.zoneStarts = zoneStarts
+        self.maxHeartRate = maxHeartRate
+        self.sentAt = sentAt
+    }
 
     /// Recent enough to show (or to start showing) on the watch.
     public func isFresh(at now: Date, maxAgeSeconds: Double = 20) -> Bool {

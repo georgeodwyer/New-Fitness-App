@@ -76,6 +76,111 @@ final class FunctionalWorkoutModel {
         RunLoop.main.add(timer, forMode: .common)
         self.timer = timer
         announceStation()
+        startWatch()
+    }
+
+    // MARK: Apple Watch
+
+    /// Showing on the Apple Watch (the Kinetix watch app, recording heart rate).
+    private(set) var isOnWatch = false
+    @ObservationIgnored private var watchTimer: Timer?
+    @ObservationIgnored private var lastWatchHeartRateAt: Date?
+    /// Taps for the watch since the last frame.
+    @ObservationIgnored private var pendingAlerts: [MirrorAlert] = []
+    /// One id for the watch link for the whole session.
+    @ObservationIgnored private let watchSessionId = UUID()
+
+    private func startWatch() {
+        let handlers = WatchMirrorService.Handlers(
+            command: { [weak self] command in self?.handleWatch(command) },
+            heartRate: { [weak self] bpm, _ in self?.receiveWatchHeartRate(bpm) },
+            resync: { [weak self] in self?.publishToWatch() }
+        )
+        isOnWatch = WatchMirrorService.shared.begin(runId: watchSessionId, handlers: handlers, activity: .functionalStrengthTraining)
+        guard isOnWatch else { return }
+        publishToWatch()
+        // The watch treats silence as a lost phone, so keep it up to date between changes.
+        let timer = Timer(timeInterval: 5, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.publishToWatch() }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        watchTimer = timer
+    }
+
+    private func handleWatch(_ command: MirrorCommand) {
+        switch command {
+        case .next, .skipStep, .lap:
+            guard !session.isFinished, !session.isWaitingForInterval else { publishToWatch(); return }
+            next()
+        case .undo:
+            guard session.canUndo else { publishToWatch(); return }
+            undo()
+        default:
+            break
+        }
+    }
+
+    private func receiveWatchHeartRate(_ bpm: Double) {
+        lastWatchHeartRateAt = Date()
+        receiveHeartRate(bpm, strap: false, live: true)
+    }
+
+    /// "Round 2 of 4 · Station 3 of 8".
+    var progressText: String {
+        let station = "Station \(session.stationIndex + 1) of \(workout.stations.count)"
+        if case .amrap = workout.format { return "Round \(session.round) · \(station)" }
+        if let total = session.totalRounds, total > 1 { return "Round \(session.round) of \(total) · \(station)" }
+        return station
+    }
+
+    private func publishToWatch() {
+        guard isOnWatch else { return }
+        let date = Date()
+        let station = session.station
+        var detail: [String] = []
+        if let station {
+            detail.append(station.target.text)
+            if let kg = station.weightKg, kg > 0 { detail.append(DisplayFormat(units: units).weight(kg)) }
+            if let speed = treadmillSpeed(for: station) {
+                detail.append(speed)
+            } else if let range = paceRange(for: station) {
+                detail.append(Units.formatPace(range.fastest, units: units) + Units.paceUnitLabel(units))
+            }
+        }
+        let phaseLabel: String? = session.isFinished ? nil
+            : (session.phase == .rest ? "Rest" : (session.isWaitingForInterval ? "Done · wait" : nil))
+        let remaining = session.remaining(at: date)
+        let frame = FunctionalMirrorFrame(
+            sessionId: watchSessionId,
+            title: workout.name,
+            station: station?.name,
+            detail: detail.isEmpty ? nil : detail.joined(separator: " · "),
+            progress: progressText,
+            phaseLabel: phaseLabel,
+            clockStartedAt: remaining == nil ? session.phaseStartedAt : nil,
+            clockEndsAt: remaining.map { date.addingTimeInterval($0) },
+            startedAt: session.startedAt,
+            next: session.nextStation?.title,
+            meters: isOutdoorRun ? stationMeters : nil,
+            currentPace: isOutdoorRun ? currentPace : nil,
+            pacePosition: pacePosition,
+            canUndo: session.canUndo,
+            nextDisabled: session.isWaitingForInterval,
+            isFinished: session.isFinished,
+            units: units,
+            alerts: pendingAlerts,
+            zoneStarts: heartRateZones.starts,
+            maxHeartRate: heartRateZones.maxHeartRate,
+            sentAt: date
+        )
+        pendingAlerts = []
+        WatchMirrorService.shared.publish(frame)
+    }
+
+    private func alertWatch(_ alert: MirrorAlert) {
+        guard isOnWatch else { return }
+        pendingAlerts.append(alert)
+        publishToWatch()
     }
 
     var workout: FunctionalWorkout { session.workout }
@@ -186,6 +291,12 @@ final class FunctionalWorkoutModel {
     func stop() {
         timer?.invalidate()
         timer = nil
+        watchTimer?.invalidate()
+        watchTimer = nil
+        if isOnWatch {
+            WatchMirrorService.shared.end(saved: savedLog != nil)
+            isOnWatch = false
+        }
         gps?.stop()
         gps = nil
         HeartRateMonitor.shared.onHeartRate = nil
@@ -226,6 +337,7 @@ final class FunctionalWorkoutModel {
             if record == nil {
                 record = FunctionalRecord(session: session)
                 endedAt = endedAt ?? Date()
+                alertWatch(.complete)
                 voice.speak("Workout done. \(Units.formatMinutesSeconds(totalSeconds))")
                 haptic(.success)
             }
@@ -234,6 +346,7 @@ final class FunctionalWorkoutModel {
         record = nil
         endedAt = nil
         announceStation()
+        alertWatch(.newStep)
     }
 
     // MARK: Cues
@@ -279,6 +392,7 @@ final class FunctionalWorkoutModel {
         targetReachedKey = stationKey
         voice.speak("\(session.station?.target.text.replacingOccurrences(of: " m", with: " metres") ?? "") done. Tap next.")
         haptic(.success)
+        alertWatch(.split)
     }
 
     /// Speed up / ease off on a run station with a pace, at most every 30 seconds.
@@ -288,8 +402,12 @@ final class FunctionalWorkoutModel {
         if let last = lastPaceCueAt, now.timeIntervalSince(last) < 30 { return }
         switch position {
         case .onTarget: return
-        case .tooSlow: voice.speak("Speed up. Target \(Units.formatPace(range.slowest, units: units))")
-        case .tooFast: voice.speak("Ease off. Target \(Units.formatPace(range.fastest, units: units))")
+        case .tooSlow:
+            voice.speak("Speed up. Target \(Units.formatPace(range.slowest, units: units))")
+            alertWatch(.speedUp)
+        case .tooFast:
+            voice.speak("Ease off. Target \(Units.formatPace(range.fastest, units: units))")
+            alertWatch(.easeOff)
         }
         lastPaceCueAt = now
     }
@@ -335,7 +453,7 @@ final class FunctionalWorkoutModel {
     private func startHeartRate() {
         let monitor = HeartRateMonitor.shared
         monitor.onHeartRate = { [weak self] bpm, _ in
-            MainActor.assumeIsolated { self?.receiveHeartRate(bpm, strap: true) }
+            MainActor.assumeIsolated { self?.receiveHeartRate(bpm, strap: true, live: true) }
         }
         monitor.connectToSaved()
         guard HKHealthStore.isHealthDataAvailable() else { return }
@@ -346,7 +464,7 @@ final class FunctionalWorkoutModel {
             let at = latest.endDate
             Task { @MainActor in
                 guard Date().timeIntervalSince(at) < 180 else { return }
-                self?.receiveHeartRate(bpm, strap: false)
+                self?.receiveHeartRate(bpm, strap: false, live: false)
             }
         }
         let query = HKAnchoredObjectQuery(type: HKQuantityType(.heartRate), predicate: predicate, anchor: nil,
@@ -356,11 +474,12 @@ final class FunctionalWorkoutModel {
         healthQuery = query
     }
 
-    /// A chest strap, when one's connected, wins over readings from Health.
-    private func receiveHeartRate(_ bpm: Double, strap: Bool) {
+    /// A chest strap wins over the watch, and both over readings saved to Health.
+    private func receiveHeartRate(_ bpm: Double, strap: Bool, live: Bool) {
         guard bpm > 30, bpm < 250 else { return }
         let date = Date()
         if !strap, let lastStrapAt, date.timeIntervalSince(lastStrapAt) < 10 { return }
+        if !live, let lastWatchHeartRateAt, date.timeIntervalSince(lastWatchHeartRateAt) < 15 { return }
         if strap { lastStrapAt = date }
         heartRate = bpm
         heartRateAt = date
