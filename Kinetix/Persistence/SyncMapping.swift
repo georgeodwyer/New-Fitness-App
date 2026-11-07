@@ -44,6 +44,7 @@ enum SyncRegistry {
         RecoveryCheckInModel.self,
         RunTemplateModel.self,
         GymTemplateModel.self,
+        FunctionalTemplateModel.self,
         CustomExerciseModel.self,
         RouteModel.self
     ]
@@ -346,13 +347,14 @@ extension StrengthLogModel: SyncableModel {
         var warmUpSeconds: Double?
         var templateId: UUID?
         var isManual: Bool?
+        var functionalData: Data?
     }
     static var syncType: String { "strengthLog" }
     var syncPayload: Payload {
         Payload(plannedSessionId: plannedSessionId, startedAt: startedAt, durationSeconds: durationSeconds, effort: effort,
                 load: load, title: title, isFinished: isFinished, finishedAt: finishedAt, healthKitWorkoutId: healthKitWorkoutId,
                 stravaActivityId: stravaActivityId, isRecorded: isRecorded, activeSeconds: activeSeconds, warmUpSeconds: warmUpSeconds,
-                templateId: templateId, isManual: isManual)
+                templateId: templateId, isManual: isManual, functionalData: functionalData)
     }
     func applySync(_ p: Payload, context: ModelContext) {
         plannedSessionId = p.plannedSessionId
@@ -370,6 +372,7 @@ extension StrengthLogModel: SyncableModel {
         warmUpSeconds = p.warmUpSeconds
         templateId = p.templateId
         isManual = p.isManual ?? false
+        functionalData = p.functionalData
     }
     static func makeForSync(id: UUID) -> StrengthLogModel { StrengthLogModel(plannedSessionId: nil, startedAt: .now, id: id) }
 }
@@ -549,6 +552,28 @@ extension GymTemplateModel: SyncableModel {
     }
     static func makeForSync(id: UUID) -> GymTemplateModel {
         GymTemplateModel(name: "", items: [], id: id)
+    }
+}
+
+extension FunctionalTemplateModel: SyncableModel {
+    struct Payload: Codable {
+        var name: String
+        var workoutData: Data?
+        var createdAt: Date
+        var lastUsedAt: Date?
+    }
+    static var syncType: String { "functionalTemplate" }
+    var syncPayload: Payload {
+        Payload(name: name, workoutData: workoutData, createdAt: createdAt, lastUsedAt: lastUsedAt)
+    }
+    func applySync(_ p: Payload, context: ModelContext) {
+        name = p.name
+        workoutData = p.workoutData
+        createdAt = p.createdAt
+        lastUsedAt = p.lastUsedAt
+    }
+    static func makeForSync(id: UUID) -> FunctionalTemplateModel {
+        FunctionalTemplateModel(workout: FunctionalWorkout(id: id, name: ""))
     }
 }
 

@@ -171,7 +171,8 @@ final class HealthService {
     func saveStrength(_ log: StrengthLogModel) async throws -> UUID {
         guard let store else { throw HealthError.unavailable }
         let configuration = HKWorkoutConfiguration()
-        configuration.activityType = .traditionalStrengthTraining
+        // Functional workouts (circuits, Hyrox) are their own kind in Health.
+        configuration.activityType = log.isFunctional ? .functionalStrengthTraining : .traditionalStrengthTraining
         configuration.locationType = .indoor
         let builder = HKWorkoutBuilder(healthStore: store, configuration: configuration, device: .local())
         let start = log.startedAt

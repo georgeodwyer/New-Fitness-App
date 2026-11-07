@@ -118,6 +118,10 @@ struct DoneTodayCard: View {
     }
 
     private func liftDetail(_ lift: StrengthLogModel) -> String {
+        if let functional = lift.functional {
+            let stations = functional.splits.filter { $0.kind != .rest }.count
+            return "\(Int((lift.durationSeconds / 60).rounded())) min · \(stations) station\(stations == 1 ? "" : "s")"
+        }
         let sets = lift.orderedSets.filter(\.isCompleted).count
         var parts = ["\(Int((lift.durationSeconds / 60).rounded())) min", "\(sets) set\(sets == 1 ? "" : "s")"]
         if lift.volumeKg > 0 { parts.append(format.volume(lift.volumeKg)) }

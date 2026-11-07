@@ -124,6 +124,19 @@ extension ShareCardData {
     @MainActor
     static func strength(_ log: StrengthLogModel, units: UnitSystem, records: Int) -> ShareCardData {
         let format = DisplayFormat(units: units)
+        if let functional = log.functional {
+            return ShareCardData(
+                kind: .strength,
+                title: log.title.isEmpty ? "Functional" : log.title,
+                subtitle: log.startedAt.formatted(.dateTime.weekday(.wide).day().month(.wide)),
+                metrics: [("Time", Units.formatMinutesSeconds(log.durationSeconds)),
+                          ("Stations", "\(functional.splits.filter { $0.kind != .rest }.count)"),
+                          functional.runMeters > 0 ? ("Run", format.distance(functional.runMeters)) : ("Effort", "\(Int(log.effort))/10")],
+                lines: Array(functional.lines().prefix(16)),
+                badge: nil,
+                units: units
+            )
+        }
         let completed = log.orderedSets.filter(\.isCompleted)
         var keys: [String] = []
         for set in completed where !keys.contains(set.progressionKey) { keys.append(set.progressionKey) }

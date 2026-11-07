@@ -134,6 +134,11 @@ final class StravaService {
     func upload(strength log: StrengthLogModel, units: UnitSystem) async throws -> String {
         guard let client else { throw StravaError.notConnected }
         let elapsed = Int(max(log.durationSeconds, (log.finishedAt ?? log.startedAt).timeIntervalSince(log.startedAt)))
+        if let functional = log.functional {
+            let description = (["Planned and coached by Kinetix."] + functional.lines()).joined(separator: "\n")
+            return String(try await client.createActivity(name: log.title.isEmpty ? "Functional" : log.title, sportType: "Workout",
+                                                          start: log.startedAt, elapsedSeconds: elapsed, description: description))
+        }
         return String(try await client.createActivity(name: log.title.isEmpty ? "Strength" : log.title, sportType: "WeightTraining",
                                                       start: log.startedAt, elapsedSeconds: elapsed,
                                                       description: Self.strengthDescription(log, units: units)))

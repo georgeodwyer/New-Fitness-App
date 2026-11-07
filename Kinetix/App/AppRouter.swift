@@ -16,6 +16,7 @@ final class AppRouter {
     /// The running workout's state lives here, so it keeps going while minimised.
     var runModel: RunWorkoutModel?
     var strengthModel: StrengthWorkoutModel?
+    var functionalModel: FunctionalWorkoutModel?
     /// The trainer is closed down to the bar above the tabs.
     private(set) var isMinimised = false
 
@@ -55,6 +56,8 @@ final class AppRouter {
         }
         runModel = nil
         strengthModel = nil
+        functionalModel?.stop()
+        functionalModel = nil
         isMinimised = false
         activeSession = session
     }
@@ -73,6 +76,8 @@ final class AppRouter {
         activeSession = nil
         runModel = nil
         strengthModel = nil
+        functionalModel?.stop()
+        functionalModel = nil
         isMinimised = false
     }
 
@@ -95,4 +100,8 @@ struct ActiveSession: Identifiable, Equatable {
     var strengthLogId: UUID? = nil
     /// A planned route to follow on a run started from the Record tab.
     var route: PlannedRoute? = nil
+    /// A functional workout (circuit / Hyrox style) started from the Workout tab.
+    var functional: FunctionalWorkout? = nil
+    /// The saved functional workout it came from, if any.
+    var functionalTemplateId: UUID? = nil
 }

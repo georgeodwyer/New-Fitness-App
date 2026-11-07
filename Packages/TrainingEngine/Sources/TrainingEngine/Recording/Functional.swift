@@ -205,7 +205,7 @@ public struct FunctionalSplit: Codable, Equatable, Sendable {
 }
 
 /// The workout as it happens: which round and station, work or rest, and the splits so far.
-/// Rounds for time and AMRAP move on when you tap Next (rest stations by themselves);
+/// Rounds for time and AMRAP move on when you tap Next (timed stations and rests by themselves);
 /// intervals and EMOM move on by the clock.
 public struct FunctionalSession: Equatable, Sendable {
     public enum Phase: Equatable, Sendable { case work, rest }
@@ -270,7 +270,7 @@ public struct FunctionalSession: Equatable, Sendable {
         case .amrap(let cap):
             return max(0, cap - elapsed(at: now))
         case .rounds:
-            if let station, station.kind == .rest, case .seconds(let seconds) = station.target {
+            if let seconds = timedStationSeconds {
                 return max(0, seconds - phaseElapsed(at: now))
             }
             return nil
@@ -303,13 +303,13 @@ public struct FunctionalSession: Equatable, Sendable {
 
     /// Call about once a second: moves on when the clock says so. Returns true if something changed.
     @discardableResult
-    public mutating func tick(at now: Date) -> Bool {
+    public mutating func tick(at now: Date, meters: Double? = nil) -> Bool {
         guard !isFinished else { return false }
         switch workout.format {
         case .intervals(let work, let rest, _):
             if phase == .work, phaseElapsed(at: now) >= work {
                 let end = phaseStartedAt.addingTimeInterval(work)
-                recordSplit(at: end, meters: nil)
+                recordSplit(at: end, meters: meters)
                 startRest(at: end)
                 return true
             }
@@ -320,7 +320,7 @@ public struct FunctionalSession: Equatable, Sendable {
         case .emom(let every, let rounds):
             if phaseElapsed(at: now) >= every {
                 let end = phaseStartedAt.addingTimeInterval(every)
-                if !isWaitingForInterval { recordSplit(at: end, meters: nil) }
+                if !isWaitingForInterval { recordSplit(at: end, meters: meters) }
                 isWaitingForInterval = false
                 if splits.count >= rounds {
                     isFinished = true
@@ -336,19 +336,26 @@ public struct FunctionalSession: Equatable, Sendable {
                 isFinished = true
                 return true
             }
-            if let station, station.kind == .rest, case .seconds(let seconds) = station.target, phaseElapsed(at: now) >= seconds {
-                recordSplit(at: phaseStartedAt.addingTimeInterval(seconds), meters: nil)
+            if let seconds = timedStationSeconds, phaseElapsed(at: now) >= seconds {
+                recordSplit(at: phaseStartedAt.addingTimeInterval(seconds), meters: meters)
                 advanceStation(at: phaseStartedAt.addingTimeInterval(seconds))
                 return true
             }
         case .rounds:
-            if let station, station.kind == .rest, case .seconds(let seconds) = station.target, phaseElapsed(at: now) >= seconds {
-                recordSplit(at: phaseStartedAt.addingTimeInterval(seconds), meters: nil)
+            if let seconds = timedStationSeconds, phaseElapsed(at: now) >= seconds {
+                recordSplit(at: phaseStartedAt.addingTimeInterval(seconds), meters: meters)
                 advanceStation(at: phaseStartedAt.addingTimeInterval(seconds))
                 return true
             }
         }
         return false
+    }
+
+    /// A station done for time ("plank 1 min", "run 2 min", rest) moves on by itself when the
+    /// time is up (rounds for time and AMRAP; the clock formats time every station anyway).
+    public var timedStationSeconds: Double? {
+        guard let station, case .seconds(let seconds) = station.target else { return nil }
+        return seconds
     }
 
     public var canUndo: Bool { !history.isEmpty }
@@ -408,4 +415,48 @@ public struct FunctionalSession: Equatable, Sendable {
 
 extension Array {
     subscript(safe index: Int) -> Element? { indices.contains(index) ? self[index] : nil }
+}
+
+// MARK: - Done
+
+/// A finished functional workout, as saved: what it was and how each station went.
+public struct FunctionalRecord: Codable, Equatable, Sendable {
+    public var workout: FunctionalWorkout
+    public var splits: [FunctionalSplit]
+    /// AMRAP: whole rounds done.
+    public var roundsDone: Int
+    /// Run stations' GPS distance added up (outdoor runs only).
+    public var runMeters: Double
+
+    public init(workout: FunctionalWorkout, splits: [FunctionalSplit], roundsDone: Int, runMeters: Double) {
+        self.workout = workout
+        self.splits = splits
+        self.roundsDone = roundsDone
+        self.runMeters = runMeters
+    }
+
+    public init(session: FunctionalSession) {
+        self.init(workout: session.workout, splits: session.splits, roundsDone: session.roundsDone,
+                  runMeters: session.splits.compactMap(\.meters).reduce(0, +))
+    }
+
+    /// Time spent on each kind of station (runs, SkiErg, sled…), largest first. Rests left out.
+    public var timeByKind: [(kind: FunctionalStation.Kind, seconds: Double)] {
+        var totals: [FunctionalStation.Kind: Double] = [:]
+        for split in splits where split.kind != .rest { totals[split.kind, default: 0] += split.seconds }
+        return totals.map { ($0.key, $0.value) }.sorted { $0.seconds > $1.seconds }
+    }
+
+    /// "Run 1 km  4:12" lines, one per station, for Strava and sharing.
+    public func lines() -> [String] {
+        splits.filter { $0.kind != .rest }.map { split in
+            let round = (workout.stations.count > 1 && splits.contains { $0.round > 1 }) ? "R\(split.round) " : ""
+            return "\(round)\(split.name) \(split.target.text)  \(Units.formatMinutesSeconds(split.seconds))"
+        }
+    }
+}
+
+extension Pace {
+    /// Treadmill speed for this pace, km/h (one decimal).
+    public var kilometresPerHour: Double { secondsPerKm > 0 ? (36_000 / secondsPerKm).rounded() / 10 : 0 }
 }

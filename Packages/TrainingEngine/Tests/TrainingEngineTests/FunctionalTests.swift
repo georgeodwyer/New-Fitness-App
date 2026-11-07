@@ -86,4 +86,24 @@ final class FunctionalTests: XCTestCase {
         XCTAssertEqual(FunctionalTarget.seconds(60).text, "1 min")
         XCTAssertEqual(FunctionalTarget.meters(1000).text, "1 km")
     }
+
+    func testRecordAddsUpRunsAndTimeByKind() {
+        let start = Date(timeIntervalSince1970: 0)
+        let workout = FunctionalWorkout(name: "Mini", format: .rounds(2), stations: [
+            FunctionalStation(kind: .run, target: .meters(400)),
+            FunctionalStation(kind: .wallBalls, target: .reps(20))
+        ])
+        var session = FunctionalSession(workout: workout, startedAt: start)
+        session.next(at: start.addingTimeInterval(90), meters: 410)
+        session.next(at: start.addingTimeInterval(150))
+        session.next(at: start.addingTimeInterval(245), meters: 395)
+        session.next(at: start.addingTimeInterval(300))
+        XCTAssertTrue(session.isFinished)
+        let record = FunctionalRecord(session: session)
+        XCTAssertEqual(record.runMeters, 805)
+        XCTAssertEqual(record.timeByKind.first?.kind, .run)
+        XCTAssertEqual(record.timeByKind.first?.seconds, 185)
+        XCTAssertEqual(record.lines().first, "R1 Run 400 m  1:30")
+        XCTAssertEqual(Pace(secondsPerKm: 240).kilometresPerHour, 15)
+    }
 }

@@ -148,6 +148,13 @@ After M13: owner's list of faults.
   `Features/Share/` (`ShareCardView` map/photo/sticker, `ShareService` render/map snapshot/
   Instagram Stories via `InstagramAppID` = `INSTAGRAM_APP_ID` xcconfig/secret, docs/SHARING.md),
   `RunAnalysis.privacyTrimmed`.
+- **Functional workouts (pass 1)**: engine `Recording/Functional.swift` (`FunctionalWorkout`, formats
+  rounds/intervals/EMOM/AMRAP, `FunctionalStation` incl. run pace fixed/zone + treadmill,
+  `FunctionalSession` Next/undo/tick, `HyroxSimulation`, `FunctionalRecord`). App:
+  `FunctionalTemplateModel` ("functionalTemplate"), `StrengthLogModel.functionalData` (a finished
+  functional workout is a strength log with no sets: load by sRPE, Health `.functionalStrengthTraining`,
+  Strava "Workout"); `Features/Functional/` (setup, editor, live model + view, summary);
+  `ActiveSession.functional` → `router.functionalModel`. Watch + plan linking are pass 2–3.
 - **M12 ✅ Gym tracker**: engine `Recording/GymWorkout.swift` (`MuscleGroup`, `ExerciseSearch`,
   `GymTemplateItem`, `GymTemplate.summary`, `GymPrefill` set-by-set from last time + "Last time" text).
   `exercises.json` gained 41 `libraryOnly` exercises with a `muscle` (never picked for plans).

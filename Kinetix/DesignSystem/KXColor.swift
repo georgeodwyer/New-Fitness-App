@@ -35,6 +35,8 @@ enum KXColor {
     /// Discipline colours for charts, meters and session icons.
     static let run = dynamic(light: 0x0093D1, dark: 0x3BD3FF)
     static let lift = dynamic(light: 0xDE3F86, dark: 0xFF5FA2)
+    /// Functional workouts (circuits, Hyrox).
+    static let functional = dynamic(light: 0xE0661B, dark: 0xFF8A3D)
     /// De-emphasis for "other" data (cross-training, mobility).
     static let other = dynamic(light: 0xB4AEA2, dark: 0x5C6B73)
     /// Marks a day with two sessions.

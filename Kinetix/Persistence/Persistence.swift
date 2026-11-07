@@ -72,6 +72,7 @@ enum KinetixSchemaV1: VersionedSchema {
         RecoveryCheckInModel.self,
         RunTemplateModel.self,
         GymTemplateModel.self,
+        FunctionalTemplateModel.self,
         CustomExerciseModel.self,
         RouteModel.self]
     }

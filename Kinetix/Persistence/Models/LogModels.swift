@@ -1,5 +1,6 @@
 import Foundation
 import SwiftData
+import TrainingEngine
 
 /// A completed run. Route and samples are stored as compact JSON blobs.
 @Model
@@ -87,6 +88,8 @@ final class StrengthLogModel: SyncTracked {
     var templateId: UUID?
     /// Marked as done by hand (not tracked in Kinetix): counted, never exported.
     var isManual: Bool = false
+    /// A functional (circuit / Hyrox style) workout: encoded `FunctionalRecord` (no sets).
+    var functionalData: Data?
 
     @Relationship(deleteRule: .cascade, inverse: \SetLogModel.session)
     var sets: [SetLogModel] = []
@@ -107,6 +110,10 @@ final class StrengthLogModel: SyncTracked {
     var volumeKg: Double {
         sets.filter { $0.isCompleted && !$0.isSoftDeleted }.reduce(0) { $0 + Double($1.actualReps) * $1.actualWeightKg }
     }
+
+    /// The functional workout this was, with its splits (nil for a gym session).
+    var functional: FunctionalRecord? { StoredJSON.decode(FunctionalRecord.self, from: functionalData) }
+    var isFunctional: Bool { functionalData != nil }
 
     var orderedSets: [SetLogModel] {
         sets.filter { !$0.isSoftDeleted }.sorted { ($0.exerciseOrder, $0.setIndex) < ($1.exerciseOrder, $1.setIndex) }

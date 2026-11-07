@@ -71,6 +71,44 @@ final class GymTemplateModel: SyncTracked {
     }
 }
 
+/// A saved functional workout (circuit / Hyrox style) from the Workout tab. Synced to the account.
+@Model
+final class FunctionalTemplateModel: SyncTracked {
+    @Attribute(.unique) var id: UUID
+    var updatedAt: Date
+    var deletedAt: Date?
+    var needsSync: Bool
+
+    var name: String
+    /// Encoded `FunctionalWorkout`.
+    var workoutData: Data?
+    var createdAt: Date
+    var lastUsedAt: Date?
+
+    init(workout: FunctionalWorkout, now: Date = .now) {
+        self.id = workout.id
+        self.updatedAt = now
+        self.deletedAt = nil
+        self.needsSync = true
+        self.name = workout.name
+        self.workoutData = StoredJSON.encode(workout)
+        self.createdAt = now
+    }
+
+    var workout: FunctionalWorkout {
+        get {
+            var workout = StoredJSON.decode(FunctionalWorkout.self, from: workoutData) ?? FunctionalWorkout(id: id, name: name)
+            workout.id = id
+            workout.name = name
+            return workout
+        }
+        set {
+            name = newValue.name
+            workoutData = StoredJSON.encode(newValue)
+        }
+    }
+}
+
 /// An exercise the user added to the library themselves. Synced to the account.
 @Model
 final class CustomExerciseModel: SyncTracked {

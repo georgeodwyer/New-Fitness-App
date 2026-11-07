@@ -167,11 +167,16 @@ struct StrengthSessionDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: KXSpacing.xl) {
                 VStack(alignment: .leading, spacing: KXSpacing.xs) {
-                    KXOverline(log.startedAt.formatted(.dateTime.weekday(.wide).day().month(.wide).hour().minute()), color: KXColor.lift)
+                    KXOverline(log.startedAt.formatted(.dateTime.weekday(.wide).day().month(.wide).hour().minute()),
+                               color: log.isFunctional ? KXColor.functional : KXColor.lift)
                     Text(log.title.isEmpty ? "Strength" : log.title).font(KXFont.display).foregroundStyle(KXColor.ink)
                 }
                 HStack {
-                    KXMetric(label: "Volume", value: format.volume(log.volumeKg), size: .small)
+                    if let functional = log.functional {
+                        KXMetric(label: "Stations", value: "\(functional.splits.filter { $0.kind != .rest }.count)", size: .small)
+                    } else {
+                        KXMetric(label: "Volume", value: format.volume(log.volumeKg), size: .small)
+                    }
                     Spacer()
                     KXMetric(label: "Time", value: Units.formatMinutesSeconds(log.durationSeconds), size: .small)
                     Spacer()
@@ -200,7 +205,11 @@ struct StrengthSessionDetailView: View {
                     exerciseCard(exercise.sets)
                 }
 
-                SaveAsTemplateButton(source: .gym(log))
+                if let functional = log.functional {
+                    FunctionalSplitsCard(record: functional, units: units)
+                } else {
+                    SaveAsTemplateButton(source: .gym(log))
+                }
                 Button(role: .destructive) { confirmDelete = true } label: {
                     Label("Delete session", systemImage: "trash")
                 }

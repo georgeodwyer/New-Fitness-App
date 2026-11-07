@@ -18,6 +18,16 @@ struct SessionContainerView: View {
 
     var body: some View {
         Group {
+            if let functional = session.functional {
+                if let functionalModel = router.functionalModel {
+                    FunctionalWorkoutView(model: functionalModel) { close() }
+                } else {
+                    ProgressView().onAppear {
+                        router.functionalModel = FunctionalWorkoutModel(workout: functional, templateId: session.functionalTemplateId,
+                                                                        units: units, settings: coachingSettings.first, context: context)
+                    }
+                }
+            } else {
             switch session.kind {
             case .strength:
                 if let strengthModel {
@@ -33,6 +43,7 @@ struct SessionContainerView: View {
                 }
             default:
                 SessionPlaceholderView(session: session)
+            }
             }
         }
         // Whatever way the session ends, the lock-screen view goes with it, and the widgets

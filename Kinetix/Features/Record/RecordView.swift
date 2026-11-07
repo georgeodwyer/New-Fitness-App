@@ -3,7 +3,7 @@ import SwiftData
 import UniformTypeIdentifiers
 import TrainingEngine
 
-/// The Workout tab: start a run or a gym session without a plan, from scratch or from a saved
+/// The Workout tab: start a run, a gym session or a functional workout without a plan, from scratch or from a saved
 /// workout, and build your own run and gym workouts (for your plan, or just to use). Recorded sessions count towards training load like planned ones.
 struct RecordView: View {
     @Query(filter: #Predicate<RunTemplateModel> { $0.deletedAt == nil }, sort: \RunTemplateModel.createdAt, order: .reverse)
@@ -51,6 +51,14 @@ struct RecordView: View {
                         .buttonStyle(.plain)
                         .accessibilityIdentifier("record.gym")
                     }
+
+                    NavigationLink {
+                        FunctionalSetupView()
+                    } label: {
+                        functionalCard
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("record.functional")
 
                     // Build your own: saved here, linked to your plan from the Plan tab.
                     HStack(spacing: KXSpacing.sm) {
@@ -252,6 +260,37 @@ struct RecordView: View {
         .background {
             RoundedRectangle(cornerRadius: KXRadius.md, style: .continuous)
                 .fill(LinearGradient(colors: [tint.opacity(0.18), KXColor.surface], startPoint: .topLeading, endPoint: .center))
+                .background(KXColor.surface, in: RoundedRectangle(cornerRadius: KXRadius.md, style: .continuous))
+        }
+        .shadow(color: KXShadow.color, radius: KXShadow.radius, y: KXShadow.y)
+        .accessibilityElement(children: .combine)
+    }
+
+    /// Functional: a wide card under Run and Gym.
+    private var functionalCard: some View {
+        HStack(spacing: KXSpacing.md) {
+            Image(systemName: "figure.strengthtraining.functional")
+                .font(.title2.weight(.semibold))
+                .foregroundStyle(KXColor.functional)
+                .frame(width: 50, height: 50)
+                .background(KXColor.functional.opacity(0.16), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Functional")
+                    .font(KXFont.custom(.condensedBold, 30, relativeTo: .title))
+                    .textCase(.uppercase)
+                    .foregroundStyle(KXColor.ink)
+                Text("Circuits and Hyrox: runs, erg, sled and gym stations")
+                    .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+            Image(systemName: "chevron.right").font(KXFont.caption).foregroundStyle(KXColor.inkTertiary).accessibilityHidden(true)
+        }
+        .padding(KXSpacing.lg)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            RoundedRectangle(cornerRadius: KXRadius.md, style: .continuous)
+                .fill(LinearGradient(colors: [KXColor.functional.opacity(0.18), KXColor.surface], startPoint: .topLeading, endPoint: .center))
                 .background(KXColor.surface, in: RoundedRectangle(cornerRadius: KXRadius.md, style: .continuous))
         }
         .shadow(color: KXShadow.color, radius: KXShadow.radius, y: KXShadow.y)
