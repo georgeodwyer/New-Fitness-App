@@ -50,6 +50,7 @@
 		3C7556B959F1D015AAC35685 /* HomeWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09F31049BEE6448D25F4EED4 /* HomeWidgets.swift */; };
 		3F0E265E6D4153ADA8037E23 /* FunctionalWorkoutModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C671C7FA31ACFA3BACE5A83 /* FunctionalWorkoutModel.swift */; };
 		3FA853E7300E79023E932CCF /* RunServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0147DFFEB3CB167E9DF43A4B /* RunServiceTests.swift */; };
+		40FC480CB767E4F6CE6DDED9 /* WorkoutChangeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6069F120423158BF405A0FB /* WorkoutChangeService.swift */; };
 		4100D39BFB207D3BA79C1236 /* StravaService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41DD740D22466B22510031CB /* StravaService.swift */; };
 		43177386AAD1798256B429CE /* BarlowCondensed-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0628314AAB0F25B9D1812815 /* BarlowCondensed-SemiBold.ttf */; };
 		44DCC687BB257F80B8E5374D /* WhatsNew.swift in Sources */ = {isa = PBXBuildFile; fileRef = C86F0DE341CD0DB91AC94EEA /* WhatsNew.swift */; };
@@ -118,6 +119,7 @@
 		9F6D5D7C390529C797D53991 /* UnitPreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A699B6FB1001149DC010A14 /* UnitPreference.swift */; };
 		A125DAE7DFD8901C454AC776 /* BarlowCondensed-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 325D39D3C463CAE911C0A916 /* BarlowCondensed-Bold.ttf */; };
 		A19788111D2249802E071BA9 /* Inter-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 76AA41DAE169FF4021C02273 /* Inter-Medium.ttf */; };
+		A29DCFA2E0B50EBA7DA21401 /* WeeklyCheckInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C732D14C6E68DF632980833 /* WeeklyCheckInView.swift */; };
 		A37859534B61490F5D344E6B /* IntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3880708490C8993B63991C6A /* IntegrationTests.swift */; };
 		A4561A30040BF6AF33AEA62D /* TrainingNotifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = 851DCA273730E4C3853CA837 /* TrainingNotifications.swift */; };
 		A47B288FF2F8B682D8D657BC /* PlanBuilderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDB23F98437C808EBB58BEF7 /* PlanBuilderView.swift */; };
@@ -277,6 +279,7 @@
 		09F31049BEE6448D25F4EED4 /* HomeWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeWidgets.swift; sourceTree = "<group>"; };
 		0AC850A99E07C7AFAF18354F /* StrengthWorkoutModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrengthWorkoutModel.swift; sourceTree = "<group>"; };
 		0B1D6E40D21B520457920C21 /* RunSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunSetupView.swift; sourceTree = "<group>"; };
+		0C732D14C6E68DF632980833 /* WeeklyCheckInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyCheckInView.swift; sourceTree = "<group>"; };
 		0D09E7C2A3E3650F504BB2DD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		0D792A73A46409ABE2ED5AF2 /* PlanService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanService.swift; sourceTree = "<group>"; };
 		0DC769B996AC6DB47C6612B5 /* App.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = App.xcconfig; sourceTree = "<group>"; };
@@ -393,6 +396,7 @@
 		A4869AF91B0E573C72D5565D /* UserProfileModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfileModel.swift; sourceTree = "<group>"; };
 		A4F90BB8590CAE95AEE03BF5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		A592700E930BD72DEAAA5BBD /* RunSummaryParts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunSummaryParts.swift; sourceTree = "<group>"; };
+		A6069F120423158BF405A0FB /* WorkoutChangeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutChangeService.swift; sourceTree = "<group>"; };
 		A6D1D0ED0DB03CD0353CFE18 /* RouteModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteModelTests.swift; sourceTree = "<group>"; };
 		AB63E4848B35BB437454824E /* RunDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunDetailView.swift; sourceTree = "<group>"; };
 		ABE151BB82821F03C677FAAB /* KinetixTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = KinetixTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -862,6 +866,7 @@
 				8625E979738A82F0E873A0DD /* SyncService.swift */,
 				851DCA273730E4C3853CA837 /* TrainingNotifications.swift */,
 				3CB8951AE011CBA263FE6226 /* VoiceCoach.swift */,
+				A6069F120423158BF405A0FB /* WorkoutChangeService.swift */,
 				2E84B289743F4727A53D8FF5 /* WorkoutEditService.swift */,
 				CDF6D92FEC0650C4D16C7DA6 /* Integrations */,
 			);
@@ -982,6 +987,7 @@
 				20FB067B24E854B00EC36D31 /* StrainCards.swift */,
 				475052F0B9186B8B9943453A /* TodaySessionCards.swift */,
 				1B3E42DCF57077752A8EC424 /* TodayTiles.swift */,
+				0C732D14C6E68DF632980833 /* WeeklyCheckInView.swift */,
 				C1337349AB61A73A2E9EC967 /* WeeklyReviewCard.swift */,
 			);
 			path = Home;
@@ -1320,12 +1326,14 @@
 				F73EA4AAE48E03D0392279D3 /* WatchScreensView.swift in Sources */,
 				FB99840249B20B1C46C58334 /* WatchSyncService.swift in Sources */,
 				E3DAE4B853207507D0E51377 /* WeekRearrangeView.swift in Sources */,
+				A29DCFA2E0B50EBA7DA21401 /* WeeklyCheckInView.swift in Sources */,
 				DACDE5B130F8FB4FB2ED1E0F /* WeeklyReviewCard.swift in Sources */,
 				44DCC687BB257F80B8E5374D /* WhatsNew.swift in Sources */,
 				72BB11CDF6863C2C39FDA03F /* WorkoutActivity.swift in Sources */,
 				6540A069DFA262A340BECB35 /* WorkoutActivityController.swift in Sources */,
 				664B7868FC08A573E4353AB1 /* WorkoutBankView.swift in Sources */,
 				1682D3131EDEDDCF809DC004 /* WorkoutBuilderView.swift in Sources */,
+				40FC480CB767E4F6CE6DDED9 /* WorkoutChangeService.swift in Sources */,
 				7F6C3F91173E450852BB2B7C /* WorkoutEditService.swift in Sources */,
 				F94AE5B5889EB755538B2A90 /* WorkoutShareCard.swift in Sources */,
 				05F1AC2F40F88D04EE925BDF /* YourPacesCard.swift in Sources */,
