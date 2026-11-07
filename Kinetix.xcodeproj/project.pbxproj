@@ -61,6 +61,7 @@
 		5466848F08C1F98E4764F874 /* RunSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4708069D9CB0D862B6D3765 /* RunSummaryView.swift */; };
 		581C33227F0ED31F466A2D30 /* PlanChangesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9379EA201DE82CD3ADB9493E /* PlanChangesView.swift */; };
 		58A813AAE226C58C5E8EA99B /* WatchMirrorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14EB6A71D2AFBFDA441F9020 /* WatchMirrorService.swift */; };
+		5EA3EBF25BA14AE3A1450F78 /* FunctionalUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C65F08EEE665B7430BC1CC84 /* FunctionalUITests.swift */; };
 		5F1BC7801AE6C3F4ECEFE1D5 /* SyncMapping.swift in Sources */ = {isa = PBXBuildFile; fileRef = E52E3E78C54380C735C981F1 /* SyncMapping.swift */; };
 		605B6E2AF0A60490FC53798F /* GymService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57D4371AF5820D576CE51646 /* GymService.swift */; };
 		6138BDF777275FD7654DA4D4 /* TrainingProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F327708828E05100B42EDD57 /* TrainingProfileView.swift */; };
@@ -418,6 +419,7 @@
 		C4708069D9CB0D862B6D3765 /* RunSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunSummaryView.swift; sourceTree = "<group>"; };
 		C49960012FF421B7459C2F62 /* RunService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunService.swift; sourceTree = "<group>"; };
 		C5069ED66DFB790377708F8D /* SampleData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleData.swift; sourceTree = "<group>"; };
+		C65F08EEE665B7430BC1CC84 /* FunctionalUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FunctionalUITests.swift; sourceTree = "<group>"; };
 		C66B591B87308C029372D75D /* TrainingEngine */ = {isa = PBXFileReference; lastKnownFileType = folder; name = TrainingEngine; path = Packages/TrainingEngine; sourceTree = SOURCE_ROOT; };
 		C6FACB92EC2C6DF95CCBEFF5 /* RoutePlannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutePlannerView.swift; sourceTree = "<group>"; };
 		C7B4611E9C48B6D104236152 /* NotificationsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsSection.swift; sourceTree = "<group>"; };
@@ -918,6 +920,7 @@
 			isa = PBXGroup;
 			children = (
 				E1A1F79A98C11CFA85E3E4C1 /* CalendarTests.swift */,
+				C65F08EEE665B7430BC1CC84 /* FunctionalUITests.swift */,
 				CE8F9A4EC4A0EB227AB709AD /* ScreenshotTests.swift */,
 			);
 			path = KinetixUITests;
@@ -1361,6 +1364,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				6E7327BE2BAC15C40A64397A /* CalendarTests.swift in Sources */,
+				5EA3EBF25BA14AE3A1450F78 /* FunctionalUITests.swift in Sources */,
 				FE3C5A0DF03F3DC1CE544053 /* ScreenshotTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
