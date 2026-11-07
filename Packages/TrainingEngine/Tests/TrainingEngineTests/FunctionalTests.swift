@@ -136,4 +136,17 @@ final class FunctionalTests: XCTestCase {
         XCTAssertNil(session.strength)
         XCTAssertEqual(session.plannedDurationMinutes, 30)
     }
+
+    func testTreadmillRunsCountTheirSetDistance() {
+        let workout = FunctionalWorkout(name: "Treadmill", format: .rounds(1), stations: [
+            FunctionalStation(kind: .run, target: .meters(1000), treadmill: true),
+            FunctionalStation(kind: .run, target: .seconds(120), pace: .fixed(.single(Pace(secondsPerKm: 240))), treadmill: true),
+            FunctionalStation(kind: .wallBalls, target: .reps(20))
+        ])
+        var session = FunctionalSession(workout: workout, startedAt: start)
+        session.next(at: at(250))
+        session.tick(at: at(371))   // the timed run moves on by itself
+        session.next(at: at(420))
+        XCTAssertEqual(FunctionalRecord(session: session).runMeters, 1500)
+    }
 }

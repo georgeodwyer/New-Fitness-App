@@ -59,7 +59,8 @@ struct WeeklyReviewData {
         let review = WeekReview.make(
             planned: thisWeek.map { WeekReview.Session(discipline: $0.kind.discipline, status: $0.status,
                                                        plannedMeters: $0.estimatedDistanceMeters ?? 0) },
-            runMeters: runs.reduce(0) { $0 + $1.distanceMeters }, runs: runs.count, lifts: lifts.count,
+            runMeters: runs.reduce(0) { $0 + $1.distanceMeters } + lifts.reduce(0) { $0 + $1.functionalRunMeters },
+            runs: runs.count, lifts: lifts.count,
             loadRatio: usual > 0 ? thisLoad / usual : nil, newBests: bests)
 
         var focus: String?

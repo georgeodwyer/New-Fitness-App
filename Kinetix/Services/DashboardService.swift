@@ -111,7 +111,7 @@ enum DashboardService {
             strain: strain,
             week: week,
             plannedRunMeters: plannedRun,
-            actualRunMeters: weekRuns.reduce(0) { $0 + $1.distanceMeters },
+            actualRunMeters: weekRuns.reduce(0) { $0 + $1.distanceMeters } + weekLifts.reduce(0) { $0 + $1.functionalRunMeters },
             plannedLiftVolumeKg: plannedVolume,
             actualLiftVolumeKg: weekLifts.reduce(0) { $0 + $1.volumeKg },
             adherence: adherence,

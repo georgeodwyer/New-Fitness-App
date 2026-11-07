@@ -339,9 +339,14 @@ enum PlanService {
     /// The last four weeks of running: runs recorded in Kinetix or imported from Strava, plus
     /// other apps' runs in Apple Health (copies of the same run counted once).
     static func recentRunning(in context: ModelContext, now: Date = .now) -> RecentRunning.Summary? {
-        let logs = ((try? context.fetch(FetchDescriptor<RunLogModel>())) ?? [])
+        let runLogs: [RecentRunning.Run] = ((try? context.fetch(FetchDescriptor<RunLogModel>())) ?? [])
             .filter { !$0.isSoftDeleted && $0.isFinished && !$0.usedSimulatedGPS }
             .map { RecentRunning.Run(start: $0.startedAt, meters: $0.distanceMeters) }
+        // Running in functional workouts (Hyrox compromised runs and the like) counts too.
+        let functionalRuns: [RecentRunning.Run] = ((try? context.fetch(FetchDescriptor<StrengthLogModel>())) ?? [])
+            .filter { !$0.isSoftDeleted && $0.isFinished && $0.functionalRunMeters > 0 }
+            .map { RecentRunning.Run(start: $0.startedAt, meters: $0.functionalRunMeters) }
+        let logs = runLogs + functionalRuns
         let settings = IntegrationSettings.shared
         let health = (settings.healthEnabled ? settings.externalWorkouts : [])
             .filter { $0.kind == .run }

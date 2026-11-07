@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 import TrainingEngine
 
 /// Top of the Plan tab: days to race (or where you are in the block), the predicted race time,
@@ -170,6 +171,9 @@ struct WeeklyDistanceCard: View {
     let format: DisplayFormat
     /// The plan's sessions: weeks already built show what's actually planned, not the target.
     var sessions: [PlannedSessionModel] = []
+    /// Functional workouts: their running counts too.
+    @Query(filter: #Predicate<StrengthLogModel> { $0.functionalData != nil && $0.deletedAt == nil })
+    private var functional: [StrengthLogModel]
 
     /// Each week's planned running: the sessions when they're built, else the outline's target.
     private var plannedMeters: [Double] {
@@ -191,6 +195,8 @@ struct WeeklyDistanceCard: View {
             let end = calendar.date(byAdding: .day, value: 7, to: week.startDate) ?? week.startDate
             result[index] = runs.filter { !$0.usedSimulatedGPS && $0.startedAt >= week.startDate && $0.startedAt < end }
                 .reduce(0) { $0 + $1.distanceMeters }
+                + functional.filter { $0.isFinished && $0.startedAt >= week.startDate && $0.startedAt < end }
+                .reduce(0) { $0 + $1.functionalRunMeters }
         }
         return result
     }

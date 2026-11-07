@@ -114,6 +114,8 @@ final class StrengthLogModel: SyncTracked {
     /// The functional workout this was, with its splits (nil for a gym session).
     var functional: FunctionalRecord? { StoredJSON.decode(FunctionalRecord.self, from: functionalData) }
     var isFunctional: Bool { functionalData != nil }
+    /// Running done in a functional workout (counts towards weekly running distance).
+    var functionalRunMeters: Double { functional?.runMeters ?? 0 }
 
     var orderedSets: [SetLogModel] {
         sets.filter { !$0.isSoftDeleted }.sorted { ($0.exerciseOrder, $0.setIndex) < ($1.exerciseOrder, $1.setIndex) }

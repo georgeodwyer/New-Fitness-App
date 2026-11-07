@@ -511,7 +511,25 @@ public struct FunctionalRecord: Codable, Equatable, Sendable {
 
     public init(session: FunctionalSession) {
         self.init(workout: session.workout, splits: session.splits, roundsDone: session.roundsDone,
-                  runMeters: session.splits.compactMap(\.meters).reduce(0, +))
+                  runMeters: Self.runMeters(splits: session.splits, workout: session.workout))
+    }
+
+    /// Metres run: GPS distance outside; on a treadmill the set distance (or, for a timed run
+    /// with a set pace, time at that pace).
+    static func runMeters(splits: [FunctionalSplit], workout: FunctionalWorkout) -> Double {
+        splits.filter { $0.kind == .run }.reduce(0) { total, split in
+            if let meters = split.meters, meters > 0 { return total + meters }
+            guard let station = workout.stations[safe: split.stationIndex], station.treadmill else { return total }
+            switch split.target {
+            case .meters(let target):
+                return total + target
+            case .seconds:
+                guard case .fixed(let pace)? = station.pace, pace.middle.secondsPerKm > 0 else { return total }
+                return total + split.seconds / pace.middle.secondsPerKm * 1000
+            default:
+                return total
+            }
+        }
     }
 
     /// Time spent on each kind of station (runs, SkiErg, sled…), largest first. Rests left out.

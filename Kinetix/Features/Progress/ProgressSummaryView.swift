@@ -45,7 +45,7 @@ struct ProgressSummaryView: View {
         let start = weekStart
         let weekRuns = runs.filter { $0.countsTowardsHistory && $0.startedAt >= start }
         let weekLifts = workouts.filter { $0.isFinished && !$0.isSoftDeleted && $0.startedAt >= start }
-        let meters = weekRuns.map(\.distanceMeters).reduce(0, +)
+        let meters = weekRuns.map(\.distanceMeters).reduce(0, +) + weekLifts.map(\.functionalRunMeters).reduce(0, +)
         let seconds = weekRuns.map(\.durationSeconds).reduce(0, +) + weekLifts.map(\.durationSeconds).reduce(0, +)
         let volume = weekLifts.map(\.volumeKg).reduce(0, +)
         return VStack(alignment: .leading, spacing: KXSpacing.md) {
