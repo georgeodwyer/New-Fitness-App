@@ -7,10 +7,11 @@ import TrainingEngine
 @MainActor
 enum RunService {
     static func begin(planned: PlannedSessionModel?, title: String, simulated: Bool, recordType: RecordRunType? = nil,
-                      in context: ModelContext, now: Date = .now) -> RunLogModel {
+                      treadmill: Bool = false, in context: ModelContext, now: Date = .now) -> RunLogModel {
         let log = RunLogModel(plannedSessionId: planned?.id, startedAt: now)
         log.title = title
         log.usedSimulatedGPS = simulated
+        log.isTreadmill = treadmill
         log.recordTypeRaw = recordType?.rawValue
         if let type = recordType?.sessionType {
             log.runTypeRaw = type.rawValue

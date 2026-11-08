@@ -43,6 +43,9 @@ final class RunLogModel: SyncTracked {
     var recordTypeRaw: String?
     /// "strava" for runs imported from Strava (recorded elsewhere, e.g. a Garmin); nil for Kinetix runs.
     var importSourceRaw: String?
+    /// Run on a treadmill: no GPS, distance from the step counter or the set speed (and
+    /// corrected to the treadmill's own figure at the end).
+    var isTreadmill: Bool = false
 
     init(plannedSessionId: UUID?, startedAt: Date, id: UUID = UUID(), now: Date = .now) {
         self.id = id

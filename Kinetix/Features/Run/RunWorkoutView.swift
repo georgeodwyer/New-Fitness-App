@@ -15,6 +15,8 @@ struct RunWorkoutView: View {
     @State private var showLeave = false
     @State private var saved = false
     @State private var askHeartRate = false
+    /// Treadmill: "What did the treadmill say?" before the effort question.
+    @State private var showTreadmillDistance = false
     /// Which number is shown big while running; tap it to switch.
     @AppStorage("run.bigNumber") private var bigNumberRaw = BigNumber.pace.rawValue
 
@@ -69,8 +71,9 @@ struct RunWorkoutView: View {
                         Text(model.title).font(KXFont.display).foregroundStyle(KXColor.ink)
                         Text(model.planned?.summary ?? "").font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
                     }
-                    gpsStatusCard
-                    if let route = model.plannedRoute {
+                    treadmillChoice
+                    if !model.isTreadmill { gpsStatusCard }
+                    if let route = model.plannedRoute, !model.isTreadmill {
                         VStack(alignment: .leading, spacing: KXSpacing.sm) {
                             KXSectionHeader("Your route", subtitle: "\(route.name) · \(format.distance(route.distanceMeters))")
                             RouteMap(route: [], planned: route.path)
@@ -108,7 +111,7 @@ struct RunWorkoutView: View {
                 }
                 .padding(KXSpacing.screenMargin)
             }
-            Button(model.hasGPSFix ? "Start run" : "Start without GPS lock") {
+            Button(model.isTreadmill ? "Start treadmill run" : (model.hasGPSFix ? "Start run" : "Start without GPS lock")) {
                 if model.shouldAskHeartRateSource { askHeartRate = true } else { model.start() }
             }
                 .buttonStyle(.kx(.primary, fullWidth: true))
@@ -128,6 +131,70 @@ struct RunWorkoutView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("Your chest strap and Apple Watch can both read heart rate. A strap is usually more accurate.")
+        }
+    }
+
+    /// "On a treadmill": no GPS; distance from the set speed or the step counter.
+    private var treadmillChoice: some View {
+        VStack(alignment: .leading, spacing: KXSpacing.sm) {
+            Toggle(isOn: Binding(get: { model.isTreadmill }, set: { model.isTreadmill = $0 })) {
+                Label("On a treadmill", systemImage: "figure.run.treadmill").font(KXFont.bodyEmphasis)
+            }
+            .tint(KXColor.accent)
+            .accessibilityIdentifier("run.treadmill")
+            if model.isTreadmill {
+                Picker("Distance from", selection: Binding(get: { model.treadmillDistance }, set: { model.treadmillDistance = $0 })) {
+                    Text("Speed I set").tag(RunWorkoutModel.TreadmillDistance.setSpeed)
+                    Text("Step counter").tag(RunWorkoutModel.TreadmillDistance.stepCounter)
+                }
+                .pickerStyle(.segmented)
+                Text(model.treadmillDistance == .setSpeed
+                     ? "Phone on the treadmill: Kinetix tells you the speed for each step and counts from it. Use − and + if you change it."
+                     : "Phone in a pocket or on an armband: Kinetix counts your steps. Pace targets show as the speed to set.")
+                    .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text("At the end you can type in the treadmill's distance and the run is corrected to it.")
+                    .font(KXFont.caption).foregroundStyle(KXColor.inkTertiary)
+            }
+        }
+        .kxCard()
+    }
+
+    /// Running on a treadmill: the speed, the speed to set for this step, and − / +.
+    @ViewBuilder
+    private var treadmillCard: some View {
+        if model.isTreadmill {
+            VStack(alignment: .leading, spacing: KXSpacing.sm) {
+                HStack {
+                    KXOverline("Treadmill")
+                    Spacer()
+                    if let target = model.treadmillTargetKmh {
+                        Text("Set to \(TreadmillSpeed.text(kilometresPerHour: target, units: model.units))")
+                            .font(KXFont.captionEmphasis).foregroundStyle(KXColor.accent)
+                    }
+                }
+                if model.treadmillDistance == .setSpeed {
+                    HStack(spacing: KXSpacing.md) {
+                        KXIconButton(systemImage: "minus", accessibilityLabel: "Slower", variant: .neutral, size: 44) {
+                            model.changeTreadmillSpeed(by: -0.1)
+                        }
+                        Spacer()
+                        Text(TreadmillSpeed.text(kilometresPerHour: model.treadmillSpeedKmh, units: model.units))
+                            .font(KXFont.number(34, relativeTo: .title))
+                            .foregroundStyle(KXColor.ink)
+                        Spacer()
+                        KXIconButton(systemImage: "plus", accessibilityLabel: "Faster", variant: .neutral, size: 44) {
+                            model.changeTreadmillSpeed(by: 0.1)
+                        }
+                    }
+                    Text("The speed the treadmill shows: distance and pace come from it.")
+                        .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+                } else {
+                    Text("Distance from your steps. Keep the phone in a pocket or on an armband.")
+                        .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+                }
+            }
+            .kxCard(.tinted)
         }
     }
 
@@ -176,16 +243,20 @@ struct RunWorkoutView: View {
             ))
             ScrollView {
                 VStack(spacing: KXSpacing.md) {
-                    if let status = model.routeStatus { routeCard(status) }
-                    RouteMap(route: model.route, planned: model.plannedRoute?.path ?? [], followLatest: true)
-                        .frame(height: model.plannedRoute == nil ? 170 : 220)
-                        .clipShape(RoundedRectangle(cornerRadius: KXRadius.md, style: .continuous))
-                        .overlay(alignment: .topLeading) {
-                            if model.isSimulated {
-                                KXChip(text: "Simulated GPS", variant: .inverted).padding(KXSpacing.sm)
+                    if model.isTreadmill {
+                        treadmillCard
+                    } else {
+                        if let status = model.routeStatus { routeCard(status) }
+                        RouteMap(route: model.route, planned: model.plannedRoute?.path ?? [], followLatest: true)
+                            .frame(height: model.plannedRoute == nil ? 170 : 220)
+                            .clipShape(RoundedRectangle(cornerRadius: KXRadius.md, style: .continuous))
+                            .overlay(alignment: .topLeading) {
+                                if model.isSimulated {
+                                    KXChip(text: "Simulated GPS", variant: .inverted).padding(KXSpacing.sm)
+                                }
                             }
-                        }
-                    trackCard
+                        trackCard
+                    }
                     segmentCard
                     telemetryCard
                     pacerCard
@@ -202,14 +273,24 @@ struct RunWorkoutView: View {
             showFinishConfirm = false
             showLeave = false
             _ = model.stop()
-            showEffort = true
+            if model.isTreadmill { showTreadmillDistance = true } else { showEffort = true }
         }
         .confirmationDialog("Finish this run?", isPresented: $showFinishConfirm, titleVisibility: .visible) {
             Button("Finish run") {
                 _ = model.stop()
-                showEffort = true
+                if model.isTreadmill { showTreadmillDistance = true } else { showEffort = true }
             }
             Button("Keep running", role: .cancel) {}
+        }
+        .sheet(isPresented: $showTreadmillDistance) {
+            TreadmillDistanceSheet(measured: model.finalSummary?.distanceMeters ?? 0, units: model.units) { meters in
+                if let meters { model.correctTreadmillDistance(to: meters) }
+                showTreadmillDistance = false
+                // Let this sheet close before the next one opens.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { showEffort = true }
+            }
+            .presentationDetents([.medium])
+            .interactiveDismissDisabled()
         }
         .sheet(isPresented: $showEffort) {
             EffortSheet(title: "How hard was that run?", defaultEffort: model.typicalEffort) { effort in
@@ -603,6 +684,42 @@ struct RouteMap: View {
         let span = MKCoordinateSpan(latitudeDelta: max(0.005, (lats.max()! - lats.min()!) * 1.4),
                                     longitudeDelta: max(0.005, (lons.max()! - lons.min()!) * 1.4))
         return .region(MKCoordinateRegion(center: center, span: span))
+    }
+}
+
+/// After a treadmill run: the distance the treadmill showed (it's usually right; the phone
+/// estimates). The run is corrected to it.
+struct TreadmillDistanceSheet: View {
+    let measured: Double
+    let units: UnitSystem
+    let onDone: (Double?) -> Void
+    @State private var meters: Double
+
+    init(measured: Double, units: UnitSystem, onDone: @escaping (Double?) -> Void) {
+        self.measured = measured
+        self.units = units
+        self.onDone = onDone
+        _meters = State(initialValue: max(measured, 100))
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: KXSpacing.lg) {
+            VStack(alignment: .leading, spacing: KXSpacing.xs) {
+                Text("What did the treadmill say?").font(KXFont.title).foregroundStyle(KXColor.ink)
+                Text("Kinetix measured \(DisplayFormat(units: units).distance(measured, decimals: 2)). Type in the treadmill's distance and the run (pace and splits too) is corrected to it.")
+                    .font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            DistanceField(meters: $meters, units: units)
+                .padding(KXSpacing.md)
+                .background(KXColor.surfaceTint, in: RoundedRectangle(cornerRadius: KXRadius.sm, style: .continuous))
+                .accessibilityIdentifier("run.treadmillDistance")
+            Button("Use this distance") { onDone(meters) }
+                .buttonStyle(.kx(.primary, fullWidth: true))
+            Button("Keep Kinetix's distance") { onDone(nil) }
+                .buttonStyle(.kx(.outlined, fullWidth: true))
+        }
+        .padding(KXSpacing.xl)
     }
 }
 

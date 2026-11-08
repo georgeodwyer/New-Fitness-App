@@ -139,7 +139,7 @@ final class HealthService {
         guard let store else { throw HealthError.unavailable }
         let configuration = HKWorkoutConfiguration()
         configuration.activityType = .running
-        configuration.locationType = .outdoor
+        configuration.locationType = log.isTreadmill ? .indoor : .outdoor
         let builder = HKWorkoutBuilder(healthStore: store, configuration: configuration, device: .local())
         let start = log.startedAt
         let end = max(log.finishedAt ?? start.addingTimeInterval(log.durationSeconds), start.addingTimeInterval(log.durationSeconds))
@@ -150,7 +150,7 @@ final class HealthService {
                                             start: start, end: end)
             try await builder.addSamples([distance])
         }
-        try await builder.addMetadata([HKMetadataKeyExternalUUID: log.id.uuidString, HKMetadataKeyIndoorWorkout: false])
+        try await builder.addMetadata([HKMetadataKeyExternalUUID: log.id.uuidString, HKMetadataKeyIndoorWorkout: log.isTreadmill])
         try await builder.endCollection(at: end)
         let finished = try await builder.finishWorkout()
         guard let workout = finished as HKWorkout? else { throw HealthError.saveFailed }

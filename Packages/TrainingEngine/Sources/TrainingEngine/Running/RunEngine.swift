@@ -176,6 +176,8 @@ public struct RunEngine: Sendable {
 
     // Distance & samples
     private var distance: Double = 0
+    /// Indoors (treadmill): the last total distance from the step counter or the set speed.
+    private var lastIndoorTotal: Double?
     private var lastSample: LocationSample?
     private var lastSampleActive: Double = 0
     /// 20 s rolling pace for display and the cue double-check.
@@ -453,6 +455,32 @@ public struct RunEngine: Sendable {
         routeDistances.append(distance)
         tryPendingTrack()
 
+        events += progressSegments()
+        events += evaluateCoach()
+        return events
+    }
+
+    // MARK: - Treadmill
+
+    /// Indoors (a treadmill): distance from the phone's step counter, the watch, or the speed
+    /// set on the treadmill, as a running total. Takes the place of GPS: pace, splits, steps
+    /// and cues all work from it. Distance while paused doesn't count.
+    public mutating func addIndoorDistance(totalMeters total: Double, at date: Date) -> [RunEvent] {
+        guard startDate != nil else { return [] }
+        var events = advanceClock(to: date)
+        defer { lastIndoorTotal = total }
+        guard !isPaused, let last = lastIndoorTotal else { return events }
+        let dt = max(activeSeconds - lastSampleActive, 0.001)
+        let step = total - last
+        // Counters can reset or jump: ignore going backwards or faster than a sprint.
+        guard step >= 0, step / dt <= 12 else { return events }
+        let before = distance
+        distance += step
+        events += recordSplits(from: before, to: distance, fromActive: lastSampleActive, toActive: activeSeconds)
+        lastSampleActive = activeSeconds
+        lastFixActive = activeSeconds
+        smoother.add(time: activeSeconds, distance: distance, speed: -1)
+        coachSmoother.add(time: activeSeconds, distance: distance, speed: -1)
         events += progressSegments()
         events += evaluateCoach()
         return events

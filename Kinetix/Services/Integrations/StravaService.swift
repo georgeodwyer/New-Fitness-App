@@ -126,9 +126,10 @@ final class StravaService {
                                      distanceMeters: log.distanceMeters)
             return String(try await client.uploadTCX(tcx, name: log.title, description: description, externalId: "kinetix-\(log.id.uuidString)"))
         }
-        // No GPS (e.g. treadmill): a manual activity with time only.
+        // No GPS (a treadmill): a manual activity with time and distance, marked as indoor.
         return String(try await client.createActivity(name: log.title, sportType: "Run", start: log.startedAt,
-                                                      elapsedSeconds: Int(log.durationSeconds), description: description))
+                                                      elapsedSeconds: Int(log.durationSeconds), description: description,
+                                                      distanceMeters: log.distanceMeters, trainer: log.isTreadmill))
     }
 
     func upload(strength log: StrengthLogModel, units: UnitSystem) async throws -> String {

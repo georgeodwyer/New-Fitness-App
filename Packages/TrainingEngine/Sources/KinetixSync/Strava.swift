@@ -329,6 +329,7 @@ public actor StravaClient {
 
     /// Creates an activity without a GPS file (used for strength sessions).
     public func createActivity(name: String, sportType: String, start: Date, elapsedSeconds: Int, description: String?,
+                               distanceMeters: Double? = nil, trainer: Bool = false,
                                timeZone: TimeZone = .current) async throws -> Int {
         let formatter = ISO8601DateFormatter()
         formatter.timeZone = timeZone
@@ -340,6 +341,9 @@ public actor StravaClient {
             ("elapsed_time", String(max(1, elapsedSeconds)))
         ]
         if let description { fields.append(("description", description)) }
+        if let distanceMeters, distanceMeters > 0 { fields.append(("distance", String(Int(distanceMeters.rounded())))) }
+        // A treadmill (or other indoor) run.
+        if trainer { fields.append(("trainer", "1")) }
         let body = Self.formURLEncoded(fields)
         let data = try await authorized(path: "api/v3/activities", method: "POST", body: Data(body.utf8),
                                         contentType: "application/x-www-form-urlencoded")

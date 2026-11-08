@@ -2,6 +2,7 @@ import Foundation
 import Observation
 import SwiftData
 import CoreLocation
+import CoreMotion
 import HealthKit
 import TrainingEngine
 
@@ -81,6 +82,78 @@ final class RunWorkoutModel {
     /// The run built on the Record tab, if any.
     let custom: CustomRunWorkout?
 
+    // MARK: Treadmill
+
+    /// Where a treadmill run's distance comes from.
+    enum TreadmillDistance: String, CaseIterable {
+        /// The speed set on the treadmill (phone on the console): Kinetix counts from it.
+        case setSpeed
+        /// The phone's step counter (phone in a pocket or on an armband).
+        case stepCounter
+    }
+
+    /// A treadmill run: no GPS (chosen on the start screen).
+    var isTreadmill = false
+    var treadmillDistance: TreadmillDistance = .setSpeed
+    /// The speed the treadmill is set to (km/h), for "set speed" distance.
+    private(set) var treadmillSpeedKmh: Double = 10
+    @ObservationIgnored private let pedometer = CMPedometer()
+    @ObservationIgnored private var pedometerMeters: Double = 0
+    @ObservationIgnored private var setSpeedMeters: Double = 0
+    @ObservationIgnored private var lastIndoorTick: Date?
+
+    /// The speed to set for this step's target pace, km/h.
+    var treadmillTargetKmh: Double? { snapshot.segment?.targetPace?.treadmillKilometresPerHour }
+
+    /// +/- on the run screen when they change the treadmill's speed.
+    func changeTreadmillSpeed(by delta: Double) {
+        treadmillSpeedKmh = min(max(((treadmillSpeedKmh + delta) * 10).rounded() / 10, 1), 30)
+    }
+
+    /// Treadmill: "What did the treadmill say?" The run is scaled to that distance before it's saved.
+    func correctTreadmillDistance(to meters: Double) {
+        guard let summary = finalSummary, meters > 0 else { return }
+        finalSummary = summary.correctedDistance(to: meters, units: units)
+    }
+
+    private func startTreadmill(at now: Date) {
+        gps?.stop()
+        lastIndoorTick = now
+        // Start at this step's speed (or an easy pace when there's no target).
+        if let target = structure?.segments.first?.targetPace?.treadmillKilometresPerHour {
+            treadmillSpeedKmh = target
+        } else {
+            treadmillSpeedKmh = (PaceZones(profile: profileForTreadmill).typicalPace(for: .easy).kilometresPerHour * 2).rounded() / 2
+        }
+        if treadmillDistance == .stepCounter, CMPedometer.isDistanceAvailable() {
+            pedometer.startUpdates(from: now) { [weak self] data, _ in
+                guard let meters = data?.distance?.doubleValue else { return }
+                Task { @MainActor in self?.pedometerMeters = meters }
+            }
+        }
+        // A first step with a target already said its speed.
+        if structure?.segments.first?.targetPace == nil {
+            voice.speak("Treadmill run. Set it to \(TreadmillSpeed.spoken(kilometresPerHour: treadmillSpeedKmh, units: units)).")
+        }
+    }
+
+    private var profileForTreadmill: AthleteProfile {
+        ((try? context.fetch(FetchDescriptor<UserProfileModel>())) ?? []).first { !$0.isSoftDeleted }?.profile
+            ?? AthleteProfile(runningExperience: .intermediate, liftingExperience: .intermediate, goal: .balancedHybrid,
+                              trainingDays: [], equipment: .fullGym)
+    }
+
+    /// Each second: the treadmill's distance so far into the engine.
+    private func feedTreadmill(at now: Date) {
+        guard isTreadmill else { return }
+        if let last = lastIndoorTick, !snapshot.isPaused {
+            setSpeedMeters += treadmillSpeedKmh / 3.6 * max(0, now.timeIntervalSince(last))
+        }
+        lastIndoorTick = now
+        let total = treadmillDistance == .setSpeed ? setSpeedMeters : pedometerMeters
+        handle(engine.addIndoorDistance(totalMeters: total, at: now))
+    }
+
     // MARK: Route
 
     /// Where the runner is on a planned route, for the run screen.
@@ -153,7 +226,7 @@ final class RunWorkoutModel {
     var strapName: String { IntegrationSettings.shared.heartRateSensorName ?? "Chest strap" }
 
     var needsPermission: Bool {
-        !isSimulated && (authorization == .denied || authorization == .restricted)
+        !isSimulated && !isTreadmill && (authorization == .denied || authorization == .restricted)
     }
 
     // MARK: Lifecycle
@@ -177,11 +250,16 @@ final class RunWorkoutModel {
         clockOrigin = .now
         let now = clockNow()
         voice.prepare()
-        log = RunService.begin(planned: planned, title: title, simulated: isSimulated, recordType: custom?.type, in: context, now: now)
+        log = RunService.begin(planned: planned, title: title, simulated: isSimulated && !isTreadmill, recordType: custom?.type,
+                               treadmill: isTreadmill, in: context, now: now)
         phase = .running
         handle(engine.start(at: now))
-        gps?.start()
-        simulator?.start()
+        if isTreadmill {
+            startTreadmill(at: now)
+        } else {
+            gps?.start()
+            simulator?.start()
+        }
         startHeartRate(from: now)
         startMirroring()
         ActiveWorkout.shared.togglePause = { [weak self] in self?.togglePause() }
@@ -303,6 +381,7 @@ final class RunWorkoutModel {
     func stop() -> RunSummary {
         timer?.invalidate()
         timer = nil
+        pedometer.stopUpdates()
         gps?.stop()
         simulator?.stop()
         voice.stop()
@@ -323,6 +402,7 @@ final class RunWorkoutModel {
 
     func discard() {
         timer?.invalidate()
+        pedometer.stopUpdates()
         gps?.stop()
         simulator?.stop()
         voice.stop()
@@ -490,9 +570,10 @@ final class RunWorkoutModel {
             simulator.advance(by: now.timeIntervalSince(lastTick), clockNow: now)
         }
         lastTick = now
+        feedTreadmill(at: now)
         handle(engine.tick(at: now))
         snapshot = engine.snapshot()
-        checkForTrack(at: now)
+        if !isTreadmill { checkForTrack(at: now) }
         updateLockScreen()
         publishToWatch()
         if now.timeIntervalSince(lastCheckpoint) >= 30, let log {
@@ -506,6 +587,12 @@ final class RunWorkoutModel {
             let isCue: Bool
             if case .paceCue = event { isCue = true } else { isCue = false }
             if isMirroringToWatch { pendingAlerts.append(MirrorAlert(event: event)) }
+            // Treadmill: a new step with a pace target means a new speed to set.
+            if isTreadmill, case .segmentStarted(_, let segment, _) = event, let target = segment.targetPace {
+                let kmh = target.treadmillKilometresPerHour
+                if treadmillDistance == .setSpeed { treadmillSpeedKmh = kmh }
+                voice.speak("Treadmill to \(TreadmillSpeed.spoken(kilometresPerHour: kmh, units: units)).")
+            }
             // Step changes come through silently when step announcements are off.
             guard !event.announcement.isEmpty else { continue }
             announcements.append(Announcement(text: event.announcement, isCue: isCue, time: snapshot.elapsedSeconds))
