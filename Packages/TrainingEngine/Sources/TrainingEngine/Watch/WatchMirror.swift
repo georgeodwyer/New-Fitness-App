@@ -21,6 +21,8 @@ public enum MirrorMessage: Codable, Equatable, Sendable {
     case gymFrame(GymMirrorFrame)
     /// Phone → watch: the functional workout right now (when something changes, and every few seconds).
     case functionalFrame(FunctionalMirrorFrame)
+    /// Watch → phone: on a treadmill run, the watch's distance so far (from its motion sensors).
+    case distance(meters: Double, at: Date)
 
     public func encoded() -> Data { (try? WatchCoding.encoder.encode(self)) ?? Data() }
     public static func decode(_ data: Data) -> MirrorMessage? { try? WatchCoding.decoder.decode(MirrorMessage.self, from: data) }

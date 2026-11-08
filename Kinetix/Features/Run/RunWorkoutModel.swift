@@ -99,6 +99,16 @@ final class RunWorkoutModel {
     private(set) var treadmillSpeedKmh: Double = 10
     @ObservationIgnored private let pedometer = CMPedometer()
     @ObservationIgnored private var pedometerMeters: Double = 0
+    /// Treadmill with the watch on: its distance (from its motion sensors) beats the phone's steps.
+    @ObservationIgnored private var watchMeters: Double?
+    /// The step distance is coming from the watch.
+    private(set) var usesWatchDistance = false
+
+    private func receiveWatchDistance(_ meters: Double) {
+        guard isTreadmill, meters >= 0 else { return }
+        watchMeters = meters
+        if !usesWatchDistance { usesWatchDistance = true }
+    }
     @ObservationIgnored private var setSpeedMeters: Double = 0
     @ObservationIgnored private var lastIndoorTick: Date?
 
@@ -150,7 +160,7 @@ final class RunWorkoutModel {
             setSpeedMeters += treadmillSpeedKmh / 3.6 * max(0, now.timeIntervalSince(last))
         }
         lastIndoorTick = now
-        let total = treadmillDistance == .setSpeed ? setSpeedMeters : pedometerMeters
+        let total = treadmillDistance == .setSpeed ? setSpeedMeters : (watchMeters ?? pedometerMeters)
         handle(engine.addIndoorDistance(totalMeters: total, at: now))
     }
 
@@ -477,9 +487,10 @@ final class RunWorkoutModel {
         let handlers = WatchMirrorService.Handlers(
             command: { [weak self] command in self?.handleWatch(command) },
             heartRate: { [weak self] bpm, _ in self?.receiveHeartRate(bpm, from: .watchLive) },
-            watchStatus: { [weak self] showing in self?.watchNeedsOpening = !showing }
+            watchStatus: { [weak self] showing in self?.watchNeedsOpening = !showing },
+            distance: { [weak self] meters in self?.receiveWatchDistance(meters) }
         )
-        isMirroringToWatch = WatchMirrorService.shared.begin(runId: mirrorRunId, handlers: handlers)
+        isMirroringToWatch = WatchMirrorService.shared.begin(runId: mirrorRunId, handlers: handlers, indoor: isTreadmill)
         publishToWatch()
     }
 

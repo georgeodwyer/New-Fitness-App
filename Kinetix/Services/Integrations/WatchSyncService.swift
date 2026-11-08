@@ -121,6 +121,7 @@ final class WatchSyncService: NSObject {
         }
         log.healthKitWorkoutId = result.healthKitWorkoutId
         log.importSourceRaw = importSource
+        log.isTreadmill = result.isTreadmill ?? false
         context.insert(log)
         RunService.finish(result.summary, log: log, planned: planned, effort: result.effort, in: context, now: result.finishedAt)
         return log

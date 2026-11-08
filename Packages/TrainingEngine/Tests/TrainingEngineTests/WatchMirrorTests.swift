@@ -98,4 +98,14 @@ final class WatchMirrorTests: XCTestCase {
         XCTAssertEqual(frame.zone(for: 160), 4)
         XCTAssertEqual(MirrorMessage.decode(MirrorMessage.command(.next).encoded()), .command(.next))
     }
+
+    func testTreadmillDistanceAndResultRoundTrip() throws {
+        let message = MirrorMessage.distance(meters: 1234.5, at: Date(timeIntervalSince1970: 1_000))
+        XCTAssertEqual(MirrorMessage.decode(message.encoded()), message)
+        let result = WatchRunResult(option: WatchRunOption(id: UUID(), source: .free, title: "Treadmill"),
+                                    startedAt: Date(timeIntervalSince1970: 0), finishedAt: Date(timeIntervalSince1970: 1800),
+                                    summary: RunSummary(durationSeconds: 1800, distanceMeters: 5000, averagePace: Pace(secondsPerKm: 360)),
+                                    effort: 5, isTreadmill: true)
+        XCTAssertEqual(WatchRunResult.decode(result.encoded())?.isTreadmill, true)
+    }
 }

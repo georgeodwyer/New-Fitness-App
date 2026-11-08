@@ -145,12 +145,12 @@ struct RunWorkoutView: View {
             if model.isTreadmill {
                 Picker("Distance from", selection: Binding(get: { model.treadmillDistance }, set: { model.treadmillDistance = $0 })) {
                     Text("Speed I set").tag(RunWorkoutModel.TreadmillDistance.setSpeed)
-                    Text("Step counter").tag(RunWorkoutModel.TreadmillDistance.stepCounter)
+                    Text("Steps").tag(RunWorkoutModel.TreadmillDistance.stepCounter)
                 }
                 .pickerStyle(.segmented)
                 Text(model.treadmillDistance == .setSpeed
                      ? "Phone on the treadmill: Kinetix tells you the speed for each step and counts from it. Use − and + if you change it."
-                     : "Phone in a pocket or on an armband: Kinetix counts your steps. Pace targets show as the speed to set.")
+                     : "From your Apple Watch's steps if you're wearing it, otherwise the phone's (in a pocket or on an armband). Pace targets show as the speed to set.")
                     .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
                     .fixedSize(horizontal: false, vertical: true)
                 Text("At the end you can type in the treadmill's distance and the run is corrected to it.")
@@ -190,7 +190,8 @@ struct RunWorkoutView: View {
                     Text("The speed the treadmill shows: distance and pace come from it.")
                         .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
                 } else {
-                    Text("Distance from your steps. Keep the phone in a pocket or on an armband.")
+                    Text(model.usesWatchDistance ? "Distance from your Apple Watch's steps."
+                                                 : "Distance from your steps. Keep the phone in a pocket or on an armband.")
                         .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
                 }
             }

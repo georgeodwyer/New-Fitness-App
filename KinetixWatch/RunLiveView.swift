@@ -185,6 +185,12 @@ struct RunLiveView: View {
                     TargetBand(target: target, pace: snapshot?.currentPace, status: snapshot?.paceStatus,
                                isGuide: segment.paceIsGuide == true, units: workout.units)
                 }
+                if let kmh = workout.treadmillTargetKmh {
+                    Text("SET \(TreadmillSpeed.text(kilometresPerHour: kmh, units: workout.units).uppercased())")
+                        .font(WatchFont.title(15))
+                        .foregroundStyle(WatchColor.accent)
+                        .accessibilityLabel("Set the treadmill to \(TreadmillSpeed.spoken(kilometresPerHour: kmh, units: workout.units))")
+                }
                 Spacer(minLength: 0)
                 HStack(alignment: .lastTextBaseline) {
                     heartRateReading
@@ -474,6 +480,8 @@ struct RunFinishedView: View {
     @State private var workout = RunWorkoutManager.shared
     @State private var effort: Double = 5
     @State private var confirmDiscard = false
+    /// Treadmill: what the treadmill said (starts at the watch's distance).
+    @State private var treadmillMeters: Double?
 
     private var format: DisplayFormat { DisplayFormat(units: workout.units) }
 
@@ -497,6 +505,9 @@ struct RunFinishedView: View {
                              color: WatchColor.good)
                     }
                 }
+                if workout.isTreadmillRun, let summary = workout.summary {
+                    treadmillDistance(measured: summary.distanceMeters)
+                }
                 WatchOverline("How hard was that?").padding(.top, 6)
                 HStack(alignment: .firstTextBaseline, spacing: 3) {
                     Text("\(Int(effort))").font(WatchFont.number(40)).foregroundStyle(WatchColor.accent)
@@ -507,7 +518,11 @@ struct RunFinishedView: View {
                                       isHapticFeedbackEnabled: true)
                 .accessibilityLabel("Effort \(Int(effort)) out of 10. Turn the Digital Crown to change.")
                 Text("Turn the Digital Crown").font(.caption2).foregroundStyle(WatchColor.inkSecondary)
-                Button("Save") { workout.save(effort: effort) }
+                Button("Save") {
+                    let measured = workout.summary?.distanceMeters ?? 0
+                    let corrected = treadmillMeters.flatMap { abs($0 - measured) >= 5 ? $0 : nil }
+                    workout.save(effort: effort, treadmillMeters: corrected)
+                }
                     .buttonStyle(WatchFilledButtonStyle())
                 Button("Discard", role: .destructive) { confirmDiscard = true }
                 Text("Saved to Apple Health. It's added to Kinetix next time your iPhone is nearby.")
@@ -518,6 +533,27 @@ struct RunFinishedView: View {
         .confirmationDialog("Discard this run?", isPresented: $confirmDiscard) {
             Button("Discard", role: .destructive) { workout.discard() }
             Button("Keep", role: .cancel) {}
+        }
+    }
+
+    /// "Treadmill said": ± 0.1 to match the treadmill's figure; the run is corrected to it.
+    private func treadmillDistance(measured: Double) -> some View {
+        let step = workout.units == .metric ? 100.0 : Units.metersPerMile / 10
+        let value = treadmillMeters ?? measured
+        return VStack(alignment: .leading, spacing: 4) {
+            WatchOverline("Treadmill said").padding(.top, 6)
+            HStack {
+                Button { treadmillMeters = max(step, value - step) } label: { Image(systemName: "minus") }
+                    .frame(width: 40)
+                Spacer()
+                Text(String(format: "%.2f %@", Units.distance(meters: value, in: workout.units), Units.distanceUnitLabel(workout.units)))
+                    .font(WatchFont.number(20))
+                Spacer()
+                Button { treadmillMeters = value + step } label: { Image(systemName: "plus") }
+                    .frame(width: 40)
+            }
+            Text("Match the treadmill's distance: pace and splits are corrected to it.")
+                .font(.caption2).foregroundStyle(WatchColor.inkSecondary)
         }
     }
 

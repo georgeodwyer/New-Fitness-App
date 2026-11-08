@@ -167,6 +167,12 @@ struct RunReadyView: View {
                 }
                 Toggle("Voice cues", isOn: Binding(get: { workout.voiceEnabled }, set: { workout.voiceEnabled = $0 }))
                     .font(.caption)
+                Toggle("Treadmill", isOn: Binding(get: { workout.treadmill }, set: { workout.treadmill = $0 }))
+                    .font(.caption)
+                if workout.treadmill {
+                    Text("No GPS: distance from your watch's motion. You'll hear the speed to set for each step.")
+                        .font(.caption2).foregroundStyle(.secondary)
+                }
                 Button {
                     Task { await workout.start(option) }
                 } label: {

@@ -20,6 +20,8 @@ final class WatchMirrorService: NSObject {
         var watchStatus: @MainActor (Bool) -> Void = { _ in }
         /// Send a fresh frame now (the watch asked, or it has just reconnected).
         var resync: @MainActor () -> Void = {}
+        /// Treadmill: the watch's distance so far.
+        var distance: @MainActor (Double) -> Void = { _ in }
     }
 
     private let healthStore = HKHealthStore()
@@ -49,11 +51,12 @@ final class WatchMirrorService: NSObject {
 
     /// Opens the watch app for this run. Returns false if there's no watch to use.
     @discardableResult
-    func begin(runId: UUID, handlers: Handlers, activity: HKWorkoutActivityType = .running) -> Bool {
+    func begin(runId: UUID, handlers: Handlers, activity: HKWorkoutActivityType = .running, indoor: Bool = false) -> Bool {
         guard isAvailable else { return false }
         self.runId = runId
         self.handlers = handlers
         self.activity = activity
+        self.indoor = indoor
         launchWatchApp(runId: runId, attempt: 1)
         return true
     }
@@ -70,6 +73,8 @@ final class WatchMirrorService: NSObject {
 
     /// What the watch's workout records: a run (outdoors) or a gym session (indoors).
     private var activity: HKWorkoutActivityType = .running
+    /// A treadmill run: the watch records indoors and sends its distance.
+    private var indoor = false
 
     /// Opens the watch app. The watch can be slow to wake, so try three times (now, after
     /// 3 s and after 6 s more). If it still won't open, the run carries on without it and the
@@ -77,7 +82,7 @@ final class WatchMirrorService: NSObject {
     private func launchWatchApp(runId: UUID, attempt: Int) {
         let configuration = HKWorkoutConfiguration()
         configuration.activityType = activity
-        configuration.locationType = activity == .running ? .outdoor : .indoor
+        configuration.locationType = activity == .running && !indoor ? .outdoor : .indoor
         healthStore.startWatchApp(with: configuration) { success, _ in
             Task { @MainActor in WatchMirrorService.shared.watchAppLaunch(runId: runId, attempt: attempt, success: success) }
         }
@@ -186,6 +191,8 @@ final class WatchMirrorService: NSObject {
             } else {
                 send(.ended(runId: nil, saved: false))
             }
+        case .distance(let meters, _):
+            handlers?.distance(meters)
         case .frame, .gymFrame, .functionalFrame, .ended:
             break
         }

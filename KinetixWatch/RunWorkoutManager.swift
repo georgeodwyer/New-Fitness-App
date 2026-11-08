@@ -88,6 +88,32 @@ final class RunWorkoutManager: NSObject {
     private(set) var isGym = false
     /// The phone's gym session right now.
     private(set) var gymFrame: GymMirrorFrame?
+    // MARK: Treadmill
+
+    /// Chosen before a run: on a treadmill (indoor workout, distance from the watch's motion
+    /// sensors, no GPS).
+    var treadmill = UserDefaults.standard.bool(forKey: "watch.treadmill") {
+        didSet { UserDefaults.standard.set(treadmill, forKey: "watch.treadmill") }
+    }
+    /// This run is on a treadmill (the watch's own run, or a phone's treadmill run shown here).
+    private(set) var isTreadmillRun = false
+    /// The speed to set for this step's target pace, km/h.
+    var treadmillTargetKmh: Double? { isTreadmillRun ? snapshot?.segment?.targetPace?.treadmillKilometresPerHour : nil }
+
+    /// The watch's distance so far (Health's running distance for this workout).
+    private func receiveIndoorDistance(_ meters: Double) {
+        guard isTreadmillRun, phase == .running else { return }
+        if isMirroring {
+            sendToPhone(.distance(meters: meters, at: Date()))
+            return
+        }
+        guard var engine else { return }
+        let events = engine.addIndoorDistance(totalMeters: meters, at: Date())
+        self.engine = engine
+        handle(events)
+        snapshot = engine.snapshot()
+    }
+
     /// Showing a functional workout (circuit / Hyrox) from the phone.
     private(set) var isFunctional = false
     /// The phone's functional workout right now.
@@ -139,10 +165,11 @@ final class RunWorkoutManager: NSObject {
         coaching.units = plan.units
         coaching.autoAdvanceSteps = controls.movesToNextStepAutomatically
         var engine = RunEngine(structure: option.structure, config: coaching)
+        isTreadmillRun = treadmill
 
         let configuration = HKWorkoutConfiguration()
         configuration.activityType = .running
-        configuration.locationType = .outdoor
+        configuration.locationType = treadmill ? .indoor : .outdoor
         do {
             let session = try HKWorkoutSession(healthStore: healthStore, configuration: configuration)
             let builder = session.associatedWorkoutBuilder()
@@ -167,7 +194,7 @@ final class RunWorkoutManager: NSObject {
             return
         }
 
-        startLocation()
+        if !isTreadmillRun { startLocation() }
         configureSpeech()
         phase = .running
         WKInterfaceDevice.current().play(.start)
@@ -348,10 +375,11 @@ final class RunWorkoutManager: NSObject {
     }
 
     /// Sends the run to the phone with the effort rating, then goes back to the list.
-    func save(effort: Double) {
-        guard let option, let summary, let startedAt else { return }
+    func save(effort: Double, treadmillMeters: Double? = nil) {
+        guard let option, var summary, let startedAt else { return }
+        if let treadmillMeters { summary = summary.correctedDistance(to: treadmillMeters, units: units) }
         let result = WatchRunResult(option: option, startedAt: startedAt, finishedAt: finishedAt ?? Date(), summary: summary,
-                                    effort: effort, healthKitWorkoutId: workoutId)
+                                    effort: effort, healthKitWorkoutId: workoutId, isTreadmill: isTreadmillRun ? true : nil)
         WatchStore.shared.send(result.thinned())
         reset()
     }
@@ -393,6 +421,7 @@ final class RunWorkoutManager: NSObject {
         gymFrame = nil
         isFunctional = false
         functionalFrame = nil
+        isTreadmillRun = false
         pendingFunctionalCommandAt = nil
         trackSuggestedHere = false
         trackDismissed = false
@@ -508,6 +537,9 @@ final class RunWorkoutManager: NSObject {
             case .segmentStarted(_, let segment, _):
                 // A rep starting (end of recovery) gets a strong double buzz, so it's felt without audio.
                 if segment.kind == .work { Self.goBuzz() } else { device.play(.notification) }
+                if isTreadmillRun, voiceEnabled, let target = segment.targetPace {
+                    speak("Treadmill to \(TreadmillSpeed.spoken(kilometresPerHour: target.treadmillKilometresPerHour, units: units)).")
+                }
             case .stepEnded:
                 // Waiting for Next step: two taps.
                 Self.stepDoneBuzz()
@@ -553,6 +585,7 @@ final class RunWorkoutManager: NSObject {
         mode = .mirroring
         isGym = configuration.activityType == .traditionalStrengthTraining
         isFunctional = configuration.activityType == .functionalStrengthTraining
+        isTreadmillRun = configuration.activityType == .running && configuration.locationType == .indoor
         phase = .running
         option = WatchRunOption(id: UUID(), source: .free,
                                 title: isGym ? "Gym on iPhone" : (isFunctional ? "Workout on iPhone" : "Run on iPhone"))
@@ -601,7 +634,7 @@ final class RunWorkoutManager: NSObject {
             receiveGym(frame)
         case .functionalFrame(let frame):
             receiveFunctional(frame)
-        case .command, .heartRate:
+        case .command, .heartRate, .distance:
             break
         }
     }
@@ -916,6 +949,11 @@ extension RunWorkoutManager: HKWorkoutSessionDelegate, HKLiveWorkoutBuilderDeleg
     nonisolated func workoutBuilderDidCollectEvent(_ workoutBuilder: HKLiveWorkoutBuilder) {}
 
     nonisolated func workoutBuilder(_ workoutBuilder: HKLiveWorkoutBuilder, didCollectDataOf collectedTypes: Set<HKSampleType>) {
+        let distance = HKQuantityType(.distanceWalkingRunning)
+        if collectedTypes.contains(distance), let total = workoutBuilder.statistics(for: distance)?.sumQuantity() {
+            let meters = total.doubleValue(for: .meter())
+            Task { @MainActor in self.receiveIndoorDistance(meters) }
+        }
         let energy = HKQuantityType(.activeEnergyBurned)
         if collectedTypes.contains(energy), let total = workoutBuilder.statistics(for: energy)?.sumQuantity() {
             let kcal = total.doubleValue(for: .kilocalorie())

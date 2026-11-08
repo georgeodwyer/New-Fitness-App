@@ -221,9 +221,12 @@ public struct WatchRunResult: Codable, Equatable, Identifiable, Sendable {
     public var effort: Double
     /// The workout the watch saved to Apple Health (so the phone doesn't save it again).
     public var healthKitWorkoutId: UUID?
+    /// Run on a treadmill (distance from the watch's motion sensors, no route).
+    public var isTreadmill: Bool? = nil
 
     public init(id: UUID = UUID(), option: WatchRunOption, startedAt: Date, finishedAt: Date, summary: RunSummary, effort: Double,
-                healthKitWorkoutId: UUID? = nil) {
+                healthKitWorkoutId: UUID? = nil, isTreadmill: Bool? = nil) {
+        self.isTreadmill = isTreadmill
         self.id = id
         self.option = option
         self.startedAt = startedAt
