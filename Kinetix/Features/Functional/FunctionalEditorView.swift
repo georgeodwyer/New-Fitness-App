@@ -50,6 +50,10 @@ struct FunctionalEditorView: View {
         .navigationTitle(template == nil ? "New functional workout" : "Edit workout")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Cancel") { dismiss() }
+                    .accessibilityIdentifier("functional.cancel")
+            }
             ToolbarItem(placement: .confirmationAction) {
                 Button("Save") {
                     save()
@@ -272,8 +276,12 @@ struct FunctionalEditorView: View {
     }
 
     private func start() {
-        router.start(ActiveSession(id: UUID(), kind: .crossTraining, title: workout.name, functional: workout,
-                                   functionalTemplateId: workout.id))
+        let session = ActiveSession(id: UUID(), kind: .crossTraining, title: workout.name, functional: workout,
+                                    functionalTemplateId: workout.id)
+        let router = router
+        // Close the builder first, then open the workout over the app.
+        dismiss()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { router.start(session) }
     }
 }
 

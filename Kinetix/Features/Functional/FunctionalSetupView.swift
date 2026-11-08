@@ -79,8 +79,13 @@ struct FunctionalSetupView: View {
         }
         .onChange(of: division) { _, _ in race = HyroxSimulation.workout(division: division, treadmill: treadmill) }
         .onChange(of: treadmill) { _, _ in race = HyroxSimulation.workout(division: division, treadmill: treadmill) }
-        .navigationDestination(isPresented: $showEditor) {
-            FunctionalEditorView(template: editorTemplate, initial: editorInitial)
+        // Its own page (not pushed on top of this one): the builder's keyboard redrew this
+        // screen in a loop when it was underneath.
+        .fullScreenCover(isPresented: $showEditor) {
+            NavigationStack {
+                FunctionalEditorView(template: editorTemplate, initial: editorInitial)
+            }
+            .tint(KXColor.accent)
         }
     }
 
