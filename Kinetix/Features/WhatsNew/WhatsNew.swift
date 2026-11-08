@@ -18,6 +18,14 @@ enum WhatsNew {
     }
 
     static let releases: [Release] = [
+        Release(id: "2026-11-treadmill-1", title: "What's new", items: [
+            Item(symbol: "figure.run.treadmill", title: "Treadmill runs",
+                 detail: "Turn on \u{201C}On a treadmill\u{201D} before a run. Kinetix tells you the speed to set for each step and counts distance from it, or from your steps."),
+            Item(symbol: "ruler", title: "Match the treadmill",
+                 detail: "At the end, type in the treadmill's distance and your pace and splits are corrected to it."),
+            Item(symbol: "heart.text.square", title: "Saved as indoor",
+                 detail: "Treadmill runs go to Apple Health as indoor runs and to Strava marked as treadmill runs.")
+        ]),
         Release(id: "2026-11-feedback-1", title: "What's new", items: [
             Item(symbol: "figure.strengthtraining.functional", title: "Functional workouts",
                  detail: "Circuits and Hyrox in the Workout tab: rounds, intervals, EMOM and AMRAP, with run pace targets and the Apple Watch."),
