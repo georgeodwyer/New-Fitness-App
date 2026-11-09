@@ -22,8 +22,8 @@ struct HomeView: View {
 
     @State private var actionSession: PlannedSessionModel?
     @State private var detailSession: PlannedSessionModel?
-    /// This week's check-in is answered: the review folds away to the bottom.
-    @State private var weeklyAnswered = false
+    /// The week whose check-in was just answered here: its review folds away to the bottom.
+    @State private var answeredWeek: Date?
     @State private var showCalendar = false
     @State private var openRun: RunLogModel?
     @State private var openLift: StrengthLogModel?
@@ -79,10 +79,11 @@ struct HomeView: View {
                     // Sunday evening and Monday: how the week went and what's next.
                     // Not answered yet: at the top. Answered: folded away at the bottom.
                     let review = weeklyReview
-                    let reviewAnswered = review.map { _ in weeklyAnswered } ?? false
+                    // Read the saved answer every time, so an answer from earlier (or another build) counts too.
+                    let reviewAnswered = review.map { answeredWeek == $0.weekStart || WeeklyCheckInView.isAnswered(weekStart: $0.weekStart) } ?? false
                     if let review, !reviewAnswered {
                         WeeklyReviewCard(data: review, units: units, onOpen: { detailSession = $0 }) {
-                            withAnimation { weeklyAnswered = true }
+                            withAnimation { answeredWeek = review.weekStart }
                         }
                     }
                     ForEach(layout.visibleCards, id: \.self) { card in
@@ -95,9 +96,6 @@ struct HomeView: View {
                     if let review, reviewAnswered {
                         WeeklyReviewCard(data: review, units: units, onOpen: { detailSession = $0 }, collapsed: true)
                     }
-                }
-                .onAppear {
-                    if let review = weeklyReview { weeklyAnswered = WeeklyCheckInView.isAnswered(weekStart: review.weekStart) }
                 }
                 .padding(KXSpacing.screenMargin)
             }
