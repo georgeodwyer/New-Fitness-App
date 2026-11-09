@@ -7,6 +7,15 @@ import TrainingEngine
 struct WeeklyCheckInView: View {
     let weekStart: Date
     let nextWeek: [PlannedSessionModel]
+    /// Called once they've answered (Today then folds the review away to the bottom).
+    var onAnswered: () -> Void = {}
+
+    /// Whether the check-in for this week has been answered.
+    static func isAnswered(weekStart: Date) -> Bool {
+        UserDefaults.standard.string(forKey: key(weekStart)) != nil
+    }
+
+    static func key(_ weekStart: Date) -> String { "weeklyCheckIn.\(Int(weekStart.timeIntervalSince1970))" }
 
     @Environment(\.modelContext) private var context
     @State private var feel: WeekFeel?
@@ -16,7 +25,7 @@ struct WeeklyCheckInView: View {
     @State private var showRearrange = false
     @State private var result: String?
 
-    private var key: String { "weeklyCheckIn.\(Int(weekStart.timeIntervalSince1970))" }
+    private var key: String { Self.key(weekStart) }
     private var hasGym: Bool { nextWeek.contains { $0.kind.discipline == .strength } }
 
     var body: some View {
@@ -87,6 +96,8 @@ struct WeeklyCheckInView: View {
             result = text
             answered = true
         }
+        // Give them a moment to read the reply before the card folds away.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { onAnswered() }
     }
 }
 

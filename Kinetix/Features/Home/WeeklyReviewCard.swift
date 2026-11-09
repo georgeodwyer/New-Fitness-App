@@ -85,11 +85,60 @@ struct WeeklyReviewCard: View {
     let data: WeeklyReviewData
     let units: UnitSystem
     var onOpen: ((PlannedSessionModel) -> Void)?
+    /// Folded to one line (Today, once the weekly check-in is answered); tap to open.
+    var collapsed = false
+    var onAnswered: () -> Void = {}
+    @State private var expanded = false
 
     private var format: DisplayFormat { DisplayFormat(units: units) }
 
     var body: some View {
+        if collapsed && !expanded {
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) { expanded = true }
+            } label: {
+                HStack(spacing: KXSpacing.md) {
+                    Image(systemName: "calendar.badge.checkmark").font(.title3).foregroundStyle(KXColor.accent)
+                        .accessibilityHidden(true)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Your week").font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink)
+                        Text(collapsedLine).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+                    }
+                    Spacer(minLength: KXSpacing.sm)
+                    Image(systemName: "chevron.down").font(KXFont.caption).foregroundStyle(KXColor.inkTertiary)
+                        .accessibilityHidden(true)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .kxCard()
+            .accessibilityHint("Shows the week review and next week")
+            .accessibilityIdentifier("today.weeklyReview")
+        } else {
+            full
+        }
+    }
+
+    /// "3 of 9 sessions · 8.1 km · next: base week 3".
+    private var collapsedLine: String {
+        var parts: [String] = []
+        if data.review.sessionsPlanned > 0 { parts.append("\(data.review.sessionsDone) of \(data.review.sessionsPlanned) sessions") }
+        parts.append(format.distance(data.review.runMeters))
+        if let focus = data.focus { parts.append("next: " + focus.lowercased()) }
+        return parts.joined(separator: " · ")
+    }
+
+    private var full: some View {
         VStack(alignment: .leading, spacing: KXSpacing.md) {
+            if collapsed {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) { expanded = false }
+                } label: {
+                    Label("Fold away", systemImage: "chevron.up").font(KXFont.captionEmphasis)
+                }
+                .foregroundStyle(KXColor.inkSecondary)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+            }
             VStack(alignment: .leading, spacing: KXSpacing.xs) {
                 KXOverline("Your week", color: KXColor.accent)
                 Text(data.review.headline).font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink)
@@ -153,7 +202,7 @@ struct WeeklyReviewCard: View {
             }
             if WeeklyReviewData.isReviewTime() {
                 Divider().overlay(KXColor.border)
-                WeeklyCheckInView(weekStart: data.weekStart, nextWeek: data.nextWeek)
+                WeeklyCheckInView(weekStart: data.weekStart, nextWeek: data.nextWeek, onAnswered: onAnswered)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

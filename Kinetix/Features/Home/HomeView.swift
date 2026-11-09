@@ -22,6 +22,8 @@ struct HomeView: View {
 
     @State private var actionSession: PlannedSessionModel?
     @State private var detailSession: PlannedSessionModel?
+    /// This week's check-in is answered: the review folds away to the bottom.
+    @State private var weeklyAnswered = false
     @State private var showCalendar = false
     @State private var openRun: RunLogModel?
     @State private var openLift: StrengthLogModel?
@@ -57,6 +59,11 @@ struct HomeView: View {
 
     private var layout: DashboardLayout { settingsModels.first?.dashboardLayout ?? .default }
 
+    /// Sunday evening and Monday: how the week went and what's next.
+    private var weeklyReview: WeeklyReviewData? {
+        WeeklyReviewData.isReviewTime() && profile != nil ? WeeklyReviewData.make(in: context) : nil
+    }
+
     var body: some View {
         let data = data
         NavigationStack {
@@ -70,8 +77,13 @@ struct HomeView: View {
                     if profile?.style == .custom, !hasActivePlan { buildOwnPlanPrompt }
                     if let plan = plans.first, plan.isPaused { PausedPlanCard(plan: plan) }
                     // Sunday evening and Monday: how the week went and what's next.
-                    if WeeklyReviewData.isReviewTime(), profile != nil, let review = WeeklyReviewData.make(in: context) {
-                        WeeklyReviewCard(data: review, units: units) { detailSession = $0 }
+                    // Not answered yet: at the top. Answered: folded away at the bottom.
+                    let review = weeklyReview
+                    let reviewAnswered = review.map { _ in weeklyAnswered } ?? false
+                    if let review, !reviewAnswered {
+                        WeeklyReviewCard(data: review, units: units, onOpen: { detailSession = $0 }) {
+                            withAnimation { weeklyAnswered = true }
+                        }
                     }
                     ForEach(layout.visibleCards, id: \.self) { card in
                         dashboardCard(card, data: data)
@@ -80,6 +92,12 @@ struct HomeView: View {
                     if layout.visibleCards.contains(.checkIn), data.todaysCheckIn != nil {
                         checkInCard(data)
                     }
+                    if let review, reviewAnswered {
+                        WeeklyReviewCard(data: review, units: units, onOpen: { detailSession = $0 }, collapsed: true)
+                    }
+                }
+                .onAppear {
+                    if let review = weeklyReview { weeklyAnswered = WeeklyCheckInView.isAnswered(weekStart: review.weekStart) }
                 }
                 .padding(KXSpacing.screenMargin)
             }
