@@ -23,3 +23,6 @@ garmin/build/
 garmin/bin/
 garmin/developer_key*
 *.der
+
+# Launch videos from /brag (not part of the app)
+brag-output*/
