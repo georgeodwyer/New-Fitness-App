@@ -22,9 +22,12 @@ final class PlanSimulationTests: XCTestCase {
     private let start = TestSupport.date(2026, 10, 26)
 
     private var startingProfile: AthleteProfile {
-        AthleteProfile(runningExperience: .intermediate, liftingExperience: .intermediate, goal: .faster10k,
+        // 16.5 km a week and a 22:00 5K reproduce their real third week: a 6 km long run of about 35 minutes
+        // and a short Monday easy run alongside intervals and a progression run.
+        AthleteProfile(runningExperience: .intermediate, recentRace: RaceResult(distanceMeters: 5000, timeSeconds: 22 * 60),
+                       liftingExperience: .intermediate, goal: .faster10k,
                        trainingDays: [.monday, .tuesday, .wednesday, .thursday, .saturday, .sunday], doubleSessionDays: 3,
-                       equipment: .fullGym, weeklyRunMeters: 15000, longestRecentRunMeters: 4500,
+                       equipment: .fullGym, weeklyRunMeters: 16500, longestRecentRunMeters: 6000,
                        liftSessionsPerWeek: 5, splitCode: "pplUpperArms", longRunDay: .sunday)
     }
 
@@ -39,8 +42,8 @@ final class PlanSimulationTests: XCTestCase {
         mutating func sets(for exercise: ExercisePrescription, weight: Double, offDay: Bool) -> [SetResult] {
             let key = exercise.progressionKey
             if oneRepMax[key] == nil {
-                // New to them: the starting weight leaves about four reps above the bottom of the range.
-                oneRepMax[key] = weight * (1 + Double(exercise.repRange.lower + 4) / 30)
+                // New to them: the starting weight leaves about three reps above the bottom of the range.
+                oneRepMax[key] = weight * (1 + Double(exercise.repRange.lower + 3) / 30)
             }
             let strength = (oneRepMax[key] ?? weight) * (offDay ? 0.93 : 1)
             let capacity = 30 * (strength / max(weight, 1) - 1)
@@ -53,7 +56,7 @@ final class PlanSimulationTests: XCTestCase {
 
         /// Training makes them a little stronger (less so in a lighter week).
         mutating func trained(_ key: String, lightWeek: Bool) {
-            oneRepMax[key] = (oneRepMax[key] ?? 0) * (lightWeek ? 1.002 : 1.006)
+            oneRepMax[key] = (oneRepMax[key] ?? 0) * (lightWeek ? 1.003 : 1.01)
         }
     }
 
@@ -99,19 +102,28 @@ final class PlanSimulationTests: XCTestCase {
 
         line("# Plan walk-through: Faster 10K, intermediate, no race date")
         line("Runs 4 days (long run Sunday), gym 5 days: Push, Pull, Legs, Upper, Shoulders & arms. Friday off.")
-        line("Starting point: 15 km a week (the intermediate minimum), longest recent run 4.5 km.")
-        line("Starting paces from the intermediate default (5K about 26:00): VDOT \(String(format: "%.1f", PaceZones(profile: profile).vdot)).")
+        line("Starting point: 16.5 km a week, a 5K of about 22:00 (VDOT \(String(format: "%.1f", PaceZones(profile: profile).vdot))).")
         line()
         line("## The outline (set on day one)")
+        line("Each week is its % of a base. The base starts at your weekly running and grows 10% after each normal week "
+             + "(not after a lighter one) towards 40 km; no week may be more than 10% above the biggest of the three before it.")
+        var base = outline.weeks.first?.runVolumeMeters ?? 0
+        var startedBase = false
+        var lastWasDeload = false
         for week in outline.weeks {
             let share = week.programmeWeek.flatMap(programme.week)?.volume
-            let base = share.map { week.runVolumeMeters / $0 }
+            if share != nil {
+                if startedBase, base < 40000, !lastWasDeload { base = min(40000, base * 1.1) }
+                startedBase = true
+                lastWasDeload = week.isRecoveryWeek
+            }
             let label = week.programmeWeek.map { "programme week \($0)" } ?? "recovery week after the programme"
             let lighter = week.isRecoveryWeek ? " · lighter" : ""
             var text = "- Week \(week.index + 1) (\(day(week.startDate))): \(week.phase.displayName)\(lighter), \(km(week.runVolumeMeters))"
-            if let share, let base {
+            if let share {
                 let percent = Int((share * 100).rounded())
-                text += " = \(percent)% of a base of \(km(base))"
+                text += " (\(percent)% of a base of \(km(base)) = \(km(base * share))"
+                text += week.runVolumeMeters < base * share - 50 ? ", held back by the 10% limit)" : ")"
             }
             text += " · \(label)"
             line(text)
@@ -165,7 +177,7 @@ final class PlanSimulationTests: XCTestCase {
             line(heading)
             var why = "Running: \(km(target.runVolumeMeters)) planned for the week"
             if let share = programmeWeek?.volume {
-                why += " (\(Int((share * 100).rounded()))% of the base, now \(km(target.runVolumeMeters / share)))"
+                why += " (programme \(Int((share * 100).rounded()))%)"
             }
             if let previousPlanned {
                 let change = (target.runVolumeMeters / max(previousPlanned, 1) - 1) * 100
@@ -207,6 +219,13 @@ final class PlanSimulationTests: XCTestCase {
                         }
                     }
                     doneMeters += meters
+                    // A time trial (week 12 without a race date): run about 3% quicker than predicted.
+                    if session.summary.contains("time trial"), let distance = BestEffortDistance(rawValue: meters.rounded()),
+                       let work = structure.segments.first(where: { $0.kind == .work })?.targetPace {
+                        let seconds = (work.fastest.secondsPerKm + work.slowest.secondsPerKm) / 2 * 0.97 * meters / 1000
+                        evidence.append(FormEstimate.Evidence(date: session.date, bestEfforts: [distance: seconds]))
+                        extra += " Ran it in \(Units.formatMinutesSeconds(seconds)), about 3% quicker than predicted."
+                    }
                     // Interval reps from week 5 run about 3% quicker than the target.
                     if type == .intervals, weekNumber >= 5 {
                         let reps = structure.segments.filter { $0.kind == .work }.compactMap(\.targetPace)
@@ -228,7 +247,7 @@ final class PlanSimulationTests: XCTestCase {
                         var weight = workingWeights[key] ?? prescribed
                         if weight <= 0 {
                             // A machine with no default: the first session's weight becomes the working weight.
-                            weight = definition?.region == .lower ? 40 : 20
+                            weight = definition?.region == .lower ? 100 : 40
                             workingWeights[key] = weight
                             states[key] = ProgressionState(workingWeightKg: weight)
                         }
