@@ -100,9 +100,10 @@ final class StrengthServiceTests: XCTestCase {
         XCTAssertGreaterThan(state.workingWeightKg, before)
         XCTAssertNotNil(state.lastChangeReason)
 
-        // Later sessions using the same lift now prescribe the new weight.
+        // Later sessions using the same lift now prescribe the new weight (a heavy week stays about 5% over it).
         let later = sessions.dropFirst().compactMap(\.strengthPrescription).flatMap(\.exercises).filter { $0.progressionKey == key }
-        XCTAssertTrue(later.allSatisfy { $0.weightKg == state.workingWeightKg })
+        XCTAssertTrue(later.filter { $0.isHeavy != true }.allSatisfy { $0.weightKg == state.workingWeightKg })
+        XCTAssertTrue(later.filter { $0.isHeavy == true }.allSatisfy { ($0.weightKg ?? 0) > state.workingWeightKg })
 
         let records = try context.fetch(FetchDescriptor<PersonalRecordModel>())
         XCTAssertFalse(records.isEmpty, "First session stores baseline bests")
