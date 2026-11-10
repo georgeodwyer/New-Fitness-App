@@ -97,6 +97,15 @@ final class ProgressionTests: XCTestCase {
         XCTAssertEqual(row.change, .increase(byKg: 2))
     }
 
+    func testLightLiftsAreNeverResetForFallingShortAfterABigStep() {
+        // 10 kg lateral raises after going up from 8 kg: 6 reps is short of 8, but expected.
+        let decision = Progression.evaluate(exerciseName: "Lateral raise", loading: .dumbbell, region: .upper, repRange: RepRange(8, 12),
+                                            prescribedSets: 2, state: ProgressionState(workingWeightKg: 10, stallCount: 2),
+                                            sets: [6, 6].map { SetResult(weightKg: 10, reps: $0) })
+        XCTAssertEqual(decision.change, .hold)
+        XCTAssertEqual(decision.newState, ProgressionState(workingWeightKg: 10, stallCount: 0))
+    }
+
     func testMissesOnALowRecoveryDayDontCountTowardsAReset() {
         let decision = Progression.evaluate(exerciseName: "Squat", loading: .barbell, region: .lower, repRange: range,
                                             prescribedSets: 3, state: ProgressionState(workingWeightKg: 100, stallCount: 2),

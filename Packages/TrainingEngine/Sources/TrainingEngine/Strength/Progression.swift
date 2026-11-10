@@ -171,6 +171,16 @@ public enum Progression {
             )
         }
 
+        // A light lift where each step is a big jump (2 kg on 10 kg is 20%): reps fall short for a
+        // while after going up. Hold while they build back; never count it towards a reset.
+        if missed && needed > repRange.upper {
+            return ProgressionDecision(
+                newState: ProgressionState(workingWeightKg: base, stallCount: 0),
+                change: .hold,
+                reason: "\(exerciseName): staying at \(weightText(base)). Steps are big at this weight, so reps take a while to build back up; it won't count towards a reset."
+            )
+        }
+
         if missed {
             let stalls = state.stallCount + 1
             if stalls >= rules.stallsBeforeDeload {

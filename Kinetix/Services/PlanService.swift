@@ -185,7 +185,8 @@ enum PlanService {
     ///   new paces or linking their own workouts.
     @discardableResult
     static func rebuildRemainder(for profile: AthleteProfile, in context: ModelContext, now: Date = .now,
-                                 startingNextWeek: Bool = false, keepOutline: Bool = false) -> TrainingPlanModel {
+                                 startingNextWeek: Bool = false, keepOutline: Bool = false,
+                                 summary customSummary: String? = nil) -> TrainingPlanModel {
         let calendar = Calendar.kinetix
         let today = calendar.startOfDay(for: now)
         // From next Monday: this week stays exactly as it is (sessions not done yet included).
@@ -231,9 +232,9 @@ enum PlanService {
         }
         plan.touch(now: now)
         previewCache = nil
-        let summary = startingNextWeek
+        let summary = customSummary ?? (startingNextWeek
             ? "Your updated plan starts Monday \(from.formatted(.dateTime.day().month())) (week \(current + 1) of \(outline.weeks.count)). This week stays as it was."
-            : "Rebuilt your plan from today (week \(current + 1) of \(outline.weeks.count)). What you've done is kept."
+            : "Rebuilt your plan from today (week \(current + 1) of \(outline.weeks.count)). What you've done is kept.")
         context.insert(PlanChangeModel(summary: summary, now: now))
         try? context.save()
         SyncService.shared.requestSync()
@@ -330,6 +331,7 @@ enum PlanService {
         guard let profileModel = try? context.fetch(FetchDescriptor<UserProfileModel>()).first(where: { !$0.isSoftDeleted }),
               let plan = try? context.fetch(FetchDescriptor<TrainingPlanModel>()).first(where: { $0.isActive && !$0.isSoftDeleted })
         else { return }
+        if updateToLatestLogic(plan: plan, profile: profileModel.profile, in: context, now: now) { return }
         if adaptToRecentWeeks(plan: plan, profile: profileModel.profile, in: context, now: now) {
             try? context.save()
             SyncService.shared.requestSync()
@@ -338,6 +340,27 @@ enum PlanService {
         let before = plan.generatedWeekCount
         ensureHorizon(for: plan, profile: profileModel.profile, in: context, now: now)
         if plan.generatedWeekCount != before { try? context.save() }
+    }
+
+    // MARK: New plan logic
+
+    /// An update changed how plans are built (`TrainingEngine.version`): the plan is rebuilt with
+    /// the new logic from next Monday. This week, done sessions and gym weights stay as they are.
+    /// Not while paused (it's rebuilt when they resume), and not once the plan has finished.
+    /// Returns whether the plan changed.
+    @discardableResult
+    static func updateToLatestLogic(plan: TrainingPlanModel, profile: AthleteProfile, in context: ModelContext, now: Date = .now) -> Bool {
+        guard plan.engineVersion != TrainingEngine.version, !plan.isPaused, let outline = plan.outline else { return false }
+        let calendar = Calendar.kinetix
+        let nextMonday = calendar.date(byAdding: .day, value: 7, to: calendar.startOfISOWeek(for: now)) ?? now
+        guard outline.weekIndex(containing: nextMonday, calendar: calendar) != nil else {
+            plan.engineVersion = TrainingEngine.version
+            return false
+        }
+        let day = nextMonday.formatted(.dateTime.weekday(.wide).day().month(.wide))
+        rebuildRemainder(for: profile, in: context, now: now, startingNextWeek: true,
+                         summary: "Kinetix's training logic has been updated. Your plan uses it from \(day); this week stays as it was, and everything you've done and your gym weights are kept.")
+        return true
     }
 
     // MARK: Growth that follows the weeks
