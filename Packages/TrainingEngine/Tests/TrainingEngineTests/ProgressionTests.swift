@@ -67,9 +67,49 @@ final class ProgressionTests: XCTestCase {
     }
 
     func testProgressionUsesWeightActuallyLifted() {
-        // Prescribed 100 kg but the user chose 95 kg and hit every rep: next is 100 kg.
+        // Prescribed 100 kg but the user chose 95 kg and hit every rep: next is 97.5 kg (under
+        // 100 kg, lower-body lifts go up 2.5 kg).
         let decision = evaluate(sets: sets([8, 8, 8], weight: 95))
-        XCTAssertEqual(decision.newState.workingWeightKg, 100)
+        XCTAssertEqual(decision.newState.workingWeightKg, 97.5)
+    }
+
+    func testLowerBodyStepScalesWithTheWeight() {
+        let light = evaluate(state: ProgressionState(workingWeightKg: 70), sets: sets([8, 8, 8], weight: 70))
+        XCTAssertEqual(light.change, .increase(byKg: 2.5))
+        let heavy = evaluate(state: ProgressionState(workingWeightKg: 120), sets: sets([8, 8, 8], weight: 120))
+        XCTAssertEqual(heavy.change, .increase(byKg: 5))
+    }
+
+    func testLightDumbbellsEarnTheirStepWithExtraReps() {
+        // 2 kg on 8 kg is a 25% jump: 12s at the top of an 8–12 range hold; 14s earn it.
+        func raise(_ reps: Int) -> ProgressionDecision {
+            Progression.evaluate(exerciseName: "Lateral raise", loading: .dumbbell, region: .upper, repRange: RepRange(8, 12),
+                                 prescribedSets: 2, state: ProgressionState(workingWeightKg: 8),
+                                 sets: [reps, reps].map { SetResult(weightKg: 8, reps: $0) })
+        }
+        XCTAssertEqual(raise(12).change, .hold)
+        XCTAssertTrue(raise(12).reason.contains("aim for 14 reps"))
+        XCTAssertEqual(raise(14).change, .increase(byKg: 2))
+        // 2 kg on 24 kg is a normal step: the top of the range is enough.
+        let row = Progression.evaluate(exerciseName: "Row", loading: .dumbbell, region: .upper, repRange: RepRange(8, 12),
+                                       prescribedSets: 2, state: ProgressionState(workingWeightKg: 24),
+                                       sets: [12, 12].map { SetResult(weightKg: 24, reps: $0) })
+        XCTAssertEqual(row.change, .increase(byKg: 2))
+    }
+
+    func testMissesOnALowRecoveryDayDontCountTowardsAReset() {
+        let decision = Progression.evaluate(exerciseName: "Squat", loading: .barbell, region: .lower, repRange: range,
+                                            prescribedSets: 3, state: ProgressionState(workingWeightKg: 100, stallCount: 2),
+                                            sets: sets([6, 5, 4]), countsMisses: false)
+        XCTAssertEqual(decision.change, .hold)
+        XCTAssertEqual(decision.newState, ProgressionState(workingWeightKg: 100, stallCount: 2))
+        XCTAssertTrue(decision.reason.contains("recovery was low"))
+    }
+
+    func testHeavyWeekWeight() {
+        XCTAssertEqual(StrengthMath.heavyWeight(working: 70, loading: .barbell), 72.5)
+        XCTAssertEqual(StrengthMath.heavyWeight(working: 100, loading: .barbell), 105)
+        XCTAssertEqual(StrengthMath.heavyWeight(working: 20, loading: .dumbbell), 22)
     }
 
     func testWeightStaysUntilEverySetReachesTheTarget() {

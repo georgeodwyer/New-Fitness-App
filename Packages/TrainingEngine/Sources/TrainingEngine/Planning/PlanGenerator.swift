@@ -100,6 +100,16 @@ public struct PlanGenerator: Sendable {
                                           rules: templates.programmes.rules(for: profile.runningExperience), calendar: calendar)
     }
 
+    /// The plan's running from week `index` on, resized after the last two weeks (see
+    /// `PlanAdaptation`). Nil for plans that aren't a coach's programme or were built before weeks
+    /// kept their base.
+    public func adaptedOutline(_ outline: PlanOutline, from index: Int, decision: PlanAdaptation.Decision,
+                               profile: AthleteProfile) -> PlanOutline? {
+        guard let goal = outline.programmeGoal, let programme = templates.programmes.programme(for: goal) else { return nil }
+        return ProgrammePlanner.adapted(outline, from: index, hold: decision.hold, limit: decision.limit, programme: programme,
+                                        profile: profile, rules: templates.programmes.rules(for: profile.runningExperience))
+    }
+
     /// Generates the detailed sessions for one week of the outline.
     /// - Parameters:
     ///   - workingWeights: current working weights by `ExercisePrescription.progressionKey`.

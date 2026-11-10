@@ -66,8 +66,12 @@ public struct ExercisePrescription: Codable, Equatable, Sendable {
     /// Nil for bodyweight movements.
     public var weightKg: Double?
     public var restSeconds: Int
+    /// A heavy week's main lift: about 5% over the working weight for the bottom of the rep
+    /// range. A one-off: it never changes the working weight.
+    public var isHeavy: Bool? = nil
 
-    public init(exerciseId: String, name: String, role: SlotRole, sets: Int, repRange: RepRange, weightKg: Double?, restSeconds: Int) {
+    public init(exerciseId: String, name: String, role: SlotRole, sets: Int, repRange: RepRange, weightKg: Double?, restSeconds: Int,
+                isHeavy: Bool? = nil) {
         self.exerciseId = exerciseId
         self.name = name
         self.role = role
@@ -75,6 +79,7 @@ public struct ExercisePrescription: Codable, Equatable, Sendable {
         self.repRange = repRange
         self.weightKg = weightKg
         self.restSeconds = restSeconds
+        self.isHeavy = isHeavy
     }
 
     /// Progression is tracked per exercise *and* role, so a lift used as both a

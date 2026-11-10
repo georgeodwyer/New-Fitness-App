@@ -150,13 +150,15 @@ public struct PrefilledSet: Equatable, Sendable {
 /// same weight, up to the top of the range; the bottom of the range after a weight
 /// increase or the first time.
 public enum RepTarget {
-    public static func reps(setIndex: Int, range: RepRange, weightKg: Double, previous: [PreviousSet]) -> Int {
+    /// - Parameter ceiling: the most to aim for (default the top of the range; a light lift
+    ///   whose next step is a big jump aims two past it).
+    public static func reps(setIndex: Int, range: RepRange, weightKg: Double, previous: [PreviousSet], ceiling: Int? = nil) -> Int {
         guard !previous.isEmpty else { return range.lower }
         let last = previous[min(setIndex, previous.count - 1)]
         // Heavier than last time (by more than rounding): start again at the bottom.
         if weightKg > last.weightKg + 0.01 { return range.lower }
         let next = last.reps + 1
-        return min(max(next, range.lower), range.upper)
+        return min(max(next, range.lower), max(ceiling ?? range.upper, range.upper))
     }
 }
 

@@ -20,6 +20,11 @@ public struct WeekTarget: Codable, Equatable, Sendable {
     public var isPostProgrammeRecovery: Bool? = nil
     /// Easy first week the runner asked for after a race.
     public var isEasyStart: Bool? = nil
+    /// The base this week's % was taken of (coach's programmes), so later weeks can be sized
+    /// again from here (nil on plans built before it was kept).
+    public var base: Double? = nil
+    /// The programme's % for this week (lead-in weeks use the first week's).
+    public var volumeShare: Double? = nil
 }
 
 public struct PlanBlock: Equatable, Sendable {

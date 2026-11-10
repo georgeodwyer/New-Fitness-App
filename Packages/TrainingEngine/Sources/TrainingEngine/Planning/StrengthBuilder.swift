@@ -40,6 +40,14 @@ public enum StrengthMath {
         return roundDown(workingWeight(oneRepMax: oneRM, reps: reps) * link.ratio, loading: exercise.loading)
     }
 
+    /// A heavy week's weight: about 5% over the working weight, to the nearest loadable step
+    /// (at least one step heavier).
+    public static func heavyWeight(working: Double, loading: ExerciseLoading) -> Double {
+        let step = increment(for: loading)
+        guard step > 0, working > 0 else { return working }
+        return max(working + step, (working * 1.05 / step).rounded() * step)
+    }
+
     /// Rounds down to a loadable weight.
     public static func roundDown(_ weight: Double, loading: ExerciseLoading) -> Double {
         let step = increment(for: loading)
@@ -55,6 +63,8 @@ enum StrengthBuilder {
         var week: WeekTarget
         /// Current working weights by progression key (from the progression engine).
         var workingWeights: [String: Double]
+        /// A heavy week: main lifts about 5% heavier for the bottom of the rep range.
+        var heavy = false
     }
 
     static func prescription(for session: StrengthSessionTemplate, context: Context) -> StrengthPrescription {
@@ -95,8 +105,9 @@ enum StrengthBuilder {
             if let kept = change?.sets[exercise.id] { scheme.sets = kept }
             let sets = adjusted(scheme.sets)
 
-            let reps: RepRange
-            let weight: Double?
+            var reps: RepRange
+            var weight: Double?
+            var isHeavy: Bool?
             if exercise.loading == .bodyweight {
                 // The coach's reps (or metres, for stations) where written, else the bodyweight default.
                 reps = slot.repsLow != nil || slot.repsHigh != nil
@@ -108,6 +119,11 @@ enum StrengthBuilder {
                 let key = "\(exercise.id).\(slot.role.rawValue)"
                 weight = context.workingWeights[key]
                     ?? startingWeight(for: exercise, role: slot.role, reps: reps, profile: context.profile)
+                if context.heavy, slot.role == .main, let working = weight, working > 0 {
+                    weight = StrengthMath.heavyWeight(working: working, loading: exercise.loading)
+                    reps = RepRange(reps.lower, reps.lower)
+                    isHeavy = true
+                }
             }
 
             exercises.append(ExercisePrescription(
@@ -117,7 +133,8 @@ enum StrengthBuilder {
                 sets: sets,
                 repRange: reps,
                 weightKg: weight,
-                restSeconds: scheme.restSeconds
+                restSeconds: scheme.restSeconds,
+                isHeavy: isHeavy
             ))
         }
         // Exercises they added to this day and kept.

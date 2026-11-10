@@ -26,6 +26,31 @@ public struct ProgressionRules: Codable, Equatable, Sendable {
     public func increment(loading: ExerciseLoading, region: BodyRegion) -> Double {
         increments[loading.rawValue]?[region.rawValue] ?? StrengthMath.increment(for: loading)
     }
+
+    /// Below this, lower-body barbell and machine lifts go up 2.5 kg rather than 5 kg (5 kg on a
+    /// 70 kg squat is a 7% jump).
+    public static let smallerLowerStepBelowKg = 100.0
+    /// A step bigger than this share of the weight is a big jump (2 kg on an 8 kg dumbbell is 25%):
+    /// earn it with two reps past the top of the range first.
+    public static let bigStepShare = 0.12
+    public static let extraRepsForBigStep = 2
+
+    /// The step for this weight: about 2.5–5% for most lifts, as the gym can load it.
+    public func increment(loading: ExerciseLoading, region: BodyRegion, weightKg: Double) -> Double {
+        let step = increment(loading: loading, region: region)
+        if region == .lower, loading == .barbell || loading == .machine, weightKg > 0, weightKg < Self.smallerLowerStepBelowKg {
+            return min(step, 2.5)
+        }
+        return step
+    }
+
+    /// Reps every set needs before the weight goes up: the top of the range, or two more when
+    /// the next step is a big jump for this weight.
+    public func repsForIncrease(repRange: RepRange, loading: ExerciseLoading, region: BodyRegion, weightKg: Double) -> Int {
+        guard loading != .bodyweight, weightKg > 0 else { return repRange.upper }
+        let step = increment(loading: loading, region: region, weightKg: weightKg)
+        return step / weightKg > Self.bigStepShare ? repRange.upper + Self.extraRepsForBigStep : repRange.upper
+    }
 }
 
 /// One logged set.
@@ -83,7 +108,8 @@ public enum Progression {
         state: ProgressionState,
         sets: [SetResult],
         rules: ProgressionRules = .standard,
-        units: UnitSystem = .metric
+        units: UnitSystem = .metric,
+        countsMisses: Bool = true
     ) -> ProgressionDecision {
         let done = sets.filter(\.completed)
         guard !done.isEmpty else {
@@ -110,15 +136,16 @@ public enum Progression {
         let rpes = atWeight.compactMap(\.rpe)
         let averageRPE = rpes.isEmpty ? nil : rpes.reduce(0, +) / Double(rpes.count)
         let allSetsDone = atWeight.count >= prescribedSets
-        let hitTop = allSetsDone && atWeight.allSatisfy { $0.reps >= repRange.upper }
+        let needed = rules.repsForIncrease(repRange: repRange, loading: loading, region: region, weightKg: base)
+        let hitTop = allSetsDone && atWeight.allSatisfy { $0.reps >= needed }
         // Only failed reps count against you. Sets not done (a session cut short) just hold the weight.
         let missed = atWeight.contains { $0.reps < repRange.lower }
         let effortOK = averageRPE.map { $0 <= rules.maxRPEForIncrease } ?? true
         let weightText = { (kg: Double) in Units.formatWeight(kg: kg, units: units) + " " + Units.weightUnitLabel(units) }
-        let setsText = "\(atWeight.count)×\(repRange.upper)"
+        let setsText = "\(atWeight.count)×\(needed)"
 
         if hitTop && effortOK {
-            let step = rules.increment(loading: loading, region: region)
+            let step = rules.increment(loading: loading, region: region, weightKg: base)
             let next = ((base + step) * 2).rounded() / 2 // nearest 0.5 kg
             let effortText = averageRPE.map { " at RPE \(formatRPE($0))" } ?? ""
             return ProgressionDecision(
@@ -133,6 +160,14 @@ public enum Progression {
                 newState: ProgressionState(workingWeightKg: base, stallCount: 0),
                 change: .hold,
                 reason: "\(exerciseName): staying at \(weightText(base)). You hit every rep, but it was very hard, so let's own this weight first."
+            )
+        }
+
+        if missed && !countsMisses {
+            return ProgressionDecision(
+                newState: ProgressionState(workingWeightKg: base, stallCount: state.stallCount),
+                change: .hold,
+                reason: "\(exerciseName): staying at \(weightText(base)). Some reps fell short, but your recovery was low today, so it doesn't count towards a reset."
             )
         }
 
@@ -165,7 +200,9 @@ public enum Progression {
         return ProgressionDecision(
             newState: ProgressionState(workingWeightKg: base, stallCount: 0),
             change: .hold,
-            reason: "\(exerciseName): staying at \(weightText(base)). Aim for \(repRange.upper) reps on every set to earn an increase."
+            reason: needed > repRange.upper
+                ? "\(exerciseName): staying at \(weightText(base)). The next step is a big jump at this weight, so aim for \(needed) reps on every set first."
+                : "\(exerciseName): staying at \(weightText(base)). Aim for \(repRange.upper) reps on every set to earn an increase."
         )
     }
 
