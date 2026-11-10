@@ -77,7 +77,7 @@ struct HeartRateZonesView: View {
             } header: {
                 Text(custom ? "Your zones" : "Your zones (automatic)")
             } footer: {
-                Text("Exertion counts each minute by its zone: zone 1 counts 1, zone 5 counts 5. Without heart rate, minutes × effort is used instead.")
+                Text("Exertion counts each minute by its zone: zone 1 counts 1, zone 5 counts 5. Without heart rate, minutes × effort is used instead. Gym sessions with heart rate count half heart rate, half minutes × effort, since heart rate reads low for lifting.")
             }
         }
         .navigationTitle("Heart rate zones")

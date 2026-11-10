@@ -18,6 +18,14 @@ enum WhatsNew {
     }
 
     static let releases: [Release] = [
+        Release(id: "2026-11-recovery-1", title: "What's new", items: [
+            Item(symbol: "checklist", title: "Your check-in counts more",
+                 detail: "With an Apple Watch, how you feel is now a quarter of your recovery score, alongside HRV, heart rate and sleep."),
+            Item(symbol: "heart.circle", title: "Gym exertion uses heart rate",
+                 detail: "Gym and functional sessions keep your heart rate, and exertion uses it alongside how hard you rated the session."),
+            Item(symbol: "calendar", title: "Your week, all week",
+                 detail: "How the week is going sits at the bottom of Today every day. Tap it for next week's sessions.")
+        ]),
         Release(id: "2026-11-treadmill-1", title: "What's new", items: [
             Item(symbol: "figure.run.treadmill", title: "Treadmill runs",
                  detail: "Turn on \u{201C}On a treadmill\u{201D} before a run. Kinetix tells you the speed to set for each step and counts distance from it, or from your steps."),

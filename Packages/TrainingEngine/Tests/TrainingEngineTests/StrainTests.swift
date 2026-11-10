@@ -248,4 +248,33 @@ final class StrainTests: XCTestCase {
         XCTAssertEqual(fresh.feeling(4).status, .tired)
         XCTAssertEqual(LegsLoad(current: 300, usual: nil, status: .tired).feeling(1).status, .tired, "Numbers still count when legs feel fine")
     }
+
+    func testGymLoadCountsHeartRate() {
+        let zones = HeartRateZones.make(age: 35, recordedMax: nil)  // max 184: zone 3 from 129, zone 4 from 147
+        let effortOnly = Strain.gymLoad(durationSeconds: 3600, effort: 6, zoneSeconds: nil, averageHeartRate: nil, zones: zones)
+        XCTAssertEqual(effortOnly.load, 180, accuracy: 0.01)
+        XCTAssertFalse(effortOnly.usedHeartRate)
+        // An hour in zone 3 counts 180 by heart rate; half that and half minutes × effort 8 (240).
+        let hard = Strain.gymLoad(durationSeconds: 3600, effort: 8, zoneSeconds: [0, 0, 0, 3600, 0, 0], averageHeartRate: nil, zones: zones)
+        XCTAssertEqual(hard.load, 210, accuracy: 0.01)
+        XCTAssertTrue(hard.usedHeartRate)
+        // Heart rate for half the session is scaled up to all of it.
+        let half = Strain.gymLoad(durationSeconds: 3600, effort: 6, zoneSeconds: [0, 0, 1800, 0, 0, 0], averageHeartRate: nil, zones: zones)
+        XCTAssertEqual(half.load, 150, accuracy: 0.01)
+        // Under 30% covered isn't enough to go on: effort only (or the average, when there is one).
+        let patchy = Strain.gymLoad(durationSeconds: 3600, effort: 6, zoneSeconds: [0, 600, 0, 0, 0, 0], averageHeartRate: nil, zones: zones)
+        XCTAssertEqual(patchy.load, 180, accuracy: 0.01)
+        XCTAssertFalse(patchy.usedHeartRate)
+        let average = Strain.gymLoad(durationSeconds: 3600, effort: 6, zoneSeconds: nil, averageHeartRate: 150, zones: zones)
+        XCTAssertEqual(average.load, (240 + 180) / 2, accuracy: 0.01)
+        XCTAssertTrue(average.usedHeartRate)
+    }
+
+    func testCheckInIsAQuarterOfRecoveryWithAWatch() throws {
+        let score = try XCTUnwrap(RecoveryScore.make(hrv: HRVSignal(today: 60, baseline: 60),
+                                                     restingHeartRate: RestingHeartRateSignal(today: 52, baseline: 52),
+                                                     sleepHours: 8, checkIn: RecoveryCheckIn(sleep: 1, soreness: 5, energy: 1)))
+        XCTAssertEqual(score.parts.first { $0.name == "Your score" }?.share ?? 0, 0.25, accuracy: 0.001)
+        XCTAssertEqual(score.parts.reduce(0) { $0 + $1.share }, 1, accuracy: 0.001)
+    }
 }

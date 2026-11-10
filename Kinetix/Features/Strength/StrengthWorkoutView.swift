@@ -77,6 +77,7 @@ struct StrengthWorkoutView: View {
                 showFinish = false
                 model.endSetTimer()
                 changesAtFinish = model.changesToKeep
+                model.log.recordHeartRate(zoneSeconds: model.secondsInZone, averageHeartRate: model.averageHeartRate)
                 summary = StrengthService.finish(model.log, planned: model.planned, effort: effort, units: units, in: context)
             }
             .presentationDetents([.medium])

@@ -31,6 +31,9 @@ final class FunctionalWorkoutModel {
     private(set) var heartRate: Double?
     private(set) var heartRateAt: Date?
     private(set) var maxHeartRate: Double?
+    /// Seconds in each heart-rate zone (index 0 = below zone 1) and heart rate × seconds, for exertion.
+    @ObservationIgnored private var zoneSeconds: [Double] = Array(repeating: 0, count: 6)
+    @ObservationIgnored private var heartRateTotal = 0.0
     @ObservationIgnored private let healthStore = HKHealthStore()
     @ObservationIgnored private var healthQuery: HKAnchoredObjectQuery?
     @ObservationIgnored private var lastStrapAt: Date?
@@ -272,6 +275,8 @@ final class FunctionalWorkoutModel {
         log.activeSeconds = record.splits.filter { $0.kind != .rest }.reduce(0) { $0 + $1.seconds }
         log.effort = effort
         log.load = SessionLoad.srpe(durationSeconds: duration, effort: effort)
+        let heartRateSeconds = zoneSeconds.reduce(0, +)
+        log.recordHeartRate(zoneSeconds: zoneSeconds, averageHeartRate: heartRateSeconds > 0 ? heartRateTotal / heartRateSeconds : nil)
         log.isFinished = true
         log.finishedAt = session.startedAt.addingTimeInterval(duration)
         log.touch(now: end)
@@ -487,6 +492,11 @@ final class FunctionalWorkoutModel {
         if !strap, let lastStrapAt, date.timeIntervalSince(lastStrapAt) < 10 { return }
         if !live, let lastWatchHeartRateAt, date.timeIntervalSince(lastWatchHeartRateAt) < 15 { return }
         if strap { lastStrapAt = date }
+        if let previous = heartRate, let at = heartRateAt, savedLog == nil {
+            let seconds = min(10, max(0, date.timeIntervalSince(at)))
+            zoneSeconds[heartRateZones.zone(for: previous)] += seconds
+            heartRateTotal += previous * seconds
+        }
         heartRate = bpm
         heartRateAt = date
         maxHeartRate = max(maxHeartRate ?? 0, bpm)

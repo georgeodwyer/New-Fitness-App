@@ -93,6 +93,10 @@ final class StrengthLogModel: SyncTracked {
     var isManual: Bool = false
     /// A functional (circuit / Hyrox style) workout: encoded `FunctionalRecord` (no sets).
     var functionalData: Data?
+    /// Average heart rate during the session (watch, strap or Health), when there was any.
+    var averageHeartRate: Double?
+    /// Encoded `[Double]`: seconds in each heart-rate zone (index 0 = below zone 1), for exertion.
+    var zoneSecondsData: Data?
 
     @Relationship(deleteRule: .cascade, inverse: \SetLogModel.session)
     var sets: [SetLogModel] = []
@@ -116,6 +120,15 @@ final class StrengthLogModel: SyncTracked {
 
     /// The functional workout this was, with its splits (nil for a gym session).
     var functional: FunctionalRecord? { StoredJSON.decode(FunctionalRecord.self, from: functionalData) }
+    /// Seconds in each heart-rate zone during the session (nil without heart rate).
+    var zoneSeconds: [Double]? { StoredJSON.decode([Double].self, from: zoneSecondsData) }
+
+    /// Keeps the session's heart rate: time in each zone and the average.
+    func recordHeartRate(zoneSeconds: [Double], averageHeartRate: Double?) {
+        guard zoneSeconds.reduce(0, +) > 0 else { return }
+        zoneSecondsData = StoredJSON.encode(zoneSeconds)
+        self.averageHeartRate = averageHeartRate
+    }
     var isFunctional: Bool { functionalData != nil }
     /// Running done in a functional workout (counts towards weekly running distance).
     var functionalRunMeters: Double { functional?.runMeters ?? 0 }

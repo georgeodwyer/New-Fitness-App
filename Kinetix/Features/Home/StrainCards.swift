@@ -525,7 +525,7 @@ struct RecoveryBreakdownSection: View {
             ForEach(sorted, id: \.name) { part in
                 row(part)
             }
-            Text("Each reading is compared with your usual and scored 0–100: a normal day for you is about 72, better than usual 85+, and 90+ means clearly better on that reading. The total is the readings weighted HRV 45%, resting heart rate 25%, sleep 20% and your score 10%; a missing reading is left out and the others share its weight. \"Your usual\" is the middle of your last 30 days.")
+            Text("Each reading is compared with your usual and scored 0–100: a normal day for you is about 72, better than usual 85+, and 90+ means clearly better on that reading. The total is the readings weighted HRV 37.5%, resting heart rate 21%, sleep 17% and your check-in 25%; a missing reading is left out and the others share its weight. \"Your usual\" is the middle of your last 30 days.")
                 .font(KXFont.caption)
                 .foregroundStyle(KXColor.inkTertiary)
                 .fixedSize(horizontal: false, vertical: true)

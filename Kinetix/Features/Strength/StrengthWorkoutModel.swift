@@ -64,6 +64,13 @@ final class StrengthWorkoutModel {
     private(set) var heartRateAt: Date?
     /// Seconds spent in each zone this session (index 0 = below zone 1).
     private(set) var secondsInZone: [Double] = Array(repeating: 0, count: 6)
+    /// Heart rate × seconds so far, for the session's average.
+    private var heartRateTotal = 0.0
+    /// The session's average heart rate so far (nil before any).
+    var averageHeartRate: Double? {
+        let seconds = secondsInZone.reduce(0, +)
+        return seconds > 0 ? heartRateTotal / seconds : nil
+    }
     /// Showing on the Apple Watch (the Kinetix watch app, recording a strength workout for heart rate).
     private(set) var isOnWatch = false
     /// The watch couldn't be opened (asleep or locked): ask the runner to open Kinetix there.
@@ -158,7 +165,9 @@ final class StrengthWorkoutModel {
         if source == .strap { lastStrapAt = now }
         if source != .health { lastLiveAt = now }
         if let previous = heartRate, let at = heartRateAt {
-            secondsInZone[zones.zone(for: previous)] += min(10, max(0, now.timeIntervalSince(at)))
+            let seconds = min(10, max(0, now.timeIntervalSince(at)))
+            secondsInZone[zones.zone(for: previous)] += seconds
+            heartRateTotal += previous * seconds
         }
         heartRate = bpm
         heartRateAt = now

@@ -154,6 +154,32 @@ public enum Strain {
         SessionLoad.srpe(durationSeconds: durationSeconds, effort: effort) / 2
     }
 
+    /// A gym session. Heart rate reads low for lifting (short sets, long rests, the effort is in the
+    /// muscles more than the heart), so with heart rate the load is half heart rate and half
+    /// minutes × effort; without it, minutes × effort alone.
+    /// - Parameters:
+    ///   - zoneSeconds: seconds in each zone recorded during the session (index 0 = below zone 1).
+    ///     Used when they cover at least 30% of the session, scaled up to the whole of it.
+    ///   - averageHeartRate: the session's average (e.g. from the watch's workout in Health), when
+    ///     there are no zone seconds.
+    public static func gymLoad(durationSeconds: Double, effort: Double, zoneSeconds: [Double]?, averageHeartRate: Double?,
+                               zones: HeartRateZones) -> (load: Double, usedHeartRate: Bool) {
+        let byEffort = load(durationSeconds: durationSeconds, effort: effort)
+        var byHeartRate: Double?
+        if let zoneSeconds, zoneSeconds.count == zoneWeights.count {
+            let covered = zoneSeconds.reduce(0, +)
+            if covered > 0, covered >= 0.3 * durationSeconds {
+                let weighted = zip(zoneSeconds, zoneWeights).reduce(0) { $0 + $1.0 / 60 * $1.1 }
+                byHeartRate = weighted * max(1, durationSeconds / covered)
+            }
+        }
+        if byHeartRate == nil, let averageHeartRate, averageHeartRate > 0 {
+            byHeartRate = load(averageHeartRate: averageHeartRate, durationSeconds: durationSeconds, zones: zones)
+        }
+        guard let byHeartRate else { return (byEffort, false) }
+        return ((byHeartRate + byEffort) / 2, true)
+    }
+
     /// Everyday activity: 3 per 1,000 steps (10,000 steps ≈ strain 4).
     public static func load(steps: Double) -> Double { max(0, steps) / 1000 * 3 }
 }
@@ -289,7 +315,10 @@ public struct RecoveryScore: Equatable, Sendable {
         return percent < 0 ? "\(-percent)% less" : "\(percent)% more"
     }
 
-    static let weights = (hrv: 0.45, restingHeartRate: 0.25, sleep: 0.2, checkIn: 0.1)
+    /// With a watch: their check-in 25%; the watch readings share the other 75% in their usual
+    /// proportions (HRV 37.5%, resting/sleeping heart rate about 21%, sleep about 17%), so a day
+    /// without a check-in scores just as before.
+    static let weights = (hrv: 0.45 * 5 / 6, restingHeartRate: 0.25 * 5 / 6, sleep: 0.2 * 5 / 6, checkIn: 0.25)
 
     /// The display scale: vs usual → shown. Far worse 20, worse 50, normal 72, better 87, far better 98.
     static let scale: [(vsUsual: Double, shown: Double)] = [(0, 20), (25, 50), (50, 72), (75, 87), (100, 98)]

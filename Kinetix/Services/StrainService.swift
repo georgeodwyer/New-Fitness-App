@@ -75,10 +75,15 @@ enum StrainService {
         }
         let plannedById = Dictionary(sessions.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         for lift in finishedLifts {
-            let load = Strain.load(durationSeconds: lift.durationSeconds, effort: lift.effort > 0 ? lift.effort : 6)
+            // Heart rate saved with the session, or else the average of the watch's workout in Health.
+            let average = lift.averageHeartRate
+                ?? healthAverage(for: interval(lift.startedAt, lift.durationSeconds, lift.finishedAt), in: external)
+            let gym = Strain.gymLoad(durationSeconds: lift.durationSeconds, effort: lift.effort > 0 ? lift.effort : 6,
+                                     zoneSeconds: lift.zoneSeconds, averageHeartRate: average, zones: zones)
             result.append(StrainActivity(id: lift.id.uuidString, date: lift.startedAt, source: .lift,
-                                         name: lift.title.isEmpty ? "Gym" : lift.title, load: load,
-                                         legsShare: legsShare(of: lift, planned: lift.plannedSessionId.flatMap { plannedById[$0] })))
+                                         name: lift.title.isEmpty ? "Gym" : lift.title, load: gym.load,
+                                         legsShare: legsShare(of: lift, planned: lift.plannedSessionId.flatMap { plannedById[$0] }),
+                                         usedHeartRate: gym.usedHeartRate))
         }
         for workout in ExternalWorkouts.notRecorded(external, excluding: recorded) {
             let load: Double
@@ -95,6 +100,18 @@ enum StrainService {
                                          usedHeartRate: (workout.averageHeartRate ?? 0) > 0, steps: steps))
         }
         return result.sorted { $0.date < $1.date }
+    }
+
+    /// The average heart rate of a Health workout covering at least half of this session
+    /// (e.g. the strength workout the Kinetix watch app saved alongside it).
+    private static func healthAverage(for session: DateInterval, in workouts: [ExternalWorkout]) -> Double? {
+        workouts.first { workout in
+            guard let average = workout.averageHeartRate, average > 0 else { return false }
+            let interval = DateInterval(start: workout.start, end: max(workout.start, workout.end))
+            guard let overlap = interval.intersection(with: session) else { return false }
+            let shorter = min(interval.duration, session.duration)
+            return shorter > 0 && overlap.duration / shorter >= 0.5
+        }?.averageHeartRate
     }
 
     /// Share of a gym session's work on the legs: lower-body sets out of all completed sets,
