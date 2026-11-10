@@ -2,9 +2,11 @@ import SwiftUI
 import SwiftData
 import TrainingEngine
 
-/// Sunday evening to Monday: how the week went, and what next week holds.
+/// How the week is going (or went, from Sunday evening to Monday), and what next week holds.
 struct WeeklyReviewData {
     var weekStart: Date
+    /// Tuesday to Sunday afternoon: the week isn't over yet, so it's "so far", not a verdict.
+    var inProgress = false
     var review: WeekReview
     var nextWeek: [PlannedSessionModel]
     var nextWeekStart: Date
@@ -56,12 +58,22 @@ struct WeeklyReviewData {
         let recordKeys = Set(records.map(\.recordKey)).count
         let bests = recordKeys > 0 ? ["\(recordKeys) gym record\(recordKeys == 1 ? "" : "s")"] : []
 
-        let review = WeekReview.make(
+        var review = WeekReview.make(
             planned: thisWeek.map { WeekReview.Session(discipline: $0.kind.discipline, status: $0.status,
                                                        plannedMeters: $0.estimatedDistanceMeters ?? 0) },
             runMeters: runs.reduce(0) { $0 + $1.distanceMeters } + lifts.reduce(0) { $0 + $1.functionalRunMeters },
             runs: runs.count, lifts: lifts.count,
             loadRatio: usual > 0 ? thisLoad / usual : nil, newBests: bests)
+        let inProgress = !isReviewTime(now)
+        if inProgress {
+            // Part-way through, judge nothing yet: what's done so far.
+            let best = bests.isEmpty ? "" : " And a new best: \(bests[0])."
+            review.headline = review.sessionsPlanned > 0
+                ? "So far this week: \(review.sessionsDone) of \(review.sessionsPlanned) sessions done." + best
+                : "So far this week: \(review.runs + review.lifts) sessions." + best
+            // A part week against full weeks reads as a low load, so leave it out until the week is done.
+            review.loadRatio = nil
+        }
 
         var focus: String?
         var notes: [String] = []
@@ -76,7 +88,7 @@ struct WeeklyReviewData {
             focus = parts.joined(separator: " · ")
             notes = plan.notes(forWeek: index)
         }
-        return WeeklyReviewData(weekStart: weekStart, review: review, nextWeek: nextWeek, nextWeekStart: weekEnd,
+        return WeeklyReviewData(weekStart: weekStart, inProgress: inProgress, review: review, nextWeek: nextWeek, nextWeekStart: weekEnd,
                                 focus: focus, notes: notes)
     }
 }
@@ -85,7 +97,7 @@ struct WeeklyReviewCard: View {
     let data: WeeklyReviewData
     let units: UnitSystem
     var onOpen: ((PlannedSessionModel) -> Void)?
-    /// Folded to one line (Today, once the weekly check-in is answered); tap to open.
+    /// Folded to one line (Today, except while the weekly check-in waits for an answer); tap to open.
     var collapsed = false
     var onAnswered: () -> Void = {}
     @State private var expanded = false
@@ -122,7 +134,9 @@ struct WeeklyReviewCard: View {
     /// "3 of 9 sessions · 8.1 km · next: base week 3".
     private var collapsedLine: String {
         var parts: [String] = []
-        if data.review.sessionsPlanned > 0 { parts.append("\(data.review.sessionsDone) of \(data.review.sessionsPlanned) sessions") }
+        if data.review.sessionsPlanned > 0 {
+            parts.append("\(data.review.sessionsDone) of \(data.review.sessionsPlanned) sessions" + (data.inProgress ? " so far" : ""))
+        }
         parts.append(format.distance(data.review.runMeters))
         if let focus = data.focus { parts.append("next: " + focus.lowercased()) }
         return parts.joined(separator: " · ")

@@ -59,9 +59,9 @@ struct HomeView: View {
 
     private var layout: DashboardLayout { settingsModels.first?.dashboardLayout ?? .default }
 
-    /// Sunday evening and Monday: how the week went and what's next.
+    /// All week: how the week is going and what's next (a review from Sunday evening to Monday).
     private var weeklyReview: WeeklyReviewData? {
-        WeeklyReviewData.isReviewTime() && profile != nil ? WeeklyReviewData.make(in: context) : nil
+        profile != nil ? WeeklyReviewData.make(in: context) : nil
     }
 
     var body: some View {
@@ -76,16 +76,6 @@ struct HomeView: View {
                     if profile == nil { planPrompt }
                     if profile?.style == .custom, !hasActivePlan { buildOwnPlanPrompt }
                     if let plan = plans.first, plan.isPaused { PausedPlanCard(plan: plan) }
-                    // Sunday evening and Monday: how the week went and what's next.
-                    // Not answered yet: at the top. Answered: folded away at the bottom.
-                    let review = weeklyReview
-                    // Read the saved answer every time, so an answer from earlier (or another build) counts too.
-                    let reviewAnswered = review.map { answeredWeek == $0.weekStart || WeeklyCheckInView.isAnswered(weekStart: $0.weekStart) } ?? false
-                    if let review, !reviewAnswered {
-                        WeeklyReviewCard(data: review, units: units, onOpen: { detailSession = $0 }) {
-                            withAnimation { answeredWeek = review.weekStart }
-                        }
-                    }
                     ForEach(layout.visibleCards, id: \.self) { card in
                         dashboardCard(card, data: data)
                     }
@@ -93,8 +83,15 @@ struct HomeView: View {
                     if layout.visibleCards.contains(.checkIn), data.todaysCheckIn != nil {
                         checkInCard(data)
                     }
-                    if let review, reviewAnswered {
-                        WeeklyReviewCard(data: review, units: units, onOpen: { detailSession = $0 }, collapsed: true)
+                    // Your week: always last, under the day's check-in. Folded to one line, except from Sunday
+                    // evening to Monday while "How did the week go?" waits for an answer.
+                    // The saved answer is read every time, so one given earlier (or on another build) counts too.
+                    if let review = weeklyReview {
+                        let waiting = !review.inProgress && answeredWeek != review.weekStart
+                            && !WeeklyCheckInView.isAnswered(weekStart: review.weekStart)
+                        WeeklyReviewCard(data: review, units: units, onOpen: { detailSession = $0 }, collapsed: !waiting) {
+                            withAnimation { answeredWeek = review.weekStart }
+                        }
                     }
                 }
                 .padding(KXSpacing.screenMargin)
