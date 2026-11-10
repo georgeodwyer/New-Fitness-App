@@ -404,13 +404,14 @@ extension SetLogModel: SyncableModel {
         var restSeconds: Int
         var isBodyweight: Bool
         var activeSeconds: Double?
+        var isHeavy: Bool?
     }
     static var syncType: String { "setLog" }
     var syncPayload: Payload {
         Payload(sessionId: session?.id, exerciseId: exerciseId, setIndex: setIndex, targetReps: targetReps, targetWeightKg: targetWeightKg,
                 actualReps: actualReps, actualWeightKg: actualWeightKg, rpe: rpe, completedAt: completedAt, progressionKey: progressionKey,
                 exerciseName: exerciseName, exerciseOrder: exerciseOrder, repRangeLower: repRangeLower, repRangeUpper: repRangeUpper,
-                restSeconds: restSeconds, isBodyweight: isBodyweight, activeSeconds: activeSeconds)
+                restSeconds: restSeconds, isBodyweight: isBodyweight, activeSeconds: activeSeconds, isHeavy: isHeavy)
     }
     func applySync(_ p: Payload, context: ModelContext) {
         exerciseId = p.exerciseId
@@ -427,6 +428,7 @@ extension SetLogModel: SyncableModel {
         repRangeLower = p.repRangeLower
         repRangeUpper = p.repRangeUpper
         restSeconds = p.restSeconds
+        isHeavy = p.isHeavy ?? false
         isBodyweight = p.isBodyweight
         activeSeconds = p.activeSeconds
         if let sessionId = p.sessionId, session?.id != sessionId {

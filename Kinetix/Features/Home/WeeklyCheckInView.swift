@@ -96,6 +96,8 @@ struct WeeklyCheckInView: View {
             result = text
             answered = true
         }
+        // How the last two weeks went may change next week's running.
+        PlanService.adaptIfDue(in: context)
         // Give them a moment to read the reply before the card folds away.
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { onAnswered() }
     }

@@ -20,7 +20,8 @@ enum GymService {
         let descriptor = FetchDescriptor<SetLogModel>(predicate: #Predicate { $0.exerciseId == exerciseId && $0.completedAt != nil })
         let sets = ((try? context.fetch(descriptor)) ?? []).filter { set in
             guard let session = set.session else { return false }
-            return !set.isSoftDeleted && !session.isSoftDeleted && session.isFinished && session.id != log?.id
+            // A heavy week's sets were a one-off: "last time" is the session before.
+            return !set.isSoftDeleted && !set.isHeavy && !session.isSoftDeleted && session.isFinished && session.id != log?.id
         }
         guard let latest = sets.compactMap(\.session).max(by: { $0.startedAt < $1.startedAt }) else { return [] }
         return sets

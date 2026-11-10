@@ -9,6 +9,9 @@ enum FormService {
     private static let vdotKey = "form.vdot"
     private static let sessionsKey = "form.sessions"
     private static let notedWeekKey = "form.notedWeek"
+    /// When training paces last changed from current form: earlier runs' targets were set from
+    /// the old paces, so only runs since then count.
+    private static let pacesChangedKey = "form.pacesChangedAt"
 
     /// Fitness on current form (nil until there's enough recent training).
     static var formVDOT: Double? {
@@ -29,17 +32,23 @@ enum FormService {
     }
 
     static func check(profile: AthleteProfile, in context: ModelContext, now: Date = .now) {
-        let from = now.addingTimeInterval(-42 * 86_400)
+        let changed = UserDefaults.standard.double(forKey: pacesChangedKey)
+        let from = max(now.addingTimeInterval(-42 * 86_400), Date(timeIntervalSince1970: changed))
         let runs = ((try? context.fetch(FetchDescriptor<RunLogModel>())) ?? [])
             .filter { $0.countsTowardsHistory && !$0.isImportedFromStrava && $0.startedAt >= from }
         let evidence = runs.map { run in
-            FormEstimate.Evidence(
+            let work = run.segmentResults.filter { $0.segment.kind == .work && $0.durationSeconds >= 60 && $0.durationSeconds <= 600 }
+            // Reps with a pace to hit (not run by effort, like hills), judged against that pace.
+            let reps = work.compactMap { result -> FormEstimate.Rep? in
+                guard let pace = result.averagePace, let range = result.segment.targetPace, result.segment.paceIsGuide != true else { return nil }
+                return FormEstimate.Rep(pace: pace, target: Pace(secondsPerKm: (range.fastest.secondsPerKm + range.slowest.secondsPerKm) / 2))
+            }
+            return FormEstimate.Evidence(
                 date: run.startedAt,
                 bestEfforts: run.distanceMeters >= 1000 ? RunAnalysis.bestEfforts(route: run.route) : [:],
-                intervalRepPaces: run.runType == .intervals
-                    ? run.segmentResults.filter { $0.segment.kind == .work && $0.durationSeconds >= 60 && $0.durationSeconds <= 360 }
-                        .compactMap(\.averagePace)
-                    : [])
+                intervalRepPaces: reps.isEmpty && run.runType == .intervals
+                    ? work.filter { $0.durationSeconds <= 360 }.compactMap(\.averagePace) : [],
+                reps: reps)
         }
         let base = PaceZones(profile: profile).vdot
         let previous = predictionVDOT(for: profile)
@@ -71,9 +80,10 @@ enum FormService {
         var profile = model.profile
         let seconds = PaceZones(vdot: form).predictedTime(distanceMeters: 10000)
         profile.recentRace = RaceResult(distanceMeters: 10000, timeSeconds: seconds.rounded())
+        UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: pacesChangedKey)
         model.profile = profile
         model.touch()
-        PlanService.rebuildRemainder(for: profile, in: context)
+        PlanService.rebuildRemainder(for: profile, in: context, keepOutline: true)
     }
 
     static func goalMeters(_ goal: TrainingGoal) -> Double {

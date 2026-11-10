@@ -127,7 +127,7 @@ struct OwnWorkoutsCard: View {
     private func apply(_ profile: AthleteProfile, to model: UserProfileModel, message: String) {
         model.profile = profile
         try? context.save()
-        PlanService.rebuildRemainder(for: profile, in: context)
+        PlanService.rebuildRemainder(for: profile, in: context, keepOutline: true)
         SyncService.shared.requestSync()
         withAnimation { self.message = message }
     }

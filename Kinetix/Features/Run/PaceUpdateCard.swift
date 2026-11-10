@@ -96,7 +96,7 @@ struct PaceUpdateCard: View {
         profile.recentRace = result
         model.profile = profile
         model.touch()
-        PlanService.rebuildRemainder(for: profile, in: context)
+        PlanService.rebuildRemainder(for: profile, in: context, keepOutline: true)
         updated = true
     }
 }

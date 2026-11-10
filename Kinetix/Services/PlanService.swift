@@ -180,9 +180,12 @@ enum PlanService {
     /// Rebuilds the active plan from today with the current answers and the latest plan logic,
     /// keeping its start date and week numbers: sessions done or skipped stay, and today's and
     /// later sessions are built again. Falls back to a new plan if there isn't one.
+    /// - Parameter keepOutline: keep the weeks' distances as they are (including any held or
+    ///   stretched by how recent weeks went): for changes that don't touch distances, like
+    ///   new paces or linking their own workouts.
     @discardableResult
     static func rebuildRemainder(for profile: AthleteProfile, in context: ModelContext, now: Date = .now,
-                                 startingNextWeek: Bool = false) -> TrainingPlanModel {
+                                 startingNextWeek: Bool = false, keepOutline: Bool = false) -> TrainingPlanModel {
         let calendar = Calendar.kinetix
         let today = calendar.startOfDay(for: now)
         // From next Monday: this week stays exactly as it is (sessions not done yet included).
@@ -194,7 +197,8 @@ enum PlanService {
         }
         let generator = generator
         // A plan they built themselves keeps its own weeks (only paces and weights are refreshed).
-        let outline = old.customPlan.map { generator.makeOutline(for: $0) } ?? generator.makeOutline(for: profile, startingOn: firstMonday)
+        let outline = keepOutline ? old
+            : old.customPlan.map { generator.makeOutline(for: $0) } ?? generator.makeOutline(for: profile, startingOn: firstMonday)
         // Past the end of the rebuilt plan (or before it starts): nothing to keep, start afresh.
         guard let current = outline.weekIndex(containing: from, calendar: calendar) ?? (from < firstMonday ? 0 : nil) else {
             return createPlan(for: profile, in: context, now: now)
@@ -326,9 +330,75 @@ enum PlanService {
         guard let profileModel = try? context.fetch(FetchDescriptor<UserProfileModel>()).first(where: { !$0.isSoftDeleted }),
               let plan = try? context.fetch(FetchDescriptor<TrainingPlanModel>()).first(where: { $0.isActive && !$0.isSoftDeleted })
         else { return }
+        if adaptToRecentWeeks(plan: plan, profile: profileModel.profile, in: context, now: now) {
+            try? context.save()
+            SyncService.shared.requestSync()
+            return
+        }
         let before = plan.generatedWeekCount
         ensureHorizon(for: plan, profile: profileModel.profile, in: context, now: now)
         if plan.generatedWeekCount != before { try? context.save() }
+    }
+
+    // MARK: Growth that follows the weeks
+
+    /// Once a week: from how the last two weeks went (running done against the sessions planned,
+    /// and the weekly check-in), next week's running grows as planned, holds, or may grow up to
+    /// 15% (see `PlanAdaptation`). Waits for the weekly check-in while it can still be answered.
+    /// Returns whether the plan changed.
+    @discardableResult
+    static func adaptToRecentWeeks(plan: TrainingPlanModel, profile: AthleteProfile, in context: ModelContext, now: Date = .now) -> Bool {
+        guard let outline = plan.outline, outline.programmeGoal != nil, !plan.isPaused else { return false }
+        let calendar = Calendar.kinetix
+        guard let current = outline.weekIndex(containing: now, calendar: calendar), current >= 2,
+              current + 1 < outline.weeks.count else { return false }
+        let lastWeekStart = outline.weeks[current - 1].startDate
+        // Monday, check-in not answered yet: wait for it (it's checked again once answered).
+        if WeeklyReviewData.isReviewTime(now), !WeeklyCheckInView.isAnswered(weekStart: lastWeekStart) { return false }
+        let doneKey = "plan.adapted.\(plan.id.uuidString).\(Int(outline.weeks[current].startDate.timeIntervalSince1970))"
+        guard !UserDefaults.standard.bool(forKey: doneKey) else { return false }
+        UserDefaults.standard.set(true, forKey: doneKey)
+
+        let sessions = plan.sessions.filter { !$0.isSoftDeleted }
+        let results = [current - 2, current - 1].map { index -> PlanAdaptation.WeekResult in
+            // Measured against the runs planned that week; done means completed (a run the app
+            // shortened for recovery counts at its shortened length on both sides).
+            let runs = sessions.filter { $0.weekIndex == index && $0.kind.discipline == .run }
+            let planned = runs.reduce(0) { $0 + ($1.estimatedDistanceMeters ?? 0) }
+            let done = runs.filter { $0.status == .completed }.reduce(0) { $0 + ($1.estimatedDistanceMeters ?? 0) }
+            let answer = UserDefaults.standard.string(forKey: WeeklyCheckInView.key(outline.weeks[index].startDate))
+            let feel = answer.flatMap { $0.split(separator: "|").first.map(String.init) }.flatMap(WeekFeel.init(rawValue:))
+            return PlanAdaptation.WeekResult(plannedRunMeters: planned, doneRunMeters: done, feel: feel)
+        }
+        let decision = PlanAdaptation.decide(results)
+        let from = current + 1
+        guard decision.changesPlan, let adapted = generator.adaptedOutline(outline, from: from, decision: decision, profile: profile),
+              abs(adapted.weeks[from].runVolumeMeters - outline.weeks[from].runVolumeMeters) >= 100 else { return false }
+
+        plan.outline = adapted
+        // Next week on is built again at its new size (it was built ahead of time).
+        for session in plan.sessions where !session.isSoftDeleted && session.weekIndex >= from
+            && (session.status == .planned || session.status == .swapped) {
+            session.softDelete(now: now)
+        }
+        plan.generatedWeekCount = min(plan.generatedWeekCount, from)
+        let format = DisplayFormat(units: profile.units)
+        let change = "Next week: \(format.distance(outline.weeks[from].runVolumeMeters)) → \(format.distance(adapted.weeks[from].runVolumeMeters))."
+        context.insert(PlanChangeModel(summary: (decision.reason.map { $0 + " " } ?? "") + change, now: now))
+        previewCache = nil
+        ensureHorizon(for: plan, profile: profile, in: context, now: now)
+        plan.touch(now: now)
+        return true
+    }
+
+    /// The weekly check-in was just answered: see whether next week changes.
+    static func adaptIfDue(in context: ModelContext, now: Date = .now) {
+        guard let profileModel = try? context.fetch(FetchDescriptor<UserProfileModel>()).first(where: { !$0.isSoftDeleted }),
+              let plan = try? context.fetch(FetchDescriptor<TrainingPlanModel>()).first(where: { $0.isActive && !$0.isSoftDeleted }),
+              adaptToRecentWeeks(plan: plan, profile: profileModel.profile, in: context, now: now)
+        else { return }
+        try? context.save()
+        SyncService.shared.requestSync()
     }
 
     /// Average weekly running over the last four weeks (nil if nothing was recorded).

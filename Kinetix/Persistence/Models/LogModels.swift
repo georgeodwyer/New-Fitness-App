@@ -162,6 +162,8 @@ final class SetLogModel: SyncTracked {
     var restSeconds: Int = 90
     /// Bodyweight exercises have no load.
     var isBodyweight: Bool = false
+    /// A heavy week's main-lift set: a one-off that never changes the working weight or counts as "last time".
+    var isHeavy: Bool = false
     /// How long the set took (Start set → Finish set), when timed.
     var activeSeconds: Double?
 

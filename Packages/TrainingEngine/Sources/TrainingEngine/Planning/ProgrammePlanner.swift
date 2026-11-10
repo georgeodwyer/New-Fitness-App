@@ -135,7 +135,7 @@ enum ProgrammePlanner {
     /// One week's running. A programme week is its % × a base; the base starts at the runner's
     /// current volume and moves towards the race-ready volume: up by the max weekly increase after
     /// each normal week (unless `hold`), or down by the ease-down rate. A lighter week is also at
-    /// most 85% of the week before, and a held week no more than the week before. Then the
+    /// most 85% of the week before, and a held week no more than the biggest of the last three. Then the
     /// programme's cap, and never more than `limit` (the usual 10%) above the biggest of the last
     /// three weeks.
     private static func size(_ slot: Slot, state: inout VolumeState, start: Double, target: Double?, programme: Programme,
@@ -163,8 +163,9 @@ enum ProgrammePlanner {
         case .easyStart:
             volume = start * rules.easyStart
         }
-        // Holding: no more running than the week before.
-        if hold, let last = state.history.last { volume = min(volume, last) }
+        // Holding: no more running than the recent normal weeks (a planned lighter week just
+        // before doesn't drag it down).
+        if hold, let recent = state.history.suffix(3).max() { volume = min(volume, recent) }
         if let cap = programme.weeklyCapMeters { volume = min(volume, cap) }
         let recent = state.history.suffix(3).max() ?? start
         volume = min(volume, recent * (1 + (limit ?? rules.maxWeeklyIncrease)))

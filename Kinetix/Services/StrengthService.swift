@@ -46,9 +46,17 @@ enum StrengthService {
         // Their own gym workout linked to a "Gym n" day: carry on exactly from last time (sets,
         // reps and weights), like starting it from the Workout tab.
         let isOwnWorkout = session.gymSlotNumber != nil
+        let templates = PlanService.templates
+        let rules = templates.strength.progressionRules
         for (order, exercise) in prescription.enumerated() {
+            let heavy = exercise.isHeavy == true
             // Use the latest working weight (progression may have moved on since the plan was generated).
-            let planned = exercise.weightKg.map { weights[exercise.progressionKey] ?? $0 } ?? 0
+            // A heavy week's main lift keeps its heavier weight (kept up to date with the working weight).
+            let planned = exercise.weightKg.map { heavy ? $0 : (weights[exercise.progressionKey] ?? $0) } ?? 0
+            let definition = templates.exercise(id: exercise.exerciseId)
+            // A light lift whose next step is a big jump aims past the top of the range.
+            let ceiling = definition.map { rules.repsForIncrease(repRange: exercise.repRange, loading: $0.loading, region: $0.region,
+                                                                 weightKg: planned) }
             let previous = GymService.previousSets(exerciseId: exercise.exerciseId, excluding: log, in: context)
             let isBodyweight = exercise.weightKg == nil
             let setCount = isOwnWorkout && !previous.isEmpty ? previous.count : exercise.sets
@@ -63,12 +71,17 @@ enum StrengthService {
                     // No working weight yet (never done in a plan session): start from last time.
                     weight = planned > 0 || isBodyweight ? planned : (last?.weightKg ?? 0)
                     // Reps climb one at a time from last time (not straight to the top of the range).
-                    reps = RepTarget.reps(setIndex: index, range: exercise.repRange, weightKg: weight, previous: previous)
+                    reps = heavy ? exercise.repRange.lower
+                        : RepTarget.reps(setIndex: index, range: exercise.repRange, weightKg: weight, previous: previous, ceiling: ceiling)
                 }
                 let set = SetLogModel(exerciseId: exercise.exerciseId, setIndex: index, targetReps: reps, targetWeightKg: weight, now: now)
                 // The sets fill in with what they did last time; the suggestion (from progression)
                 // shows above them.
-                if let last {
+                if heavy {
+                    // A heavy week: the sets fill in with the heavier weight and its reps, not last time's.
+                    set.actualReps = reps
+                    set.actualWeightKg = weight
+                } else if let last {
                     set.actualReps = last.reps
                     set.actualWeightKg = isBodyweight ? 0 : last.weightKg
                 }
@@ -79,6 +92,7 @@ enum StrengthService {
                 set.repRangeUpper = exercise.repRange.upper
                 set.restSeconds = exercise.restSeconds
                 set.isBodyweight = isBodyweight
+                set.isHeavy = heavy
                 context.insert(set)
                 set.session = log
             }
@@ -157,6 +171,8 @@ enum StrengthService {
         var changes: [ExerciseChange] = []
         var records: [RecordAchieved] = []
         var newWeights: [String: Double] = [:]
+        // Missed reps on a low-recovery day (below 67) still hold the weight, but don't count towards a reset.
+        let lowRecovery = (BalanceService.todaysRecovery(in: context, now: log.startedAt)?.score ?? 100) < 67
 
         for key in orderedKeys {
             guard let exerciseSets = groups[key], let first = exerciseSets.first else { continue }
@@ -166,8 +182,14 @@ enum StrengthService {
             let definition = templates.exercise(id: first.exerciseId)
             let range = RepRange(first.repRangeLower, first.repRangeUpper)
 
+            // A heavy week's main lift is a one-off: the working weight stays as it is.
+            if exerciseSets.contains(where: \.isHeavy) {
+                if results.contains(where: \.completed) {
+                    changes.append(ExerciseChange(exerciseName: first.exerciseName, change: .none,
+                                                  reason: "\(first.exerciseName): heavy week, so your working weight stays as it is. Back to it next week."))
+                }
+            } else if !log.isRecorded {
             // Progression (plan sessions only; your own workouts pre-fill from last time instead).
-            if !log.isRecorded {
                 let stateModel = exerciseState(for: key, first: first, in: context)
                 var state = ProgressionState(workingWeightKg: stateModel?.workingWeightKg ?? first.targetWeightKg,
                                              stallCount: stateModel?.stallCount ?? 0)
@@ -199,7 +221,8 @@ enum StrengthService {
                         state: state,
                         sets: results,
                         rules: rules,
-                        units: units
+                        units: units,
+                        countsMisses: !lowRecovery
                     )
                     if decision.change != .none, let stateModel {
                         stateModel.workingWeightKg = decision.newState.workingWeightKg
@@ -318,7 +341,13 @@ enum StrengthService {
             for index in prescription.exercises.indices {
                 let key = prescription.exercises[index].progressionKey
                 if let weight = weights[key], prescription.exercises[index].weightKg != nil {
-                    prescription.exercises[index].weightKg = weight
+                    if prescription.exercises[index].isHeavy == true {
+                        // A heavy week stays about 5% over the working weight.
+                        let loading = PlanService.templates.exercise(id: prescription.exercises[index].exerciseId)?.loading ?? .barbell
+                        prescription.exercises[index].weightKg = StrengthMath.heavyWeight(working: weight, loading: loading)
+                    } else {
+                        prescription.exercises[index].weightKg = weight
+                    }
                     changed = true
                 }
             }

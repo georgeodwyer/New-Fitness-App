@@ -280,7 +280,7 @@ private struct LinkGymWorkoutCard: View {
         model.profile = profile
         try? context.save()
         // This day is rebuilt with the workout in it, so close it.
-        PlanService.rebuildRemainder(for: profile, in: context)
+        PlanService.rebuildRemainder(for: profile, in: context, keepOutline: true)
         SyncService.shared.requestSync()
         dismiss()
     }

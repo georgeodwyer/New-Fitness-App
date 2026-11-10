@@ -39,7 +39,7 @@ final class PlanSimulationTests: XCTestCase {
 
         /// Sets done at `weight`: about one rep left in the tank on the first set, a little
         /// fewer reps on each set after. `offDay` is a bad day (poor sleep): about 7% weaker.
-        mutating func sets(for exercise: ExercisePrescription, weight: Double, offDay: Bool) -> [SetResult] {
+        mutating func sets(for exercise: ExercisePrescription, weight: Double, offDay: Bool, ceiling: Int) -> [SetResult] {
             let key = exercise.progressionKey
             if oneRepMax[key] == nil {
                 // New to them: the starting weight leaves about three reps above the bottom of the range.
@@ -49,7 +49,7 @@ final class PlanSimulationTests: XCTestCase {
             let capacity = 30 * (strength / max(weight, 1) - 1)
             return (0..<exercise.sets).map { set in
                 let reps = Int((capacity - 1 - 0.7 * Double(set)).rounded(.down))
-                return SetResult(weightKg: weight, reps: min(max(reps, 0), exercise.repRange.upper),
+                return SetResult(weightKg: weight, reps: min(max(reps, 0), ceiling),
                                  rpe: min(10, 8 + Double(set) * 0.5), completed: true)
             }
         }
@@ -99,6 +99,8 @@ final class PlanSimulationTests: XCTestCase {
         var pendingCheckIn: WeekFeel?
         var summaryRows: [String] = []
         var cycleExtended = false
+        var weekResults: [PlanAdaptation.WeekResult] = []
+        var feels: [Int: WeekFeel] = [:]
 
         line("# Plan walk-through: Faster 10K, intermediate, no race date")
         line("Runs 4 days (long run Sunday), gym 5 days: Push, Pull, Legs, Upper, Shoulders & arms. Friday off.")
@@ -133,6 +135,17 @@ final class PlanSimulationTests: XCTestCase {
         var index = 0
         var previousPlanned: Double?
         while index < outline.weeks.count {
+            // Each Monday: how the last two weeks went may change next week (as PlanService does).
+            var adaptationNote: String?
+            if index >= 2, index + 1 < outline.weeks.count, weekResults.count >= index {
+                let decision = PlanAdaptation.decide(Array(weekResults[(index - 2)..<index]))
+                if decision.changesPlan, let adapted = generator.adaptedOutline(outline, from: index + 1, decision: decision, profile: profile),
+                   abs(adapted.weeks[index + 1].runVolumeMeters - outline.weeks[index + 1].runVolumeMeters) >= 100 {
+                    adaptationNote = (decision.reason ?? "") + " Week \(index + 2): \(km(outline.weeks[index + 1].runVolumeMeters)) → "
+                        + "\(km(adapted.weeks[index + 1].runVolumeMeters))."
+                    outline = adapted
+                }
+            }
             let target = outline.weeks[index]
             guard var week = generator.generateWeek(index, outline: outline, profile: profile, workingWeights: workingWeights) else { break }
             let weekNumber = index + 1
@@ -189,6 +202,7 @@ final class PlanSimulationTests: XCTestCase {
             let emphasis = programmeWeek?.strength ?? (target.isRecoveryWeek ? "light" : "normal")
             line("Gym: \(emphasis) week" + (target.isRecoveryWeek ? " (one set fewer per exercise)." : "."))
             for note in week.notes { line("Coach's note: \(note)") }
+            if let adaptationNote { line("Plan change this Monday: \(adaptationNote)") }
             if !changesForThisWeek.isEmpty {
                 line("Changed by last week's check-in: " + changesForThisWeek.joined(separator: "; ") + ".")
             }
@@ -226,13 +240,17 @@ final class PlanSimulationTests: XCTestCase {
                         evidence.append(FormEstimate.Evidence(date: session.date, bestEfforts: [distance: seconds]))
                         extra += " Ran it in \(Units.formatMinutesSeconds(seconds)), about 3% quicker than predicted."
                     }
-                    // Interval reps from week 5 run about 3% quicker than the target.
+                    // Interval reps from week 5 run about 3% quicker than the target (reps run by
+                    // effort, like hills, don't count).
                     if type == .intervals, weekNumber >= 5 {
-                        let reps = structure.segments.filter { $0.kind == .work }.compactMap(\.targetPace)
-                            .map { Pace(secondsPerKm: ($0.fastest.secondsPerKm + $0.slowest.secondsPerKm) / 2 * 0.97) }
+                        let reps = structure.segments.filter { $0.kind == .work && $0.paceIsGuide != true }.compactMap(\.targetPace)
+                            .map { range -> FormEstimate.Rep in
+                                let target = (range.fastest.secondsPerKm + range.slowest.secondsPerKm) / 2
+                                return FormEstimate.Rep(pace: Pace(secondsPerKm: target * 0.97), target: Pace(secondsPerKm: target))
+                            }
                         if reps.count >= 3 {
-                            evidence.append(FormEstimate.Evidence(date: session.date, bestEfforts: [:], intervalRepPaces: reps))
-                            extra += " Reps averaged \(pace(reps[0].secondsPerKm)) (target about \(pace(reps[0].secondsPerKm / 0.97)))."
+                            evidence.append(FormEstimate.Evidence(date: session.date, bestEfforts: [:], reps: reps))
+                            extra += " Reps averaged \(pace(reps[0].pace.secondsPerKm)) (target \(pace(reps[0].target.secondsPerKm)))."
                         }
                     }
                     let typeName = type == .long ? "long" : type.rawValue
@@ -244,18 +262,28 @@ final class PlanSimulationTests: XCTestCase {
                         guard let prescribed = exercise.weightKg else { continue } // bodyweight: no weight to progress
                         let key = exercise.progressionKey
                         let definition = templates.exercise(id: exercise.exerciseId)
-                        var weight = workingWeights[key] ?? prescribed
+                        let heavy = exercise.isHeavy == true
+                        // A heavy week's main lift is lifted at its heavier weight.
+                        var weight = heavy ? prescribed : (workingWeights[key] ?? prescribed)
                         if weight <= 0 {
                             // A machine with no default: the first session's weight becomes the working weight.
                             weight = definition?.region == .lower ? 100 : 40
                             workingWeights[key] = weight
                             states[key] = ProgressionState(workingWeightKg: weight)
                         }
-                        let sets = lifter.sets(for: exercise, weight: weight, offDay: badWeek)
-                        let decision = Progression.evaluate(
-                            exerciseName: exercise.name, loading: definition?.loading ?? .barbell, region: definition?.region ?? .upper,
-                            repRange: exercise.repRange, prescribedSets: exercise.sets,
-                            state: states[key] ?? ProgressionState(workingWeightKg: weight), sets: sets, rules: rules)
+                        let ceiling = rules.repsForIncrease(repRange: exercise.repRange, loading: definition?.loading ?? .barbell,
+                                                            region: definition?.region ?? .upper, weightKg: weight)
+                        let sets = lifter.sets(for: exercise, weight: weight, offDay: badWeek, ceiling: ceiling)
+                        // Heavy-week sets never change the working weight; misses in the bad week
+                        // (recovery below 67) don't count towards a reset.
+                        let decision = heavy
+                            ? ProgressionDecision(newState: states[key] ?? ProgressionState(workingWeightKg: workingWeights[key] ?? weight),
+                                                  change: .none, reason: "\(exercise.name): heavy week, working weight unchanged.")
+                            : Progression.evaluate(
+                                exerciseName: exercise.name, loading: definition?.loading ?? .barbell, region: definition?.region ?? .upper,
+                                repRange: exercise.repRange, prescribedSets: exercise.sets,
+                                state: states[key] ?? ProgressionState(workingWeightKg: weight), sets: sets, rules: rules,
+                                countsMisses: !badWeek)
                         if decision.change != .none {
                             states[key] = decision.newState
                             workingWeights[key] = decision.newState.workingWeightKg
@@ -263,8 +291,9 @@ final class PlanSimulationTests: XCTestCase {
                         lifter.trained(key, lightWeek: target.isRecoveryWeek)
                         let repsText = sets.map { String($0.reps) }.joined(separator: ", ")
                         if exercise.role == .main {
-                            mains.append("\(exercise.name) \(kg(weight)) × \(repsText) (aim \(exercise.repRange.lower)–\(exercise.repRange.upper))")
-                            mainLiftHistory[exercise.name, default: []].append((weekNumber, weight))
+                            let aim = exercise.repRange.lower == exercise.repRange.upper ? "\(exercise.repRange.lower)" : "\(exercise.repRange.lower)–\(exercise.repRange.upper)"
+                            mains.append("\(exercise.name) \(kg(weight)) × \(repsText) (aim \(aim)\(heavy ? ", heavy week" : ""))")
+                            mainLiftHistory[exercise.name, default: []].append((weekNumber, workingWeights[key] ?? weight))
                         }
                         switch decision.change {
                         case .increase: increases.append(decision.reason)
@@ -282,6 +311,9 @@ final class PlanSimulationTests: XCTestCase {
                 }
             }
             actualWeekMeters.append(doneMeters)
+            if weekNumber == 2 { feels[weekNumber] = .tooEasy }
+            if weekNumber == 6 || weekNumber == 7 { feels[weekNumber] = .tooMuch }
+            weekResults.append(PlanAdaptation.WeekResult(plannedRunMeters: planned, doneRunMeters: doneMeters, feel: feels[weekNumber]))
             line()
             line("Ran \(km(doneMeters)) of \(km(planned)) planned.")
             if !increases.isEmpty { line("Weights going up for the next session:"); increases.forEach { line("  - \($0)") } }
@@ -297,6 +329,10 @@ final class PlanSimulationTests: XCTestCase {
                 pendingCheckIn = .tooEasy
                 carried.append("Weekly check-in: \"too easy\" → next week's easy, steady and long runs about 5% longer (intervals stay as planned).")
             }
+            if weekNumber == 7 {
+                pendingCheckIn = .tooMuch
+                carried.append("Weekly check-in: \"too much\" again → next week a little lighter again, and (two in a row) the week after doesn't grow.")
+            }
             if badWeek {
                 pendingCheckIn = .tooMuch
                 carried.append("Weekly check-in: \"too much\" → next week's runs about 10% shorter (intervals one rep fewer) and one set fewer on gym accessories. The week after goes back to the plan.")
@@ -308,7 +344,7 @@ final class PlanSimulationTests: XCTestCase {
                     let before = PaceZones(vdot: currentVDOT)
                     let after = PaceZones(vdot: form.vdot)
                     profile.recentRace = RaceResult(distanceMeters: 10000, timeSeconds: after.predictedTime(distanceMeters: 10000).rounded())
-                    outline = generator.makeOutline(for: profile, startingOn: start)
+                    // The plan's distances stay as they are (including any held weeks); only paces change.
                     paceOfferTaken = true
                     let easyBefore = before.range(for: .easy), easyAfter = after.range(for: .easy)
                     let intBefore = before.range(for: .interval), intAfter = after.range(for: .interval)
@@ -317,8 +353,8 @@ final class PlanSimulationTests: XCTestCase {
                     let tenAfter = Units.formatMinutesSeconds(after.predictedTime(distanceMeters: 10000))
                     let easyText = "\(pace(easyBefore.slowest.secondsPerKm))–\(pace(easyBefore.fastest.secondsPerKm)) → \(pace(easyAfter.slowest.secondsPerKm))–\(pace(easyAfter.fastest.secondsPerKm))"
                     let intervalText = "\(pace(intBefore.fastest.secondsPerKm)) → \(pace(intAfter.fastest.secondsPerKm))"
-                    var text = "Faster paces: your interval reps show fitness of VDOT \(vdotText) (was \(wasText)). "
-                    text += "The app offers to update your paces; accepted, so the plan is rebuilt from today with them. "
+                    var text = "Faster paces: your recent running shows fitness of VDOT \(vdotText) (was \(wasText)). "
+                    text += "The app offers to update your paces; accepted, so sessions from today use them. "
                     text += "10K prediction \(tenBefore) → \(tenAfter); easy \(easyText); intervals \(intervalText). Weekly distances stay the same."
                     carried.append(text)
                 } else if weekNumber >= 5 {
@@ -337,9 +373,10 @@ final class PlanSimulationTests: XCTestCase {
             carried.forEach { line("  - \($0)") }
             line()
 
-            let mainsNow = ["Squat", "Bench", "Deadlift", "Overhead", "Row"].compactMap { name -> String? in
-                guard let entry = mainLiftHistory.first(where: { $0.key.contains(name) })?.value.last else { return nil }
-                return "\(name) \(kg(entry.kg))"
+            let mainsNow = [("Squat", "Barbell Back Squat"), ("Bench", "Barbell Bench Press"), ("Deadlift", "Romanian Deadlift"),
+                            ("Overhead", "Overhead Press"), ("Row", "Barbell Row")].compactMap { short, name -> String? in
+                guard let entry = mainLiftHistory[name]?.last else { return nil }
+                return "\(short) \(kg(entry.kg))"
             }
             let light = target.isRecoveryWeek ? " (light)" : ""
             let longText = long.map { km($0) } ?? "–"

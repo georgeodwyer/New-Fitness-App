@@ -24,7 +24,15 @@ enum WhatsNew {
             Item(symbol: "heart.circle", title: "Gym exertion uses heart rate",
                  detail: "Gym and functional sessions keep your heart rate, and exertion uses it alongside how hard you rated the session."),
             Item(symbol: "calendar", title: "Your week, all week",
-                 detail: "How the week is going sits at the bottom of Today every day. Tap it for next week's sessions.")
+                 detail: "How the week is going sits at the bottom of Today every day. Tap it for next week's sessions."),
+            Item(symbol: "chart.line.uptrend.xyaxis", title: "A plan that follows your weeks",
+                 detail: "Run well under plan two weeks running, or say \u{201C}too much\u{201D} twice, and next week holds instead of growing. \u{201C}Too easy\u{201D} twice lets it grow a little more. Lighter weeks are now properly lighter."),
+            Item(symbol: "speedometer", title: "Faster paces from your sessions",
+                 detail: "Reps run quicker than their target now count towards faster paces, not just races and time trials."),
+            Item(symbol: "scalemass", title: "Smarter weight steps",
+                 detail: "Lower-body lifts go up 2.5 kg until 100 kg, light dumbbells go up after two extra reps, and missed reps on a low-recovery day don't count towards a reset."),
+            Item(symbol: "flame", title: "Heavy gym weeks",
+                 detail: "In heavy weeks, main lifts are about 5% heavier for fewer reps. They never change your working weights.")
         ]),
         Release(id: "2026-11-treadmill-1", title: "What's new", items: [
             Item(symbol: "figure.run.treadmill", title: "Treadmill runs",
