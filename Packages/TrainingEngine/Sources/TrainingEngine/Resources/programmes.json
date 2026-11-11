@@ -279,6 +279,11 @@
        {
         "role": "accessory",
         "pattern": "core"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Dumbbell Curl"
        }
       ]
      },
@@ -305,6 +310,11 @@
        {
         "role": "accessory",
         "pattern": "antiRotation"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Overhead Triceps Extension"
        }
       ]
      }
@@ -339,6 +349,11 @@
        {
         "role": "accessory",
         "pattern": "core"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Dumbbell Curl"
        }
       ]
      },
@@ -365,6 +380,11 @@
        {
         "role": "accessory",
         "pattern": "antiRotation"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Overhead Triceps Extension"
        }
       ]
      },
