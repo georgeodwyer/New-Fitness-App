@@ -114,4 +114,36 @@ final class PlanAdaptationTests: XCTestCase {
             }
         }
     }
+
+    func testLongRunsBuildSteadily() {
+        var half = profile
+        half.goal = .halfMarathon
+        let outline = generator.makeOutline(for: half, startingOn: start)
+        var longs: [Double?] = []
+        for index in outline.weeks.indices {
+            let week = generator.generateWeek(index, outline: outline, profile: half)
+            longs.append(week?.sessions.first { $0.kind == .run(.long) && !$0.summary.contains("time trial") }?.estimatedDistanceMeters)
+        }
+        for (i, long) in longs.enumerated() {
+            guard let long, let recent = longs[max(0, i - 6)..<i].compactMap({ $0 }).suffix(3).max() else { continue }
+            XCTAssertLessThanOrEqual(long, max(recent * 1.15, recent + 1500) + 300, "Week \(i + 1): \(long) after \(recent)")
+        }
+        // Week 9's programme long run is 18 km: kept short of it, with a note saying why.
+        let nine = generator.generateWeek(8, outline: outline, profile: half)
+        XCTAssertTrue(nine?.notes.contains { $0.contains("builds steadily") } ?? false)
+    }
+
+    func testHalfWithoutARaceEndsWithA10KTimeTrial() throws {
+        var half = profile
+        half.goal = .halfMarathon
+        let outline = generator.makeOutline(for: half, startingOn: start)
+        let raceWeek = try XCTUnwrap(outline.weeks.firstIndex { $0.programmeWeek == 12 })
+        let week = try XCTUnwrap(generator.generateWeek(raceWeek, outline: outline, profile: half))
+        let trial = try XCTUnwrap(week.sessions.first { $0.summary.contains("time trial") })
+        XCTAssertTrue(trial.summary.hasPrefix("10K time trial"), trial.summary)
+        XCTAssertEqual(trial.estimatedDistanceMeters ?? 0, 10000, accuracy: 1)
+        // Run at 10K pace, not half-marathon pace.
+        let zones = PaceZones(profile: half)
+        XCTAssertEqual(trial.runStructure?.segments.first?.targetPace, zones.range(for: .tenK))
+    }
 }

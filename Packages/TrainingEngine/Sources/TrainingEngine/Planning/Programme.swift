@@ -135,6 +135,18 @@ public struct Programme: Codable, Equatable, Sendable {
     /// A race or time trial's distance: the goal's race, or a 5K check-in for goals without one.
     var timeTrialMeters: Double { raceDistanceMeters ?? 5000 }
 
+    /// Race week's distance: the race on race day; without a race, a time trial of the race
+    /// distance up to 10K (a half or marathon time trial would be far longer than the long runs
+    /// before it).
+    func trialMeters(isRace: Bool) -> Double {
+        isRace ? timeTrialMeters : min(timeTrialMeters, 10000)
+    }
+
+    /// The pace race week is run at: race pace, or 10K pace for a 10K time trial.
+    func trialZone(isRace: Bool) -> PaceZone {
+        trialMeters(isRace: isRace) < timeTrialMeters ? .tenK : racePaceZone
+    }
+
     /// The pace the race is run at.
     var racePaceZone: PaceZone {
         switch goal {

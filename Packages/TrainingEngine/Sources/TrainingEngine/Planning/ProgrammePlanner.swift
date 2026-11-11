@@ -313,22 +313,27 @@ enum ProgrammePlanner {
         let shortest = rules.shortestRunMeters
         // A race or time trial week: the race counts towards the week's running, so the runs
         // around it stay short.
+        let trialMeters = programme.trialMeters(isRace: hasEventThisWeek)
         let weekMeters = sessions.contains(where: \.isRace)
-            ? max(week.runVolumeMeters - programme.timeTrialMeters, shortest * 2)
+            ? max(week.runVolumeMeters - trialMeters, shortest * 2)
             : week.runVolumeMeters
 
-        // Long run cap: the programme (race programmes set their own; others also the Rules tab)
-        // and, early on, their longest recent run.
-        var longCap = programme.raceDistanceMeters != nil
-            ? programme.longRunCapMeters
-            : min(programme.longRunCapMeters, rules.longestRunMeters)
-        if let longest = profile.longestRecentRunMeters, longest > 0, (week.programmeCycle ?? 1) == 1 {
-            longCap = min(longCap, max(longest * pow(1.1, Double(index + 1)), shortest))
+        // Long run cap: the programme's, their longest recent run early on, and at most 15% (or
+        // 1.5 km) over the longest of the last few long runs, so it builds steadily.
+        let longCap = longRunCap(index, previous: longRuns(before: index, outline: outline, programme: programme, profile: profile,
+                                                           rules: rules),
+                                 outline: outline, programme: programme, profile: profile, rules: rules)
+        if let long = sessions.first(where: { $0.runType == .long && !$0.isRace }), !sessions.contains(where: \.isRace),
+           let wanted = wantedLongRun(long, week: week, programme: programme, rules: rules), wanted > longCap + 1000 {
+            let unit = Units.distanceUnitLabel(profile.units)
+            notes.append("Long run kept to \(String(format: "%.1f", Units.distance(meters: RunBuilder.tidy(longCap), in: profile.units))) \(unit) "
+                         + "(the programme has \(String(format: "%.0f", Units.distance(meters: wanted, in: profile.units))) \(unit)) so it builds steadily from your recent long runs.")
         }
 
         let context = WeekContext(weekMeters: weekMeters, shortest: shortest, longestRun: rules.longestRunMeters,
                                   longShare: rules.longRunShare, longCap: longCap, longSpec: programmeWeek?.longRun ?? .auto,
-                                  raceMeters: programme.timeTrialMeters, raceZone: programme.racePaceZone,
+                                  raceMeters: trialMeters, raceZone: programme.trialZone(isRace: hasEventThisWeek),
+                                  raceUsesGoalPace: trialMeters >= programme.timeTrialMeters,
                                   raceIsEffort: programme.goal == .first5k && profile.goalTimeSeconds == nil,
                                   raceLabel: hasEventThisWeek ? "race" : "time trial", programmeName: programme.name, zones: zones,
                                   rules: rules)
@@ -461,6 +466,65 @@ enum ProgrammePlanner {
         return GeneratedWeek(target: week, sessions: generated, plannedRunMeters: plannedRunMeters, notes: notes)
     }
 
+    // MARK: Long-run growth
+
+    /// The most a long run may grow over the longest of the last few: 15%, or 1.5 km if that's more.
+    static let longRunGrowth = 0.15
+    static let longRunGrowthMinMeters = 1500.0
+
+    /// The long run a week's programme asks for, before any cap.
+    private static func wantedLongRun(_ session: ProgrammeSession, week: WeekTarget, programme: Programme,
+                                      rules: ProgrammeRules) -> Double? {
+        let spec = session.distance.kind == "auto" ? (week.programmeWeek.flatMap(programme.week)?.longRun ?? .auto) : session.distance
+        switch spec.kind {
+        case "meters": return spec.value ?? week.runVolumeMeters * rules.longRunShare
+        case "share": return week.runVolumeMeters * (spec.value ?? rules.longRunShare)
+        default: return week.runVolumeMeters * rules.longRunShare
+        }
+    }
+
+    /// A week's long-run cap: the programme's (race programmes set their own; others also the
+    /// Rules tab), early on their longest recent run, and growth over the last few long runs.
+    private static func longRunCap(_ index: Int, previous: [Double?], outline: PlanOutline, programme: Programme,
+                                   profile: AthleteProfile, rules: ProgrammeRules) -> Double {
+        let week = outline.weeks[index]
+        let shortest = rules.shortestRunMeters
+        var cap = programme.raceDistanceMeters != nil
+            ? programme.longRunCapMeters
+            : min(programme.longRunCapMeters, rules.longestRunMeters)
+        if let longest = profile.longestRecentRunMeters, longest > 0, (week.programmeCycle ?? 1) == 1 {
+            cap = min(cap, max(longest * pow(1.1, Double(index + 1)), shortest))
+        }
+        // The longest of the last three long runs (within six weeks; race weeks and easy weeks have none).
+        if let recent = previous.suffix(6).compactMap({ $0 }).suffix(3).max() {
+            cap = min(cap, max(recent * (1 + longRunGrowth), recent + longRunGrowthMinMeters))
+        }
+        return max(cap, shortest)
+    }
+
+    /// The long runs of the weeks before `index`, sized as their weeks size them (nil for weeks
+    /// without one: recovery weeks after the programme, easy starts and race weeks).
+    private static func longRuns(before index: Int, outline: PlanOutline, programme: Programme, profile: AthleteProfile,
+                                 rules: ProgrammeRules) -> [Double?] {
+        var result: [Double?] = []
+        for i in 0..<min(index, outline.weeks.count) {
+            let week = outline.weeks[i]
+            guard week.isPostProgrammeRecovery != true, week.isEasyStart != true, let number = week.programmeWeek else {
+                result.append(nil)
+                continue
+            }
+            let sessions = programme.sessions(inWeek: number)
+            guard !sessions.contains(where: \.isRace), let long = sessions.first(where: { $0.runType == .long }),
+                  let wanted = wantedLongRun(long, week: week, programme: programme, rules: rules) else {
+                result.append(nil)
+                continue
+            }
+            let cap = longRunCap(i, previous: result, outline: outline, programme: programme, profile: profile, rules: rules)
+            result.append(RunBuilder.tidy(min(max(wanted, rules.shortestRunMeters), cap)))
+        }
+        return result
+    }
+
     // MARK: Sizing the runs
 
     /// What sizing a week's runs needs.
@@ -473,6 +537,8 @@ enum ProgrammePlanner {
         var longSpec: ProgrammeDistance
         var raceMeters: Double
         var raceZone: PaceZone
+        /// The race (or time trial) is the goal distance, so a goal pace applies.
+        var raceUsesGoalPace = true
         /// Run the race by feel (a first 5K without a goal time): easy-to-steady, pace as a guide.
         var raceIsEffort: Bool
         var raceLabel: String
@@ -497,10 +563,11 @@ enum ProgrammePlanner {
                 runs[i].structure = RunStructure(segments: [
                     RunSegment(kind: .work, length: .distance(meters: c.raceMeters),
                                targetPace: c.raceIsEffort ? range(for: "steady", zones: c.zones)
-                                   : (c.zones.goalPaceRange ?? c.zones.range(for: c.raceZone)),
+                                   : ((c.raceUsesGoalPace ? c.zones.goalPaceRange : nil) ?? c.zones.range(for: c.raceZone)),
                                label: c.raceLabel == "race" ? "Race" : "Time trial", paceIsGuide: c.raceIsEffort ? true : nil)
                 ])
-                let name = c.raceMeters == 5000 && c.raceLabel != "race" ? "5K" : c.programmeName
+                let name = c.raceLabel != "race" && (c.raceMeters == 5000 || c.raceMeters == 10000)
+                    ? (c.raceMeters == 5000 ? "5K" : "10K") : c.programmeName
                 runs[i].summary = c.raceIsEffort ? "\(name) \(c.raceLabel) · run it comfortably and finish strong"
                     : "\(name) \(c.raceLabel)"
             } else if session.isRunWalk {
