@@ -421,7 +421,11 @@ final class PlanSimulationTests: XCTestCase {
         line("|---|---|---|---|---|---|")
         summaryRows.forEach { line($0) }
 
-        print("\n===== \(marker) =====\n" + report.joined(separator: "\n") + "\n===== END \(marker) =====\n")
+        // A line at a time: one very long write can come out garbled in CI logs.
+        print("===== \(marker) =====")
+        for text in report { print(text) }
+        print("===== END \(marker) =====")
+        fflush(stdout)
 
         // Lifts move up over the plan.
         let grew = mainLiftHistory.values.filter { history in (history.last?.kg ?? 0) > (history.first?.kg ?? 0) }
