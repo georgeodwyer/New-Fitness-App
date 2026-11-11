@@ -18,6 +18,12 @@ enum WhatsNew {
     }
 
     static let releases: [Release] = [
+        Release(id: "2026-11-longruns-1", title: "What's new", items: [
+            Item(symbol: "figure.run", title: "Long runs that build steadily",
+                 detail: "Each long run grows at most 15% (or 1.5 km) over your recent longest, so there are no sudden jumps."),
+            Item(symbol: "stopwatch", title: "A 10K time trial",
+                 detail: "Half marathon and marathon plans without a race date now end with a 10K time trial, run at 10K pace.")
+        ]),
         Release(id: "2026-11-recovery-1", title: "What's new", items: [
             Item(symbol: "checklist", title: "Your check-in counts more",
                  detail: "With an Apple Watch, how you feel is now a quarter of your recovery score, alongside HRV, heart rate and sleep."),
