@@ -365,7 +365,7 @@ final class PlanSimulationTests: XCTestCase {
             if index + 1 < outline.weeks.count {
                 let next = outline.weeks[index + 1]
                 let ending = next.isRecoveryWeek ? " (a lighter week)." : "."
-                carried.append("Next week's distance, \(km(next.runVolumeMeters)), was set on day one and doesn't depend on how this week went" + ending)
+                carried.append("Next week's distance, \(km(next.runVolumeMeters)), is as planned: the last two weeks didn't call for a hold or more growth" + ending)
             }
             carried.append("Gym: every session uses the latest working weights (sessions already planned update as soon as a weight changes).")
             line()
