@@ -21,11 +21,11 @@ final class PlanSimulationTests: XCTestCase {
     private var generator: PlanGenerator { PlanGenerator(templates: templates, calendar: calendar) }
     private let start = TestSupport.date(2026, 10, 26)
 
-    private var startingProfile: AthleteProfile {
+    private func startingProfile(_ goal: TrainingGoal) -> AthleteProfile {
         // 16.5 km a week and a 22:00 5K reproduce their real third week: a 6 km long run of about 35 minutes
         // and a short Monday easy run alongside intervals and a progression run.
         AthleteProfile(runningExperience: .intermediate, recentRace: RaceResult(distanceMeters: 5000, timeSeconds: 22 * 60),
-                       liftingExperience: .intermediate, goal: .faster10k,
+                       liftingExperience: .intermediate, goal: goal,
                        trainingDays: [.monday, .tuesday, .wednesday, .thursday, .saturday, .sunday], doubleSessionDays: 3,
                        equipment: .fullGym, weeklyRunMeters: 16500, longestRecentRunMeters: 6000,
                        liftSessionsPerWeek: 5, splitCode: "pplUpperArms", longRunDay: .sunday)
@@ -84,8 +84,18 @@ final class PlanSimulationTests: XCTestCase {
     // MARK: The walk-through
 
     func testWalkThroughThePlan() throws {
-        var profile = startingProfile
-        let programme = try XCTUnwrap(templates.programmes.programme(for: .faster10k))
+        try walkThrough(.faster10k, marker: "PLAN SIMULATION")
+    }
+
+    /// The same runner and gym week, training for a half marathon.
+    func testWalkThroughTheHalfMarathonPlan() throws {
+        try walkThrough(.halfMarathon, marker: "HALF MARATHON SIMULATION")
+    }
+
+    private func walkThrough(_ goal: TrainingGoal, marker: String) throws {
+        report = []
+        var profile = startingProfile(goal)
+        let programme = try XCTUnwrap(templates.programmes.programme(for: goal))
         var outline = generator.makeOutline(for: profile, startingOn: start)
         let rules = templates.strength.progression ?? .standard
 
@@ -102,7 +112,7 @@ final class PlanSimulationTests: XCTestCase {
         var weekResults: [PlanAdaptation.WeekResult] = []
         var feels: [Int: WeekFeel] = [:]
 
-        line("# Plan walk-through: Faster 10K, intermediate, no race date")
+        line("# Plan walk-through: \(programme.name), intermediate, no race date")
         line("Runs 4 days (long run Sunday), gym 5 days: Push, Pull, Legs, Upper, Shoulders & arms. Friday off.")
         line("Starting point: 16.5 km a week, a 5K of about 22:00 (VDOT \(String(format: "%.1f", PaceZones(profile: profile).vdot))).")
         line()
@@ -234,7 +244,7 @@ final class PlanSimulationTests: XCTestCase {
                     }
                     doneMeters += meters
                     // A time trial (week 12 without a race date): run about 3% quicker than predicted.
-                    if session.summary.contains("time trial"), let distance = BestEffortDistance(rawValue: meters.rounded()),
+                    if session.summary.contains("time trial"), let distance = BestEffortDistance.allCases.first(where: { abs($0.meters - meters) < $0.meters * 0.02 }),
                        let work = structure.segments.first(where: { $0.kind == .work })?.targetPace {
                         let seconds = (work.fastest.secondsPerKm + work.slowest.secondsPerKm) / 2 * 0.97 * meters / 1000
                         evidence.append(FormEstimate.Evidence(date: session.date, bestEfforts: [distance: seconds]))
@@ -411,7 +421,7 @@ final class PlanSimulationTests: XCTestCase {
         line("|---|---|---|---|---|---|")
         summaryRows.forEach { line($0) }
 
-        print("\n===== PLAN SIMULATION =====\n" + report.joined(separator: "\n") + "\n===== END PLAN SIMULATION =====\n")
+        print("\n===== \(marker) =====\n" + report.joined(separator: "\n") + "\n===== END \(marker) =====\n")
 
         // Lifts move up over the plan.
         let grew = mainLiftHistory.values.filter { history in (history.last?.kg ?? 0) > (history.first?.kg ?? 0) }
