@@ -291,8 +291,9 @@ final class FunctionalWorkoutModel {
         SyncService.shared.requestSync()
         ActivityExportService.strengthFinished(log, units: units, in: context)
         let context = self.context
+        let logId = log.id
         Task { @MainActor in
-            await ActivityNotifications.gymFinished(log, summary: nil, in: context)
+            await ActivityNotifications.gymFinished(id: logId, summary: nil, in: context)
             await NotificationService.scheduleMornings(in: context)
         }
         savedLog = log

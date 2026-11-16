@@ -55,6 +55,20 @@ enum ActivityNotifications {
 
     // MARK: Workout results
 
+    /// Called a moment after saving (from a Task), so the workout is looked up again by id: the
+    /// object saved may no longer be usable by then (deleted, or the store reset).
+    static func runFinished(id: UUID, in context: ModelContext) async {
+        let descriptor = FetchDescriptor<RunLogModel>(predicate: #Predicate { $0.id == id })
+        guard let log = (try? context.fetch(descriptor))?.first, log.isFinished else { return }
+        await runFinished(log, in: context)
+    }
+
+    static func gymFinished(id: UUID, summary: StrengthService.Summary?, in context: ModelContext) async {
+        let descriptor = FetchDescriptor<StrengthLogModel>(predicate: #Predicate { $0.id == id })
+        guard let log = (try? context.fetch(descriptor))?.first else { return }
+        await gymFinished(log, summary: summary, in: context)
+    }
+
     /// A run was saved: its result, new best efforts and badges.
     static func runFinished(_ log: RunLogModel, in context: ModelContext) async {
         TrainingNotifications.sessionDone(on: log.startedAt)

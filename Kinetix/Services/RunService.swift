@@ -56,8 +56,9 @@ enum RunService {
         ActivityExportService.runFinished(log, in: context)
         // The result (shows when Kinetix isn't on screen, e.g. a run finished on the watch), and
         // the week's notifications brought up to date.
+        let logId = log.id
         Task { @MainActor in
-            await ActivityNotifications.runFinished(log, in: context)
+            await ActivityNotifications.runFinished(id: logId, in: context)
             await NotificationService.scheduleMornings(in: context)
         }
     }
@@ -90,8 +91,9 @@ enum RunService {
         ActivityExportService.runFinished(log, in: context)
         // The result (shows when Kinetix isn't on screen, e.g. a run finished on the watch), and
         // the week's notifications brought up to date.
+        let logId = log.id
         Task { @MainActor in
-            await ActivityNotifications.runFinished(log, in: context)
+            await ActivityNotifications.runFinished(id: logId, in: context)
             await NotificationService.scheduleMornings(in: context)
         }
     }

@@ -291,8 +291,9 @@ enum StrengthService {
             records: records
         )
         // The result (shows when Kinetix isn't on screen) and the week's notifications brought up to date.
+        let logId = log.id
         Task { @MainActor in
-            await ActivityNotifications.gymFinished(log, summary: summary, in: context)
+            await ActivityNotifications.gymFinished(id: logId, summary: summary, in: context)
             await NotificationService.scheduleMornings(in: context)
         }
         return summary
