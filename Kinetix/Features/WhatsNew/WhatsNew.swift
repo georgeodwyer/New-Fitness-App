@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// "What's new": shown once after an update with the newest notes. Add an entry at the top of
-/// `releases` with each TestFlight / App Store build (a new id shows it again).
+/// "What's new": shown once after an update with every note since the person last saw it. Add
+/// an entry at the top of `releases` with each TestFlight / App Store build (a new id shows it).
 enum WhatsNew {
     struct Item: Identifiable {
         let symbol: String
@@ -82,16 +82,23 @@ enum WhatsNew {
 
     private static let seenKey = "whatsNew.lastSeen"
 
-    /// The notes to show now: the newest release, once. New installs don't see it (they get
+    /// The notes to show now: everything added since the release this person last saw, newest
+    /// first and on one screen, so skipping builds (test builds kept to yourself, or just not
+    /// updating for a while) doesn't skip notes. Shown once. New installs don't see it (they get
     /// the walkthrough instead), they just mark it seen.
     static func pending(isNewInstall: Bool, defaults: UserDefaults = .standard) -> Release? {
         guard let latest = releases.first else { return nil }
-        if defaults.string(forKey: seenKey) == latest.id { return nil }
+        let seen = defaults.string(forKey: seenKey)
+        if seen == latest.id { return nil }
         if isNewInstall {
             markSeen(latest, defaults: defaults)
             return nil
         }
-        return latest
+        // Everything newer than what they saw (all of it if what they saw isn't listed any more).
+        let unseen = seen.flatMap { id in releases.firstIndex { $0.id == id } }.map { Array(releases[..<$0]) } ?? releases
+        var titles = Set<String>()
+        let items = unseen.flatMap(\.items).filter { titles.insert($0.title).inserted }
+        return Release(id: latest.id, title: latest.title, items: items)
     }
 
     static func markSeen(_ release: Release, defaults: UserDefaults = .standard) {
