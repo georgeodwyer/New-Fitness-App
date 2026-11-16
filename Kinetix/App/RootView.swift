@@ -82,6 +82,8 @@ struct RootView: View {
         .onChange(of: scenePhase, initial: true) { _, phase in
             // Keep detailed sessions generated about two weeks ahead.
             if phase == .active {
+                // For "a week away" notifications.
+                UserDefaults.standard.set(Date(), forKey: TrainingNotifications.Keys.lastOpened)
                 // Back in the app mid-workout: bring the watch up to date.
                 WatchMirrorService.shared.resendLast()
                 if router.activeSession == nil, interruptedRun == nil {
@@ -102,6 +104,7 @@ struct RootView: View {
                 WidgetSnapshotService.update(in: context)
                 WatchSyncService.shared.sendPlan()
                 Task { await NotificationService.scheduleMornings(in: context) }
+                BackgroundRefresh.submit()
             }
         }
     }

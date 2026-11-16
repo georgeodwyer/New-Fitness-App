@@ -280,7 +280,7 @@ enum StrengthService {
         SyncService.shared.requestSync()
         ActivityExportService.strengthFinished(log, units: units, in: context)
 
-        return Summary(
+        let summary = Summary(
             title: log.title,
             durationSeconds: duration,
             volumeKg: log.volumeKg,
@@ -290,6 +290,12 @@ enum StrengthService {
             changes: changes,
             records: records
         )
+        // The result (shows when Kinetix isn't on screen) and the week's notifications brought up to date.
+        Task { @MainActor in
+            await ActivityNotifications.gymFinished(log, summary: summary, in: context)
+            await NotificationService.scheduleMornings(in: context)
+        }
+        return summary
     }
 
     /// Abandons an in-progress workout (its sets are removed).

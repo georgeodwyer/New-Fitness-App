@@ -37,11 +37,17 @@ struct KinetixApp: App {
     }
 
     var body: some Scene {
+        let container = self.container
         WindowGroup {
             RootView()
                 .modifier(AppearanceModifier(forceDark: launch.forceDark))
         }
         .modelContainer(container)
+        // A few times a day, when iOS allows: recovery, steps, exertion and runs from other
+        // apps, for notifications (see BackgroundRefresh).
+        .backgroundTask(.appRefresh(BackgroundRefresh.identifier)) {
+            await BackgroundRefresh.run(container: container)
+        }
     }
 }
 

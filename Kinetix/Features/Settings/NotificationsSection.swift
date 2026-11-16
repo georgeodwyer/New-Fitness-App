@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 import UserNotifications
 
-/// Settings for the morning summary and the gym rest alert.
+/// Settings for every notification Kinetix sends (all local; nothing comes from a server).
 struct NotificationsSection: View {
     @Environment(\.modelContext) private var context
     @AppStorage(NotificationService.Keys.morningEnabled) private var morningEnabled = true
@@ -18,6 +18,9 @@ struct NotificationsSection: View {
     @AppStorage(TrainingNotifications.Keys.fuellingEnabled) private var fuellingEnabled = true
     @AppStorage(TrainingNotifications.Keys.checkInEnabled) private var checkInEnabled = true
     @AppStorage(TrainingNotifications.Keys.weeklyEnabled) private var weeklyEnabled = true
+    @AppStorage(TrainingNotifications.Keys.resultsEnabled) private var resultsEnabled = true
+    @AppStorage(TrainingNotifications.Keys.nudgesEnabled) private var nudgesEnabled = true
+    @AppStorage(TrainingNotifications.Keys.onTrackEnabled) private var onTrackEnabled = true
 
     var body: some View {
         Section {
@@ -52,11 +55,21 @@ struct NotificationsSection: View {
             }
             Toggle("Fuelling tips", isOn: $fuellingEnabled)
             Toggle("Check-in reminder", isOn: $checkInEnabled)
-            Toggle("Sunday week review", isOn: $weeklyEnabled)
+            Toggle("Weekly and monthly reviews", isOn: $weeklyEnabled)
         } header: {
             Text("Training")
         } footer: {
-            Text("Fuelling tips: carbs the evening before a long run or race, fuel on runs over 75 minutes, protein after the gym. The check-in reminder comes at 10:00 if you haven't done it. General guidance, not medical advice.")
+            Text("Session reminders start once you've set your session times above; until then the morning summary says what's on. Fuelling tips: carbs the evening before a long run or race, protein after the gym. The check-in reminder comes at 10:00 if you haven't done it. General guidance, not medical advice.")
+        }
+
+        Section {
+            Toggle("Workout results", isOn: $resultsEnabled)
+            Toggle("Recovery, steps and exertion nudges", isOn: $nudgesEnabled)
+            Toggle("Streaks and on-track messages", isOn: $onTrackEnabled)
+        } header: {
+            Text("Progress")
+        } footer: {
+            Text("Results: your distance, pace, new bests, weight increases and badges when a workout is saved. Nudges: a heads-up when recovery is low, steps are well below usual or the day's exertion is high. Never more than three notifications a day in total.")
         }
 
         Section {
@@ -90,7 +103,7 @@ struct NotificationsSection: View {
 
     /// Changes whenever a training notification setting changes.
     private var trainingSettingsKey: String {
-        [sessionEnabled, bedtimeEnabled, fuellingEnabled, checkInEnabled, weeklyEnabled].map { $0 ? "1" : "0" }.joined()
+        [sessionEnabled, bedtimeEnabled, fuellingEnabled, checkInEnabled, weeklyEnabled, resultsEnabled, nudgesEnabled, onTrackEnabled].map { $0 ? "1" : "0" }.joined()
             + "\(sessionLead)-\(morningSessionMinutes)-\(eveningSessionMinutes)-\(sleepNeedMinutes)"
     }
 

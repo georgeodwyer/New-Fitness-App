@@ -18,6 +18,12 @@ enum WhatsNew {
     }
 
     static let releases: [Release] = [
+        Release(id: "2026-11-notifications-1", title: "What's new", items: [
+            Item(symbol: "bell.badge", title: "Smarter notifications",
+                 detail: "Your day's training each morning, your results and new bests after a workout, and a heads-up when recovery is low. Never more than three a day."),
+            Item(symbol: "slider.horizontal.3", title: "You choose",
+                 detail: "Turn each kind on or off in Settings, Notifications. Set your session times there for reminders before each session.")
+        ]),
         Release(id: "2026-11-longruns-1", title: "What's new", items: [
             Item(symbol: "figure.run", title: "Long runs that build steadily",
                  detail: "Each long run grows at most 15% (or 1.5 km) over your recent longest, so there are no sudden jumps."),
