@@ -56,11 +56,7 @@ enum RunService {
         ActivityExportService.runFinished(log, in: context)
         // The result (shows when Kinetix isn't on screen, e.g. a run finished on the watch), and
         // the week's notifications brought up to date.
-        let logId = log.id
-        Task { @MainActor in
-            await ActivityNotifications.runFinished(id: logId, in: context)
-            await NotificationService.scheduleMornings(in: context)
-        }
+        ActivityNotifications.afterRunSaved(log.id, in: context)
     }
 
     /// A run that was recording when Kinetix stopped (closed by iOS, out of battery or a crash):
@@ -91,11 +87,7 @@ enum RunService {
         ActivityExportService.runFinished(log, in: context)
         // The result (shows when Kinetix isn't on screen, e.g. a run finished on the watch), and
         // the week's notifications brought up to date.
-        let logId = log.id
-        Task { @MainActor in
-            await ActivityNotifications.runFinished(id: logId, in: context)
-            await NotificationService.scheduleMornings(in: context)
-        }
+        ActivityNotifications.afterRunSaved(log.id, in: context)
     }
 
     /// A planned run done without recording it in Kinetix (forgot the app, a treadmill…):

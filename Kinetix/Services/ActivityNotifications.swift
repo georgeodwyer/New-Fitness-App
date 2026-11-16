@@ -55,6 +55,27 @@ enum ActivityNotifications {
 
     // MARK: Workout results
 
+    /// Not while unit tests run: the queued work would outlive each test's throwaway store.
+    static let isActive = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil
+
+    /// After a run is saved: its result, then the week's notifications brought up to date.
+    static func afterRunSaved(_ id: UUID, in context: ModelContext) {
+        guard isActive else { return }
+        Task { @MainActor in
+            await runFinished(id: id, in: context)
+            await NotificationService.scheduleMornings(in: context)
+        }
+    }
+
+    /// After a gym or functional session is saved.
+    static func afterGymSaved(_ id: UUID, summary: StrengthService.Summary?, in context: ModelContext) {
+        guard isActive else { return }
+        Task { @MainActor in
+            await gymFinished(id: id, summary: summary, in: context)
+            await NotificationService.scheduleMornings(in: context)
+        }
+    }
+
     /// Called a moment after saving (from a Task), so the workout is looked up again by id: the
     /// object saved may no longer be usable by then (deleted, or the store reset).
     static func runFinished(id: UUID, in context: ModelContext) async {
