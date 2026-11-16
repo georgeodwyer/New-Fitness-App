@@ -4,16 +4,19 @@ import UserNotifications
 
 /// On Today, for anyone without notifications on: what they'd get, then Apple's question (if
 /// they've never been asked) or a way to Settings (if they said no before; iOS only asks once).
-/// "Not now" hides it for two weeks.
+/// "Not now" hides it for two weeks; turning them on, or saying no to Apple's question, hides it
+/// for good.
 struct NotificationPromptCard: View {
     @Environment(\.modelContext) private var context
     @AppStorage("notifications.prompt.snoozedUntil") private var snoozedUntil: Double = 0
+    /// They said no to Apple's question from this card: never shown again (Settings still has it).
+    @AppStorage("notifications.prompt.declined") private var declined = false
     @State private var status: UNAuthorizationStatus?
 
     static let snoozeDays = 14
 
     private var visible: Bool {
-        guard let status, status == .notDetermined || status == .denied else { return false }
+        guard !declined, let status, status == .notDetermined || status == .denied else { return false }
         return Date().timeIntervalSince1970 >= snoozedUntil
     }
 
@@ -63,6 +66,7 @@ struct NotificationPromptCard: View {
             await NotificationService.requestPermissionIfNeeded()
             await NotificationService.scheduleMornings(in: context)
             await refresh()
+            if status == .denied { declined = true }
         }
     }
 }
