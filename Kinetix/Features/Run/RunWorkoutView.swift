@@ -261,6 +261,7 @@ struct RunWorkoutView: View {
                     segmentCard
                     telemetryCard
                     pacerCard
+                    metronomeCard
                 }
                 .padding(.horizontal, KXSpacing.screenMargin)
                 .padding(.bottom, KXSpacing.md)
@@ -579,6 +580,38 @@ struct RunWorkoutView: View {
             }
         }
         .kxCard(model.announcements.last?.isCue == true ? .accent : .tinted)
+    }
+
+    /// A click at a set step rate, to help with cadence. Mixed over music.
+    private var metronomeCard: some View {
+        VStack(alignment: .leading, spacing: KXSpacing.sm) {
+            Toggle(isOn: Binding(get: { model.metronomeOn }, set: { model.setMetronome($0) })) {
+                Label("Metronome", systemImage: "metronome").font(KXFont.bodyEmphasis)
+            }
+            .tint(KXColor.accent)
+            .accessibilityIdentifier("run.metronome")
+            if model.metronomeOn {
+                HStack {
+                    KXIconButton(systemImage: "minus", accessibilityLabel: "Slower step rate", variant: .neutral, size: 44) {
+                        model.changeMetronome(by: -2)
+                    }
+                    Spacer()
+                    VStack(spacing: 0) {
+                        Text("\(model.metronomeStepsPerMinute)").font(KXFont.number(32, relativeTo: .title2)).foregroundStyle(KXColor.ink)
+                        Text("steps per minute").font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+                    }
+                    .accessibilityElement(children: .combine)
+                    Spacer()
+                    KXIconButton(systemImage: "plus", accessibilityLabel: "Faster step rate", variant: .neutral, size: 44) {
+                        model.changeMetronome(by: 2)
+                    }
+                }
+                Text("Your music keeps playing at full volume while the metronome is on; voice cues play over it.")
+                    .font(KXFont.caption).foregroundStyle(KXColor.inkTertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .kxCard(.tinted)
     }
 
     private var controls: some View {

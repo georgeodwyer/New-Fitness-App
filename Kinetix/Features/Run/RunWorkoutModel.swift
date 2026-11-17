@@ -58,6 +58,34 @@ final class RunWorkoutModel {
     @ObservationIgnored private var engine: RunEngine
     private let context: ModelContext
     private let voice = VoiceCoach()
+    @ObservationIgnored private let metronome = Metronome()
+    /// A click at a set step rate over the music (remembered for next time).
+    private(set) var metronomeOn = Metronome.storedEnabled
+    private(set) var metronomeStepsPerMinute = Metronome.storedStepsPerMinute
+
+    func setMetronome(_ on: Bool) {
+        metronomeOn = on
+        Metronome.storedEnabled = on
+        updateMetronome()
+    }
+
+    func changeMetronome(by delta: Int) {
+        metronomeStepsPerMinute = min(max(metronomeStepsPerMinute + delta, Metronome.range.lowerBound), Metronome.range.upperBound)
+        Metronome.storedStepsPerMinute = metronomeStepsPerMinute
+        if metronome.isPlaying { metronome.start(stepsPerMinute: metronomeStepsPerMinute) }
+    }
+
+    /// Clicking while running (not paused) with the metronome on.
+    private func updateMetronome() {
+        let shouldPlay = metronomeOn && phase == .running && !snapshot.isPaused
+        if shouldPlay, !metronome.isPlaying {
+            voice.keepsAudioActive = true
+            metronome.start(stepsPerMinute: metronomeStepsPerMinute)
+        } else if !shouldPlay, metronome.isPlaying {
+            metronome.stop()
+            voice.keepsAudioActive = false
+        }
+    }
     private let gps: GPSLocationSource?
     private let simulator: SimulatedLocationSource?
     @ObservationIgnored private var timer: Timer?
@@ -282,6 +310,7 @@ final class RunWorkoutModel {
             simulator?.start()
         }
         startHeartRate(from: now)
+        updateMetronome()
         startMirroring()
         ActiveWorkout.shared.togglePause = { [weak self] in self?.togglePause() }
         lockScreen.start(title: title, kind: "run", state: .run(snapshot, units: units, now: .now))
@@ -306,6 +335,7 @@ final class RunWorkoutModel {
             voice.speak("Paused.")
         }
         snapshot = engine.snapshot()
+        updateMetronome()
         updateLockScreen(important: true)
         publishToWatch()
     }
@@ -412,6 +442,7 @@ final class RunWorkoutModel {
         let summary = engine.summary()
         finalSummary = summary
         phase = .finished
+        updateMetronome()
         stopMirroring(saved: true)
         return summary
     }
@@ -426,6 +457,8 @@ final class RunWorkoutModel {
         pedometer.stopUpdates()
         gps?.stop()
         simulator?.stop()
+        metronome.stop()
+        voice.keepsAudioActive = false
         voice.stop()
         stopHeartRate()
         lockScreen.end()

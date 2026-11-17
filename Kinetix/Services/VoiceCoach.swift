@@ -11,6 +11,15 @@ final class VoiceCoach: NSObject, AVSpeechSynthesizerDelegate {
     var volume: Float = 1
     var isMuted = false
     private var deactivateTask: Task<Void, Never>?
+    /// The metronome is clicking: the audio stays on, mixed with music rather than lowering it
+    /// (voice included), until it stops.
+    var keepsAudioActive = false {
+        didSet {
+            guard keepsAudioActive != oldValue else { return }
+            prepare()
+            if !keepsAudioActive { releaseAudio() }
+        }
+    }
 
     override init() {
         super.init()
@@ -20,7 +29,11 @@ final class VoiceCoach: NSObject, AVSpeechSynthesizerDelegate {
     /// Configures the audio session for spoken prompts that duck other audio.
     func prepare() {
         let session = AVAudioSession.sharedInstance()
-        try? session.setCategory(.playback, mode: .voicePrompt, options: [.duckOthers, .interruptSpokenAudioAndMixWithOthers])
+        if keepsAudioActive {
+            try? session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
+        } else {
+            try? session.setCategory(.playback, mode: .voicePrompt, options: [.duckOthers, .interruptSpokenAudioAndMixWithOthers])
+        }
     }
 
     func speak(_ text: String) {
@@ -86,7 +99,7 @@ final class VoiceCoach: NSObject, AVSpeechSynthesizerDelegate {
     /// Lets the user's music return to full volume. Ending the audio session fails while the
     /// speech is still letting go of it (the music then stays quiet), so try again a few times.
     private func releaseAudio(attempt: Int = 1) {
-        guard !synthesizer.isSpeaking else { return }
+        guard !synthesizer.isSpeaking, !keepsAudioActive else { return }
         do {
             try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
         } catch {

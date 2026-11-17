@@ -23,6 +23,8 @@ enum WhatsNew {
                  detail: "Open one of your workouts and tap Share. Your friend gets the same session with paces set from their own training zones, and can change any step."),
             Item(symbol: "person.crop.circle", title: "A new Profile tab",
                  detail: "Your badges, race predictions, best efforts and records in one place, plus running tools: a pace calculator, split planner and treadmill converter. Settings are behind the cog in the top corner."),
+            Item(symbol: "metronome", title: "Running metronome",
+                 detail: "Turn on the metronome on the run screen for a soft click at your chosen steps per minute, over your music."),
             Item(symbol: "shoeprints.fill", title: "Cadence and stride length",
                  detail: "Your steps per minute and stride length on every run, with a chart and each km or mile.")
         ]),
