@@ -43,6 +43,7 @@ struct RunSummaryView: View {
                 if !summary.segments.isEmpty { PlannedVsActualCard(results: summary.segments, format: format) }
                 targetCard
                 if summary.heartRateSamples.count >= 3 { HeartRateZonesCard(samples: summary.heartRateSamples) }
+                CadenceCard(samples: summary.stepSamples, splits: summary.splits, units: units)
                 if !summary.splits.isEmpty { splitsCard }
                 if let laps = summary.laps, !laps.isEmpty { LapsCard(laps: laps, format: format) }
                 if let log, log.isFinished { SaveAsTemplateButton(source: .run(log)) }
@@ -80,7 +81,8 @@ struct RunSummaryView: View {
             secondary: [
                 .init(label: "Max HR", value: summary.maxHeartRate.map { "\(Int($0))" } ?? "--", unit: "bpm"),
                 .init(label: "Splits", value: "\(summary.splits.count)"),
-            ],
+            ] + CadenceCard.stats(samples: summary.stepSamples, distanceMeters: summary.distanceMeters,
+                                  durationSeconds: summary.durationSeconds, units: units),
             footnote: summary.averageHeartRate == nil ? "Heart rate appears here once Apple Watch or a chest strap is connected." : nil
         ) {
             RouteMap(route: summary.route)

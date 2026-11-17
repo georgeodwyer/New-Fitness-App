@@ -46,6 +46,8 @@ final class RunLogModel: SyncTracked {
     /// Run on a treadmill: no GPS, distance from the step counter or the set speed (and
     /// corrected to the treadmill's own figure at the end).
     var isTreadmill: Bool = false
+    /// Encoded `[StepSample]`: the step counter through the run, for cadence and stride length.
+    var stepsData: Data?
 
     init(plannedSessionId: UUID?, startedAt: Date, id: UUID = UUID(), now: Date = .now) {
         self.id = id

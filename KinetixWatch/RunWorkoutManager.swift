@@ -184,9 +184,10 @@ final class RunWorkoutManager: NSObject {
             session.startActivity(with: start)
             try await builder.beginCollection(at: start)
             startedAt = start
-            extras.start(at: start)
             let events = engine.start(at: start)
             self.engine = engine
+            extras.onSteps = { [weak self] steps, at in self?.engine?.addSteps(total: steps, at: at) }
+            extras.start(at: start)
             handle(events)
         } catch {
             errorText = "Couldn't start the workout: \(error.localizedDescription)"
@@ -591,6 +592,7 @@ final class RunWorkoutManager: NSObject {
                                 title: isGym ? "Gym on iPhone" : (isFunctional ? "Workout on iPhone" : "Run on iPhone"))
         let start = Date()
         startedAt = start
+        extras.onSteps = nil
         extras.start(at: start)
         lastFrameAt = start
         let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in

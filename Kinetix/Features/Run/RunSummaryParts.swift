@@ -12,6 +12,8 @@ struct RunStatsGrid: View {
     }
 
     let stats: [Stat]
+    /// Pads a short row to this many columns, so it lines up with a full row above.
+    var columns: Int? = nil
 
     var body: some View {
         HStack(alignment: .top, spacing: KXSpacing.sm) {
@@ -34,6 +36,11 @@ struct RunStatsGrid: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityElement(children: .combine)
+            }
+            if let columns, stats.count < columns {
+                ForEach(0..<(columns - stats.count), id: \.self) { _ in
+                    Color.clear.frame(maxWidth: .infinity, maxHeight: 1)
+                }
             }
         }
     }
@@ -58,7 +65,11 @@ struct RunHeroCard<Map: View>: View {
                 RunStatsGrid(stats: stats)
                 if !secondary.isEmpty {
                     Divider().overlay(KXColor.border)
-                    RunStatsGrid(stats: secondary)
+                    // Four to a row.
+                    ForEach(Array(stride(from: 0, to: secondary.count, by: 4)), id: \.self) { start in
+                        RunStatsGrid(stats: Array(secondary[start..<min(start + 4, secondary.count)]),
+                                     columns: secondary.count > 4 ? 4 : nil)
+                    }
                 }
                 if let footnote {
                     Text(footnote).font(KXFont.caption).foregroundStyle(KXColor.inkTertiary)

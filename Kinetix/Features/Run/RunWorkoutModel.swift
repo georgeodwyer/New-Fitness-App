@@ -135,15 +135,25 @@ final class RunWorkoutModel {
         } else {
             treadmillSpeedKmh = (PaceZones(profile: profileForTreadmill).typicalPace(for: .easy).kilometresPerHour * 2).rounded() / 2
         }
-        if treadmillDistance == .stepCounter, CMPedometer.isDistanceAvailable() {
-            pedometer.startUpdates(from: now) { [weak self] data, _ in
-                guard let meters = data?.distance?.doubleValue else { return }
-                Task { @MainActor in self?.pedometerMeters = meters }
-            }
-        }
         // A first step with a target already said its speed.
         if structure?.segments.first?.targetPace == nil {
             voice.speak("Treadmill run. Set it to \(TreadmillSpeed.spoken(kilometresPerHour: treadmillSpeedKmh, units: units)).")
+        }
+    }
+
+    /// The phone's step counter, for every run: steps for cadence and stride length, and on a
+    /// treadmill (step-counter distance) the distance too. Not on simulated GPS runs.
+    private func startStepCounter(at now: Date) {
+        guard !(isSimulated && !isTreadmill), CMPedometer.isStepCountingAvailable() else { return }
+        pedometer.startUpdates(from: now) { [weak self] data, _ in
+            guard let data else { return }
+            let steps = data.numberOfSteps.doubleValue
+            let meters = data.distance?.doubleValue
+            Task { @MainActor in
+                guard let self, self.phase == .running else { return }
+                if let meters { self.pedometerMeters = meters }
+                self.engine.addSteps(total: steps, at: self.clockNow())
+            }
         }
     }
 
@@ -264,6 +274,7 @@ final class RunWorkoutModel {
                                treadmill: isTreadmill, in: context, now: now)
         phase = .running
         handle(engine.start(at: now))
+        startStepCounter(at: now)
         if isTreadmill {
             startTreadmill(at: now)
         } else {

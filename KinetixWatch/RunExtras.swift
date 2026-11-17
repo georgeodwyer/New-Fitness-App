@@ -19,14 +19,22 @@ final class RunExtras {
     @ObservationIgnored private var startedAt: Date?
     @ObservationIgnored private var lastAltitude: Double?
     @ObservationIgnored private let pedometer = CMPedometer()
+    /// The step counter's total so far, for runs recorded on the watch (cadence and stride
+    /// length on the run's summary).
+    @ObservationIgnored var onSteps: (@MainActor (Double, Date) -> Void)?
 
     func start(at date: Date) {
         reset()
         startedAt = date
-        guard CMPedometer.isCadenceAvailable() else { return }
+        guard CMPedometer.isStepCountingAvailable() else { return }
         pedometer.startUpdates(from: date) { [weak self] data, _ in
-            guard let perSecond = data?.currentCadence?.doubleValue else { return }
-            Task { @MainActor in self?.cadence = perSecond * 60 }
+            guard let data else { return }
+            let perSecond = data.currentCadence?.doubleValue
+            let steps = data.numberOfSteps.doubleValue
+            Task { @MainActor in
+                if let perSecond { self?.cadence = perSecond * 60 }
+                self?.onSteps?(steps, Date())
+            }
         }
     }
 

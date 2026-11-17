@@ -34,6 +34,7 @@ enum RunService {
         log.averageHeartRate = summary.averageHeartRate
         log.maxHeartRate = summary.maxHeartRate
         log.heartRateData = summary.heartRateSamples.isEmpty ? nil : StoredJSON.encode(summary.heartRateSamples)
+        log.stepsData = summary.stepSamples.flatMap { $0.isEmpty ? nil : StoredJSON.encode($0) }
         log.timeInTargetSeconds = summary.timeInTargetSeconds
         log.targetedSeconds = summary.targetedSeconds
         log.touch(now: now)
@@ -144,6 +145,7 @@ extension RunService {
 
 extension RunLogModel {
     var heartRateSamples: [HeartRateSample] { StoredJSON.decode([HeartRateSample].self, from: heartRateData) ?? [] }
+    var stepSamples: [StepSample]? { StoredJSON.decode([StepSample].self, from: stepsData) }
     var runType: RunSessionType? { runTypeRaw.flatMap(RunSessionType.init(rawValue:)) }
     var recordType: RecordRunType? { recordTypeRaw.flatMap(RecordRunType.init(rawValue:)) }
     /// "Recorded" for Record-tab runs, "Planned" for plan sessions.

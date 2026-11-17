@@ -33,6 +33,7 @@ struct RunDetailView: View {
                 let heartRate = RunAnalysis.heartRateSeries(log.heartRateSamples)
                 if heartRate.count >= 3 { RunLineChart(title: "Heart rate", points: heartRate, kind: .heartRate) }
                 if log.heartRateSamples.count >= 3 { HeartRateZonesCard(samples: log.heartRateSamples) }
+                CadenceCard(samples: log.stepSamples, splits: log.splits, units: units)
                 if !log.splits.isEmpty { splitsCard }
                 if !log.laps.isEmpty { LapsCard(laps: log.laps, format: format) }
                 if !log.segmentResults.isEmpty { PlannedVsActualCard(results: log.segmentResults, format: format) }
@@ -93,6 +94,8 @@ struct RunDetailView: View {
             .init(label: "Effort", value: "\(Int(log.effort))", unit: "/10"),
             .init(label: "Load", value: "\(Int(log.load.rounded()))"),
         ]
+        secondary += CadenceCard.stats(samples: log.stepSamples, distanceMeters: log.distanceMeters,
+                                       durationSeconds: log.durationSeconds, units: units)
         if log.targetedSeconds > 0 {
             secondary.append(.init(label: "On target", value: "\(Int((log.timeInTargetSeconds / log.targetedSeconds * 100).rounded()))", unit: "%"))
         }
@@ -207,6 +210,7 @@ struct RunLineChart: View {
     enum Kind {
         case pace(UnitSystem)
         case heartRate
+        case cadence
     }
 
     let title: String
@@ -218,6 +222,7 @@ struct RunLineChart: View {
         switch kind {
         case .pace: return KXColor.run
         case .heartRate: return KXColor.ink
+        case .cadence: return KXColor.inkSecondary
         }
     }
 
@@ -225,6 +230,7 @@ struct RunLineChart: View {
         switch kind {
         case .pace(let units): return Units.formatPace(Pace(secondsPerKm: value), units: units) + Units.paceUnitLabel(units)
         case .heartRate: return "\(Int(value.rounded())) bpm"
+        case .cadence: return "\(Int(value.rounded())) spm"
         }
     }
 
