@@ -109,7 +109,8 @@ enum CardColor {
     static let warn = Color(hex: 0xFFC23D)
     static let hot = Color(hex: 0xFF4F4F)
     static let slate = Color(hex: 0x8A979C)
-    static let zones = [slate, run, good, warn, hot]
+    /// Zones 1–5: grey, blue, green, orange, red (each clearly different, none like volt).
+    static let zones = [slate, run, good, Color(hex: 0xFF8A2B), Color(hex: 0xFF3B5C)]
 }
 
 private extension Color {
@@ -355,24 +356,52 @@ struct ShareCardView: View {
         return panel {
             panelTitle("Heart rate" + (details.zoneSeconds.contains { $0 > 0 } ? " zones" : ""), summary.isEmpty ? nil : summary)
             if details.zoneSeconds.contains(where: { $0 > 0 }) {
-                GeometryReader { proxy in
-                    HStack(spacing: 0) {
-                        ForEach(0..<5, id: \.self) { zone in
-                            CardColor.zones[zone].frame(width: proxy.size.width * details.zoneSeconds[zone] / total)
-                        }
-                    }
-                }
-                .frame(height: 12)
-                .clipShape(Capsule())
-                HStack {
+                zoneBar(details.zoneSeconds, total: total)
+                    .frame(height: 12)
+                // A key: each zone's colour, name and minutes, in five equal columns.
+                HStack(spacing: 4) {
                     ForEach(0..<5, id: \.self) { zone in
-                        Text("Z\(zone + 1) \(Int((details.zoneSeconds[zone] / 60).rounded()))m")
-                        if zone < 4 { Spacer(minLength: 0) }
+                        let minutes = Int((details.zoneSeconds[zone] / 60).rounded())
+                        HStack(spacing: 4) {
+                            Circle().fill(CardColor.zones[zone]).frame(width: 7, height: 7)
+                            Text("Z\(zone + 1)").foregroundStyle(CardColor.ink)
+                            Text("\(minutes)m").foregroundStyle(CardColor.inkSecondary)
+                        }
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .opacity(details.zoneSeconds[zone] > 0 ? 1 : 0.45)
                     }
                 }
-                .font(CardFont.condensed(11, .condensedMedium))
-                .foregroundStyle(CardColor.inkSecondary)
+                .font(CardFont.condensed(12, .condensedMedium))
             }
+        }
+    }
+
+    /// Time in each zone as one bar; a zone with any time gets at least a sliver so it shows.
+    private func zoneBar(_ seconds: [Double], total: Double) -> some View {
+        GeometryReader { proxy in
+            HStack(spacing: 2) {
+                ForEach(Self.zoneWidths(seconds, total: total, width: proxy.size.width), id: \.zone) { item in
+                    CardColor.zones[item.zone].frame(width: item.width)
+                }
+            }
+            .clipShape(Capsule())
+        }
+    }
+
+    /// Each zone with time and its width, every one at least 4 points (taken from the larger ones).
+    static func zoneWidths(_ seconds: [Double], total: Double, width: CGFloat) -> [(zone: Int, width: CGFloat)] {
+        let used = seconds.indices.filter { seconds[$0] > 0 }
+        guard !used.isEmpty, total > 0 else { return [] }
+        let available = max(width - CGFloat(used.count - 1) * 2, 1)
+        let minimum: CGFloat = 4
+        let raw = used.map { CGFloat(seconds[$0] / total) * available }
+        let shortfall = raw.reduce(CGFloat(0)) { $0 + max(minimum - $1, 0) }
+        let large = raw.filter { $0 > minimum }.reduce(CGFloat(0), +)
+        return zip(used, raw).map { zone, value in
+            guard value > minimum, large > 0 else { return (zone, minimum) }
+            return (zone, max(value - shortfall * value / large, minimum))
         }
     }
 
