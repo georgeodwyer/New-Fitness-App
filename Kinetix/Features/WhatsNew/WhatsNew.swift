@@ -18,6 +18,10 @@ enum WhatsNew {
     }
 
     static let releases: [Release] = [
+        Release(id: "2026-11-checkin-score-1", title: "What's new", items: [
+            Item(symbol: "gauge.with.dots.needle.33percent", title: "A fairer check-in score",
+                 detail: "Sleep and energy now count for more, and not being sore counts as a normal day rather than a bonus. A 2 on sleep or energy keeps the score at 65 or below, so a tired day shows.")
+        ]),
         Release(id: "2026-11-notifications-1", title: "What's new", items: [
             Item(symbol: "bell.badge", title: "Smarter notifications",
                  detail: "Your day's training each morning, your results and new bests after a workout, and a heads-up when recovery is low. Never more than three a day."),
