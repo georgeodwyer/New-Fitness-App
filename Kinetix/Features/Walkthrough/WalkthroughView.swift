@@ -81,7 +81,7 @@ struct WalkthroughPage: Sendable {
     let points: [(symbol: String, text: String)]
     let illustration: Illustration
 
-    enum Illustration { case welcome, today, plan, adapts, record, progress, connect, help }
+    enum Illustration { case welcome, today, plan, adapts, record, progress, profile, connect, help }
 
     static let all: [WalkthroughPage] = [
         WalkthroughPage(
@@ -90,6 +90,7 @@ struct WalkthroughPage: Sendable {
             points: [
                 ("calendar", "Your plan mixes runs and gym sessions so they help each other, not compete."),
                 ("heart.text.square", "It reads how recovered you are and adjusts the day."),
+                ("chart.line.uptrend.xyaxis", "It moves you on as you get fitter: paces, long runs and weights all progress from your results."),
                 ("arrow.uturn.backward", "Every change is explained, and you're always in control."),
             ],
             illustration: .welcome),
@@ -97,10 +98,10 @@ struct WalkthroughPage: Sendable {
             plain: "Start each day on", accented: "Today",
             detail: "Everything you need for today, in one place.",
             points: [
-                ("gauge.with.needle", "Recovery: how ready your body is, out of 100, with your HRV, resting heart rate and sleep under it. About 72 is a normal day; 85+ is great."),
-                ("hand.raised", "No sleep data (watch charging overnight)? Tap \"Don't wait\" and your check-in sets the score."),
+                ("gauge.with.needle", "Recovery: how ready your body is, out of 100, from HRV, resting heart rate, sleep and your check-in. About 72 is a normal day; 85+ is great."),
+                ("checkmark.circle", "Your score: a 10-second check-in on sleep, legs, upper body and energy. No watch? It sets your recovery on its own."),
                 ("flame", "Exertion: how hard you've worked today, against a target for the day."),
-                ("checkmark.circle", "Your score: a 10-second check-in on sleep, legs, upper body and energy."),
+                ("calendar.badge.checkmark", "Your week: sessions done and what's next, at the bottom of Today."),
                 ("arrow.down", "Pull down to refresh your Apple Health data."),
             ],
             illustration: .today),
@@ -109,19 +110,19 @@ struct WalkthroughPage: Sendable {
             detail: "The Plan tab lays out every week, building towards your goal.",
             points: [
                 ("flag.checkered", "A countdown to race day and the phase you're in."),
-                ("chart.bar", "This week's distance against the plan, and earlier weeks kept for reference."),
+                ("chart.bar", "This week's distance against the plan, with a lighter week every few weeks to absorb the work."),
+                ("dumbbell", "Gym days follow your strength focus: Balanced, Lower body & glutes, or Upper body & arms."),
                 ("calendar", "Tap This week on Today for the full calendar."),
-                ("arrow.triangle.2.circlepath", "Change your goal or days in Settings and rebuild from today, keeping your progress."),
             ],
             illustration: .plan),
         WalkthroughPage(
             plain: "A plan that", accented: "adapts",
             detail: "Your plan isn't fixed. It responds to how you're doing.",
             points: [
-                ("arrow.down.right", "Low recovery: today's hard sessions are eased for you."),
-                ("hand.raised", "Fair recovery: you're offered a lighter version. Your choice."),
-                ("calendar.badge.clock", "Busy day? Open a session and tap Move, swap or skip: move it, or trade days with another session."),
-                ("checkmark.circle", "Did a session without the app, or on a treadmill? Tap Mark as done on it."),
+                ("arrow.down.right", "Low recovery: today's hard sessions are eased for you. Fair recovery: you're offered a lighter version."),
+                ("checklist", "Weekly check-in on Monday: say how last week felt and the coming week is set to match."),
+                ("chart.line.uptrend.xyaxis", "Running faster than your paces? You're offered new ones. Hit all your reps and the weights go up."),
+                ("calendar.badge.clock", "Busy day? Move, swap or skip a session, or tap Mark as done if you trained without the app."),
                 ("arrow.uturn.backward", "Every change shows why it happened, and you can undo it."),
             ],
             illustration: .adapts),
@@ -129,34 +130,46 @@ struct WalkthroughPage: Sendable {
             plain: "Record runs and", accented: "lifts",
             detail: "Start today's session from Today, or anything else from Workout.",
             points: [
-                ("figure.run", "Runs: live pace, distance and heart rate, with audio coaching. Tap the big number to switch it."),
+                ("figure.run", "Runs: live pace, distance and heart rate, with voice coaching that lowers your music only while it speaks."),
+                ("figure.run.treadmill", "Treadmill runs, track mode, and a metronome to help with your cadence."),
                 ("trophy", "Racing? Choose Race: a new best updates your paces and plan."),
-                ("dumbbell", "Gym: sets, reps and weights, with a rest timer. Finish early if you're short on time."),
-                ("applewatch", "Apple Watch: run from your wrist and build your own watch screens in Settings."),
+                ("dumbbell", "Gym and Hyrox-style workouts: sets, reps and weights with a rest timer, or build and save your own."),
+                ("applewatch", "Apple Watch: run from your wrist with screens you design."),
             ],
             illustration: .record),
         WalkthroughPage(
             plain: "See your", accented: "progress",
             detail: "The Progress tab shows what your training is adding up to.",
             points: [
-                ("speedometer", "Your paces for every type of run, and race time predictions."),
-                ("trophy", "Best efforts over each running distance, and records for every lift."),
+                ("speedometer", "Your paces for every type of run, and weekly distance against the plan."),
                 ("chart.line.uptrend.xyaxis", "Each lift's working weight and estimated 1-rep max over time."),
+                ("shoeprints.fill", "Every run in detail: splits, heart-rate zones, cadence and stride length."),
+                ("square.and.arrow.up", "Share a run as a map, photo or details card, or send a workout to a friend: it fills in their own paces."),
             ],
             illustration: .progress),
+        WalkthroughPage(
+            plain: "Your", accented: "profile",
+            detail: "The Profile tab is all about you. Settings are behind the cog in the top corner.",
+            points: [
+                ("rosette", "Badges for milestones and streaks."),
+                ("trophy", "Race predictions, best efforts and lift records."),
+                ("function", "Tools: a pace calculator, split planner and treadmill converter."),
+                ("gearshape", "Tap the cog for Settings: goal, days, gym kit, coaching and connections."),
+            ],
+            illustration: .profile),
         WalkthroughPage(
             plain: "Connect your", accented: "apps",
             detail: "Optional, but they make Kinetix much smarter. Set them up in Settings.",
             points: [
                 ("heart.fill", "Apple Health: sleep, HRV and resting heart rate power your recovery score."),
-                ("applewatch", "Apple Watch: runs and gym sessions on your wrist, with screens you design."),
+                ("applewatch", "Apple Watch or Garmin: train from your wrist."),
                 ("arrow.triangle.2.circlepath", "Strava: send your runs and lifts there automatically."),
-                ("bell", "Notifications: a morning summary of the day, and rest timer alerts."),
+                ("bell", "Notifications: your day each morning, your results and new bests, and a heads-up when recovery is low. Never more than three a day."),
             ],
             illustration: .connect),
         WalkthroughPage(
             plain: "You're", accented: "all set",
-            detail: "Change your goal, days or gym kit any time in Settings, and your plan rebuilds around it.",
+            detail: "Change your goal, days, gym kit or strength focus any time in Profile → Settings, and your plan rebuilds around it.",
             points: [
                 ("questionmark.circle", "Watch this tour again in Settings → App tour."),
                 ("info.circle", "Tap any session to see what it's for and how to do it."),
@@ -164,7 +177,6 @@ struct WalkthroughPage: Sendable {
             illustration: .help),
     ]
 }
-
 private struct WalkthroughPageView: View {
     let page: WalkthroughPage
 
@@ -213,6 +225,7 @@ private struct WalkthroughIllustration: View {
             case .adapts: adapts
             case .record: record
             case .progress: progress
+            case .profile: profile
             case .connect: connect
             case .help: help
             }
@@ -327,6 +340,37 @@ private struct WalkthroughIllustration: View {
                 }
             }
             .frame(height: 130, alignment: .bottom)
+        }
+        .frame(maxWidth: 320)
+    }
+
+    private var profile: some View {
+        miniCard {
+            VStack(spacing: KXSpacing.md) {
+                HStack(spacing: KXSpacing.md) {
+                    Text("K")
+                        .font(KXFont.number(22))
+                        .foregroundStyle(KXColor.onAccent)
+                        .frame(width: 46, height: 46)
+                        .background(KXColor.accent, in: Circle())
+                    VStack(alignment: .leading, spacing: KXSpacing.xxs) {
+                        Text("HALF MARATHON").font(KXFont.overline).foregroundStyle(KXColor.inkSecondary)
+                        Text("Predicted 1:42:10").font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink)
+                    }
+                    Spacer()
+                    Image(systemName: "gearshape").foregroundStyle(KXColor.inkSecondary)
+                }
+                HStack(spacing: KXSpacing.md) {
+                    ForEach(["medal.fill", "flame.fill", "figure.run", "dumbbell.fill"], id: \.self) { symbol in
+                        Image(systemName: symbol)
+                            .font(.title3)
+                            .foregroundStyle(KXColor.accent)
+                            .frame(width: 44, height: 44)
+                            .background(KXColor.surfaceTint, in: Circle())
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity)
         }
         .frame(maxWidth: 320)
     }
