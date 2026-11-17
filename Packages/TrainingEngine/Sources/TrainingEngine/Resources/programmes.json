@@ -217,6 +217,7 @@
     "name": "Full body ×1",
     "suits": "Very busy weeks or running-focused plans.",
     "shown": true,
+    "focus": "balanced",
     "days": [
      {
       "name": "Full body",
@@ -255,6 +256,7 @@
     "name": "Full body ×2",
     "suits": "Most runners: two sessions that cover everything.",
     "shown": true,
+    "focus": "balanced",
     "days": [
      {
       "name": "Full body A",
@@ -325,6 +327,7 @@
     "name": "Full body ×3",
     "suits": "Balanced hybrid, newer lifters.",
     "shown": true,
+    "focus": "balanced",
     "days": [
      {
       "name": "Full body A",
@@ -429,6 +432,7 @@
     "name": "Upper / Lower",
     "suits": "Strength focus with 4 lifting days.",
     "shown": true,
+    "focus": "balanced",
     "days": [
      {
       "name": "Upper A",
@@ -537,6 +541,7 @@
     "name": "Push / Pull / Legs",
     "suits": "Muscle focus with 3 lifting days.",
     "shown": true,
+    "focus": "balanced",
     "days": [
      {
       "name": "Push",
@@ -634,6 +639,7 @@
     "name": "Push / Pull / Legs ×2",
     "suits": "Experienced lifters, muscle focus, light running.",
     "shown": true,
+    "focus": "balanced",
     "days": [
      {
       "name": "Push A",
@@ -827,6 +833,7 @@
     "name": "Upper / Lower / Full",
     "suits": "3 days, a bit more volume per muscle than full body.",
     "shown": true,
+    "focus": "balanced",
     "days": [
      {
       "name": "Upper",
@@ -914,6 +921,7 @@
     "name": "PPL + Upper / Lower",
     "suits": "5 lifting days, muscle focus.",
     "shown": true,
+    "focus": "balanced",
     "days": [
      {
       "name": "Push",
@@ -1059,6 +1067,7 @@
     "name": "PPL + Upper + Shoulders & arms",
     "suits": "5 lifting days, muscle focus.",
     "shown": true,
+    "focus": "balanced",
     "days": [
      {
       "name": "Push",
@@ -1385,6 +1394,7 @@
     "name": "Hyrox: stations ×2",
     "suits": "Hyrox: two station sessions covering all eight stations.",
     "shown": true,
+    "focus": "balanced",
     "days": [
      {
       "name": "Stations A",
@@ -1492,6 +1502,7 @@
     "name": "Hyrox: strength + stations",
     "suits": "Hyrox: two strength days and one station day.",
     "shown": true,
+    "focus": "balanced",
     "days": [
      {
       "name": "Strength A",
@@ -1637,6 +1648,7 @@
     "name": "Push / Pull / Legs / Upper",
     "suits": "4 lifting days, muscle focus: push, pull and legs, plus an upper day for extra chest, back and arms.",
     "shown": true,
+    "focus": "balanced",
     "days": [
      {
       "name": "Push",
@@ -1903,6 +1915,7 @@
     "name": "Runner strength ×1",
     "suits": "Runners: one short session of single-leg strength, calves and core to stay strong and injury-resistant.",
     "shown": true,
+    "focus": "balanced",
     "days": [
      {
       "name": "Runner strength",
@@ -1972,6 +1985,7 @@
     "name": "Runner strength ×2",
     "suits": "Runners: single-leg strength, hamstrings and calves, plus hip power. Short sessions that fit around running.",
     "shown": true,
+    "focus": "balanced",
     "days": [
      {
       "name": "Runner strength A",
@@ -2081,6 +2095,602 @@
         "repsLow": 8,
         "repsHigh": 10,
         "restSeconds": 45
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "code": "glutes2",
+    "name": "Glutes & legs ×2",
+    "suits": "Lower-body and glute focus, 2 gym days. Upper body and arms kept in every week.",
+    "shown": true,
+    "focus": "lowerBody",
+    "days": [
+     {
+      "name": "Full body A",
+      "focus": "fullBody",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "squat"
+       },
+       {
+        "role": "main",
+        "pattern": "hipThrust"
+       },
+       {
+        "role": "accessory",
+        "pattern": "horizontalPull"
+       },
+       {
+        "role": "accessory",
+        "pattern": "horizontalPush"
+       },
+       {
+        "role": "accessory",
+        "pattern": "abduction"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Dumbbell Curl"
+       }
+      ]
+     },
+     {
+      "name": "Full body B",
+      "focus": "fullBody",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "hingeAccessory"
+       },
+       {
+        "role": "main",
+        "pattern": "named",
+        "exerciseName": "Bulgarian Split Squat"
+       },
+       {
+        "role": "accessory",
+        "pattern": "verticalPull"
+       },
+       {
+        "role": "accessory",
+        "pattern": "verticalPush"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Leg Curl"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Overhead Triceps Extension"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "code": "glutes3",
+    "name": "Glutes & legs ×3",
+    "suits": "Lower-body and glute focus, 3 gym days: two lower days and an upper day with arms.",
+    "shown": true,
+    "focus": "lowerBody",
+    "days": [
+     {
+      "name": "Lower A",
+      "focus": "lower",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "squat"
+       },
+       {
+        "role": "main",
+        "pattern": "hipThrust"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Step-Up"
+       },
+       {
+        "role": "accessory",
+        "pattern": "abduction"
+       },
+       {
+        "role": "accessory",
+        "pattern": "calf"
+       }
+      ]
+     },
+     {
+      "name": "Upper",
+      "focus": "upper",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "horizontalPush"
+       },
+       {
+        "role": "main",
+        "pattern": "horizontalPull"
+       },
+       {
+        "role": "accessory",
+        "pattern": "verticalPull"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Dumbbell Curl"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Overhead Triceps Extension"
+       },
+       {
+        "role": "accessory",
+        "pattern": "core"
+       }
+      ]
+     },
+     {
+      "name": "Lower B",
+      "focus": "lower",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "hingeAccessory"
+       },
+       {
+        "role": "main",
+        "pattern": "named",
+        "exerciseName": "Bulgarian Split Squat"
+       },
+       {
+        "role": "accessory",
+        "pattern": "hipThrust"
+       },
+       {
+        "role": "accessory",
+        "pattern": "abduction"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Leg Curl"
+       },
+       {
+        "role": "accessory",
+        "pattern": "antiRotation"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "code": "glutes4",
+    "name": "Glutes & legs ×4",
+    "suits": "Lower-body and glute focus, 4 gym days.",
+    "shown": true,
+    "focus": "lowerBody",
+    "days": [
+     {
+      "name": "Lower A",
+      "focus": "lower",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "squat"
+       },
+       {
+        "role": "main",
+        "pattern": "hipThrust"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Step-Up"
+       },
+       {
+        "role": "accessory",
+        "pattern": "abduction"
+       },
+       {
+        "role": "accessory",
+        "pattern": "calf"
+       }
+      ]
+     },
+     {
+      "name": "Upper A",
+      "focus": "upper",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "horizontalPush"
+       },
+       {
+        "role": "main",
+        "pattern": "horizontalPull"
+       },
+       {
+        "role": "accessory",
+        "pattern": "verticalPush"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Dumbbell Curl"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Overhead Triceps Extension"
+       }
+      ]
+     },
+     {
+      "name": "Lower B",
+      "focus": "lower",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "hingeAccessory"
+       },
+       {
+        "role": "main",
+        "pattern": "named",
+        "exerciseName": "Bulgarian Split Squat"
+       },
+       {
+        "role": "accessory",
+        "pattern": "hipThrust"
+       },
+       {
+        "role": "accessory",
+        "pattern": "abduction"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Leg Curl"
+       },
+       {
+        "role": "accessory",
+        "pattern": "antiRotation"
+       }
+      ]
+     },
+     {
+      "name": "Upper B",
+      "focus": "upper",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "verticalPull"
+       },
+       {
+        "role": "main",
+        "pattern": "named",
+        "exerciseName": "Incline Dumbbell Press"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Dumbbell Lateral Raise"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Hammer Curl"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Triceps Pushdown"
+       },
+       {
+        "role": "accessory",
+        "pattern": "core"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "code": "upperArms2",
+    "name": "Upper & arms ×2",
+    "suits": "Upper body and arms focus, 2 gym days. Legs kept to what running needs.",
+    "shown": true,
+    "focus": "upperBody",
+    "days": [
+     {
+      "name": "Full body A",
+      "focus": "fullBody",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "horizontalPush"
+       },
+       {
+        "role": "main",
+        "pattern": "horizontalPull"
+       },
+       {
+        "role": "accessory",
+        "pattern": "squat"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Dumbbell Lateral Raise"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Dumbbell Curl"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Overhead Triceps Extension"
+       }
+      ]
+     },
+     {
+      "name": "Full body B",
+      "focus": "fullBody",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "verticalPush"
+       },
+       {
+        "role": "main",
+        "pattern": "verticalPull"
+       },
+       {
+        "role": "accessory",
+        "pattern": "hingeAccessory"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Hammer Curl"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Triceps Pushdown"
+       },
+       {
+        "role": "accessory",
+        "pattern": "core"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "code": "upperArms3",
+    "name": "Upper & arms ×3",
+    "suits": "Upper body and arms focus, 3 gym days: two upper days and a lower day.",
+    "shown": true,
+    "focus": "upperBody",
+    "days": [
+     {
+      "name": "Upper A",
+      "focus": "upper",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "horizontalPush"
+       },
+       {
+        "role": "main",
+        "pattern": "horizontalPull"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Dumbbell Lateral Raise"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Dumbbell Curl"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Overhead Triceps Extension"
+       }
+      ]
+     },
+     {
+      "name": "Lower",
+      "focus": "lower",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "squat"
+       },
+       {
+        "role": "accessory",
+        "pattern": "hingeAccessory"
+       },
+       {
+        "role": "accessory",
+        "pattern": "lunge"
+       },
+       {
+        "role": "accessory",
+        "pattern": "calf"
+       },
+       {
+        "role": "accessory",
+        "pattern": "core"
+       }
+      ]
+     },
+     {
+      "name": "Upper B",
+      "focus": "upper",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "verticalPush"
+       },
+       {
+        "role": "main",
+        "pattern": "verticalPull"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Incline Dumbbell Press"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Hammer Curl"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Triceps Pushdown"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "code": "upperArms4",
+    "name": "Upper & arms ×4",
+    "suits": "Upper body and arms focus, 4 gym days.",
+    "shown": true,
+    "focus": "upperBody",
+    "days": [
+     {
+      "name": "Upper A",
+      "focus": "upper",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "horizontalPush"
+       },
+       {
+        "role": "main",
+        "pattern": "horizontalPull"
+       },
+       {
+        "role": "accessory",
+        "pattern": "verticalPull"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Dumbbell Curl"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Overhead Triceps Extension"
+       }
+      ]
+     },
+     {
+      "name": "Lower",
+      "focus": "lower",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "squat"
+       },
+       {
+        "role": "main",
+        "pattern": "hingeAccessory"
+       },
+       {
+        "role": "accessory",
+        "pattern": "lunge"
+       },
+       {
+        "role": "accessory",
+        "pattern": "calf"
+       },
+       {
+        "role": "accessory",
+        "pattern": "core"
+       }
+      ]
+     },
+     {
+      "name": "Upper B",
+      "focus": "upper",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "named",
+        "exerciseName": "Incline Dumbbell Press"
+       },
+       {
+        "role": "main",
+        "pattern": "verticalPull"
+       },
+       {
+        "role": "accessory",
+        "pattern": "horizontalPull"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Hammer Curl"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Triceps Pushdown"
+       }
+      ]
+     },
+     {
+      "name": "Shoulders & arms",
+      "focus": "upper",
+      "slots": [
+       {
+        "role": "main",
+        "pattern": "verticalPush"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Dumbbell Lateral Raise"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Rear Delt Fly"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Dumbbell Curl"
+       },
+       {
+        "role": "accessory",
+        "pattern": "named",
+        "exerciseName": "Overhead Triceps Extension"
+       },
+       {
+        "role": "accessory",
+        "pattern": "antiRotation"
        }
       ]
      }

@@ -93,6 +93,9 @@ final class OnboardingModel {
     /// decides, as for profiles made before the question existed).
     var liftSessionsPerWeek = 2
     var splitCode: String?
+    /// Which splits the gym-week step shows: Balanced, Lower body & glutes or Upper body & arms
+    /// (follows the chosen split; not stored separately).
+    var strengthFocus: StrengthEmphasis = .balanced
     var gymWeekChosen = false
     var doubleSessionDays = 0
     var equipment: Equipment?
@@ -235,6 +238,7 @@ final class OnboardingModel {
         gymWeekChosen = profile.liftSessionsPerWeek != nil
         if let lifts = profile.liftSessionsPerWeek { liftSessionsPerWeek = lifts }
         splitCode = profile.splitCode
+        strengthFocus = profile.splitCode.flatMap { PlanService.templates.programmes.strength?.split($0)?.emphasis } ?? .balanced
         racedRecently = profile.racedRecently ?? false
         easyFirstWeek = profile.easyFirstWeek ?? true
         easyFirstWeekRequestedAt = profile.easyFirstWeekRequestedAt

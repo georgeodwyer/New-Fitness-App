@@ -53,13 +53,18 @@ SPLITS = {
     "push / pull / legs / upper": "pplUpper",
     "hyrox: stations ×2": "hyroxStations2", "hyrox: strength + stations": "hyroxHybrid3",
     "runner strength ×1": "runner1", "runner strength ×2": "runner2",
+    "glutes & legs ×2": "glutes2", "glutes & legs ×3": "glutes3", "glutes & legs ×4": "glutes4",
+    "upper & arms ×2": "upperArms2", "upper & arms ×3": "upperArms3", "upper & arms ×4": "upperArms4",
 }
+# Strength focus column → the app's focus (which splits show for Balanced / Lower / Upper).
+FOCUS = {"balanced": "balanced", "lower body & glutes": "lowerBody", "upper body & arms": "upperBody"}
 PATTERNS = {
     "any squat": "squat", "any hinge (deadlift)": "hinge", "any hinge accessory (rdl, bridge)": "hingeAccessory",
     "any lunge / split squat": "lunge", "any calf raise": "calf", "any horizontal push (bench, press-up)": "horizontalPush",
     "any vertical push (overhead press)": "verticalPush", "any horizontal pull (row)": "horizontalPull",
     "any vertical pull (pull-up, pulldown)": "verticalPull", "any arms": "arms", "any core": "core",
     "any anti-rotation core": "antiRotation", "any hyrox station": "station",
+    "any hip thrust (bridge)": "hipThrust", "any hip abduction": "abduction",
 }
 EXERCISES = ROOT / "Packages/TrainingEngine/Sources/TrainingEngine/Resources/exercises.json"
 PHASES = {"base": "base", "build": "build", "peak": "peak", "taper": "taper", "race week": "taper", "deload": None}
@@ -333,8 +338,12 @@ def strength(wb, fail):
         if not code:
             fail("Strength splits", row, f"unknown split '{v['Split']}'")
             continue
+        focus = FOCUS.get(str(v.get("Focus") or "Balanced").strip().lower())
+        if not focus:
+            fail("Strength splits", row, f"unknown focus '{v.get('Focus')}'")
+            continue
         splits[code] = {"code": code, "name": str(v["Split"]).strip(), "suits": (v.get("Who it suits") or "").strip(),
-                        "shown": str(v.get("Shown in onboarding?") or "Yes").strip().lower() != "no", "days": []}
+                        "shown": str(v.get("Shown in onboarding?") or "Yes").strip().lower() != "no", "focus": focus, "days": []}
     for row, v in rows(wb["Split days"]):
         code = SPLITS.get(str(v["Split"]).strip().lower())
         if code not in splits:

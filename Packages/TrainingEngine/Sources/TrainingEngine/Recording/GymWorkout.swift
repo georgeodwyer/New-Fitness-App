@@ -14,7 +14,7 @@ public enum MuscleGroup: String, Codable, CaseIterable, Sendable {
         case "verticalPush": self = .shoulders
         case "arms": self = .arms
         case "squat", "lunge", "calf": self = .legs
-        case "hinge", "hingeAccessory": self = .glutes
+        case "hinge", "hingeAccessory", "hipThrust", "abduction": self = .glutes
         case "core", "antiRotation": self = .core
         default: self = .fullBody
         }

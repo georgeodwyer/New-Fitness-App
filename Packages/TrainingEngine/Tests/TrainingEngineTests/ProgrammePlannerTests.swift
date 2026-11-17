@@ -170,11 +170,16 @@ final class ProgrammePlannerTests: XCTestCase {
 
     func testChosenGymSplit() {
         let strength = try! XCTUnwrap(TestSupport.bundledTemplates.programmes.strength)
-        XCTAssertEqual(Set(strength.offered(sessions: 2).map(\.code)), ["fullBody2", "upperLower", "hyroxStations2", "runner2"])
-        XCTAssertTrue(strength.offered(sessions: 1).map(\.code).contains("runner1"))
-        XCTAssertEqual(Set(strength.offered(sessions: 3).map(\.code)), ["fullBody3", "ppl", "upperLowerFull", "hyroxHybrid3"])
-        XCTAssertEqual(strength.offered(sessions: 6).map(\.code), ["ppl6"])
-        XCTAssertEqual(Set(strength.offered(sessions: 4).map(\.code)), ["upperLower", "pplUpper"])
+        XCTAssertEqual(Set(strength.offered(sessions: 2, focus: .balanced).map(\.code)), ["fullBody2", "upperLower", "hyroxStations2", "runner2"])
+        XCTAssertTrue(strength.offered(sessions: 1, focus: .balanced).map(\.code).contains("runner1"))
+        XCTAssertEqual(Set(strength.offered(sessions: 3, focus: .balanced).map(\.code)), ["fullBody3", "ppl", "upperLowerFull", "hyroxHybrid3"])
+        XCTAssertEqual(strength.offered(sessions: 6, focus: .balanced).map(\.code), ["ppl6"])
+        XCTAssertEqual(Set(strength.offered(sessions: 4, focus: .balanced).map(\.code)), ["upperLower", "pplUpper"])
+        // Focus splits: 2–4 sessions each, and only with their focus.
+        XCTAssertEqual(strength.offered(sessions: 3, focus: .lowerBody).map(\.code), ["glutes3"])
+        XCTAssertEqual(strength.offered(sessions: 2, focus: .upperBody).map(\.code), ["upperArms2"])
+        XCTAssertEqual(strength.sessionCounts(for: .lowerBody), [2, 3, 4])
+        XCTAssertEqual(Set(strength.offered(sessions: 4).map(\.code)), ["upperLower", "pplUpper", "glutes4", "upperArms4"])
         XCTAssertEqual(strength.split("pplUpper")?.days.map(\.name), ["Push", "Pull", "Legs", "Upper"])
         let muscle = try! XCTUnwrap(TestSupport.bundledTemplates.programmes.settings(for: .buildMuscle))
         XCTAssertTrue(muscle.suggests("ppl"))

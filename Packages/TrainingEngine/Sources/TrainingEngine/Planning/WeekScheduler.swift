@@ -412,7 +412,7 @@ extension StrengthSessionTemplate {
         case "verticalPush": return [.shoulders, .triceps]
         case "horizontalPull", "verticalPull": return [.back, .biceps]
         case "arms": return [.biceps, .triceps]
-        case "squat", "lunge", "hinge", "hingeAccessory", "calf": return [.legs]
+        case "squat", "lunge", "hinge", "hingeAccessory", "calf", "hipThrust", "abduction": return [.legs]
         case "core", "antiRotation": return []
         default: break
         }

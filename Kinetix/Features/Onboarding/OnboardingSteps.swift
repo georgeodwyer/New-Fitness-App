@@ -440,7 +440,7 @@ struct GymWeekStep: View {
     private var settings: GoalSettings? { model.goal.flatMap { PlanService.templates.programmes.settings(for: $0) } }
     private var suggested: String? { settings?.defaultSplit }
     private func isSuggested(_ code: String) -> Bool { settings?.suggests(code) ?? false }
-    private var offered: [WorkbookSplit] { strength?.offered(sessions: model.liftSessionsPerWeek) ?? [] }
+    private var offered: [WorkbookSplit] { strength?.offered(sessions: model.liftSessionsPerWeek, focus: model.strengthFocus) ?? [] }
 
     var body: some View {
         OnboardingQuestion(plain: "Your gym", accented: "week",
@@ -461,6 +461,22 @@ struct GymWeekStep: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .kxCard(.tinted)
         } else {
+            VStack(alignment: .leading, spacing: KXSpacing.sm) {
+                KXOverline("Strength focus")
+                Picker("Strength focus", selection: Binding(get: { model.strengthFocus }, set: { changeFocus(to: $0) })) {
+                    ForEach(StrengthEmphasis.allCases) { Text($0.shortName).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .accessibilityIdentifier("onboarding.strengthFocus")
+                Text(focusDetail).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            if offered.isEmpty, let counts = strength?.sessionCounts(for: model.strengthFocus), !counts.isEmpty {
+                Text("\(model.strengthFocus.displayName) splits are for \(counts.map(String.init).joined(separator: ", ")) gym sessions a week. Change the number above, or pick another focus.")
+                    .font(KXFont.callout).foregroundStyle(KXColor.ink)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .kxCard(.tinted)
+            }
             VStack(spacing: KXSpacing.md) {
                 ForEach(offered) { split in
                     KXOptionCard(title: isSuggested(split.code) ? "\(split.name) · Suggested" : split.name,
@@ -486,6 +502,24 @@ struct GymWeekStep: View {
                 pickSplitIfNeeded()
             }
             .onChange(of: model.liftSessionsPerWeek) { pickSplitIfNeeded() }
+    }
+
+    private var focusDetail: String {
+        switch model.strengthFocus {
+        case .balanced: return "Even work for the whole body."
+        case .lowerBody: return "More legs and glutes (hip thrusts, split squats, abduction), with upper body and arms every week. For 2–4 gym sessions."
+        case .upperBody: return "More chest, back, shoulders and arms, with the leg work running needs. For 2–4 gym sessions."
+        }
+    }
+
+    /// A focus with no split for this many sessions moves to the nearest number it has.
+    private func changeFocus(to focus: StrengthEmphasis) {
+        model.strengthFocus = focus
+        if let counts = strength?.sessionCounts(for: focus), !counts.isEmpty, !counts.contains(model.liftSessionsPerWeek) {
+            model.liftSessionsPerWeek = counts.min { abs($0 - model.liftSessionsPerWeek) < abs($1 - model.liftSessionsPerWeek) } ?? counts[0]
+        }
+        model.splitCode = nil
+        pickSplitIfNeeded()
     }
 
     /// e.g. "Push · Pull · Legs" (the days used for this many sessions).

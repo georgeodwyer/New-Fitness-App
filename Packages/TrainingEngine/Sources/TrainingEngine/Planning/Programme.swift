@@ -284,9 +284,40 @@ public struct WorkbookStrength: Codable, Equatable, Sendable {
     public func split(_ code: String) -> WorkbookSplit? { splits.first { $0.code == code } }
 
     /// The splits to offer for a number of gym sessions a week: those with that many days,
-    /// plus Upper / Lower (its first upper and lower days) for two.
-    public func offered(sessions: Int) -> [WorkbookSplit] {
-        splits.filter { $0.shown && ($0.days.count == sessions || ($0.code == "upperLower" && sessions == 2)) }
+    /// plus Upper / Lower (its first upper and lower days) for two. With a focus, only that
+    /// focus's splits.
+    public func offered(sessions: Int, focus: StrengthEmphasis? = nil) -> [WorkbookSplit] {
+        splits.filter {
+            $0.shown && ($0.days.count == sessions || ($0.code == "upperLower" && sessions == 2))
+                && (focus == nil || $0.emphasis == focus)
+        }
+    }
+
+    /// The numbers of gym sessions a focus has splits for (e.g. 2–4 for Lower body & glutes).
+    public func sessionCounts(for focus: StrengthEmphasis) -> [Int] {
+        Array(Set(splits.filter { $0.shown && $0.emphasis == focus }.map(\.days.count))).sorted()
+    }
+}
+
+/// What a gym split concentrates on. Anyone can pick any of them.
+public enum StrengthEmphasis: String, Codable, CaseIterable, Sendable, Identifiable {
+    case balanced, lowerBody, upperBody
+    public var id: String { rawValue }
+
+    public var displayName: String {
+        switch self {
+        case .balanced: return "Balanced"
+        case .lowerBody: return "Lower body & glutes"
+        case .upperBody: return "Upper body & arms"
+        }
+    }
+
+    public var shortName: String {
+        switch self {
+        case .balanced: return "Balanced"
+        case .lowerBody: return "Lower & glutes"
+        case .upperBody: return "Upper & arms"
+        }
     }
 }
 
@@ -295,6 +326,9 @@ public struct WorkbookSplit: Codable, Equatable, Sendable, Identifiable {
     public var name: String
     public var suits: String
     public var shown: Bool
+    /// From the workbook's Focus column (nil in older data = balanced).
+    public var focus: StrengthEmphasis? = nil
     public var days: [StrengthSessionTemplate]
     public var id: String { code }
+    public var emphasis: StrengthEmphasis { focus ?? .balanced }
 }

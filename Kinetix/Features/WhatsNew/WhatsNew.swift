@@ -18,6 +18,10 @@ enum WhatsNew {
     }
 
     static let releases: [Release] = [
+        Release(id: "2026-11-strength-focus-1", title: "What's new", items: [
+            Item(symbol: "figure.strengthtraining.traditional", title: "Choose a strength focus",
+                 detail: "Balanced, Lower body & glutes, or Upper body & arms. Pick it with your gym split in Settings, Training profile. Every focus keeps arm work in your week.")
+        ]),
         Release(id: "2026-11-share-cadence-1", title: "What's new", items: [
             Item(symbol: "square.and.arrow.up", title: "Share runs with friends",
                  detail: "Open one of your workouts and tap Share. Your friend gets the same session with paces set from their own training zones, and can change any step."),
