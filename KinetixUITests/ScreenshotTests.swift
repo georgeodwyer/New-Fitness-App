@@ -178,8 +178,10 @@ final class ScreenshotTests: XCTestCase {
             app.swipeDown(); app.swipeDown()
         }
 
-        app.tabBars.buttons["Settings"].tap()
-        snap("25-settings")
+        app.tabBars.buttons["Profile"].tap()
+        snap("25-profile")
+        app.buttons["profile.settings"].firstMatch.tap()
+        snap("25a-settings")
         if app.buttons["settings.coaching"].firstMatch.waitForExistence(timeout: 3) {
             app.buttons["settings.coaching"].firstMatch.tap()
             snap("25b-audio-coaching")

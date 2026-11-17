@@ -11,7 +11,6 @@ struct RunningProgressView: View {
     @Query(sort: \PlannedSessionModel.date) private var sessions: [PlannedSessionModel]
     @Query(filter: #Predicate<UserProfileModel> { $0.deletedAt == nil }) private var profiles: [UserProfileModel]
     @State private var filter: RunFilter = .all
-    @State private var bests: [BestEffortRow] = []
 
     private var format: DisplayFormat { DisplayFormat(units: units) }
 
@@ -36,14 +35,6 @@ struct RunningProgressView: View {
         }
     }
 
-    struct BestEffortRow: Identifiable, Equatable {
-        let distance: BestEffortDistance
-        let seconds: Double
-        let runId: UUID
-        let date: Date
-        var id: Double { distance.meters }
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: KXSpacing.xl) {
             if let profile = profiles.first?.profile {
@@ -53,10 +44,9 @@ struct RunningProgressView: View {
             WeeklyBarChart(title: "Weekly distance", weeks: weeklyDistance, unitLabel: Units.distanceUnitLabel(units),
                            seriesName: "Run", color: KXColor.run, valueFormatter: { format.distance($0) },
                            scale: { Units.distance(meters: $0, in: units) })
-            bestEffortsCard
+            BestEffortsCard(units: units)
             historyCard
         }
-        .task(id: counted.count) { bests = computeBests() }
     }
 
     // MARK: Totals
@@ -93,51 +83,6 @@ struct RunningProgressView: View {
         }
         return TrainingHistory.weekly(counted.map { (date: $0.startedAt, value: $0.distanceMeters) }, weeks: 12, today: .now,
                                       calendar: calendar, planned: planned.filter { $0.value > 0 })
-    }
-
-    // MARK: Best efforts
-
-    private func computeBests() -> [BestEffortRow] {
-        var best: [BestEffortDistance: BestEffortRow] = [:]
-        // Strava's summary map has no timestamps, so imported runs can't give best efforts.
-        for run in counted where run.distanceMeters >= BestEffortDistance.oneKilometre.meters && !run.isImportedFromStrava {
-            for (distance, seconds) in RunAnalysis.bestEfforts(route: run.route)
-            where best[distance].map({ seconds < $0.seconds }) ?? true {
-                best[distance] = BestEffortRow(distance: distance, seconds: seconds, runId: run.id, date: run.startedAt)
-            }
-        }
-        return BestEffortDistance.allCases.compactMap { best[$0] }
-    }
-
-    private var bestEffortsCard: some View {
-        VStack(alignment: .leading, spacing: KXSpacing.md) {
-            KXSectionHeader("Best efforts", subtitle: "Your fastest time over each distance, from any run")
-            if bests.isEmpty {
-                KXEmptyState(symbol: "stopwatch", title: "No best efforts yet",
-                             message: "Run at least 1 km with GPS and your fastest times show up here.")
-            }
-            ForEach(bests) { row in
-                NavigationLink {
-                    if let run = finished.first(where: { $0.id == row.runId }) { RunDetailView(log: run, units: units) }
-                } label: {
-                    HStack {
-                        Image(systemName: "medal.fill").foregroundStyle(KXColor.warning).accessibilityHidden(true)
-                        Text(row.distance.displayName).font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink)
-                        Spacer()
-                        VStack(alignment: .trailing, spacing: 0) {
-                            Text(Units.formatMinutesSeconds(row.seconds)).font(KXFont.bodyEmphasis.monospacedDigit()).foregroundStyle(KXColor.ink)
-                            Text("\(format.pace(Pace(secondsPerKm: row.seconds / row.distance.meters * 1000))) · \(row.date.formatted(.dateTime.day().month().year()))")
-                                .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
-                        }
-                        Image(systemName: "chevron.right").font(KXFont.caption).foregroundStyle(KXColor.inkTertiary).accessibilityHidden(true)
-                    }
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityElement(children: .combine)
-            }
-        }
-        .kxCard()
     }
 
     // MARK: History

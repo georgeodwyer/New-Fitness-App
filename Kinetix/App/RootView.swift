@@ -82,7 +82,7 @@ struct RootView: View {
                 case "plan": router.selectedTab = .plan
                 case "record": router.selectedTab = .record
                 case "progress": router.selectedTab = .progress
-                case "settings": router.selectedTab = .settings
+                case "settings", "profile": router.selectedTab = .settings
                 default: router.selectedTab = .today
                 }
             }
@@ -168,9 +168,9 @@ struct MainTabView: View {
                 .safeAreaInset(edge: .bottom) { MiniWorkoutBar() }
                 .tabItem { Label("Progress", systemImage: "chart.bar") }
                 .tag(AppRouter.Tab.progress)
-            SettingsView()
+            ProfileView()
                 .safeAreaInset(edge: .bottom) { MiniWorkoutBar() }
-                .tabItem { Label("Settings", systemImage: "gearshape") }
+                .tabItem { Label("Profile", systemImage: "person.crop.circle") }
                 .tag(AppRouter.Tab.settings)
         }
         // Below-par recovery: reduce today's session or keep it as planned?
