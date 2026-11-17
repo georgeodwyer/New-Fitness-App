@@ -97,6 +97,7 @@
 		7ACA70325602396261B857E8 /* AccountService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27D5D1CA3AE70EB8EF9D18FD /* AccountService.swift */; };
 		7C7C3B1A994523C342761A39 /* LogModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08A053F7F4B39B04FED73E26 /* LogModels.swift */; };
 		7CA88CFE8439E3F9F876A122 /* WatchStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4279740084F6D852D0D6FA4 /* WatchStore.swift */; };
+		7F4BE93BDAD0DEA367F2C076 /* SharedWorkoutFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1F6A3AF8CAC48C2E5E27BB3 /* SharedWorkoutFile.swift */; };
 		7F6C3F91173E450852BB2B7C /* WorkoutEditService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E84B289743F4727A53D8FF5 /* WorkoutEditService.swift */; };
 		88465AEC1E20712F14D487A7 /* AchievementsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F46190B293DDB860E13E1D8 /* AchievementsCard.swift */; };
 		8B54A4325A9E7F601F01144F /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D0A8758A0E38811D70F3371 /* HomeView.swift */; };
@@ -413,6 +414,7 @@
 		B0FD71C9E3D791207D7F472E /* FunctionalEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FunctionalEditorView.swift; sourceTree = "<group>"; };
 		B1038EB67DEE18F975258A44 /* YourPacesCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YourPacesCard.swift; sourceTree = "<group>"; };
 		B16CC86849C40BB16FD55693 /* WorkoutBuilderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutBuilderView.swift; sourceTree = "<group>"; };
+		B1F6A3AF8CAC48C2E5E27BB3 /* SharedWorkoutFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedWorkoutFile.swift; sourceTree = "<group>"; };
 		B20939AE5B582C11C6898982 /* KXSessionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXSessionCard.swift; sourceTree = "<group>"; };
 		B47FF206A078EFBF0D55363B /* WorkoutShareCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutShareCard.swift; sourceTree = "<group>"; };
 		B488A5C64C09276C346F5B82 /* RunWorkoutModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunWorkoutModel.swift; sourceTree = "<group>"; };
@@ -539,6 +541,14 @@
 				9F46190B293DDB860E13E1D8 /* AchievementsCard.swift */,
 			);
 			path = Achievements;
+			sourceTree = "<group>";
+		};
+		0E036407AAC59B7B58B2E816 /* Sharing */ = {
+			isa = PBXGroup;
+			children = (
+				B1F6A3AF8CAC48C2E5E27BB3 /* SharedWorkoutFile.swift */,
+			);
+			path = Sharing;
 			sourceTree = "<group>";
 		};
 		10B7D0DAD1B0D22522E1DF83 /* Onboarding */ = {
@@ -785,6 +795,7 @@
 				3528D4A7E6EEADE70767D2FA /* Settings */,
 				36DD1705EA0C4180192DB459 /* Share */,
 				C814304C226E4BD2F4A218EF /* Shared */,
+				0E036407AAC59B7B58B2E816 /* Sharing */,
 				3486AD757FA77E95F7EF7C45 /* Strength */,
 				506B48D8CD7A4A45BA01353B /* Walkthrough */,
 				03E8AE46F6BC5060D2F66701 /* WhatsNew */,
@@ -1319,6 +1330,7 @@
 				0F03C57E92D8F046002B9B45 /* ShareCards.swift in Sources */,
 				BD94D0B027551866392B9A74 /* ShareService.swift in Sources */,
 				D39A8D1E0A1E8B229D26C427 /* ShareSessionView.swift in Sources */,
+				7F4BE93BDAD0DEA367F2C076 /* SharedWorkoutFile.swift in Sources */,
 				63E3B789A3726B06318F6FB0 /* StrainCards.swift in Sources */,
 				F6ADC107991EEC039CDD60EA /* StrainService.swift in Sources */,
 				4100D39BFB207D3BA79C1236 /* StravaService.swift in Sources */,
