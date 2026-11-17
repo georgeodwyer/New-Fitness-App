@@ -515,6 +515,14 @@ struct RecoveryBreakdownSection: View {
 
     private var sorted: [RecoveryScore.Part] { recovery.parts.sorted { $0.share > $1.share } }
 
+    /// Check-in only (no watch readings) has its own rules.
+    private var explanation: String {
+        if recovery.parts.contains(where: { $0.name == "Energy" }) {
+            return "From your check-in: sleep and energy 35% each, soreness 30% (legs 20%, upper body 10%). Sleep and energy: 3 shows as 72, a normal day. Not sore shows as 80, a normal good day rather than a bonus. A 2 on sleep or energy caps the score at 65 (both at 58), and the worst answer on anything caps it at 55, so a rough day always shows."
+        }
+        return "Each reading is compared with your usual and scored 0–100: a normal day for you is about 72, better than usual 85+, and 90+ means clearly better on that reading. The total is the readings weighted HRV 37.5%, resting heart rate 21%, sleep 17% and your check-in 25%; a missing reading is left out and the others share its weight. \"Your usual\" is the middle of your last 30 days."
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: KXSpacing.lg) {
             HStack(alignment: .firstTextBaseline, spacing: KXSpacing.sm) {
@@ -525,7 +533,7 @@ struct RecoveryBreakdownSection: View {
             ForEach(sorted, id: \.name) { part in
                 row(part)
             }
-            Text("Each reading is compared with your usual and scored 0–100: a normal day for you is about 72, better than usual 85+, and 90+ means clearly better on that reading. The total is the readings weighted HRV 37.5%, resting heart rate 21%, sleep 17% and your check-in 25%; a missing reading is left out and the others share its weight. \"Your usual\" is the middle of your last 30 days.")
+            Text(explanation)
                 .font(KXFont.caption)
                 .foregroundStyle(KXColor.inkTertiary)
                 .fixedSize(horizontal: false, vertical: true)

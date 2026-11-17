@@ -82,6 +82,21 @@ final class StrainTests: XCTestCase {
         XCTAssertTrue(tired.reason.contains("15% less"))
     }
 
+    func testFreshButTiredIsNotAGoodDay() throws {
+        // Sleep 3, energy 2, not sore: used to show 76; now the 2 on energy caps it at 65.
+        let tired = try XCTUnwrap(RecoveryScore.make(hrv: nil, restingHeartRate: nil, sleepHours: nil,
+                                                     checkIn: RecoveryCheckIn(sleep: 3, soreness: 1, energy: 2, legSoreness: 1)))
+        XCTAssertEqual(tired.score, 65)
+        XCTAssertEqual(tired.targetEffect, .lower)
+        XCTAssertEqual(tired.parts.reduce(0) { $0 + $1.points }, tired.score, accuracy: 0.5)
+        let bothTwos = try XCTUnwrap(RecoveryScore.make(hrv: nil, restingHeartRate: nil, sleepHours: nil,
+                                                        checkIn: RecoveryCheckIn(sleep: 2, soreness: 1, energy: 2, legSoreness: 1)))
+        XCTAssertEqual(bothTwos.score, 58)
+        let good = try XCTUnwrap(RecoveryScore.make(hrv: nil, restingHeartRate: nil, sleepHours: nil,
+                                                    checkIn: RecoveryCheckIn(sleep: 4, soreness: 1, energy: 4, legSoreness: 1)))
+        XCTAssertEqual(good.score, 85)
+    }
+
     func testCheckInOnlyRecovery() throws {
         // Legs count more than upper body: very sore legs pull it down further.
         let soreLegs = try XCTUnwrap(RecoveryScore.make(hrv: nil, restingHeartRate: nil, sleepHours: nil,
@@ -93,7 +108,7 @@ final class StrainTests: XCTestCase {
         // A great day, and one worst answer caps it.
         let great = try XCTUnwrap(RecoveryScore.make(hrv: nil, restingHeartRate: nil, sleepHours: nil,
                                                      checkIn: RecoveryCheckIn(sleep: 5, soreness: 1, energy: 5, legSoreness: 1)))
-        XCTAssertEqual(great.score, 98)
+        XCTAssertEqual(great.score, 93, "Not sore is a normal good day, not a bonus")
         let wrecked = try XCTUnwrap(RecoveryScore.make(hrv: nil, restingHeartRate: nil, sleepHours: nil,
                                                        checkIn: RecoveryCheckIn(sleep: 5, soreness: 1, energy: 5, legSoreness: 5)))
         XCTAssertEqual(wrecked.score, 55, "Very sore legs cap it")
@@ -104,8 +119,8 @@ final class StrainTests: XCTestCase {
         // Sleep hours from Health share the sleep weight with the rating.
         let withHours = try XCTUnwrap(RecoveryScore.make(hrv: nil, restingHeartRate: nil, sleepHours: 7, usualSleepHours: 7,
                                                          checkIn: RecoveryCheckIn(sleep: 3, soreness: 3, energy: 3, legSoreness: 3)))
-        XCTAssertEqual(withHours.score, 72)
-        XCTAssertEqual(withHours.parts.first { $0.name == "Sleep" }?.share ?? 0, 0.15, accuracy: 0.001)
+        XCTAssertEqual(withHours.score, 70)
+        XCTAssertEqual(withHours.parts.first { $0.name == "Sleep" }?.share ?? 0, 0.175, accuracy: 0.001)
     }
 
     func testRecovery() {
@@ -121,8 +136,7 @@ final class StrainTests: XCTestCase {
         XCTAssertEqual(poor?.targetEffect, .lower)
         // Check-in alone still gives a score.
         let checkInOnly = RecoveryScore.make(hrv: nil, restingHeartRate: nil, sleepHours: nil, checkIn: RecoveryCheckIn(sleep: 3, soreness: 3, energy: 3))
-        XCTAssertEqual(checkInOnly?.score, 72, "A normal day shows as 72")
-        XCTAssertEqual(checkInOnly?.vsUsual, 50)
+        XCTAssertEqual(checkInOnly?.score, 70, "All 3s (a bit sore) shows as 70")
         XCTAssertEqual(checkInOnly?.targetEffect, .normal)
         XCTAssertEqual(checkInOnly?.parts.map(\.name), ["Sleep rating", "Energy", "Soreness"])
         XCTAssertEqual(checkInOnly?.parts.reduce(0) { $0 + $1.share } ?? 0, 1, accuracy: 0.001)

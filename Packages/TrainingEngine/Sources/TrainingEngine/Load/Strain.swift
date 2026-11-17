@@ -342,20 +342,30 @@ public struct RecoveryScore: Equatable, Sendable {
     }
 
     /// Without a watch (no HRV or resting heart rate), recovery comes from the check-in:
-    /// sleep 30%, energy 30%, legs 25%, upper body 15% (soreness 40% on older check-ins with
-    /// one soreness answer). With sleep from Apple Health, it shares the sleep 30% with the
-    /// rating. Each rating: 3 shows as 72 (a normal day), 5 about 98, 1 about 20. The worst
-    /// answer on anything (very sore legs, no energy…) caps the score at 55, two at 45, so a
-    /// bad day always shows.
-    static let checkInWeights = (sleep: 0.30, energy: 0.30, legs: 0.25, upperBody: 0.15)
+    /// sleep 35%, energy 35%, legs 20%, upper body 10% (soreness 30% on older check-ins with
+    /// one soreness answer). With sleep from Apple Health, it shares the sleep 35% with the
+    /// rating. Sleep and energy: 3 shows as 72 (a normal day), 5 about 98, 1 about 20.
+    /// Soreness: not sore is a normal good day (80), not a bonus — most days aren't sore — then
+    /// 75, 65, 45 and 20 for very sore. Caps, so a bad day always shows: the worst answer on
+    /// anything (very sore, no energy…) caps the score at 55, two at 45; a 2 on sleep or energy
+    /// caps it at 65, two 2s at 58.
+    static let checkInWeights = (sleep: 0.35, energy: 0.35, legs: 0.20, upperBody: 0.10)
+
+    /// Soreness 1 (not sore) … 5 (very sore) as shown.
+    static let sorenessShown: [Double] = [80, 75, 65, 45, 20]
 
     static func checkInOnly(_ checkIn: RecoveryCheckIn, sleepHours: Double?, usualSleepHours: Double?) -> RecoveryScore {
         var parts: [(Part, Double)] = []
-        func add(_ name: String, rating: Int, best: Int, detail: String, weight: Double) {
-            // Rating 1–5 (or 5–1 for soreness) → 0–100 against a normal day (3 = 50).
-            let value = Double(best == 5 ? rating - 1 : 5 - rating) * 25
+        func add(_ name: String, rating: Int, detail: String, weight: Double) {
+            // Rating 1–5 → 0–100 against a normal day (3 = 50).
+            let value = Double(rating - 1) * 25
             parts.append((Part(name: name, score: shown(vsUsual: value), vsUsual: value, detail: detail,
                                rule: "Your check-in: 3 shows as 72, 5 about 98, 1 about 20."), weight))
+        }
+        func addSoreness(_ name: String, rating: Int, weight: Double) {
+            let score = sorenessShown[min(max(rating, 1), 5) - 1]
+            parts.append((Part(name: name, score: score, vsUsual: vsUsual(fromShown: score), detail: "\(6 - rating)/5",
+                               rule: "Not sore shows as 80 (a normal good day), a little sore 75, then 65, 45 and 20 for very sore."), weight))
         }
         let w = checkInWeights
         if let sleepHours, sleepHours > 0 {
@@ -364,21 +374,20 @@ public struct RecoveryScore: Equatable, Sendable {
             parts.append((Part(name: "Sleep", score: shown(vsUsual: value), vsUsual: value,
                                detail: HealthMetric.sleep.format(sleepHours) + " asleep",
                                rule: "Hours asleep from Apple Health against your need: an hour less shows about 50."), w.sleep / 2))
-            add("Sleep rating", rating: checkIn.sleep, best: 5, detail: "\(checkIn.sleep)/5", weight: w.sleep / 2)
+            add("Sleep rating", rating: checkIn.sleep, detail: "\(checkIn.sleep)/5", weight: w.sleep / 2)
         } else {
-            add("Sleep rating", rating: checkIn.sleep, best: 5, detail: "\(checkIn.sleep)/5", weight: w.sleep)
+            add("Sleep rating", rating: checkIn.sleep, detail: "\(checkIn.sleep)/5", weight: w.sleep)
         }
-        add("Energy", rating: checkIn.energy, best: 5, detail: "\(checkIn.energy)/5", weight: w.energy)
+        add("Energy", rating: checkIn.energy, detail: "\(checkIn.energy)/5", weight: w.energy)
         if let legs = checkIn.legSoreness {
-            add("Legs", rating: legs, best: 1, detail: "\(6 - legs)/5", weight: w.legs)
-            add("Upper body", rating: checkIn.soreness, best: 1, detail: "\(6 - checkIn.soreness)/5", weight: w.upperBody)
+            addSoreness("Legs", rating: legs, weight: w.legs)
+            addSoreness("Upper body", rating: checkIn.soreness, weight: w.upperBody)
         } else {
-            add("Soreness", rating: checkIn.soreness, best: 1, detail: "\(6 - checkIn.soreness)/5", weight: w.legs + w.upperBody)
+            addSoreness("Soreness", rating: checkIn.soreness, weight: w.legs + w.upperBody)
         }
         let totalWeight = parts.reduce(0) { $0 + $1.1 }
         var score = parts.reduce(0) { $0 + $1.0.score * $1.1 } / totalWeight
-        let worst = [checkIn.sleep == 1, checkIn.energy == 1, checkIn.legSoreness == 5, checkIn.soreness == 5].filter { $0 }.count
-        let cap: Double? = worst >= 2 ? 45 : (worst == 1 ? 55 : nil)
+        let cap = checkInCap(checkIn)
         let scale = cap.map { min(1, $0 / max(score, 1)) } ?? 1
         if let cap { score = min(score, cap) }
         let shownScore = score.rounded()
@@ -389,6 +398,15 @@ public struct RecoveryScore: Equatable, Sendable {
             part.score *= scale
             return part
         }, vsUsual: vsUsual(fromShown: shownScore))
+    }
+
+    /// The most a check-in can score: a worst answer caps it at 55 (two at 45); a 2 on sleep or
+    /// energy at 65 (two 2s at 58). nil = no cap.
+    static func checkInCap(_ checkIn: RecoveryCheckIn) -> Double? {
+        let worst = [checkIn.sleep == 1, checkIn.energy == 1, checkIn.legSoreness == 5, checkIn.soreness == 5].filter { $0 }.count
+        let twos = [checkIn.sleep == 2, checkIn.energy == 2].filter { $0 }.count
+        let caps = [worst >= 2 ? 45 : nil, worst == 1 ? 55 : nil, twos >= 2 ? 58 : nil, twos == 1 ? 65 : nil].compactMap { $0 }
+        return caps.min().map(Double.init)
     }
 
     /// Sleep is scored against their need: their usual sleep, kept between 7 and 9 hours.
@@ -438,11 +456,12 @@ public struct RecoveryScore: Equatable, Sendable {
             }
         }
         if let checkIn {
-            add("Your score", vsUsual: checkIn.readiness * 100,
+            // Scored as on its own (no watch), so "not sore" is a normal day here too.
+            add("Your score", vsUsual: checkInOnly(checkIn, sleepHours: nil, usualSleepHours: nil).vsUsual,
                 detail: checkIn.legSoreness.map {
                     "Sleep \(checkIn.sleep)/5 · legs \($0)/5 · upper body \(checkIn.soreness)/5 · energy \(checkIn.energy)/5"
                 } ?? "Sleep \(checkIn.sleep)/5 · soreness \(checkIn.soreness)/5 · energy \(checkIn.energy)/5",
-                rule: "Your sleep, soreness and energy ratings: all 3s show as 72.", weight: weights.checkIn)
+                rule: "Your check-in, scored as it would be without a watch: sleep and energy 35% each, soreness 30%.", weight: weights.checkIn)
         }
         guard !parts.isEmpty else { return nil }
         let totalWeight = parts.reduce(0) { $0 + $1.1 }
