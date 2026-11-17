@@ -18,6 +18,12 @@ enum WhatsNew {
     }
 
     static let releases: [Release] = [
+        Release(id: "2026-11-share-cadence-1", title: "What's new", items: [
+            Item(symbol: "square.and.arrow.up", title: "Share runs with friends",
+                 detail: "Open one of your workouts and tap Share. Your friend gets the same session with paces set from their own training zones, and can change any step."),
+            Item(symbol: "shoeprints.fill", title: "Cadence and stride length",
+                 detail: "Your steps per minute and stride length on every run, with a chart and each km or mile.")
+        ]),
         Release(id: "2026-11-checkin-score-1", title: "What's new", items: [
             Item(symbol: "gauge.with.dots.needle.33percent", title: "A fairer check-in score",
                  detail: "Sleep and energy now count for more, and not being sore counts as a normal day rather than a bonus. A 2 on sleep or energy keeps the score at 65 or below, so a tired day shows.")

@@ -59,6 +59,12 @@ struct RunSetupView: View {
         .background(KXColor.background.ignoresSafeArea())
         .navigationTitle(template == nil ? "New run" : workout.name)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            // Send the structure to a friend; their own paces fill in when they open it.
+            if !workout.blocks.isEmpty, let zones {
+                ToolbarItem(placement: .primaryAction) { ShareWorkoutButton(workout: workout, zones: zones) }
+            }
+        }
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: KXSpacing.sm) {
                 Button {

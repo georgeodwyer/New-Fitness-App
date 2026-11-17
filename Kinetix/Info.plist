@@ -10,6 +10,21 @@
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
 	<string>Kinetix</string>
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Kinetix run workout</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>com.georgeodwyer.kinetix.run-workout</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -52,6 +67,8 @@
 		<string>instagram-stories</string>
 		<string>gcm-ciq</string>
 	</array>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<false/>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>Kinetix connects to Bluetooth heart rate straps to show live heart rate during workouts.</string>
 	<key>NSHealthShareUsageDescription</key>
@@ -101,6 +118,31 @@
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+	<key>UTExportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+				<string>public.content</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Kinetix run workout</string>
+			<key>UTTypeIdentifier</key>
+			<string>com.georgeodwyer.kinetix.run-workout</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>kinetixrun</string>
+				</array>
+				<key>public.mime-type</key>
+				<array>
+					<string>application/x-kinetix-run</string>
+				</array>
+			</dict>
+		</dict>
 	</array>
 </dict>
 </plist>

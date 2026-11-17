@@ -16,6 +16,9 @@ struct RootView: View {
     @State private var showStoreRecovered = Persistence.recoveredFromBrokenStore
     /// "What's new" after an update (once per release).
     @State private var whatsNew: WhatsNew.Release?
+    /// A workout a friend shared, opened from Messages, AirDrop or Files.
+    @State private var sharedWorkout: SharedRunWorkout?
+    @State private var sharedWorkoutUnreadable = false
 
     var body: some View {
         ZStack {
@@ -66,6 +69,11 @@ struct RootView: View {
         }
         // Links from widgets and the lock screen: kinetix://tab/<today|plan|record|progress|settings>.
         .onOpenURL { url in
+            // A workout a friend shared (.kinetixrun).
+            if url.isFileURL {
+                if let shared = SharedWorkoutFile.read(url) { sharedWorkout = shared } else { sharedWorkoutUnreadable = true }
+                return
+            }
             // Back from Garmin Connect after choosing watches.
             if GarminService.shared.handle(url: url) { return }
             guard url.scheme == "kinetix", url.host != "localhost" else { return }
@@ -78,6 +86,23 @@ struct RootView: View {
                 default: router.selectedTab = .today
                 }
             }
+        }
+        .sheet(isPresented: Binding(get: { sharedWorkout != nil }, set: { if !$0 { sharedWorkout = nil } })) {
+            if let sharedWorkout {
+                let profile = profiles.first?.profile
+                ImportSharedWorkoutSheet(shared: sharedWorkout, zones: profile.map(PaceZones.init(profile:)),
+                                         units: profile?.units ?? UnitPreference.stored) { workout in
+                    context.insert(RunTemplateModel(workout: workout))
+                    try? context.save()
+                    SyncService.shared.requestSync()
+                    router.selectedTab = .record
+                }
+            }
+        }
+        .alert("Can't open this workout", isPresented: $sharedWorkoutUnreadable) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("It may be from a newer version of Kinetix. Update the app from TestFlight or the App Store and try again.")
         }
         .onChange(of: scenePhase, initial: true) { _, phase in
             // Keep detailed sessions generated about two weeks ahead.
