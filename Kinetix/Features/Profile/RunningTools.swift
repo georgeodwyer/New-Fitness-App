@@ -136,7 +136,7 @@ struct PaceCalculatorView: View {
                 if solve != .distance { toolCard("Distance") { DistanceInput(meters: $meters, units: units) } }
                 if solve != .time { toolCard("Time") { DurationInput(seconds: $seconds) } }
                 if solve != .pace {
-                    toolCard("Pace (\(Units.paceUnitLabel(units).trimmingCharacters(in: .whitespaces)))") {
+                    toolCard("Pace (" + Units.paceUnitLabel(units) + ")") {
                         DurationInput(seconds: $paceSeconds, showsHours: false)
                     }
                 }
@@ -188,6 +188,12 @@ struct SplitPlannerView: View {
     @State private var seconds: Double = 50 * 60
     @State private var strategy: Strategy = .even
 
+    private var strategyText: String {
+        if strategy == .even { return "The same pace all the way." }
+        let percent = Int(strategy.fraction * 100)
+        return "Start a little slower and finish faster: the second half about \(percent)% quicker than the first. Many runners race best this way."
+    }
+
     private var splits: [PaceTools.PlannedSplit] {
         PaceTools.splits(distanceMeters: meters, goalSeconds: seconds,
                          splitMeters: units == .metric ? 1000 : Units.metersPerMile, negativeSplit: strategy.fraction)
@@ -202,8 +208,7 @@ struct SplitPlannerView: View {
                     ForEach(Strategy.allCases) { Text($0.rawValue).tag($0) }
                 }
                 .pickerStyle(.segmented)
-                Text(strategy == .even ? "The same pace all the way."
-                     : "Start a little slower and finish faster: the second half about \(Int(strategy.fraction * 100))% quicker than the first. Many runners race best this way.")
+                Text(strategyText)
                     .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
                     .fixedSize(horizontal: false, vertical: true)
                 if !splits.isEmpty { splitsCard }
@@ -259,44 +264,9 @@ struct ConverterView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: KXSpacing.lg) {
-                toolCard("Pace → treadmill speed") {
-                    DurationInput(seconds: $paceSeconds, showsHours: false)
-                    Text(paceSeconds > 0 ? "\(TreadmillSpeed.text(kilometresPerHour: pace.kilometresPerHour, units: .metric)) · \(TreadmillSpeed.text(kilometresPerHour: pace.kilometresPerHour, units: .imperial))" : "–")
-                        .font(KXFont.number(30, relativeTo: .title2)).foregroundStyle(KXColor.ink)
-                    Text("Per \(units == .metric ? "km" : "mile"). Many runners set a 1% incline to match running outside.")
-                        .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
-                }
-                toolCard("Treadmill speed → pace") {
-                    HStack {
-                        Stepper(value: $speedKmh, in: 3...30, step: 0.1) {
-                            Text(String(format: "%.1f km/h", speedKmh)).font(KXFont.number(26, relativeTo: .title2))
-                        }
-                    }
-                    let fromSpeed = Pace(secondsPerKm: 3600 / speedKmh)
-                    Text("\(Units.formatPace(fromSpeed, units: .metric))/km · \(Units.formatPace(fromSpeed, units: .imperial))/mi · \(String(format: "%.1f mph", speedKmh / 1.609344))")
-                        .font(KXFont.bodyEmphasis.monospacedDigit()).foregroundStyle(KXColor.ink)
-                }
-                toolCard("Kilometres ↔ miles") {
-                    HStack(alignment: .firstTextBaseline, spacing: KXSpacing.sm) {
-                        TextField("0", value: $kilometres, format: .number.precision(.fractionLength(0...2)))
-                            .keyboardType(.decimalPad)
-                            .font(KXFont.number(28, relativeTo: .title2))
-                            .frame(maxWidth: 120)
-                            .padding(.horizontal, KXSpacing.sm)
-                            .background(KXColor.surfaceTint, in: RoundedRectangle(cornerRadius: KXRadius.sm, style: .continuous))
-                        Text("km =").foregroundStyle(KXColor.inkSecondary)
-                        Text(String(format: "%.2f mi", kilometres * 1000 / Units.metersPerMile))
-                            .font(KXFont.number(28, relativeTo: .title2))
-                    }
-                    TextField("Miles", value: Binding(get: { (kilometres * 1000 / Units.metersPerMile * 100).rounded() / 100 },
-                                                      set: { kilometres = $0 * Units.metersPerMile / 1000 }),
-                              format: .number.precision(.fractionLength(0...2)))
-                        .keyboardType(.decimalPad)
-                        .font(KXFont.callout)
-                        .padding(KXSpacing.xs)
-                        .background(KXColor.surfaceTint, in: RoundedRectangle(cornerRadius: KXRadius.sm, style: .continuous))
-                    Text("Type in either box.").font(KXFont.caption).foregroundStyle(KXColor.inkTertiary)
-                }
+                paceToSpeed
+                speedToPace
+                kilometresAndMiles
             }
             .padding(KXSpacing.screenMargin)
         }
@@ -304,5 +274,69 @@ struct ConverterView: View {
         .navigationTitle("Converter")
         .navigationBarTitleDisplayMode(.inline)
         .scrollDismissesKeyboard(.interactively)
+    }
+
+    private var speedText: String {
+        guard paceSeconds > 0 else { return "–" }
+        let metric = TreadmillSpeed.text(kilometresPerHour: pace.kilometresPerHour, units: .metric)
+        let imperial = TreadmillSpeed.text(kilometresPerHour: pace.kilometresPerHour, units: .imperial)
+        return metric + " · " + imperial
+    }
+
+    private var paceToSpeed: some View {
+        toolCard("Pace → treadmill speed") {
+            DurationInput(seconds: $paceSeconds, showsHours: false)
+            Text(speedText)
+                .font(KXFont.number(30, relativeTo: .title2)).foregroundStyle(KXColor.ink)
+            Text("Per " + (units == .metric ? "km" : "mile") + ". Many runners set a 1% incline to match running outside.")
+                .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+        }
+    }
+
+    private var paceFromSpeedText: String {
+        let pace = Pace(secondsPerKm: 3600 / speedKmh)
+        let perKm = Units.formatPace(pace, units: .metric) + "/km"
+        let perMile = Units.formatPace(pace, units: .imperial) + "/mi"
+        let mph = String(format: "%.1f mph", speedKmh / 1.609344)
+        return [perKm, perMile, mph].joined(separator: " · ")
+    }
+
+    private var speedToPace: some View {
+        toolCard("Treadmill speed → pace") {
+            Stepper(value: $speedKmh, in: 3...30, step: 0.1) {
+                Text(String(format: "%.1f km/h", speedKmh)).font(KXFont.number(26, relativeTo: .title2))
+            }
+            Text(paceFromSpeedText)
+                .font(KXFont.bodyEmphasis.monospacedDigit()).foregroundStyle(KXColor.ink)
+        }
+    }
+
+    private var milesBinding: Binding<Double> {
+        Binding(get: { (kilometres * 1000 / Units.metersPerMile * 100).rounded() / 100 },
+                set: { kilometres = $0 * Units.metersPerMile / 1000 })
+    }
+
+    private var kilometresAndMiles: some View {
+        toolCard("Kilometres ↔ miles") {
+            HStack(alignment: .firstTextBaseline, spacing: KXSpacing.sm) {
+                TextField("0", value: $kilometres, format: .number.precision(.fractionLength(0...2)))
+                    .keyboardType(.decimalPad)
+                    .font(KXFont.number(28, relativeTo: .title2))
+                    .frame(maxWidth: 120)
+                    .padding(.horizontal, KXSpacing.sm)
+                    .background(KXColor.surfaceTint, in: RoundedRectangle(cornerRadius: KXRadius.sm, style: .continuous))
+                Text("km").foregroundStyle(KXColor.inkSecondary)
+            }
+            HStack(alignment: .firstTextBaseline, spacing: KXSpacing.sm) {
+                TextField("0", value: milesBinding, format: .number.precision(.fractionLength(0...2)))
+                    .keyboardType(.decimalPad)
+                    .font(KXFont.number(28, relativeTo: .title2))
+                    .frame(maxWidth: 120)
+                    .padding(.horizontal, KXSpacing.sm)
+                    .background(KXColor.surfaceTint, in: RoundedRectangle(cornerRadius: KXRadius.sm, style: .continuous))
+                Text("miles").foregroundStyle(KXColor.inkSecondary)
+            }
+            Text("Type in either box.").font(KXFont.caption).foregroundStyle(KXColor.inkTertiary)
+        }
     }
 }
