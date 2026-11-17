@@ -132,6 +132,9 @@ public struct RunSummary: Codable, Equatable, Sendable {
     public var laps: [Lap]? = nil
     /// Track mode was used, in this lane (distance measured along the lane, not GPS).
     public var trackLane: Int? = nil
+    /// Steps through the run (running total, at most one sample every 5 s); nil when the step
+    /// counter wasn't available. Cadence and stride length come from these (see `RunCadence`).
+    public var stepSamples: [StepSample]? = nil
 
     /// For building a summary outside the engine (e.g. a run sent from the watch, tests).
     public init(durationSeconds: Double, distanceMeters: Double, averagePace: Pace?, splits: [Split] = [], segments: [SegmentResult] = [],
@@ -256,6 +259,11 @@ public struct RunEngine: Sendable {
     private var heartRates: [Double] = []
     private var heartRateSamples: [HeartRateSample] = []
     private var currentHeartRate: Double?
+
+    // Steps
+    private var lastStepTotal: Double?
+    private var activeSteps: Double = 0
+    private var stepSamples: [StepSample] = []
 
     public init(structure: RunStructure?, config: CoachingConfig = CoachingConfig()) {
         self.segments = structure?.segments ?? []
@@ -402,6 +410,19 @@ public struct RunEngine: Sendable {
             if heartRateSamples.last.map({ activeSeconds - $0.elapsed >= 5 }) ?? true {
                 heartRateSamples.append(HeartRateSample(elapsed: activeSeconds, bpm: bpm))
             }
+        }
+    }
+
+    /// The step counter's total since it started (CMPedometer). Steps while paused don't count.
+    public mutating func addSteps(total: Double, at date: Date) {
+        guard startDate != nil, total >= 0 else { return }
+        defer { lastStepTotal = total }
+        guard let last = lastStepTotal else { return }
+        let delta = total - last
+        guard delta > 0, !isPaused else { return }
+        activeSteps += delta
+        if stepSamples.last.map({ activeSeconds - $0.elapsed >= 5 }) ?? true {
+            stepSamples.append(StepSample(elapsed: activeSeconds, steps: activeSteps))
         }
     }
 
@@ -645,6 +666,15 @@ public struct RunEngine: Sendable {
             laps: summaryLaps
         )
         .withTrackLane(trackLaneUsed)
+        .withSteps(summarySteps)
+    }
+
+    /// The step samples, ending with the steps so far (nil when no steps were counted).
+    private var summarySteps: [StepSample]? {
+        guard activeSteps > 0 else { return nil }
+        var all = stepSamples
+        if all.last?.steps != activeSteps { all.append(StepSample(elapsed: activeSeconds, steps: activeSteps)) }
+        return all
     }
 
     /// The marked laps plus the one in progress (so the last stretch isn't lost).
@@ -858,6 +888,12 @@ extension RunSummary {
     func withTrackLane(_ lane: Int?) -> RunSummary {
         var copy = self
         copy.trackLane = lane
+        return copy
+    }
+
+    func withSteps(_ samples: [StepSample]?) -> RunSummary {
+        var copy = self
+        copy.stepSamples = samples
         return copy
     }
 }
