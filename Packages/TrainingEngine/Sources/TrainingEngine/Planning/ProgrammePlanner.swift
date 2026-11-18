@@ -692,11 +692,18 @@ enum ProgrammePlanner {
         !session.isRace && (session.runType == .tempo || session.runType == .intervals)
     }
 
-    /// With three runs or fewer and more than one hard session, keeps one (alternating by week)
-    /// and makes the others easy runs in their place. nil when nothing changes.
+    /// With three runs or fewer, keeps one hard session (alternating by week) and makes the
+    /// others easy runs in their place: easy running comes before a second hard run. A race or
+    /// time trial is that week's hard effort. nil when nothing changes.
     static func oneHardSession(_ sessions: [ProgrammeSession], runs: Int, weekIndex: Int) -> (sessions: [ProgrammeSession], kept: String)? {
         guard runs <= 3 else { return nil }
         let hard = sessions.indices.filter { isHard(sessions[$0]) }
+        if let race = sessions.first(where: \.isRace) {
+            guard !hard.isEmpty else { return nil }
+            var result = sessions
+            for index in hard { result[index] = easySession(order: sessions[index].order) }
+            return (result, race.name)
+        }
         guard hard.count > 1 else { return nil }
         let keep = hard[weekIndex % hard.count]
         var result = sessions

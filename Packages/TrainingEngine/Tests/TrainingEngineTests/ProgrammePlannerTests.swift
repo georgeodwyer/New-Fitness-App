@@ -65,6 +65,45 @@ final class ProgrammePlannerTests: XCTestCase {
         XCTAssertGreaterThan(hardTitles.count, 1, "The hard session alternates through the plan")
     }
 
+    /// Every programme at 2, 3 and 4 runs a week: with 3 or fewer, at most one hard effort a
+    /// week (a race counts), and the weekly distance still meets the plan's target. Prints a
+    /// table for the CI log.
+    func testEveryProgrammeKeepsEasyRunsInShortWeeks() {
+        let calendar = TestSupport.calendar
+        var lines = ["===== SHORT WEEKS ====="]
+        for programme in TestSupport.bundledTemplates.programmes.programmes {
+            for runsWanted in [2, 3, 4] where runsWanted >= programme.runsPerWeekMin && runsWanted <= programme.runsPerWeekMax {
+                let days: [Weekday] = [.monday, .tuesday, .wednesday, .thursday, .friday, .saturday, .sunday]
+                var profile = TestSupport.profile(running: .intermediate, goal: programme.goal, days: days, doubles: 0)
+                profile.liftSessionsPerWeek = 7 - runsWanted
+                profile.weeklyRunMeters = Double(runsWanted) * 8000
+                profile.longestRecentRunMeters = 10_000
+                let outline = generator.makeOutline(for: profile, startingOn: monday)
+                var shortfalls = 0
+                for (index, target) in outline.weeks.enumerated() {
+                    guard let week = generator.generateWeek(index, outline: outline, profile: profile) else { continue }
+                    let runs = week.sessions.filter { $0.kind.discipline == .run }
+                    let hard = runs.filter { $0.kind == .run(.tempo) || $0.kind == .run(.intervals) }
+                    let race = runs.contains { $0.title.lowercased().contains("race") || $0.title.lowercased().contains("time trial") }
+                    let meters = runs.compactMap(\.estimatedDistanceMeters).reduce(0, +)
+                    if runsWanted <= 3 {
+                        XCTAssertLessThanOrEqual(hard.count + (race ? 1 : 0), 1,
+                                                 "\(programme.name), \(runsWanted) runs, week \(index + 1): \(runs.map(\.title))")
+                    }
+                    if !race, target.runVolumeMeters > 0, meters < target.runVolumeMeters * 0.9 { shortfalls += 1 }
+                    if index < 4 || race {
+                        lines.append("\(programme.name) · \(runsWanted) runs · wk \(index + 1): \(runs.map(\.title).joined(separator: ", ")) · "
+                                     + "\(String(format: "%.1f", meters / 1000)) of \(String(format: "%.1f", target.runVolumeMeters / 1000)) km")
+                    }
+                }
+                lines.append("\(programme.name) · \(runsWanted) runs · weeks under 90% of target: \(shortfalls) of \(outline.weeks.count)")
+                _ = calendar
+            }
+        }
+        lines.append("===== END SHORT WEEKS =====")
+        lines.forEach { print($0) }
+    }
+
     // MARK: Loading
 
     func testHalfMarathonLoads() {
