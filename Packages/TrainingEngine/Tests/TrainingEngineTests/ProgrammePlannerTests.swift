@@ -44,6 +44,27 @@ final class ProgrammePlannerTests: XCTestCase {
         week.sessions.filter { $0.kind.discipline == .run }
     }
 
+    /// Three runs a week (five gym sessions, like George's week): one hard run, an easy run and
+    /// the long run, the hard one alternating, so not every run is hard.
+    func testThreeRunWeeksHaveOneHardSession() {
+        var profile = TestSupport.profile(running: .intermediate, goal: .faster10k,
+                                          days: [.monday, .tuesday, .wednesday, .thursday, .saturday, .sunday], doubles: 2)
+        profile.liftSessionsPerWeek = 5
+        profile.weeklyRunMeters = 20_000
+        profile.longestRecentRunMeters = 8_000
+        let (_, weeks) = plan(profile)
+        XCTAssertFalse(weeks.isEmpty)
+        var hardTitles = Set<String>()
+        for week in weeks {
+            let runs = runs(week)
+            XCTAssertLessThanOrEqual(runs.count, 3)
+            let hard = runs.filter { $0.kind == .run(.tempo) || $0.kind == .run(.intervals) }
+            XCTAssertLessThanOrEqual(hard.count, 1, "At most one hard run: \(runs.map(\.title))")
+            hard.forEach { hardTitles.insert($0.title) }
+        }
+        XCTAssertGreaterThan(hardTitles.count, 1, "The hard session alternates through the plan")
+    }
+
     // MARK: Loading
 
     func testHalfMarathonLoads() {

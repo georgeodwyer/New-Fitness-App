@@ -305,6 +305,12 @@ enum ProgrammePlanner {
         if sessions.count < written {
             notes.append("This week has \(sessions.count) runs to fit your \(mix.days.count) training days, so the easiest runs were left out.")
         }
+        // Three runs or fewer: one hard session, an easy run and the long run (the hard one
+        // alternates week to week), so not every run is hard.
+        if let limited = oneHardSession(sessions, runs: weekCounts.runs, weekIndex: index) {
+            sessions = limited.sessions
+            notes.append("With \(sessions.count) runs this week: one hard session (\(limited.kept.lowercased())), an easy run and the long run. The hard session alternates each week.")
+        }
         // A race only happens on race day: without a race date it's a time trial.
         let hasEventThisWeek = outline.eventDate.map { event in
             event >= week.startDate && event < (calendar.date(byAdding: .day, value: 7, to: week.startDate) ?? event)
@@ -679,6 +685,25 @@ enum ProgrammePlanner {
             result.append(easySession(order: (result.map(\.order).max() ?? 0) + 1))
         }
         return result
+    }
+
+    /// Hard runs (tempo, intervals, fartlek), not the long run or a race.
+    static func isHard(_ session: ProgrammeSession) -> Bool {
+        !session.isRace && (session.runType == .tempo || session.runType == .intervals)
+    }
+
+    /// With three runs or fewer and more than one hard session, keeps one (alternating by week)
+    /// and makes the others easy runs in their place. nil when nothing changes.
+    static func oneHardSession(_ sessions: [ProgrammeSession], runs: Int, weekIndex: Int) -> (sessions: [ProgrammeSession], kept: String)? {
+        guard runs <= 3 else { return nil }
+        let hard = sessions.indices.filter { isHard(sessions[$0]) }
+        guard hard.count > 1 else { return nil }
+        let keep = hard[weekIndex % hard.count]
+        var result = sessions
+        for index in hard where index != keep {
+            result[index] = easySession(order: sessions[index].order)
+        }
+        return (result, sessions[keep].name)
     }
 
     static func easySession(order: Int) -> ProgrammeSession {
