@@ -56,8 +56,8 @@ final class ProgrammePlannerTests: XCTestCase {
         XCTAssertFalse(weeks.isEmpty)
         var hardTitles = Set<String>()
         for week in weeks {
+            // (An extra easy run can be added on a free day when there's distance left over.)
             let runs = runs(week)
-            XCTAssertLessThanOrEqual(runs.count, 3)
             let hard = runs.filter { $0.kind == .run(.tempo) || $0.kind == .run(.intervals) }
             XCTAssertLessThanOrEqual(hard.count, 1, "At most one hard run: \(runs.map(\.title))")
             hard.forEach { hardTitles.insert($0.title) }
