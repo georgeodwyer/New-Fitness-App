@@ -214,13 +214,21 @@ enum PlanService {
         plan.endDate = outline.eventDate
         plan.generatedWeekCount = current
 
-        // From `from` (today or next Monday); the following weeks as usual.
+        // From `from` (today or next Monday); the following weeks as usual. A day where a session
+        // is already done (or skipped) doesn't get a new one of the same sort: rebuilding after
+        // today's run mustn't add today's run again.
+        let settled = plan.sessions.filter {
+            !$0.isSoftDeleted && $0.date >= from && ($0.status == .completed || $0.status == .skipped)
+        }
+        func alreadySettled(_ generated: GeneratedSession) -> Bool {
+            settled.contains { calendar.isDate($0.date, inSameDayAs: generated.date) && $0.kind.discipline == generated.kind.discipline }
+        }
         let weights = workingWeights(in: context)
         let horizon = max(calendar.date(byAdding: .day, value: horizonDays, to: today) ?? today, from)
         while !plan.isPaused, plan.generatedWeekCount < outline.weeks.count, outline.weeks[plan.generatedWeekCount].startDate <= horizon {
             let index = plan.generatedWeekCount
             if let week = generator.generateWeek(index, outline: outline, profile: profile, workingWeights: weights, notBefore: from) {
-                for generated in week.sessions where generated.date >= from {
+                for generated in week.sessions where generated.date >= from && !alreadySettled(generated) {
                     let session = PlannedSessionModel(generated: generated, weekIndex: index)
                     context.insert(session)
                     session.plan = plan
@@ -331,6 +339,7 @@ enum PlanService {
         guard let profileModel = try? context.fetch(FetchDescriptor<UserProfileModel>()).first(where: { !$0.isSoftDeleted }),
               let plan = try? context.fetch(FetchDescriptor<TrainingPlanModel>()).first(where: { $0.isActive && !$0.isSoftDeleted })
         else { return }
+        if removeDuplicatesOfDoneSessions(plan: plan, now: now) { try? context.save() }
         if updateToLatestLogic(plan: plan, profile: profileModel.profile, in: context, now: now) { return }
         if adaptToRecentWeeks(plan: plan, profile: profileModel.profile, in: context, now: now) {
             try? context.save()
@@ -340,6 +349,23 @@ enum PlanService {
         let before = plan.generatedWeekCount
         ensureHorizon(for: plan, profile: profileModel.profile, in: context, now: now)
         if plan.generatedWeekCount != before { try? context.save() }
+    }
+
+    /// A session still planned on a day where the same session is already done (left by a
+    /// rebuild in an earlier version that added today's run again). Returns whether any were removed.
+    @discardableResult
+    static func removeDuplicatesOfDoneSessions(plan: TrainingPlanModel, now: Date = .now) -> Bool {
+        let calendar = Calendar.kinetix
+        let live = plan.sessions.filter { !$0.isSoftDeleted }
+        let done = live.filter { $0.status == .completed }
+        var removed = false
+        for session in live where session.status == .planned || session.status == .swapped {
+            if done.contains(where: { calendar.isDate($0.date, inSameDayAs: session.date) && $0.kind == session.kind }) {
+                session.softDelete(now: now)
+                removed = true
+            }
+        }
+        return removed
     }
 
     // MARK: New plan logic

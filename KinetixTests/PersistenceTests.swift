@@ -122,4 +122,31 @@ final class PlanServiceTests: XCTestCase {
         XCTAssertTrue(nextWeekDays.isSubset(of: Set(changed.trainingDays)), "Next week follows the new days")
         XCTAssertFalse(nextWeekDays.isEmpty)
     }
+
+    func testRebuildingAfterTodaysRunDoesNotAddItAgain() throws {
+        let container = try Persistence.makeContainer(inMemory: true)
+        let context = container.mainContext
+        context.insert(UserProfileModel(profile: SampleData.profile))
+        let plan = PlanService.createPlan(for: SampleData.profile, in: context, now: monday)
+        let calendar = Calendar.kinetix
+        func live() -> [PlannedSessionModel] { plan.sessions.filter { !$0.isSoftDeleted } }
+        // The first run of the week is done; the plan is then rebuilt that evening (new paces).
+        let run = try XCTUnwrap(live().filter { $0.kind.discipline == .run }.min { $0.date < $1.date })
+        run.status = .completed
+        try context.save()
+        let evening = calendar.date(bySettingHour: 21, minute: 0, second: 0, of: run.date)!
+        PlanService.rebuildRemainder(for: SampleData.profile, in: context, now: evening, keepOutline: true)
+
+        let sameDayRuns = live().filter { calendar.isDate($0.date, inSameDayAs: run.date) && $0.kind.discipline == .run }
+        XCTAssertEqual(sameDayRuns.map(\.id), [run.id], "Only the run that's done, no second copy")
+
+        // A duplicate left by an earlier version is tidied away.
+        let duplicate = PlannedSessionModel(date: run.date, slot: run.slot, kind: run.kind, isKey: false,
+                                            plannedDurationMinutes: 25, plannedEffort: 4)
+        context.insert(duplicate)
+        duplicate.plan = plan
+        XCTAssertTrue(PlanService.removeDuplicatesOfDoneSessions(plan: plan))
+        XCTAssertTrue(duplicate.isSoftDeleted)
+        XCTAssertFalse(run.isSoftDeleted)
+    }
 }
