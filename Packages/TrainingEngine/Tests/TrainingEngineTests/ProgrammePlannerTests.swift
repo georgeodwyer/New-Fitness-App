@@ -73,9 +73,10 @@ final class ProgrammePlannerTests: XCTestCase {
         var lines = ["===== SHORT WEEKS ====="]
         for programme in TestSupport.bundledTemplates.programmes.programmes {
             for runsWanted in [2, 3, 4] where runsWanted >= programme.runsPerWeekMin && runsWanted <= programme.runsPerWeekMax {
-                let days: [Weekday] = [.monday, .tuesday, .wednesday, .thursday, .friday, .saturday, .sunday]
+                // Six days (training all seven adds a recovery run on top), runs on their own days.
+                let days: [Weekday] = [.monday, .tuesday, .wednesday, .thursday, .saturday, .sunday]
                 var profile = TestSupport.profile(running: .intermediate, goal: programme.goal, days: days, doubles: 0)
-                profile.liftSessionsPerWeek = 7 - runsWanted
+                profile.liftSessionsPerWeek = 6 - runsWanted
                 profile.weeklyRunMeters = Double(runsWanted) * 8000
                 profile.longestRecentRunMeters = 10_000
                 let outline = generator.makeOutline(for: profile, startingOn: monday)
@@ -90,13 +91,13 @@ final class ProgrammePlannerTests: XCTestCase {
                         XCTAssertLessThanOrEqual(hard.count + (race ? 1 : 0), 1,
                                                  "\(programme.name), \(runsWanted) runs, week \(index + 1): \(runs.map(\.title))")
                     }
-                    if !race, target.runVolumeMeters > 0, meters < target.runVolumeMeters * 0.9 { shortfalls += 1 }
+                    if !race, target.runVolumeMeters > 0, meters < target.runVolumeMeters * 0.9 || meters > target.runVolumeMeters * 1.1 { shortfalls += 1 }
                     if index < 4 || race {
                         lines.append("\(programme.name) · \(runsWanted) runs · wk \(index + 1): \(runs.map(\.title).joined(separator: ", ")) · "
                                      + "\(String(format: "%.1f", meters / 1000)) of \(String(format: "%.1f", target.runVolumeMeters / 1000)) km")
                     }
                 }
-                lines.append("\(programme.name) · \(runsWanted) runs · weeks under 90% of target: \(shortfalls) of \(outline.weeks.count)")
+                lines.append("\(programme.name) · \(runsWanted) runs · weeks more than 10% off target: \(shortfalls) of \(outline.weeks.count)")
                 _ = calendar
             }
         }
