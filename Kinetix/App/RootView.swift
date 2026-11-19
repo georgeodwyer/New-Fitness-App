@@ -162,7 +162,7 @@ struct MainTabView: View {
                 .tag(AppRouter.Tab.plan)
             RecordView()
                 .safeAreaInset(edge: .bottom) { MiniWorkoutBar() }
-                .tabItem { Label("Workout", systemImage: "record.circle") }
+                .tabItem { Label("Workout", systemImage: "figure.mixed.cardio") }
                 .tag(AppRouter.Tab.record)
             ProgressScreen()
                 .safeAreaInset(edge: .bottom) { MiniWorkoutBar() }
