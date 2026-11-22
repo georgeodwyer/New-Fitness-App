@@ -118,6 +118,121 @@ final class RunWorkoutModel {
         case setSpeed
         /// The phone's step counter (phone in a pocket or on an armband).
         case stepCounter
+        /// A Bluetooth (FTMS) treadmill: distance and speed from the belt itself.
+        case bluetooth
+    }
+
+    // MARK: Bluetooth treadmill
+
+    @ObservationIgnored let treadmill = TreadmillMonitor.shared
+    /// Belt distance at the start of the run, and since.
+    @ObservationIgnored private var beltStartMeters: Double?
+    @ObservationIgnored private var beltMeters: Double = 0
+    /// Belt speed when the treadmill sends no distance (counted from the speed instead).
+    @ObservationIgnored private var beltSpeedKmh: Double = 0
+    /// The speed Kinetix wants the belt at for this step (km/h).
+    private(set) var beltTargetKmh: Double?
+    /// Counting down to a speed change ("Speeding up to … in 3, 2, 1").
+    private(set) var speedChangeCountdown: Int?
+    @ObservationIgnored private var speedChangeTask: Task<Void, Never>?
+
+    /// Distance from the belt itself.
+    var usesBluetoothTreadmill: Bool { isTreadmill && treadmillDistance == .bluetooth }
+    /// Kinetix sets the belt speed for each step.
+    var controlsTreadmill: Bool {
+        usesBluetoothTreadmill && IntegrationSettings.shared.treadmillControl && treadmill.canControl
+    }
+
+    private func startBluetoothTreadmill(at now: Date) {
+        beltStartMeters = nil
+        beltMeters = 0
+        treadmill.onReading = { [weak self] reading, _ in
+            guard let self else { return }
+            if let total = reading.totalMeters {
+                if self.beltStartMeters == nil { self.beltStartMeters = total }
+                self.beltMeters = max(0, total - (self.beltStartMeters ?? total))
+            }
+            let wasStopped = self.beltSpeedKmh < 0.5
+            self.beltSpeedKmh = reading.speedKmh ?? self.beltSpeedKmh
+            // The belt has just started: bring it to this step's speed.
+            if wasStopped, self.beltSpeedKmh >= 0.5, self.controlsTreadmill, let target = self.beltTargetKmh {
+                self.changeBeltSpeed(to: target)
+            }
+        }
+        treadmill.connectToSaved()
+        if controlsTreadmill { treadmill.requestControl() }
+        if let first = structure?.segments.first {
+            beltTargetKmh = beltSpeed(for: first)
+        } else {
+            beltTargetKmh = easyBeltSpeed
+        }
+        if controlsTreadmill {
+            voice.speak((treadmill.reading?.speedKmh ?? 0) >= 0.5
+                        ? "Treadmill run. Kinetix will set the speed for each step."
+                        : "Treadmill run. Start the belt and Kinetix will set the speed for each step.")
+            if (treadmill.reading?.speedKmh ?? 0) >= 0.5, let target = beltTargetKmh { changeBeltSpeed(to: target) }
+        } else if let target = beltTargetKmh {
+            voice.speak("Treadmill run. Set it to \(TreadmillSpeed.spoken(kilometresPerHour: target, units: units)).")
+        }
+    }
+
+    private var easyBeltSpeed: Double {
+        FTMS.speed(for: PaceZones(profile: profileForTreadmill).range(for: .easy), supported: treadmill.supportedSpeeds)
+    }
+
+    /// The belt speed for a step: its pace target, or easy for a step without one.
+    private func beltSpeed(for segment: RunSegment) -> Double {
+        segment.targetPace.map { FTMS.speed(for: $0, supported: treadmill.supportedSpeeds) } ?? easyBeltSpeed
+    }
+
+    /// A spoken 3-second countdown, then the new speed (cancelled by a pause or another change).
+    private func changeBeltSpeed(to kmh: Double) {
+        speedChangeTask?.cancel()
+        let current = treadmill.reading?.speedKmh ?? beltSpeedKmh
+        guard abs(current - kmh) >= 0.05 else { speedChangeCountdown = nil; return }
+        let words = TreadmillSpeed.spoken(kilometresPerHour: kmh, units: units)
+        voice.speak("\(kmh > current ? "Speeding up" : "Slowing") to \(words) in 3, 2, 1.")
+        speedChangeTask = Task { @MainActor [weak self] in
+            for count in stride(from: 3, through: 1, by: -1) {
+                self?.speedChangeCountdown = count
+                try? await Task.sleep(for: .seconds(1.2))
+                guard !Task.isCancelled else { return }
+            }
+            guard let self, !Task.isCancelled, self.phase == .running, !self.snapshot.isPaused else {
+                self?.speedChangeCountdown = nil
+                return
+            }
+            self.speedChangeCountdown = nil
+            self.treadmill.setSpeed(kmh)
+        }
+    }
+
+    /// − / + while Kinetix controls the belt: a small change straight away (they asked for it).
+    func nudgeBelt(by delta: Double) {
+        let base = beltTargetKmh ?? treadmill.reading?.speedKmh ?? easyBeltSpeed
+        let maximum = treadmill.supportedSpeeds?.maximum ?? 25
+        let kmh = min(max(((base + delta) * 10).rounded() / 10, 1), maximum)
+        beltTargetKmh = kmh
+        speedChangeTask?.cancel()
+        speedChangeCountdown = nil
+        treadmill.setSpeed(kmh)
+    }
+
+    /// The run is over: the belt stops (if Kinetix controls it) and readings stop coming in.
+    private func endBluetoothTreadmill() {
+        guard usesBluetoothTreadmill else { return }
+        speedChangeTask?.cancel()
+        speedChangeCountdown = nil
+        if controlsTreadmill { treadmill.stopBelt() }
+        treadmill.onReading = nil
+    }
+
+    /// The big Stop belt button: stops the belt and pauses the run.
+    func stopBelt() {
+        speedChangeTask?.cancel()
+        speedChangeCountdown = nil
+        treadmill.stopBelt()
+        if !snapshot.isPaused { togglePause() }
     }
 
     /// A treadmill run: no GPS (chosen on the start screen).
@@ -157,6 +272,10 @@ final class RunWorkoutModel {
     private func startTreadmill(at now: Date) {
         gps?.stop()
         lastIndoorTick = now
+        if treadmillDistance == .bluetooth {
+            startBluetoothTreadmill(at: now)
+            return
+        }
         // Start at this step's speed (or an easy pace when there's no target).
         if let target = structure?.segments.first?.targetPace?.treadmillKilometresPerHour {
             treadmillSpeedKmh = target
@@ -196,9 +315,18 @@ final class RunWorkoutModel {
         guard isTreadmill else { return }
         if let last = lastIndoorTick, !snapshot.isPaused {
             setSpeedMeters += treadmillSpeedKmh / 3.6 * max(0, now.timeIntervalSince(last))
+            if treadmillDistance == .bluetooth, beltStartMeters == nil {
+                // A treadmill that sends no distance: counted from its speed.
+                beltMeters += beltSpeedKmh / 3.6 * max(0, now.timeIntervalSince(last))
+            }
         }
         lastIndoorTick = now
-        let total = treadmillDistance == .setSpeed ? setSpeedMeters : (watchMeters ?? pedometerMeters)
+        let total: Double
+        switch treadmillDistance {
+        case .setSpeed: total = setSpeedMeters
+        case .stepCounter: total = watchMeters ?? pedometerMeters
+        case .bluetooth: total = beltMeters
+        }
         handle(engine.addIndoorDistance(totalMeters: total, at: now))
     }
 
@@ -328,11 +456,29 @@ final class RunWorkoutModel {
         if snapshot.isPaused {
             engine.resume(at: now)
             simulator?.start()
-            voice.speak("Resumed.")
+            if controlsTreadmill {
+                // The belt starts again after a countdown, then goes back to this step's speed.
+                voice.speak("Resumed. Belt starting in 3, 2, 1.")
+                speedChangeTask?.cancel()
+                speedChangeTask = Task { @MainActor [weak self] in
+                    try? await Task.sleep(for: .seconds(3.6))
+                    guard let self, !Task.isCancelled, !self.snapshot.isPaused else { return }
+                    self.treadmill.resumeBelt()
+                }
+            } else {
+                voice.speak("Resumed.")
+            }
         } else {
             engine.pause(at: now)
             simulator?.stop()
-            voice.speak("Paused.")
+            if controlsTreadmill {
+                speedChangeTask?.cancel()
+                speedChangeCountdown = nil
+                treadmill.pauseBelt()
+                voice.speak("Paused. Belt stopping.")
+            } else {
+                voice.speak("Paused.")
+            }
         }
         snapshot = engine.snapshot()
         updateMetronome()
@@ -432,6 +578,7 @@ final class RunWorkoutModel {
     func stop() -> RunSummary {
         timer?.invalidate()
         timer = nil
+        endBluetoothTreadmill()
         pedometer.stopUpdates()
         gps?.stop()
         simulator?.stop()
@@ -454,6 +601,7 @@ final class RunWorkoutModel {
 
     func discard() {
         timer?.invalidate()
+        endBluetoothTreadmill()
         pedometer.stopUpdates()
         gps?.stop()
         simulator?.stop()
@@ -643,7 +791,19 @@ final class RunWorkoutModel {
             if case .paceCue = event { isCue = true } else { isCue = false }
             if isMirroringToWatch { pendingAlerts.append(MirrorAlert(event: event)) }
             // Treadmill: a new step with a pace target means a new speed to set.
-            if isTreadmill, case .segmentStarted(_, let segment, _) = event, let target = segment.targetPace {
+            if usesBluetoothTreadmill, case .segmentStarted(let index, let segment, _) = event {
+                // Kinetix sets the belt (after a countdown), or says the speed to set. The first
+                // step is handled when the treadmill part of the run starts.
+                if index > 0 {
+                    let kmh = beltSpeed(for: segment)
+                    beltTargetKmh = kmh
+                    if controlsTreadmill {
+                        if (treadmill.reading?.speedKmh ?? beltSpeedKmh) >= 0.5 { changeBeltSpeed(to: kmh) }
+                    } else if segment.targetPace != nil {
+                        voice.speak("Treadmill to \(TreadmillSpeed.spoken(kilometresPerHour: kmh, units: units)).")
+                    }
+                }
+            } else if isTreadmill, case .segmentStarted(_, let segment, _) = event, let target = segment.targetPace {
                 let kmh = target.treadmillKilometresPerHour
                 if treadmillDistance == .setSpeed { treadmillSpeedKmh = kmh }
                 voice.speak("Treadmill to \(TreadmillSpeed.spoken(kilometresPerHour: kmh, units: units)).")

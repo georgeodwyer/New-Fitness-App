@@ -146,15 +146,21 @@ struct RunWorkoutView: View {
                 Picker("Distance from", selection: Binding(get: { model.treadmillDistance }, set: { model.treadmillDistance = $0 })) {
                     Text("Speed I set").tag(RunWorkoutModel.TreadmillDistance.setSpeed)
                     Text("Steps").tag(RunWorkoutModel.TreadmillDistance.stepCounter)
+                    Text("Bluetooth").tag(RunWorkoutModel.TreadmillDistance.bluetooth)
                 }
                 .pickerStyle(.segmented)
-                Text(model.treadmillDistance == .setSpeed
-                     ? "Phone on the treadmill: Kinetix tells you the speed for each step and counts from it. Use − and + if you change it."
-                     : "From your Apple Watch's steps if you're wearing it, otherwise the phone's (in a pocket or on an armband). Pace targets show as the speed to set.")
-                    .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                Text("At the end you can type in the treadmill's distance and the run is corrected to it.")
-                    .font(KXFont.caption).foregroundStyle(KXColor.inkTertiary)
+                .accessibilityIdentifier("run.treadmillDistance")
+                if model.treadmillDistance == .bluetooth {
+                    TreadmillConnectionView()
+                } else {
+                    Text(model.treadmillDistance == .setSpeed
+                         ? "Phone on the treadmill: Kinetix tells you the speed for each step and counts from it. Use − and + if you change it."
+                         : "From your Apple Watch's steps if you're wearing it, otherwise the phone's (in a pocket or on an armband). Pace targets show as the speed to set.")
+                        .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text("At the end you can type in the treadmill's distance and the run is corrected to it.")
+                        .font(KXFont.caption).foregroundStyle(KXColor.inkTertiary)
+                }
             }
         }
         .kxCard()
@@ -163,7 +169,9 @@ struct RunWorkoutView: View {
     /// Running on a treadmill: the speed, the speed to set for this step, and − / +.
     @ViewBuilder
     private var treadmillCard: some View {
-        if model.isTreadmill {
+        if model.usesBluetoothTreadmill {
+            BluetoothTreadmillCard(model: model)
+        } else if model.isTreadmill {
             VStack(alignment: .leading, spacing: KXSpacing.sm) {
                 HStack {
                     KXOverline("Treadmill")
@@ -275,12 +283,12 @@ struct RunWorkoutView: View {
             showFinishConfirm = false
             showLeave = false
             _ = model.stop()
-            if model.isTreadmill { showTreadmillDistance = true } else { showEffort = true }
+            if model.isTreadmill && !model.usesBluetoothTreadmill { showTreadmillDistance = true } else { showEffort = true }
         }
         .confirmationDialog("Finish this run?", isPresented: $showFinishConfirm, titleVisibility: .visible) {
             Button("Finish run") {
                 _ = model.stop()
-                if model.isTreadmill { showTreadmillDistance = true } else { showEffort = true }
+                if model.isTreadmill && !model.usesBluetoothTreadmill { showTreadmillDistance = true } else { showEffort = true }
             }
             Button("Keep running", role: .cancel) {}
         }

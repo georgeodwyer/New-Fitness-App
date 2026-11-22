@@ -17,6 +17,9 @@ final class IntegrationSettings {
         healthConnectedAt = defaults.object(forKey: Keys.healthConnectedAt) as? Date
         heartRateSensorID = defaults.string(forKey: Keys.sensorID).flatMap(UUID.init(uuidString:))
         heartRateSensorName = defaults.string(forKey: Keys.sensorName)
+        treadmillID = defaults.string(forKey: Keys.treadmillID).flatMap(UUID.init(uuidString:))
+        treadmillName = defaults.string(forKey: Keys.treadmillName)
+        treadmillControl = defaults.object(forKey: Keys.treadmillControl) as? Bool ?? true
         useWatchHeartRate = defaults.object(forKey: Keys.useWatchHeartRate) as? Bool ?? true
         mirrorRunsToWatch = defaults.object(forKey: Keys.mirrorRuns) as? Bool ?? true
         runHeartRateSource = defaults.string(forKey: Keys.runHeartRateSource).flatMap(RunHeartRateSource.init(rawValue:)) ?? .watch
@@ -36,6 +39,9 @@ final class IntegrationSettings {
         static let healthConnectedAt = "integrations.health.connectedAt"
         static let sensorID = "integrations.hr.sensorID"
         static let sensorName = "integrations.hr.sensorName"
+        static let treadmillID = "integrations.treadmill.id"
+        static let treadmillName = "integrations.treadmill.name"
+        static let treadmillControl = "integrations.treadmill.control"
         static let useWatchHeartRate = "integrations.hr.useWatch"
         static let mirrorRuns = "integrations.watch.mirrorRuns"
         static let runHeartRateSource = "integrations.hr.runSource"
@@ -56,6 +62,11 @@ final class IntegrationSettings {
     /// The paired Bluetooth heart rate strap.
     var heartRateSensorID: UUID? { didSet { defaults.set(heartRateSensorID?.uuidString, forKey: Keys.sensorID) } }
     var heartRateSensorName: String? { didSet { defaults.set(heartRateSensorName, forKey: Keys.sensorName) } }
+    /// A Bluetooth (FTMS) treadmill: distance and speed from the belt, and speed control.
+    var treadmillID: UUID? { didSet { defaults.set(treadmillID?.uuidString, forKey: Keys.treadmillID) } }
+    var treadmillName: String? { didSet { defaults.set(treadmillName, forKey: Keys.treadmillName) } }
+    /// Kinetix sets the belt speed for each step (when the treadmill allows it).
+    var treadmillControl: Bool { didSet { defaults.set(treadmillControl, forKey: Keys.treadmillControl) } }
     /// Use heart rate from Apple Watch (through Apple Health) during runs.
     var useWatchHeartRate: Bool { didSet { defaults.set(useWatchHeartRate, forKey: Keys.useWatchHeartRate) } }
     /// Open the Kinetix watch app and show the run there when a run starts on the phone.

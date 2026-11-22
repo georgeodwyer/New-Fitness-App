@@ -18,6 +18,12 @@ enum WhatsNew {
     }
 
     static let releases: [Release] = [
+        Release(id: "2026-11-bluetooth-treadmill-1", title: "What's new", items: [
+            Item(symbol: "figure.run.treadmill", title: "Bluetooth treadmills",
+                 detail: "On a treadmill run, choose Bluetooth: distance and speed come straight from the belt. If your treadmill allows it, Kinetix sets the speed for each step after a spoken countdown, and Pause stops the belt."),
+            Item(symbol: "1.circle", title: "Easier short weeks",
+                 detail: "With three runs a week or fewer, your plan has one hard session, an easy run and the long run.")
+        ]),
         Release(id: "2026-11-strength-focus-1", title: "What's new", items: [
             Item(symbol: "figure.strengthtraining.traditional", title: "Choose a strength focus",
                  detail: "Balanced, Lower body & glutes, or Upper body & arms. Pick it with your gym split in Settings, Training profile. Every focus keeps arm work in your week.")
