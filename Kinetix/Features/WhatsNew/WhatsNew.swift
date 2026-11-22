@@ -21,6 +21,8 @@ enum WhatsNew {
         Release(id: "2026-11-bluetooth-treadmill-1", title: "What's new", items: [
             Item(symbol: "figure.run.treadmill", title: "Bluetooth treadmills",
                  detail: "On a treadmill run, choose Bluetooth: distance and speed come straight from the belt. If your treadmill allows it, Kinetix sets the speed for each step after a spoken countdown, and Pause stops the belt."),
+            Item(symbol: "heart.text.square", title: "Runs from other apps count",
+                 detail: "Ran in Apple's Workout app, for example on a gym treadmill with your watch? Today asks whether to count it as that day's planned run, with the real distance and heart rate."),
             Item(symbol: "1.circle", title: "Easier short weeks",
                  detail: "With three runs a week or fewer, your plan has one hard session, an easy run and the long run.")
         ]),

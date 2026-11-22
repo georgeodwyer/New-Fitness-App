@@ -77,6 +77,7 @@ struct HomeView: View {
                     if profile?.style == .custom, !hasActivePlan { buildOwnPlanPrompt }
                     if let plan = plans.first, plan.isPaused { PausedPlanCard(plan: plan) }
                     if profile != nil { NotificationPromptCard() }
+                    if profile != nil { HealthRunMatchCard(units: units) }
                     ForEach(layout.visibleCards, id: \.self) { card in
                         dashboardCard(card, data: data)
                     }

@@ -96,11 +96,12 @@ enum RunService {
     /// Strava (it may well be there already).
     @discardableResult
     static func logManual(for planned: PlannedSessionModel, startedAt: Date, durationSeconds: Double, distanceMeters: Double,
-                          effort: Double, averageHeartRate: Double? = nil, in context: ModelContext, now: Date = .now) -> RunLogModel {
+                          effort: Double, averageHeartRate: Double? = nil, source: String = RunLogModel.manualSource,
+                          in context: ModelContext, now: Date = .now) -> RunLogModel {
         let log = RunLogModel(plannedSessionId: planned.id, startedAt: startedAt, now: now)
         log.title = planned.title
         if case .run(let type) = planned.kind { log.runTypeRaw = type.rawValue }
-        log.importSourceRaw = RunLogModel.manualSource
+        log.importSourceRaw = source
         log.durationSeconds = max(durationSeconds, 0)
         log.distanceMeters = max(distanceMeters, 0)
         log.averageHeartRate = averageHeartRate
@@ -153,6 +154,7 @@ extension RunLogModel {
         if isImportedFromStrava { return "From Strava" }
         if isFromGarmin { return "Garmin" }
         if isLoggedByHand { return "Logged by hand" }
+        if isFromHealth { return "From Apple Health" }
         if recordTypeRaw != nil { return "Recorded" }
         return plannedSessionId != nil ? "Planned" : nil
     }
@@ -162,6 +164,10 @@ extension RunLogModel {
     /// Strava and Health if you've linked them), so Kinetix doesn't upload it again.
     var isFromGarmin: Bool { importSourceRaw == "garmin" }
     static let manualSource = "manual"
+    /// A run recorded in another app (e.g. Apple's Workout app on a GymKit treadmill) that the
+    /// runner counted as a planned run: already in Health, so never sent there or to Strava.
+    static let healthSource = "health"
+    var isFromHealth: Bool { importSourceRaw == Self.healthSource }
     /// Marked as done by hand (not recorded in Kinetix): no route, never exported.
     var isLoggedByHand: Bool { importSourceRaw == Self.manualSource }
     /// Simulated GPS runs are practice data: shown, but left out of totals and best efforts.

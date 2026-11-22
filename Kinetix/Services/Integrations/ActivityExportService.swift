@@ -39,7 +39,7 @@ enum ActivityExportService {
     static func export(run log: RunLogModel, in context: ModelContext, settings: IntegrationSettings = .shared) async {
         // Simulated GPS runs are practice data, and runs imported from Strava came from
         // another app: keep both out of Health and Strava.
-        guard log.isFinished, !log.isSoftDeleted, !log.usedSimulatedGPS, !log.isImportedFromStrava, !log.isFromGarmin, !log.isLoggedByHand,
+        guard log.isFinished, !log.isSoftDeleted, !log.usedSimulatedGPS, !log.isImportedFromStrava, !log.isFromGarmin, !log.isLoggedByHand, !log.isFromHealth,
               !inFlight.contains(log.id) else { return }
         inFlight.insert(log.id)
         defer { inFlight.remove(log.id) }
@@ -105,7 +105,7 @@ enum ActivityExportService {
         guard anyEnabled else { return }
         let since = now.addingTimeInterval(-retryWindow)
         let runs = (try? context.fetch(FetchDescriptor<RunLogModel>(predicate: #Predicate { $0.isFinished && $0.startedAt >= since }))) ?? []
-        for run in runs where !run.isImportedFromStrava && !run.isFromGarmin && !run.isLoggedByHand
+        for run in runs where !run.isImportedFromStrava && !run.isFromGarmin && !run.isLoggedByHand && !run.isFromHealth
             && (run.healthKitWorkoutId == nil || run.stravaActivityId == nil) {
             await export(run: run, in: context)
         }
