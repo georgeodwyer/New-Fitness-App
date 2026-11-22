@@ -173,6 +173,9 @@ enum StrengthService {
         var newWeights: [String: Double] = [:]
         // Missed reps on a low-recovery day (below 67) still hold the weight, but don't count towards a reset.
         let lowRecovery = (BalanceService.todaysRecovery(in: context, now: log.startedAt)?.score ?? 100) < 67
+        // A sore area (legs or upper body 1–2 out of 5 on the check-in) is treated the same for its exercises.
+        let soreRegions = (BalanceService.todaysCheckIn(in: context, now: log.startedAt).map(Rebalancer.soreAreas) ?? [])
+            .reduce(into: Set<BodyRegion>()) { $0.formUnion($1 == .legs ? [.lower] : [.upper]) }
 
         for key in orderedKeys {
             guard let exerciseSets = groups[key], let first = exerciseSets.first else { continue }
@@ -222,7 +225,7 @@ enum StrengthService {
                         sets: results,
                         rules: rules,
                         units: units,
-                        countsMisses: !lowRecovery
+                        countsMisses: !lowRecovery && !soreRegions.contains(definition?.region ?? .upper)
                     )
                     if decision.change != .none, let stateModel {
                         stateModel.workingWeightKg = decision.newState.workingWeightKg

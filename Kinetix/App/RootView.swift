@@ -173,16 +173,24 @@ struct MainTabView: View {
                 .tabItem { Label("Profile", systemImage: "person.crop.circle") }
                 .tag(AppRouter.Tab.settings)
         }
-        // Below-par recovery: reduce today's session or keep it as planned?
-        .confirmationDialog("Recovery is below par today", isPresented: Binding(
+        // Below-par recovery or a sore area: change today's session, or keep it as planned?
+        .confirmationDialog(router.pendingReduction?.offer.title ?? "Today's session", isPresented: Binding(
             get: { router.pendingReduction != nil },
             set: { if !$0 { router.pendingReduction = nil } }
         ), titleVisibility: .visible, presenting: router.pendingReduction) { pending in
-            Button("\(pending.option.title) and start") { router.answerReduction(reduce: true, in: context) }
-            Button("Keep as planned") { router.answerReduction(reduce: false, in: context) }
+            if let other = pending.offer.swapWith {
+                Button("Swap with \(other.title) and start it") { router.answerReduction(.swap, in: context) }
+            }
+            if let option = pending.offer.option {
+                Button("\(option.title) and start") { router.answerReduction(.takeChange, in: context) }
+            }
+            if let day = pending.offer.moveTo {
+                Button("Move it to \(day.formatted(.dateTime.weekday(.wide)))") { router.answerReduction(.move, in: context) }
+            }
+            Button("Keep as planned") { router.answerReduction(.keep, in: context) }
             Button("Cancel", role: .cancel) { router.pendingReduction = nil }
         } message: { pending in
-            Text("Your recovery is \(Int(pending.recovery.score.rounded())). \(pending.option.detail).")
+            Text(pending.offer.message)
         }
         .fullScreenCover(item: $router.presentedSession) { session in
             SessionContainerView(session: session)

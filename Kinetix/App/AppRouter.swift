@@ -20,32 +20,48 @@ final class AppRouter {
     /// The trainer is closed down to the bar above the tabs.
     private(set) var isMinimised = false
 
-    /// A planned session waiting on "reduce or keep as planned?" (recovery is below par).
+    /// A planned session waiting on "change it or keep as planned?" (recovery below par, or
+    /// sore legs or upper body for a session that works them).
     struct PendingReduction: Identifiable {
         let session: PlannedSessionModel
-        let option: SwapOption
-        let recovery: RecoveryScore
+        let offer: BalanceService.RecoveryOffer
         var id: UUID { session.id }
     }
     var pendingReduction: PendingReduction?
 
-    /// Starts a planned session, first asking whether to reduce it when recovery is below par.
+    /// Starts a planned session, first offering a change when recovery or soreness says so.
     func startPlanned(_ session: PlannedSessionModel, in context: ModelContext) {
-        if activeSession == nil, let reduction = BalanceService.reduction(for: session, in: context) {
-            pendingReduction = PendingReduction(session: session, option: reduction.option, recovery: reduction.recovery)
+        if activeSession == nil, let offer = BalanceService.recoveryOffer(for: session, in: context) {
+            pendingReduction = PendingReduction(session: session, offer: offer)
             return
         }
         start(ActiveSession(id: session.id, kind: session.kind, title: session.title))
     }
 
-    /// The answer to "reduce or keep as planned?".
-    func answerReduction(reduce: Bool, in context: ModelContext) {
+    enum ReductionAnswer { case takeChange, keep, swap, move }
+
+    /// The answer to the offer.
+    func answerReduction(_ answer: ReductionAnswer, in context: ModelContext) {
         guard let pending = pendingReduction else { return }
         pendingReduction = nil
-        if reduce {
-            BalanceService.takeReduced(pending.session, option: pending.option, recovery: pending.recovery, in: context)
+        let profile = ((try? context.fetch(FetchDescriptor<UserProfileModel>())) ?? []).first { !$0.isSoftDeleted }?.profile
+        switch answer {
+        case .takeChange:
+            if let option = pending.offer.option {
+                BalanceService.takeOffered(pending.session, option: option, recovery: pending.offer.recovery, in: context)
+            }
+            start(ActiveSession(id: pending.session.id, kind: pending.session.kind, title: pending.session.title))
+        case .keep:
+            start(ActiveSession(id: pending.session.id, kind: pending.session.kind, title: pending.session.title))
+        case .swap:
+            // Today becomes the other gym session: start that one.
+            guard let other = pending.offer.swapWith, let profile else { return }
+            BalanceService.swapDays(pending.session, with: other, profile: profile, in: context)
+            start(ActiveSession(id: other.id, kind: other.kind, title: other.title))
+        case .move:
+            guard let day = pending.offer.moveTo, let profile else { return }
+            BalanceService.move(pending.session, to: day, profile: profile, in: context)
         }
-        start(ActiveSession(id: pending.session.id, kind: pending.session.kind, title: pending.session.title))
     }
 
     /// Opens a session full screen. While another one is running, that one is reopened instead.

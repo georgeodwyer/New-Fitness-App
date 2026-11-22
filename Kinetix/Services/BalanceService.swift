@@ -224,13 +224,101 @@ enum BalanceService {
         return data.strain.recovery
     }
 
-    /// The cut to offer when today's session starts on a below-par recovery day (nil: start as planned).
-    static func reduction(for session: PlannedSessionModel, in context: ModelContext, now: Date = .now) -> (option: SwapOption, recovery: RecoveryScore)? {
-        guard Calendar.kinetix.isDate(session.date, inSameDayAs: now),
+    /// Today's check-in (with this morning's heart-rate and HRV flags), nil before it's done.
+    static func todaysCheckIn(in context: ModelContext, now: Date = .now) -> RecoveryCheckIn? {
+        let calendar = Calendar.kinetix
+        let health = HealthInputs.current
+        return ((try? context.fetch(FetchDescriptor<RecoveryCheckInModel>())) ?? [])
+            .first { !$0.isSoftDeleted && calendar.isDate($0.date, inSameDayAs: now) }?
+            .engineValue(restingHeartRate: health.restingHeartRate, hrv: health.hrv)
+    }
+
+    /// What to offer when today's session starts and recovery or soreness says it should change.
+    struct RecoveryOffer {
+        var title: String
+        var message: String
+        /// The changed session to take (reduced, easy run instead, fewer sets for a sore area).
+        var option: SwapOption?
+        /// A later gym session to swap days with (sore area, and that one spares it).
+        var swapWith: PlannedSessionModel?
+        /// A day to move the session to (sore legs on a run day).
+        var moveTo: Date?
+        var recovery: RecoveryScore?
+    }
+
+    /// The offer for today's session (nil: start as planned). Sore legs or upper body change only
+    /// the sessions that work them; whole-body recovery changes any session.
+    static func recoveryOffer(for session: PlannedSessionModel, in context: ModelContext, now: Date = .now) -> RecoveryOffer? {
+        let calendar = Calendar.kinetix
+        guard calendar.isDate(session.date, inSameDayAs: now),
               session.kind.discipline == .run || session.kind.discipline == .strength,
-              let recovery = todaysRecovery(in: context, now: now),
-              let option = Rebalancer.reduced(session.weekSession, recovery: recovery) else { return nil }
-        return (option, recovery)
+              let profile = ((try? context.fetch(FetchDescriptor<UserProfileModel>())) ?? []).first(where: { !$0.isSoftDeleted })?.profile
+        else { return nil }
+        let checkIn = todaysCheckIn(in: context, now: now)
+        let areas = checkIn.map(Rebalancer.soreAreas) ?? []
+        let overall = todaysRecovery(in: context, now: now)
+
+        if session.kind.discipline == .run {
+            // Sore legs: an easy run instead, or another day. Upper body never changes a run.
+            if areas.contains(.legs), let checkIn {
+                let legs = checkIn.legSoreness ?? checkIn.soreness
+                let easy = Rebalancer.easyRunForSoreLegs(session.weekSession, legs: legs, context: Self.context(profile: profile, now: now))
+                let move = moveOptions(for: session, profile: profile, in: context, now: now)
+                    .first { $0.warning == nil && !calendar.isDate($0.day, inSameDayAs: session.date) && $0.day > session.date }
+                if easy != nil || move != nil {
+                    return RecoveryOffer(title: "Your legs are sore today",
+                                         message: "Legs \(Rebalancer.feel(legs))/5. "
+                                             + (easy.map { "An easy run instead: \($0.detail). " } ?? "")
+                                             + (move.map { "Or move it to \($0.day.formatted(.dateTime.weekday(.wide)))." } ?? ""),
+                                         option: easy, moveTo: move?.day, recovery: overall)
+                }
+            }
+            // Otherwise whole-body recovery, worked out without upper-body soreness.
+            let runRecovery = checkIn.flatMap { StrainService.recovery(health: HealthInputs.current, checkIn: Rebalancer.forRuns($0)) } ?? overall
+            guard let recovery = runRecovery, let option = Rebalancer.reduced(session.weekSession, recovery: recovery) else { return nil }
+            return RecoveryOffer(title: "Recovery is below par today",
+                                 message: "Your recovery for running is \(Int(recovery.score.rounded())). \(option.detail).",
+                                 option: option, recovery: recovery)
+        }
+
+        // Gym: a sore area this session works → swap with a later gym day that spares it, or fewer sets on it.
+        let library = PlanService.templates
+        let region: (String) -> BodyRegion? = { library.exercise(id: $0)?.region }
+        let soreHere = areas.intersection(Rebalancer.areasWorked(session.weekSession, region: region))
+        if !soreHere.isEmpty, let checkIn {
+            let swap = daySwapOptions(for: session, profile: profile, in: context, now: now).first { option in
+                option.warning == nil && option.other.kind.discipline == .strength && option.other.date > session.date
+                    && Rebalancer.areasWorked(option.other.weekSession, region: region).isDisjoint(with: soreHere)
+            }
+            let fewer = Rebalancer.fewerSetsForSoreness(session.weekSession, areas: soreHere, region: region,
+                                                        recovery: overall, checkIn: checkIn)
+            if swap != nil || fewer != nil {
+                let names = soreHere.map(\.displayName).sorted().joined(separator: " and ")
+                let verb = soreHere == [.upper] ? "is" : "are"
+                var message = "Your \(names) \(verb) sore today."
+                if let other = swap?.other {
+                    message += " Swap with \(other.title) on \(other.date.formatted(.dateTime.weekday(.wide))), which spares them"
+                    if let fewer { message += ", or keep today with fewer sets: \(fewer.detail.lowercased())." } else { message += "." }
+                } else if let fewer {
+                    message += " \(fewer.title): \(fewer.detail.lowercased())."
+                }
+                return RecoveryOffer(title: "Sore \(names) today", message: message, option: fewer, swapWith: swap?.other, recovery: overall)
+            }
+        }
+        guard let recovery = overall, let option = Rebalancer.reduced(session.weekSession, recovery: recovery) else { return nil }
+        return RecoveryOffer(title: "Recovery is below par today",
+                             message: "Your recovery is \(Int(recovery.score.rounded())). \(option.detail).",
+                             option: option, recovery: recovery)
+    }
+
+    /// Takes the offered change (recorded with its readings, so it can be undone).
+    @discardableResult
+    static func takeOffered(_ session: PlannedSessionModel, option: SwapOption, recovery: RecoveryScore?,
+                            in modelContext: ModelContext, now: Date = .now) -> [String] {
+        guard let profile = ((try? modelContext.fetch(FetchDescriptor<UserProfileModel>())) ?? []).first(where: { !$0.isSoftDeleted })?.profile
+        else { return [] }
+        return apply([Adjustment(session: option.replacement, explanation: option.explanation, cause: .lowRecovery)], to: [session],
+                     profile: profile, triggers: recovery.map(recoveryScoreTriggers) ?? [], in: modelContext, now: now)
     }
 
     /// Takes the reduced version (recorded with the recovery readings, so it can be undone).

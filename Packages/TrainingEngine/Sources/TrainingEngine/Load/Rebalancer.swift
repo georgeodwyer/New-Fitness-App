@@ -588,3 +588,104 @@ public enum Rebalancer {
         ], warning: warning)
     }
 }
+
+// MARK: - Sore legs or upper body
+
+/// The check-in's soreness, by body area. Whole-body recovery (sleep, energy, HRV, heart rate)
+/// still applies to every session; soreness only changes sessions that work the sore area:
+/// sore legs (1 or 2 out of 5 on the check-in) → a run is offered as an easy run or a move,
+/// leg exercises get fewer sets (or the gym day swaps with a later one that spares the legs);
+/// a sore upper body → upper-body exercises only, never runs.
+public enum BodyArea: String, CaseIterable, Sendable {
+    case legs, upper
+
+    public var displayName: String { self == .legs ? "legs" : "upper body" }
+    var regions: Set<BodyRegion> { self == .legs ? [.lower] : [.upper] }
+}
+
+extension Rebalancer {
+    /// Stored soreness 4–5 is "sore" (the check-in shows it as 2 or 1 out of 5, 5 = fresh).
+    public static let soreAtOrAbove = 4
+    /// The share of sets kept on a sore area's exercises.
+    public static let soreAreaSetsKept = 0.75
+
+    /// Sore areas from a check-in. An older check-in with one soreness answer counts for both.
+    public static func soreAreas(_ checkIn: RecoveryCheckIn) -> Set<BodyArea> {
+        guard let legs = checkIn.legSoreness else { return checkIn.soreness >= soreAtOrAbove ? [.legs, .upper] : [] }
+        var areas: Set<BodyArea> = []
+        if legs >= soreAtOrAbove { areas.insert(.legs) }
+        if checkIn.soreness >= soreAtOrAbove { areas.insert(.upper) }
+        return areas
+    }
+
+    /// The check-in as it counts for a run: legs only (upper-body soreness is left out).
+    public static func forRuns(_ checkIn: RecoveryCheckIn) -> RecoveryCheckIn {
+        guard let legs = checkIn.legSoreness else { return checkIn }
+        var runs = checkIn
+        runs.soreness = legs
+        runs.legSoreness = nil
+        return runs
+    }
+
+    /// "Out of 5" as the check-in shows it (5 = fresh).
+    public static func feel(_ soreness: Int) -> Int { 6 - soreness }
+
+    /// Sore legs: a hard or long run offered as an easy run (a long run shortened). nil for a run
+    /// that's already easy (moving it is still offered).
+    public static func easyRunForSoreLegs(_ session: WeekSession, legs: Int, context: Context) -> SwapOption? {
+        guard case .run(let type) = session.kind, type != .easy, type != .recovery,
+              session.status == .planned, session.changeReason == nil else { return nil }
+        let rules = BalanceRules.current.rebalancing
+        let minutes = max(rules.minimumEasyRunMinutes, session.durationMinutes)
+        let easyMinutes = type == .long ? (minutes * rules.easedLongRunFactor).rounded() : min(minutes, rules.easedRunMaxMinutes)
+        var option = easyRun(minutes: easyMinutes, from: session, context: context,
+                             explanation: "Swapped your \(session.title.lowercased()) for an easy \(Int(easyMinutes))-minute run because your legs are sore today (\(feel(legs))/5).")
+        option.title = "Easy run instead"
+        return option
+    }
+
+    /// The sore areas a gym session works (from its exercises).
+    public static func areasWorked(_ session: WeekSession, region: (String) -> BodyRegion?) -> Set<BodyArea> {
+        guard let strength = session.strength else { return [] }
+        let regions = Set(strength.exercises.compactMap { region($0.exerciseId) })
+        return Set(BodyArea.allCases.filter { !$0.regions.isDisjoint(with: regions) })
+    }
+
+    /// Fewer sets on the sore areas' exercises (same weights), after any whole-body cut for a
+    /// below-par recovery. nil when nothing would change.
+    public static func fewerSetsForSoreness(_ session: WeekSession, areas: Set<BodyArea>, region: (String) -> BodyRegion?,
+                                            recovery: RecoveryScore?, checkIn: RecoveryCheckIn) -> SwapOption? {
+        guard case .strength = session.kind, var strength = session.strength, !strength.exercises.isEmpty,
+              session.status == .planned, session.changeReason == nil else { return nil }
+        let sore = areas.intersection(areasWorked(session, region: region))
+        guard !sore.isEmpty else { return nil }
+        let before = strength.exercises.reduce(0) { $0 + $1.sets }
+        let multiplier = recovery?.volumeMultiplier ?? 1
+        if multiplier < 1 { strength = reducedGym(strength, multiplier: multiplier) }
+        let soreRegions = sore.reduce(into: Set<BodyRegion>()) { $0.formUnion($1.regions) }
+        for index in strength.exercises.indices {
+            guard let exerciseRegion = region(strength.exercises[index].exerciseId), soreRegions.contains(exerciseRegion) else { continue }
+            let sets = strength.exercises[index].sets
+            strength.exercises[index].sets = max(1, min(sets - 1, Int((Double(sets) * soreAreaSetsKept).rounded(.down))))
+        }
+        let after = strength.exercises.reduce(0) { $0 + $1.sets }
+        guard after < before else { return nil }
+        var reduced = session
+        reduced.strength = strength
+        reduced.durationMinutes = max(15, (session.durationMinutes * Double(after) / Double(before) / 5).rounded() * 5)
+        reduced.effort = max(3, session.effort - 1)
+        reduced.status = .swapped
+        let names = sore.sorted { $0.rawValue < $1.rawValue }
+        let areaText = names.map { $0 == .legs ? "lower-body" : "upper-body" }.joined(separator: " and ")
+        let feelings = names.map { area -> String in
+            let value = area == .legs ? (checkIn.legSoreness ?? checkIn.soreness) : checkIn.soreness
+            return "\(area.displayName) \(feel(value))/5"
+        }.joined(separator: ", ")
+        var reason = "Fewer \(areaText) sets because you're sore today (\(feelings))."
+        if multiplier < 1, let recovery { reason += " A few fewer sets overall too, as your recovery is \(Int(recovery.score.rounded()))." }
+        reduced.summary = "Same weights, \(after) sets instead of \(before)"
+        reduced.changeReason = reason
+        return SwapOption(id: "soreArea", title: "Fewer \(areaText) sets", detail: reduced.summary,
+                          systemImage: "arrow.down.right.circle", replacement: reduced, explanation: reason)
+    }
+}
