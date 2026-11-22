@@ -3,7 +3,7 @@ import SwiftData
 import Charts
 import TrainingEngine
 
-/// Stats → Overview's effort and recovery: recovery over the last 30 days, daily exertion and
+/// Stats → Overview's exertion and recovery: recovery over the last 30 days, daily exertion and
 /// this week against your usual.
 struct ProgressSummaryView: View {
     let units: UnitSystem

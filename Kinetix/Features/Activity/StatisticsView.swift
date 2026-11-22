@@ -4,7 +4,7 @@ import Charts
 import TrainingEngine
 
 /// Stats, one view at a time:
-/// - Overview: totals for a period, the training calendar, sessions a week, effort and recovery;
+/// - Overview: totals for a period, the training calendar, sessions a week, exertion and recovery;
 /// - Running: your paces, totals, weekly distance, pace and cadence trends, best efforts, race
 ///   predictions and every run;
 /// - Strength: lifts over time, sets per muscle group, weekly volume and every session;
