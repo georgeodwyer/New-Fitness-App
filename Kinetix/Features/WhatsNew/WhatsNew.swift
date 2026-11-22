@@ -21,6 +21,8 @@ enum WhatsNew {
         Release(id: "2026-11-simpler-1", title: "What's new", items: [
             Item(symbol: "rectangle.stack", title: "A simpler Today",
                  detail: "Today opens with Readiness, a watch-face dial: recovery round the outside, today's exertion inside and your legs at the bottom, with sleep, HRV and resting heart rate beside it. Then your session, your week and your goal. Add more cards with ••• then Edit dashboard."),
+            Item(symbol: "rectangle.grid.1x2", title: "Cleaner cards",
+                 detail: "Today's session is a compact row with a big Start button, and a run from Apple Health can be counted right there. Your race countdown shows your predicted time against your goal, and the other cards are one glance each."),
             Item(symbol: "lightbulb", title: "Tours and help",
                  detail: "A quick tour the first time you open each tab, a Getting started checklist, a ? next to anything technical, and Help & questions in Settings."),
             Item(symbol: "slider.horizontal.3", title: "Tidier tabs",

@@ -1,8 +1,8 @@
 import SwiftUI
 import TrainingEngine
 
-/// Today's sessions, stacked full width: a run shows its distance, time, target pace and
-/// its parts as a coloured bar; a gym session shows a summary. Rest days and a plan that
+/// Today's sessions, stacked full width, each a compact row: the session and its essentials,
+/// a round Start button and small links. Rest days and a plan that
 /// hasn't started get one card.
 struct TodaySessionCards: View {
     let sessions: [PlannedSessionModel]
@@ -27,127 +27,86 @@ struct TodaySessionCards: View {
 
     // MARK: Cards
 
+    /// A compact row: what it is and the essentials on one line, a big round Start button, the
+    /// Apple Health "Count it" offer when a run there matches, and small links underneath.
     private func card(_ session: PlannedSessionModel) -> some View {
         let tint = session.kind.tint
         let isRun = session.kind.discipline == .run
-        return VStack(alignment: .leading, spacing: KXSpacing.md) {
+        let open = session.status == .planned || session.status == .swapped
+        return VStack(alignment: .leading, spacing: KXSpacing.sm) {
             HStack(alignment: .center, spacing: KXSpacing.md) {
-                Image(systemName: session.kind.symbolName)
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(tint)
-                    .frame(width: 40, height: 40)
-                    .background(tint.opacity(0.14), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: 1) {
+                VStack(alignment: .leading, spacing: 2) {
                     KXOverline(overline(session), color: tint)
                     Text(session.title)
-                        .font(KXFont.custom(.condensedBold, 22, relativeTo: .title3))
+                        .font(KXFont.custom(.condensedBold, 24, relativeTo: .title3))
                         .textCase(.uppercase)
                         .foregroundStyle(KXColor.ink)
                         .lineLimit(2)
+                    Text(isRun ? runLine(session) : summary(session))
+                        .font(KXFont.callout)
+                        .foregroundStyle(KXColor.inkSecondary)
+                        .lineLimit(2)
                 }
                 Spacer(minLength: KXSpacing.xs)
-                menu(session)
+                trailing(session, open: open)
             }
-            if isRun {
-                runDetails(session)
-            } else {
-                Text(summary(session))
-                    .font(KXFont.callout)
-                    .foregroundStyle(KXColor.inkSecondary)
+            if isRun, open, Calendar.kinetix.isDateInToday(session.date) {
+                HealthMatchStrip(session: session, format: format)
             }
-            footer(session)
+            Divider().overlay(KXColor.border)
+            HStack(spacing: KXSpacing.lg) {
+                Button(session.status == .completed ? "View" : "Details") { onDetails(session) }
+                    .accessibilityIdentifier("today.details")
+                if session.status == .planned {
+                    Button("Swap, move or skip") { onActions(session) }
+                        .accessibilityIdentifier("today.actions")
+                }
+                Spacer(minLength: 0)
+            }
+            .font(KXFont.callout)
+            .foregroundStyle(KXColor.inkSecondary)
         }
-        .kxCard(padding: KXSpacing.lg)
+        .padding(.vertical, KXSpacing.md)
+        .padding(.leading, KXSpacing.lg)
+        .padding(.trailing, KXSpacing.md)
+        .background(KXColor.surface, in: RoundedRectangle(cornerRadius: KXRadius.md, style: .continuous))
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("today.sessionTile")
     }
 
+    /// The round button on the right: Start, a tick once done, or a word when skipped.
     @ViewBuilder
-    private func runDetails(_ session: PlannedSessionModel) -> some View {
-        let structure = session.runStructure
-        HStack(alignment: .top, spacing: KXSpacing.lg) {
-            if let meters = session.estimatedDistanceMeters, meters > 0 {
-                stat("Distance", format.distance(meters))
+    private func trailing(_ session: PlannedSessionModel, open: Bool) -> some View {
+        if session.status == .completed {
+            Image(systemName: "checkmark")
+                .font(.system(size: 22, weight: .bold))
+                .foregroundStyle(KXColor.onAccent)
+                .frame(width: 56, height: 56)
+                .background(KXColor.success, in: Circle())
+                .accessibilityLabel("Done")
+        } else if session.status == .skipped {
+            Text("Skipped").font(KXFont.captionEmphasis).foregroundStyle(KXColor.inkSecondary)
+        } else if open, canStart(session) {
+            Button { onStart(session) } label: {
+                Image(systemName: "play.fill")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(KXColor.onAccent)
+                    .frame(width: 60, height: 60)
+                    .background(KXColor.accent, in: Circle())
             }
-            stat("Time", "\(Int(session.plannedDurationMinutes.rounded())) min")
-            if let pace = Self.targetPace(structure) {
-                stat("Target", format.paceRange(pace))
-            }
-            Spacer(minLength: 0)
-        }
-        if let structure, structure.segments.count > 1 {
-            SessionStructureBar(structure: structure)
-                .frame(height: 12)
-            Text(session.summary)
-                .font(KXFont.caption)
-                .foregroundStyle(KXColor.inkTertiary)
-                .lineLimit(2)
-        } else if !session.summary.isEmpty {
-            Text(session.summary)
-                .font(KXFont.callout)
-                .foregroundStyle(KXColor.inkSecondary)
+            .buttonStyle(.plain)
+            .accessibilityLabel(session.kind.discipline == .run ? "Start run" : "Start \(session.title)")
+            .accessibilityIdentifier("today.start")
         }
     }
 
-    private func stat(_ label: String, _ value: String) -> some View {
-        VStack(alignment: .leading, spacing: 1) {
-            KXOverline(label)
-            Text(value)
-                .font(KXFont.number(22, relativeTo: .title3))
-                .foregroundStyle(KXColor.ink)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-        }
-        .accessibilityElement(children: .combine)
-    }
-
-    @ViewBuilder
-    private func footer(_ session: PlannedSessionModel) -> some View {
-        HStack(spacing: KXSpacing.sm) {
-            switch session.status {
-            case .completed:
-                Label("Done", systemImage: "checkmark.circle.fill")
-                    .font(KXFont.bodyEmphasis)
-                    .foregroundStyle(KXColor.success)
-                Spacer()
-                Button("View") { onDetails(session) }
-                    .buttonStyle(.kx(.outlined))
-            case .skipped:
-                Label("Skipped", systemImage: "xmark.circle")
-                    .font(KXFont.bodyEmphasis)
-                    .foregroundStyle(KXColor.inkSecondary)
-                Spacer()
-            default:
-                if canStart(session) {
-                    Button {
-                        onStart(session)
-                    } label: {
-                        Label(session.kind.discipline == .run ? "Start run" : "Start", systemImage: "play.fill")
-                    }
-                    .buttonStyle(.kx(.primary, fullWidth: true))
-                    .accessibilityLabel("Start \(session.title)")
-                }
-                Button("Details") { onDetails(session) }
-                    .buttonStyle(.kx(.outlined, fullWidth: !canStart(session)))
-            }
-        }
-    }
-
-    private func menu(_ session: PlannedSessionModel) -> some View {
-        Menu {
-            Button { onDetails(session) } label: { Label("Details", systemImage: "info.circle") }
-            if session.status == .planned {
-                Button { onActions(session) } label: { Label("Skip, swap or move", systemImage: "arrow.left.arrow.right") }
-            }
-        } label: {
-            Image(systemName: "ellipsis")
-                .font(.body.weight(.semibold))
-                .foregroundStyle(KXColor.inkSecondary)
-                .frame(width: 36, height: 32)
-                .background(KXColor.surfaceTint, in: Capsule())
-        }
-        .accessibilityLabel("More for \(session.title)")
+    /// "5.0 km · 30 min · 5:10–5:57/km".
+    private func runLine(_ session: PlannedSessionModel) -> String {
+        var parts: [String] = []
+        if let meters = session.estimatedDistanceMeters, meters > 0 { parts.append(format.distance(meters)) }
+        parts.append("\(Int(session.plannedDurationMinutes.rounded())) min")
+        if let pace = Self.targetPace(session.runStructure) { parts.append(format.paceRange(pace)) }
+        return parts.joined(separator: " · ")
     }
 
     private var restCard: some View {
@@ -181,6 +140,11 @@ struct TodaySessionCards: View {
 
     private func overline(_ session: PlannedSessionModel) -> String {
         var text = sessions.count > 1 ? (session.slot == .morning ? "Morning" : "Evening") : "Today"
+        switch session.kind.discipline {
+        case .run: text += " · Run"
+        case .strength: text += " · Gym"
+        default: break
+        }
         if session.status == .swapped { text += " · Swapped" }
         return text
     }

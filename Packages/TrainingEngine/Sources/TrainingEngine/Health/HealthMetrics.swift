@@ -380,7 +380,7 @@ public enum SleepScore {
 public enum DashboardCard: String, Codable, CaseIterable, Sendable {
     case today, checkIn, body, load, dailyLoad, week, weekStrip, goal, records
 
-    public static let defaultOrder: [DashboardCard] = [.load, .today, .weekStrip, .goal, .checkIn, .dailyLoad, .week, .body, .records]
+    public static let defaultOrder: [DashboardCard] = [.load, .today, .goal, .weekStrip, .checkIn, .dailyLoad, .week, .body, .records]
 
     public var displayName: String {
         switch self {
@@ -390,8 +390,8 @@ public enum DashboardCard: String, Codable, CaseIterable, Sendable {
         case .load: return "Readiness (check-in, exertion and recovery)"
         case .dailyLoad: return "Daily exertion chart"
         case .week: return "This week vs plan"
-        case .weekStrip: return "Week at a glance"
-        case .goal: return "Goal progress"
+        case .weekStrip: return "This week"
+        case .goal: return "Goal and race countdown"
         case .records: return "Records and race estimates"
         }
     }

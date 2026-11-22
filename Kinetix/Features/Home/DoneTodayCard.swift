@@ -50,10 +50,10 @@ struct DoneTodayCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: KXSpacing.sm) {
-            KXOverline("Done today", color: KXColor.success)
+            KXOverline("Done today")
             ForEach(items) { item in
                 row(item)
-                if item.id != items.last?.id { Divider() }
+                if item.id != items.last?.id { Divider().overlay(KXColor.border) }
             }
         }
         .kxCard()
@@ -81,31 +81,32 @@ struct DoneTodayCard: View {
         }
     }
 
+    /// A ticked row: green for Kinetix sessions, grey for workouts from other apps, with the
+    /// essentials on the right.
     private func line(symbol: String, tint: Color, title: String, detail: String, source: String?, opens: Bool) -> some View {
-        HStack(spacing: KXSpacing.md) {
+        let fromHealth = !opens
+        return HStack(spacing: KXSpacing.md) {
             Image(systemName: "checkmark.circle.fill")
-                .foregroundStyle(KXColor.success)
+                .font(.title3)
+                .foregroundStyle(fromHealth ? KXColor.inkTertiary : KXColor.success)
                 .accessibilityHidden(true)
-            Image(systemName: symbol)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(tint)
-                .frame(width: 28, height: 28)
-                .background(KXColor.surfaceTint, in: Circle())
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(KXFont.bodyEmphasis).foregroundStyle(KXColor.ink).lineLimit(1)
-                Text(detail).font(KXFont.caption.monospacedDigit()).foregroundStyle(KXColor.inkSecondary).lineLimit(1)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title).font(fromHealth ? KXFont.body : KXFont.bodyEmphasis).foregroundStyle(KXColor.ink).lineLimit(1)
+                if let source, source != "Planned", source != "Recorded" {
+                    Text(source).font(KXFont.caption2).foregroundStyle(KXColor.inkSecondary)
+                }
             }
-            Spacer(minLength: 0)
-            if let source, source != "Planned", source != "Recorded" {
-                Text(source).font(KXFont.caption).foregroundStyle(KXColor.inkTertiary)
-            }
-            if opens {
-                Image(systemName: "chevron.right").font(KXFont.caption).foregroundStyle(KXColor.inkTertiary).accessibilityHidden(true)
-            }
+            Spacer(minLength: KXSpacing.sm)
+            Text(detail)
+                .font(KXFont.caption.monospacedDigit())
+                .foregroundStyle(KXColor.inkSecondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
         }
+        .padding(.vertical, KXSpacing.xs)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
+        .accessibilityHint(opens ? "Opens the session" : "")
     }
 
     private func runDetail(_ run: RunLogModel) -> String {

@@ -90,7 +90,7 @@ final class HealthMetricsTests: XCTestCase {
 
     func testDashboardLayoutReorderHideAndUpgrade() {
         var layout = DashboardLayout.default
-        XCTAssertEqual(layout.visibleCards, [.load, .today, .weekStrip, .goal], "Four cards to start; the rest can be switched on")
+        XCTAssertEqual(layout.visibleCards, [.load, .today, .goal, .weekStrip], "Four cards to start; the rest can be switched on")
         XCTAssertEqual(layout.cards, DashboardCard.defaultOrder)
         layout.setHidden(.records, false)
         XCTAssertTrue(layout.visibleCards.contains(.records))

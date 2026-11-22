@@ -10,101 +10,70 @@ struct WeekProgressCard: View {
 
     private var format: DisplayFormat { DisplayFormat(units: units) }
 
+    /// How far through the week's plan you'd be by the end of today, if everything went to plan.
+    private func expectedShare(_ discipline: Discipline, measure: (PlannedSessionModel) -> Double) -> Double {
+        let sessions = data.week.flatMap(\.sessions).filter { $0.kind.discipline == discipline && $0.status != .skipped }
+        let total = sessions.reduce(0) { $0 + measure($1) }
+        guard total > 0 else { return 0 }
+        let endOfToday = Calendar.kinetix.date(byAdding: .day, value: 1, to: Calendar.kinetix.startOfDay(for: .now)) ?? .now
+        return sessions.filter { $0.date < endOfToday }.reduce(0) { $0 + measure($1) } / total
+    }
+
+    private var status: String {
+        let a = data.adherence
+        if a.total == 0 { return "Nothing planned" }
+        if a.missed > 0 { return "\(a.missed) missed" }
+        return "On track"
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: KXSpacing.lg) {
-            KXOverline("This week vs plan")
-            HStack(alignment: .center, spacing: KXSpacing.lg) {
-                adherenceRing
-                VStack(alignment: .leading, spacing: KXSpacing.md) {
-                    meters
-                }
-            }
-            Divider().overlay(KXColor.border)
-            adherence
+        VStack(alignment: .leading, spacing: KXSpacing.md) {
+            KXOverline("This week vs plan · \(status)")
+            bar("Run", value: data.actualRunMeters, planned: data.plannedRunMeters,
+                expected: expectedShare(.run) { $0.estimatedDistanceMeters ?? 0 }, color: KXColor.run,
+                text: "\(format.distance(data.actualRunMeters))/\(format.distance(data.plannedRunMeters, decimals: 0))")
+            bar("Gym", value: data.actualLiftVolumeKg, planned: data.plannedLiftVolumeKg,
+                expected: expectedShare(.strength) { _ in 1 }, color: KXColor.lift,
+                text: "\(format.volume(data.actualLiftVolumeKg))/\(format.volume(data.plannedLiftVolumeKg))")
+            Text("White tick: where the plan expects you to be by today")
+                .font(KXFont.caption2)
+                .foregroundStyle(KXColor.inkSecondary)
         }
         .kxCard()
-    }
-
-    /// Plan adherence as a ring: the share of this week's sessions so far that were done.
-    private var adherenceRing: some View {
-        let percent = data.adherence.percent
-        return ZStack {
-            Circle().stroke(KXColor.surfaceTint, lineWidth: 9)
-            Circle()
-                .trim(from: 0, to: CGFloat(percent ?? 0) / 100)
-                .stroke(KXColor.success, style: StrokeStyle(lineWidth: 9, lineCap: .round))
-                .rotationEffect(.degrees(-90))
-            VStack(spacing: 0) {
-                Text(percent.map { "\($0)%" } ?? "–")
-                    .font(KXFont.number(26, relativeTo: .title2))
-                    .foregroundStyle(KXColor.ink)
-                Text("on plan").font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
-            }
-        }
-        .frame(width: 92, height: 92)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Plan adherence \(percent.map { "\($0) percent" } ?? "not yet")")
-    }
-
-    @ViewBuilder private var meters: some View {
-            KXMeter(
-                label: "Running distance",
-                valueText: format.distance(data.actualRunMeters),
-                targetText: format.distance(data.plannedRunMeters, decimals: 0),
-                fraction: data.plannedRunMeters > 0 ? data.actualRunMeters / data.plannedRunMeters : 0,
-                color: KXColor.run
-            )
-            KXMeter(
-                label: "Lifting volume",
-                valueText: compactWeight(data.actualLiftVolumeKg),
-                targetText: compactWeight(data.plannedLiftVolumeKg),
-                fraction: data.plannedLiftVolumeKg > 0 ? data.actualLiftVolumeKg / data.plannedLiftVolumeKg : 0,
-                color: KXColor.lift
-            )
-    }
-
-    private func compactWeight(_ kg: Double) -> String { DisplayFormat(units: units).volume(kg) }
-
-    private var adherence: some View {
-        let a = data.adherence
-        return VStack(alignment: .leading, spacing: KXSpacing.sm) {
-            HStack(alignment: .firstTextBaseline) {
-                Text("Sessions so far").font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
-                Spacer()
-                Text("\(a.completed) of \(a.total)").font(KXFont.bodyEmphasis.monospacedDigit()).foregroundStyle(KXColor.ink)
-            }
-            // Part-to-whole: done / skipped / missed / still to come, with 2 pt gaps.
-            GeometryReader { geo in
-                let total = max(a.total, 1)
-                let parts: [(Int, Color)] = [(a.completed, KXColor.success), (a.skipped, KXColor.inkTertiary),
-                                             (a.missed, KXColor.warning), (a.upcoming, KXColor.border)]
-                let visible = parts.filter { $0.0 > 0 }
-                let gaps = CGFloat(max(visible.count - 1, 0)) * 2
-                HStack(spacing: 2) {
-                    ForEach(Array(visible.enumerated()), id: \.offset) { _, part in
-                        Rectangle().fill(part.1)
-                            .frame(width: max(4, (geo.size.width - gaps) * CGFloat(part.0) / CGFloat(total)))
-                    }
-                }
-                .clipShape(Capsule())
-            }
-            .frame(height: 10)
-            .accessibilityHidden(true)
-            HStack(spacing: KXSpacing.md) {
-                legend("checkmark.circle.fill", KXColor.success, "\(a.completed) done")
-                legend("arrow.left.arrow.right.circle.fill", KXColor.accent, "\(a.swapped) swapped")
-                legend("xmark.circle.fill", KXColor.inkTertiary, "\(a.skipped) skipped")
-                if a.missed > 0 { legend("exclamationmark.circle.fill", KXColor.warning, "\(a.missed) missed") }
-            }
-        }
         .accessibilityElement(children: .combine)
     }
 
-    private func legend(_ symbol: String, _ color: Color, _ text: String) -> some View {
-        HStack(spacing: 4) {
-            Image(systemName: symbol).foregroundStyle(color).font(KXFont.caption)
-            Text(text).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+    private func bar(_ label: String, value: Double, planned: Double, expected: Double, color: Color, text: String) -> some View {
+        let share = planned > 0 ? min(value / planned, 1) : 0
+        return HStack(spacing: KXSpacing.sm) {
+            Text(label.uppercased())
+                .font(KXFont.caption)
+                .foregroundStyle(KXColor.inkSecondary)
+                .frame(width: 36, alignment: .leading)
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(KXColor.surfaceTint)
+                    Capsule().fill(color).frame(width: max(share > 0 ? 10 : 0, geo.size.width * share))
+                    if planned > 0 {
+                        Rectangle()
+                            .fill(KXColor.ink)
+                            .frame(width: 2, height: 18)
+                            .offset(x: max(0, geo.size.width * expected - 1))
+                    }
+                }
+                .frame(height: 10)
+                .frame(maxHeight: .infinity)
+            }
+            .frame(height: 18)
+            Text(text)
+                .font(KXFont.number(16, relativeTo: .callout))
+                .foregroundStyle(KXColor.ink)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .frame(width: 96, alignment: .trailing)
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(label): \(text)")
     }
 }
 
@@ -359,5 +328,87 @@ struct SessionActionsSheet: View {
             }
             .padding(KXSpacing.xl)
         }
+    }
+}
+
+// MARK: - Latest best
+
+/// Records on Today as one spotlight: the latest new best (with when), your race estimates in a
+/// line underneath, and a link to all records in Activity.
+struct LatestBestCard: View {
+    let records: [PersonalRecordModel]
+    let profile: AthleteProfile?
+    let units: UnitSystem
+    let onAll: () -> Void
+
+    private var format: DisplayFormat { DisplayFormat(units: units) }
+
+    private var latest: PersonalRecordModel? {
+        records.filter { !$0.isSoftDeleted && $0.kindRaw == RecordKind.estimatedOneRepMax.rawValue }
+            .max { $0.achievedAt < $1.achievedAt }
+    }
+
+    private func when(_ date: Date) -> String {
+        let calendar = Calendar.kinetix
+        if calendar.isDateInToday(date) { return "today" }
+        if calendar.isDateInYesterday(date) { return "yesterday" }
+        let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: date), to: calendar.startOfDay(for: .now)).day ?? 0
+        return days < 7 ? date.formatted(.dateTime.weekday(.wide)) : date.formatted(.dateTime.day().month(.abbreviated))
+    }
+
+    /// "5K 23:41 · 10K 49:15 · Half 1:52:10".
+    private var raceLine: String? {
+        guard let profile else { return nil }
+        let zones = PaceZones(vdot: FormService.predictionVDOT(for: profile))
+        let races: [(String, Double)] = [("5K", 5000), ("10K", 10000), ("Half", 21097.5)]
+        return races.map { "\($0.0) \(Units.formatMinutesSeconds(zones.predictedTime(distanceMeters: $0.1)))" }.joined(separator: " · ")
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: KXSpacing.sm) {
+            HStack(alignment: .center, spacing: KXSpacing.md) {
+                VStack(alignment: .leading, spacing: 2) {
+                    if let record = latest {
+                        KXOverline("New best · \(when(record.achievedAt))", color: KXColor.warning)
+                        Text("\(PlanService.templates.exercise(id: record.recordKey)?.name ?? record.recordKey) \(format.weight(record.value))")
+                            .font(KXFont.custom(.condensedBold, 24, relativeTo: .title3))
+                            .textCase(.uppercase)
+                            .foregroundStyle(KXColor.ink)
+                            .lineLimit(2)
+                        Text("Estimated 1-rep max").font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+                    } else {
+                        KXOverline("Race estimates", color: KXColor.run)
+                        Text("From your current fitness").font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
+                    }
+                }
+                Spacer(minLength: KXSpacing.xs)
+                Image(systemName: "trophy.fill")
+                    .font(.title3)
+                    .foregroundStyle(KXColor.warning)
+                    .frame(width: 48, height: 48)
+                    .background(KXColor.warning.opacity(0.16), in: Circle())
+                    .accessibilityHidden(true)
+            }
+            if let raceLine {
+                Text(raceLine)
+                    .font(KXFont.callout.monospacedDigit())
+                    .foregroundStyle(KXColor.ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+            Divider().overlay(KXColor.border)
+            HStack(spacing: KXSpacing.lg) {
+                Button("All records", action: onAll)
+                Spacer(minLength: 0)
+            }
+            .font(KXFont.callout)
+            .foregroundStyle(KXColor.inkSecondary)
+        }
+        .padding(.vertical, KXSpacing.md)
+        .padding(.leading, KXSpacing.lg)
+        .padding(.trailing, KXSpacing.md)
+        .background(KXColor.surface, in: RoundedRectangle(cornerRadius: KXRadius.md, style: .continuous))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("today.records")
     }
 }

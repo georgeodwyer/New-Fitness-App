@@ -100,7 +100,20 @@ struct WeeklyReviewCard: View {
     /// Folded to one line (Today, except while the weekly check-in waits for an answer); tap to open.
     var collapsed = false
     var onAnswered: () -> Void = {}
+    /// On Today: the week in three numbers (sessions, distance, points) and the question; next
+    /// week's sessions behind a link.
+    var compactToday = false
     @State private var expanded = false
+    @State private var showNextWeek = false
+    @Environment(\.modelContext) private var context
+
+    /// This week's points (the same as Achievements).
+    private var weekPoints: Int? {
+        let (activities, planned) = ActivityRecords.all(in: context)
+        let calendar = Calendar.kinetix
+        return Points.weeks(activities, planned: planned, now: .now, calendar: calendar)
+            .last { calendar.isDate($0.start, inSameDayAs: calendar.startOfISOWeek(for: data.weekStart)) }?.total
+    }
 
     private var format: DisplayFormat { DisplayFormat(units: units) }
 
@@ -142,7 +155,63 @@ struct WeeklyReviewCard: View {
         return parts.joined(separator: " · ")
     }
 
-    private var full: some View {
+    @ViewBuilder private var full: some View {
+        if compactToday { compact } else { detailed }
+    }
+
+    /// Today's version: three numbers, then "How did it feel?".
+    private var compact: some View {
+        VStack(alignment: .leading, spacing: KXSpacing.md) {
+            HStack {
+                KXOverline("Your week")
+                Spacer()
+                if collapsed {
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) { expanded = false }
+                    } label: {
+                        Image(systemName: "chevron.up").font(KXFont.captionEmphasis)
+                    }
+                    .foregroundStyle(KXColor.inkSecondary)
+                    .accessibilityLabel("Fold away")
+                }
+            }
+            HStack(alignment: .top) {
+                if data.review.sessionsPlanned > 0 {
+                    number("\(data.review.sessionsDone)/\(data.review.sessionsPlanned)", "sessions", KXColor.ink)
+                }
+                number(format.distance(data.review.runMeters, decimals: 1), "run", KXColor.ink)
+                if let points = weekPoints {
+                    number("\(points)", "points", KXColor.accent)
+                }
+            }
+            if WeeklyReviewData.isReviewTime() {
+                WeeklyCheckInView(weekStart: data.weekStart, nextWeek: data.nextWeek, onAnswered: onAnswered)
+            }
+            if !data.nextWeek.isEmpty {
+                Divider().overlay(KXColor.border)
+                Button("Next week: \(data.nextWeek.count) session\(data.nextWeek.count == 1 ? "" : "s")" + (data.focus.map { " · \($0.lowercased())" } ?? "")) {
+                    showNextWeek = true
+                }
+                .font(KXFont.callout)
+                .foregroundStyle(KXColor.inkSecondary)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .kxCard()
+        .accessibilityIdentifier("today.weeklyReview")
+        .sheet(isPresented: $showNextWeek) { WeeklyReviewSheet(units: units) }
+    }
+
+    private func number(_ value: String, _ label: String, _ color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(value).font(KXFont.number(28, relativeTo: .title2)).foregroundStyle(color).lineLimit(1).minimumScaleFactor(0.7)
+            Text(label).font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+    }
+
+    private var detailed: some View {
         VStack(alignment: .leading, spacing: KXSpacing.md) {
             if collapsed {
                 Button {

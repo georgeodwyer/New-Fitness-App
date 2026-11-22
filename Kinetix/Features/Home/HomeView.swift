@@ -81,7 +81,7 @@ struct HomeView: View {
                     if let plan = plans.first, plan.isPaused {
                         PausedPlanCard(plan: plan)
                     } else if profile != nil {
-                        HealthRunMatchCard(units: units, otherwiseGettingStarted: true)
+                        HealthRunMatchCard(units: units, otherwiseGettingStarted: true, excludingToday: true)
                     }
                     ForEach(layout.visibleCards, id: \.self) { card in
                         dashboardCard(card, data: data)
@@ -96,7 +96,7 @@ struct HomeView: View {
                     if let review = weeklyReview {
                         let waiting = !review.inProgress && answeredWeek != review.weekStart
                             && !WeeklyCheckInView.isAnswered(weekStart: review.weekStart)
-                        WeeklyReviewCard(data: review, units: units, onOpen: { detailSession = $0 }, collapsed: !waiting) {
+                        WeeklyReviewCard(data: review, units: units, onOpen: { detailSession = $0 }, collapsed: !waiting, compactToday: true) {
                             withAnimation { answeredWeek = review.weekStart }
                         }
                     }
@@ -221,9 +221,9 @@ struct HomeView: View {
         .kxCard(.accent)
     }
 
-    /// Today's sessions stacked full width, then this week (when its card is on the dashboard),
-    /// then the note about a lighter version when recovery is below par.
-    private func todayTiles(data: DashboardData, showWeek: Bool) -> some View {
+    /// Today's sessions stacked full width, then the note about a lighter version when recovery
+    /// is below par.
+    private func todayTiles(data: DashboardData) -> some View {
         let recovery = data.strain.recovery
         let start = plans.first?.startDate
         return VStack(alignment: .leading, spacing: KXSpacing.md) {
@@ -235,9 +235,6 @@ struct HomeView: View {
                 onDetails: { detailSession = $0 },
                 onActions: { actionSession = $0 }
             )
-            if showWeek {
-                ThisWeekTile(days: data.week) { showCalendar = true }
-            }
             // On a below-par day, starting a session asks whether to reduce it (see AppRouter).
             if let recovery, let change = recovery.volumeChangeText, recovery.volumeMultiplier < 1 {
                 Label("Recovery \(Int(recovery.score.rounded())): you'll be offered \(change) when you start today's session.",
@@ -270,7 +267,7 @@ struct HomeView: View {
     private func dashboardCard(_ card: DashboardCard, data: DashboardData) -> some View {
         switch card {
         case .today:
-            if profile != nil { todayTiles(data: data, showWeek: layout.visibleCards.contains(.weekStrip)) }
+            if profile != nil { todayTiles(data: data) }
             if !doneToday.isEmpty {
                 DoneTodayCard(items: doneToday, units: units, onOpenRun: { openRun = $0 }, onOpenLift: { openLift = $0 })
             }
@@ -278,7 +275,7 @@ struct HomeView: View {
             // Before it's logged it sits where it's placed; afterwards it's at the bottom.
             if data.todaysCheckIn == nil { checkInCard(data) }
         case .body:
-            BodyCard()
+            BodyTrendsCard()
         case .load:
             // Readiness: today's check-in first (when it has no card of its own), then recovery and
             // exertion. Tap for the breakdown, the daily chart and body data.
@@ -289,15 +286,22 @@ struct HomeView: View {
         case .week:
             WeekProgressCard(data: data, units: units)
         case .weekStrip:
-            // Shown under today's sessions; on its own only if Today is hidden.
-            if profile == nil || !layout.visibleCards.contains(.today) { WeekStripCard(days: data.week) }
+            if profile != nil {
+                ThisWeekTile(days: data.week, actualRunMeters: data.actualRunMeters, plannedRunMeters: data.plannedRunMeters,
+                             format: DisplayFormat(units: units)) { showCalendar = true }
+            } else {
+                WeekStripCard(days: data.week)
+            }
         case .goal:
             if let plan = plans.first, let outline = plan.outline {
-                RaceCountdownCard(outline: outline, profile: profile)
+                GoalTodayCard(outline: outline, profile: profile)
             }
         case .records:
-            RecentRecordsCard(records: Array(records.filter { $0.kindRaw == RecordKind.estimatedOneRepMax.rawValue }.prefix(3)), units: units)
-            if let profile { RacePredictionsCard(profile: profile) }
+            LatestBestCard(records: records, profile: profile, units: units) {
+                UserDefaults.standard.set(ActivityScreen.Section.statistics.rawValue, forKey: ActivityScreen.sectionKey)
+                UserDefaults.standard.set(StatisticsView.Filter.strength.rawValue, forKey: "stats.filter")
+                router.selectedTab = .progress
+            }
         }
     }
 

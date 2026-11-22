@@ -49,21 +49,8 @@ struct GettingStartedCard: View {
         let list = items
         let done = list.filter(isDone).count
         Group {
-            if !hidden && done < list.count && !TabTours.isUITesting {
-                VStack(alignment: .leading, spacing: KXSpacing.md) {
-                    HStack(alignment: .firstTextBaseline) {
-                        KXSectionHeader("Getting started", subtitle: "\(done) of \(list.count) done")
-                        Spacer()
-                        Button("Hide") { withAnimation { hidden = true } }
-                            .font(KXFont.captionEmphasis)
-                            .foregroundStyle(KXColor.inkSecondary)
-                            .accessibilityIdentifier("gettingStarted.hide")
-                    }
-                    ProgressView(value: Double(done), total: Double(list.count)).tint(KXColor.accent)
-                    ForEach(list) { item in row(item) }
-                }
-                .kxCard()
-                .accessibilityIdentifier("today.gettingStarted")
+            if !hidden && done < list.count && !TabTours.isUITesting, let step = list.first(where: { !isDone($0) }) {
+                stepCard(step, list: list, done: done)
             }
         }
         .task { await refresh() }
@@ -84,6 +71,57 @@ struct GettingStartedCard: View {
         } message: {
             Text("Open the Watch app on your iPhone, scroll to Kinetix under Available Apps and tap Install. Then start runs and gym sessions from your wrist.")
         }
+    }
+
+    /// One step at a time: the next thing to do, its button, and progress dots with Skip and Hide.
+    private func stepCard(_ item: Item, list: [Item], done: Int) -> some View {
+        let text = copy(item)
+        return VStack(alignment: .leading, spacing: KXSpacing.sm) {
+            HStack(alignment: .center, spacing: KXSpacing.md) {
+                VStack(alignment: .leading, spacing: 2) {
+                    KXOverline("Getting started · \(done + 1) of \(list.count)", color: KXColor.accent)
+                    Text(text.title)
+                        .font(KXFont.custom(.condensedBold, 22, relativeTo: .title3))
+                        .textCase(.uppercase)
+                        .foregroundStyle(KXColor.ink)
+                    Text(text.detail)
+                        .font(KXFont.caption)
+                        .foregroundStyle(KXColor.inkSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: KXSpacing.xs)
+                if let action = text.action {
+                    Button(action) { perform(item) }
+                        .buttonStyle(.kx(.primary))
+                        .accessibilityIdentifier("gettingStarted.\(item.rawValue)")
+                }
+            }
+            Divider().overlay(KXColor.border)
+            HStack(spacing: KXSpacing.lg) {
+                HStack(spacing: 4) {
+                    ForEach(list) { other in
+                        Capsule()
+                            .fill(isDone(other) ? KXColor.success : (other == item ? KXColor.accent : KXColor.border))
+                            .frame(width: 16, height: 4)
+                    }
+                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("\(done) of \(list.count) done")
+                Spacer(minLength: 0)
+                if item == .notifications || item == .watch || item == .apps {
+                    Button("Skip") { skip(item) }
+                }
+                Button("Hide all") { withAnimation { hidden = true } }
+                    .accessibilityIdentifier("gettingStarted.hide")
+            }
+            .font(KXFont.callout)
+            .foregroundStyle(KXColor.inkSecondary)
+        }
+        .padding(.vertical, KXSpacing.md)
+        .padding(.leading, KXSpacing.lg)
+        .padding(.trailing, KXSpacing.md)
+        .background(KXColor.surface, in: RoundedRectangle(cornerRadius: KXRadius.md, style: .continuous))
+        .accessibilityIdentifier("today.gettingStarted")
     }
 
     private func row(_ item: Item) -> some View {
