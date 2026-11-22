@@ -29,10 +29,10 @@ enum TabTours {
         switch tab {
         case .today:
             return [
-                Step(symbol: "sun.max", title: "Your day at a glance",
-                     text: "Today's session is at the top. Tap Start to begin, or the session for its details."),
                 Step(symbol: "gauge.with.needle", title: "Readiness",
-                     text: "Check in each morning (sleep, energy, soreness). With Apple Health it gives a recovery score, and your session can be eased on a tough day."),
+                     text: "The dial at the top: the outer ring is your recovery, the thin inner line is today's exertion (its target shaded), and your legs are at the bottom. Sleep, HRV and resting heart rate sit beside it. Tap it for the full breakdown."),
+                Step(symbol: "sun.max", title: "Today's session",
+                     text: "Underneath is today's session. Tap Start to begin. Check in each morning (sleep, energy, soreness) and on a tough day you're offered a lighter version."),
                 Step(symbol: "square.grid.2x2", title: "Make it yours",
                      text: "Tap ••• then Edit dashboard to add more cards, like this week against plan or records, or to reorder them."),
             ]
