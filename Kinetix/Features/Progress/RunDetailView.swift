@@ -56,6 +56,7 @@ struct RunDetailView: View {
                 .accessibilityLabel("Share")
                 .accessibilityIdentifier("run.share")
             Button("Edit") { editing = true }.accessibilityIdentifier("run.edit")
+            FriendsVisibilityButton(id: log.id)
         }
         .sheet(isPresented: $sharing) { ShareSessionView(source: .run(log), units: units) }
         .sheet(isPresented: $editing) {

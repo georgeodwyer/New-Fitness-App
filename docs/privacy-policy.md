@@ -1,10 +1,10 @@
 # Kinetix privacy policy
 
-_Last updated 18 November 2026_
+_Last updated 22 November 2026_
 
 ## The short version
 
-Kinetix works on your iPhone and Apple Watch. Nothing leaves them unless you create an account (to back up and sync) or connect Strava or Garmin. We never sell your data, never use it for advertising, never use it to train AI models and never track you across other apps or websites.
+Kinetix works on your iPhone and Apple Watch. Nothing leaves them unless you create an account (to back up and sync), connect Strava or Garmin, or add friends. We never sell your data, never use it for advertising, never use it to train AI models and never track you across other apps or websites.
 
 ## What's stored on your iPhone
 
@@ -45,6 +45,10 @@ Only if you connect it. Kinetix uploads the sessions you've chosen (runs, and st
 ## Garmin
 
 Only if you connect it. With the Kinetix app on a Garmin watch, your planned runs go from your iPhone to the watch through Garmin's Connect IQ link, and runs you record on it come back the same way. With Garmin Connect linked, Kinetix puts your planned runs on your Garmin Connect calendar and receives your finished activities (summary, laps and heart rate) so it can tick off your plan. Your Garmin sign-in is held on our server (Supabase), never on your iPhone, and is used only for this. Finished activities wait there only until Kinetix on your iPhone has saved them, then they're deleted. Disconnect at any time in Settings → Garmin or in Garmin Connect, and your Garmin sign-in and calendar records are deleted straight away. What happens on Garmin Connect is covered by Garmin's own privacy policy.
+
+## Friends
+
+Only if you choose a username. Friends you accept can see your username and the name you choose (never your email), your sessions from the last 60 days (type, title, date, time, distance, pace, sets and a map of runs with the first and last 200 metres removed, so where you start and finish isn't shown) and your weekly points and challenge progress. Heart rate and other Apple Health readings are never shared with friends. Mark a session Only me to hide it, or turn off Friends see my sessions. People can find you by username, by your friend code or from your invite link or QR code, and you choose whether to accept them. You can remove or block anyone, and report them to us; reports are kept so we can review them. Deleting your account deletes your username, friends, shared sessions, points and challenges.
 
 ## Sharing
 

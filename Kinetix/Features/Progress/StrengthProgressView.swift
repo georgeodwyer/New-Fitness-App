@@ -400,6 +400,7 @@ struct StrengthSessionDetailView: View {
             Button { sharing = true } label: { Image(systemName: "square.and.arrow.up") }
                 .accessibilityLabel("Share")
             Button("Edit") { editing = true }
+            FriendsVisibilityButton(id: log.id)
         }
         .sheet(isPresented: $sharing) {
             ShareSessionView(source: .strength(log, records: recordsSet.count), units: units)

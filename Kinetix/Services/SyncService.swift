@@ -49,6 +49,8 @@ final class SyncService {
             lastSyncedAt = .now
             UserDefaults.standard.set(lastSyncedAt, forKey: "sync.lastSyncedAt")
             status = .idle
+            // What friends see (only once you've chosen a username).
+            await SocialService.shared.publish(in: context)
         } catch {
             status = .failed(error.localizedDescription)
         }

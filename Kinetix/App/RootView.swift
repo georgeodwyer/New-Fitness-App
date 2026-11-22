@@ -77,6 +77,13 @@ struct RootView: View {
             // Back from Garmin Connect after choosing watches.
             if GarminService.shared.handle(url: url) { return }
             guard url.scheme == "kinetix", url.host != "localhost" else { return }
+            // An invite link or QR code from a friend: kinetix://friend/CODE.
+            if let code = FriendLink.code(from: url) {
+                SocialService.shared.pendingCode = code
+                UserDefaults.standard.set(ActivityScreen.Section.achievements.rawValue, forKey: ActivityScreen.sectionKey)
+                router.selectedTab = .progress
+                return
+            }
             if url.host == "tab" {
                 switch url.lastPathComponent {
                 case "plan": router.selectedTab = .plan

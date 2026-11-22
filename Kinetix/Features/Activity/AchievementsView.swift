@@ -20,6 +20,7 @@ struct AchievementsView: View {
         let planned = ActivityRecords.planned(sessions.filter { $0.plan?.isActive ?? true })
         let weeks = Points.weeks(activities, planned: planned, now: .now, calendar: calendar)
         VStack(alignment: .leading, spacing: KXSpacing.xl) {
+            FriendsCard()
             pointsCard(weeks, calendar: calendar)
             challengesCard(activities, planned: planned, calendar: calendar)
             badgesCard

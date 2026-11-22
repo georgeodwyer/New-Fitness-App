@@ -138,6 +138,28 @@ public actor SupabaseClient {
         return (all, current)
     }
 
+    // MARK: - Functions and own tables
+
+    /// Calls a database function (rest/v1/rpc/<name>) with named parameters; returns its JSON.
+    public func rpc(_ name: String, params: [String: JSONValue] = [:]) async throws -> Data {
+        try await send(path: "rest/v1/rpc/\(name)", method: "POST", body: SyncCoding.encoder.encode(params), headers: [:], authorized: true)
+    }
+
+    /// Inserts or updates rows in one of your own tables (row level security limits it to yours).
+    public func upsert<Row: Encodable>(_ table: String, rows: [Row], onConflict: String) async throws {
+        guard !rows.isEmpty else { return }
+        _ = try await send(path: "rest/v1/\(table)?on_conflict=\(onConflict)", method: "POST", body: SyncCoding.encoder.encode(rows),
+                           headers: ["Prefer": "resolution=merge-duplicates,return=minimal"], authorized: true)
+    }
+
+    /// Deletes your own rows by id.
+    public func delete(_ table: String, ids: [UUID]) async throws {
+        guard !ids.isEmpty else { return }
+        let list = ids.map { $0.uuidString.lowercased() }.joined(separator: ",")
+        _ = try await send(path: "rest/v1/\(table)?id=in.(\(list))", method: "DELETE", body: nil,
+                           headers: ["Prefer": "return=minimal"], authorized: true)
+    }
+
     static func encodeQueryValue(_ value: String) -> String {
         var allowed = CharacterSet.urlQueryAllowed
         allowed.remove(charactersIn: "+&=")
