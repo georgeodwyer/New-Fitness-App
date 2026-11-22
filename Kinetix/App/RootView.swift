@@ -81,7 +81,7 @@ struct RootView: View {
                 switch url.lastPathComponent {
                 case "plan": router.selectedTab = .plan
                 case "record": router.selectedTab = .record
-                case "progress": router.selectedTab = .progress
+                case "progress", "activity": router.selectedTab = .progress
                 case "settings", "profile": router.selectedTab = .settings
                 default: router.selectedTab = .today
                 }
@@ -164,9 +164,9 @@ struct MainTabView: View {
                 .safeAreaInset(edge: .bottom) { MiniWorkoutBar() }
                 .tabItem { Label("Workout", systemImage: "figure.mixed.cardio") }
                 .tag(AppRouter.Tab.record)
-            ProgressScreen()
+            ActivityScreen()
                 .safeAreaInset(edge: .bottom) { MiniWorkoutBar() }
-                .tabItem { Label("Progress", systemImage: "chart.bar") }
+                .tabItem { Label("Activity", systemImage: "chart.bar") }
                 .tag(AppRouter.Tab.progress)
             ProfileView()
                 .safeAreaInset(edge: .bottom) { MiniWorkoutBar() }

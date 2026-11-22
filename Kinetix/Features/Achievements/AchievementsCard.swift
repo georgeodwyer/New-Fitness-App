@@ -10,8 +10,16 @@ struct AchievementsCard: View {
     @Query(filter: #Predicate<StrengthLogModel> { $0.isFinished && $0.deletedAt == nil }) private var lifts: [StrengthLogModel]
     @Query(filter: #Predicate<PersonalRecordModel> { $0.deletedAt == nil }) private var records: [PersonalRecordModel]
     @State private var showAll = false
+    /// When set, tapping opens this (Activity's Achievements) instead of the sheet.
+    var onOpen: (() -> Void)? = nil
 
     private var achievements: [Achievement] {
+        Self.compute(checkIns: checkIns, runs: runs, lifts: lifts, records: records)
+    }
+
+    /// The tiered badges from what's in the store.
+    static func compute(checkIns: [RecoveryCheckInModel], runs: [RunLogModel], lifts: [StrengthLogModel],
+                        records: [PersonalRecordModel]) -> [Achievement] {
         let countedRuns = runs.filter { !$0.usedSimulatedGPS }
         let gym = lifts.filter { !$0.isFunctional && !$0.isManual }
         let functional = lifts.filter(\.isFunctional)
@@ -29,7 +37,7 @@ struct AchievementsCard: View {
         let earned = all.filter { $0.level > 0 }
         // The closest next badge.
         let next = all.filter { !$0.isMaxed }.max { $0.progress < $1.progress }
-        Button { showAll = true } label: {
+        Button { if let onOpen { onOpen() } else { showAll = true } } label: {
             VStack(alignment: .leading, spacing: KXSpacing.sm) {
                 HStack {
                     KXOverline("Achievements")

@@ -10,7 +10,7 @@ struct ProgressSummaryView: View {
     let runs: [RunLogModel]
     let workouts: [StrengthLogModel]
     let profile: AthleteProfile?
-    let open: (ProgressScreen.Section) -> Void
+    let open: (ProgressSection.Section) -> Void
 
     @Query(sort: \RecoveryCheckInModel.date) private var checkIns: [RecoveryCheckInModel]
     @State private var health = HealthService.shared
@@ -170,7 +170,7 @@ struct ProgressSummaryView: View {
         .kxCard(padding: KXSpacing.md)
     }
 
-    private func link(_ title: String, detail: String, symbol: String, tint: Color, section: ProgressScreen.Section) -> some View {
+    private func link(_ title: String, detail: String, symbol: String, tint: Color, section: ProgressSection.Section) -> some View {
         Button { open(section) } label: {
             HStack(spacing: KXSpacing.md) {
                 Image(systemName: symbol)

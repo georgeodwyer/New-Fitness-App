@@ -44,7 +44,6 @@ struct RunningProgressView: View {
             WeeklyBarChart(title: "Weekly distance", weeks: weeklyDistance, unitLabel: Units.distanceUnitLabel(units),
                            seriesName: "Run", color: KXColor.run, valueFormatter: { format.distance($0) },
                            scale: { Units.distance(meters: $0, in: units) })
-            BestEffortsCard(units: units)
             historyCard
         }
     }

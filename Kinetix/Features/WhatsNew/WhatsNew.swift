@@ -18,6 +18,14 @@ enum WhatsNew {
     }
 
     static let releases: [Release] = [
+        Release(id: "2026-11-activity-1", title: "What's new", items: [
+            Item(symbol: "chart.bar.xaxis", title: "Activity tab",
+                 detail: "Progress is now Activity: your progress, every session in one feed, statistics (totals, training calendar, weekly volume, pace and strength trends, best efforts) and achievements."),
+            Item(symbol: "star.circle", title: "Levels and points",
+                 detail: "Earn points for every session, with extra for sticking to your plan and for weeks in a row. Points add up to your level."),
+            Item(symbol: "rosette", title: "Badges and monthly challenges",
+                 detail: "Badges now go bronze, silver, gold and platinum, there are fun extras (and a few secret ones) to find, and new challenges each month.")
+        ]),
         Release(id: "2026-11-bluetooth-treadmill-1", title: "What's new", items: [
             Item(symbol: "figure.run.treadmill", title: "Bluetooth treadmills",
                  detail: "On a treadmill run, choose Bluetooth: distance and speed come straight from the belt. If your treadmill allows it, Kinetix sets the speed for each step after a spoken countdown, and Pause stops the belt."),

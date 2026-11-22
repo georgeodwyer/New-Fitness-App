@@ -138,7 +138,8 @@ final class ScreenshotTests: XCTestCase {
             planRoute()
         }
 
-        app.tabBars.buttons["Progress"].tap()
+        app.tabBars.buttons["Activity"].tap()
+        if app.buttons["activity.section.progress"].waitForExistence(timeout: 3) { app.buttons["activity.section.progress"].tap() }
         if app.buttons["Running"].waitForExistence(timeout: 3) { app.buttons["Running"].tap() }
         snap("24-progress-running")
         app.swipeUp()

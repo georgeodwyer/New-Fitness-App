@@ -2,10 +2,10 @@ import SwiftUI
 import SwiftData
 import TrainingEngine
 
-/// Progress, split four ways: Summary (this week, recovery over 30 days, daily exertion and
+/// The Activity tab's Progress section, split four ways: Summary (this week, recovery over 30 days, daily exertion and
 /// this week against usual), Running (totals, weekly distance, best efforts, every run),
 /// Strength (weekly volume, lifts, every session) and Health (body data from Apple Health).
-struct ProgressScreen: View {
+struct ProgressSection: View {
     enum Section: String, CaseIterable, Identifiable {
         case summary = "Summary", running = "Running", strength = "Strength", health = "Health"
         var id: String { rawValue }
@@ -23,10 +23,7 @@ struct ProgressScreen: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
                 VStack(alignment: .leading, spacing: KXSpacing.xl) {
-                    KXScreenHeader(title: "Progress")
                     Picker("Section", selection: section) {
                         ForEach(Section.allCases) { Text($0.rawValue).tag($0) }
                     }
@@ -42,9 +39,5 @@ struct ProgressScreen: View {
                     case .health: HealthProgressView()
                     }
                 }
-                .padding(KXSpacing.screenMargin)
-            }
-            .background(KXColor.background.ignoresSafeArea())
-        }
     }
 }

@@ -2,8 +2,8 @@ import SwiftUI
 import SwiftData
 import TrainingEngine
 
-/// The Profile tab: who you are and what you've done (profile card, badges, race predictions,
-/// best efforts, strength records), running tools, and Settings behind the cog.
+/// The Profile tab: who you are and a summary of what you've done (level, badges, race
+/// predictions, strength records), running tools, and Settings behind the cog.
 struct ProfileView: View {
     @Query(filter: #Predicate<UserProfileModel> { $0.deletedAt == nil }) private var profiles: [UserProfileModel]
     @Query(filter: #Predicate<PersonalRecordModel> { $0.deletedAt == nil }, sort: \PersonalRecordModel.achievedAt, order: .reverse)
@@ -21,9 +21,9 @@ struct ProfileView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: KXSpacing.xl) {
                     profileCard
-                    AchievementsCard()
+                    ProfileLevelCard(open: openAchievements)
+                    AchievementsCard(onOpen: openAchievements)
                     if let profile = profileModel?.profile { RacePredictionsCard(profile: profile) }
-                    BestEffortsCard(units: units)
                     let lifts = records.filter { $0.kindRaw == RecordKind.estimatedOneRepMax.rawValue }
                     if !lifts.isEmpty { RecentRecordsCard(records: Array(lifts.prefix(5)), units: units) }
                     toolsCard
@@ -40,6 +40,12 @@ struct ProfileView: View {
                 }
             }
         }
+    }
+
+    /// The detail lives in Activity → Achievements.
+    private func openAchievements() {
+        UserDefaults.standard.set(ActivityScreen.Section.achievements.rawValue, forKey: ActivityScreen.sectionKey)
+        router.selectedTab = .progress
     }
 
     /// Initials (from the account email) or the logo letter, the goal and the training summary.
@@ -121,5 +127,18 @@ struct ProfileView: View {
             Image(systemName: "chevron.right").font(KXFont.caption).foregroundStyle(KXColor.inkTertiary).accessibilityHidden(true)
         }
         .contentShape(Rectangle())
+    }
+}
+
+/// The level strip on Profile, with its own queries.
+private struct ProfileLevelCard: View {
+    let open: () -> Void
+    @Query private var runs: [RunLogModel]
+    @Query(filter: #Predicate<StrengthLogModel> { $0.isFinished }) private var workouts: [StrengthLogModel]
+    @Query(filter: #Predicate<PlannedSessionModel> { $0.deletedAt == nil }) private var sessions: [PlannedSessionModel]
+    @State private var integrations = IntegrationSettings.shared
+
+    var body: some View {
+        LevelStrip(runs: runs, workouts: workouts, sessions: sessions, external: integrations.loadWorkouts, open: open)
     }
 }
