@@ -2,12 +2,11 @@ import SwiftUI
 import SwiftData
 import TrainingEngine
 
-/// The Activity tab: Progress (the old Progress tab), Activity (every session, newest first),
-/// Statistics (totals, calendar, weekly volume, trends, best efforts) and Achievements (level,
-/// points, challenges, badges and friends).
+/// The Activity tab: Feed (every session, newest first), Stats (overview, running, strength and
+/// health) and Achievements (friends, level, points, challenges and badges).
 struct ActivityScreen: View {
     enum Section: String, CaseIterable, Identifiable {
-        case progress = "Progress", activity = "Activity", statistics = "Statistics", achievements = "Achievements"
+        case feed = "Feed", statistics = "Stats", achievements = "Achievements"
         var id: String { rawValue }
         var identifier: String { "activity.section.\(String(describing: self))" }
     }
@@ -19,32 +18,29 @@ struct ActivityScreen: View {
     @Query(filter: #Predicate<StrengthLogModel> { $0.isFinished }) private var workouts: [StrengthLogModel]
     @Query(filter: #Predicate<PlannedSessionModel> { $0.deletedAt == nil }) private var sessions: [PlannedSessionModel]
     @State private var integrations = IntegrationSettings.shared
-    @AppStorage(ActivityScreen.sectionKey) private var sectionRaw = Section.progress.rawValue
+    @AppStorage(ActivityScreen.sectionKey) private var sectionRaw = Section.statistics.rawValue
 
     private var units: UnitSystem { profiles.first?.units ?? UnitPreference.stored }
-    private var section: Section { Section(rawValue: sectionRaw) ?? .progress }
+    private var section: Section { Section(rawValue: sectionRaw) ?? .statistics }
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: KXSpacing.lg) {
                     KXScreenHeader(title: "Activity")
-                    LevelStrip(runs: runs, workouts: workouts, sessions: sessions, external: integrations.loadWorkouts) {
-                        sectionRaw = Section.achievements.rawValue
-                    }
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: KXSpacing.xs) {
-                            ForEach(Section.allCases) { option in
-                                KXSelectableChip(text: option.rawValue, isSelected: section == option) { sectionRaw = option.rawValue }
-                                    .accessibilityIdentifier(option.identifier)
-                            }
+                    TabTourCard(.activity)
+                    HStack(spacing: KXSpacing.xs) {
+                        ForEach(Section.allCases) { option in
+                            KXSelectableChip(text: option.rawValue, isSelected: section == option) { sectionRaw = option.rawValue }
+                                .accessibilityIdentifier(option.identifier)
                         }
                     }
                     switch section {
-                    case .progress: ProgressSection()
-                    case .activity: ActivityFeedView(units: units, runs: runs, workouts: workouts, external: integrations.loadWorkouts)
+                    case .feed: ActivityFeedView(units: units, runs: runs, workouts: workouts, external: integrations.loadWorkouts)
                     case .statistics: StatisticsView(units: units, runs: runs, workouts: workouts, external: integrations.loadWorkouts)
-                    case .achievements: AchievementsView(units: units)
+                    case .achievements:
+                        LevelStrip(runs: runs, workouts: workouts, sessions: sessions, external: integrations.loadWorkouts) {}
+                        AchievementsView(units: units)
                     }
                 }
                 .padding(KXSpacing.screenMargin)

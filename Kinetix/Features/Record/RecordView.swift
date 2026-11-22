@@ -15,6 +15,18 @@ struct RecordView: View {
     @State private var showImporter = false
     @State private var importMessage: String?
     @State private var sharingWorkout: CustomRunWorkout?
+    @Query(sort: \PlannedSessionModel.date) private var sessions: [PlannedSessionModel]
+    @Environment(AppRouter.self) private var router
+    /// Saved workouts, the bank and routes fold away under "Your workouts and routes".
+    @AppStorage("workout.showMore") private var showMore = false
+
+    /// Today's planned session still to do, for the big button at the top.
+    private var todaysSession: PlannedSessionModel? {
+        sessions.first {
+            !$0.isSoftDeleted && Calendar.kinetix.isDateInToday($0.date) && ($0.plan?.isActive ?? true)
+                && ($0.status == .planned || $0.status == .swapped)
+        }
+    }
 
     private var units: UnitSystem { profiles.first?.units ?? UnitPreference.stored }
     private var defaultPace: Pace {
@@ -31,6 +43,30 @@ struct RecordView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: KXSpacing.xl) {
                     KXScreenHeader(title: "Workout")
+                    TabTourCard(.workout)
+
+                    if let session = todaysSession {
+                        Button { router.startPlanned(session, in: context) } label: {
+                            HStack(spacing: KXSpacing.md) {
+                                Image(systemName: "play.fill")
+                                    .font(.title3)
+                                    .foregroundStyle(KXColor.onAccent)
+                                    .frame(width: 48, height: 48)
+                                    .background(KXColor.accent, in: Circle())
+                                    .accessibilityHidden(true)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    KXOverline("Today's session")
+                                    Text(session.title).font(KXFont.headline).foregroundStyle(KXColor.ink)
+                                }
+                                Spacer()
+                                Image(systemName: "chevron.right").foregroundStyle(KXColor.inkTertiary).accessibilityHidden(true)
+                            }
+                            .kxCard(.accent)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("workout.today")
+                        KXOverline("Or start something else")
+                    }
 
                     HStack(spacing: KXSpacing.md) {
                         NavigationLink {
@@ -60,79 +96,102 @@ struct RecordView: View {
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("record.functional")
 
-                    NavigationLink {
-                        WorkoutBankView()
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) { showMore.toggle() }
                     } label: {
-                        Label("Browse the workout bank", systemImage: "books.vertical")
-                            .font(KXFont.captionEmphasis)
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.kx(.outlined, fullWidth: true))
-                    .accessibilityIdentifier("record.bank")
-
-                    // Build your own: saved here, linked to your plan from the Plan tab.
-                    HStack(spacing: KXSpacing.sm) {
-                        NavigationLink {
-                            RunSetupView(initial: nil)
-                        } label: {
-                            Label("Build a run workout", systemImage: "plus")
-                                .font(KXFont.captionEmphasis)
-                                .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.kx(.outlined, fullWidth: true))
-                        .accessibilityIdentifier("workout.buildRun")
-                        NavigationLink {
-                            GymTemplateEditorView(template: nil)
-                        } label: {
-                            Label("Build a gym workout", systemImage: "plus")
-                                .font(KXFont.captionEmphasis)
-                                .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.kx(.outlined, fullWidth: true))
-                        .accessibilityIdentifier("workout.buildGym")
-                    }
-
-                    VStack(alignment: .leading, spacing: KXSpacing.sm) {
                         HStack {
-                            KXOverline("My run workouts")
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Your workouts and routes").font(KXFont.headline).foregroundStyle(KXColor.ink)
+                                Text("Saved workouts, the workout bank, building your own and routes")
+                                    .font(KXFont.caption).foregroundStyle(KXColor.inkSecondary)
+                            }
                             Spacer()
-                            if !templates.isEmpty { Text("tap to start · swipe to delete").font(KXFont.caption).foregroundStyle(KXColor.inkSecondary) }
+                            Image(systemName: "chevron.down")
+                                .foregroundStyle(KXColor.inkTertiary)
+                                .rotationEffect(.degrees(showMore ? 180 : 0))
+                                .accessibilityHidden(true)
                         }
-                        .padding(.horizontal, KXSpacing.xxs)
-                        if sortedTemplates.isEmpty {
-                            KXEmptyState(symbol: "bookmark", title: "No saved workouts yet",
-                                         message: "Build a run (say 2 × 10 min at threshold) and tap \u{201C}Save as template\u{201D} to reuse it.")
-                                .kxCard()
+                        .kxCard(padding: KXSpacing.md)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("workout.more")
+                    // Own gym or own runs: link saved workouts to the plan (shows only for those plans).
+                    OwnWorkoutsCard()
+                    if showMore {
+                        NavigationLink {
+                            WorkoutBankView()
+                        } label: {
+                            Label("Browse the workout bank", systemImage: "books.vertical")
+                                .font(KXFont.captionEmphasis)
+                                .frame(maxWidth: .infinity)
                         }
-                        // Each workout in its own card.
-                        // Swipe left to delete; press and hold to share.
-                        ForEach(sortedTemplates) { template in
-                            KXSwipeToDelete {
-                                withAnimation {
-                                    template.softDelete()
-                                    try? context.save()
-                                }
-                                SyncService.shared.requestSync()
-                            } content: {
-                                NavigationLink {
-                                    RunSetupView(initial: template)
-                                } label: {
-                                    templateRow(template)
-                                        .kxCard(padding: KXSpacing.md)
-                                }
-                                .buttonStyle(.plain)
-                                .contextMenu {
-                                    Button {
-                                        sharingWorkout = template.workout
+                        .buttonStyle(.kx(.outlined, fullWidth: true))
+                        .accessibilityIdentifier("record.bank")
+
+                        // Build your own: saved here, linked to your plan just above.
+                        HStack(spacing: KXSpacing.sm) {
+                            NavigationLink {
+                                RunSetupView(initial: nil)
+                            } label: {
+                                Label("Build a run workout", systemImage: "plus")
+                                    .font(KXFont.captionEmphasis)
+                                    .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(.kx(.outlined, fullWidth: true))
+                            .accessibilityIdentifier("workout.buildRun")
+                            NavigationLink {
+                                GymTemplateEditorView(template: nil)
+                            } label: {
+                                Label("Build a gym workout", systemImage: "plus")
+                                    .font(KXFont.captionEmphasis)
+                                    .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(.kx(.outlined, fullWidth: true))
+                            .accessibilityIdentifier("workout.buildGym")
+                        }
+
+                        VStack(alignment: .leading, spacing: KXSpacing.sm) {
+                            HStack {
+                                KXOverline("My run workouts")
+                                Spacer()
+                                if !templates.isEmpty { Text("tap to start · swipe to delete").font(KXFont.caption).foregroundStyle(KXColor.inkSecondary) }
+                            }
+                            .padding(.horizontal, KXSpacing.xxs)
+                            if sortedTemplates.isEmpty {
+                                KXEmptyState(symbol: "bookmark", title: "No saved workouts yet",
+                                             message: "Build a run (say 2 × 10 min at threshold) and tap \u{201C}Save as template\u{201D} to reuse it.")
+                                    .kxCard()
+                            }
+                            // Each workout in its own card.
+                            // Swipe left to delete; press and hold to share.
+                            ForEach(sortedTemplates) { template in
+                                KXSwipeToDelete {
+                                    withAnimation {
+                                        template.softDelete()
+                                        try? context.save()
+                                    }
+                                    SyncService.shared.requestSync()
+                                } content: {
+                                    NavigationLink {
+                                        RunSetupView(initial: template)
                                     } label: {
-                                        Label("Share workout", systemImage: "square.and.arrow.up")
+                                        templateRow(template)
+                                            .kxCard(padding: KXSpacing.md)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .contextMenu {
+                                        Button {
+                                            sharingWorkout = template.workout
+                                        } label: {
+                                            Label("Share workout", systemImage: "square.and.arrow.up")
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
 
-                    routesSection
+                        routesSection
+                    }
                 }
                 .padding(KXSpacing.screenMargin)
             }

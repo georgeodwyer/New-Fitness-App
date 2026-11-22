@@ -51,6 +51,7 @@ struct StrainCard: View {
             }
             HStack(spacing: KXSpacing.sm) {
                 KXOverline("Legs")
+                InfoButton(.legs)
                 KXStatusPill(level: TodayFormat.legsLevel(report.legs.status), text: report.legs.status.title)
                 Spacer(minLength: 0)
                 Image(systemName: "chevron.right")
@@ -76,6 +77,7 @@ struct StrainCard: View {
         VStack(alignment: .leading, spacing: KXSpacing.sm) {
             HStack(alignment: .firstTextBaseline) {
                 KXOverline("Exertion today")
+                InfoButton(.exertion)
                 Spacer(minLength: KXSpacing.sm)
                 (Text(TodayFormat.one(strain)).font(KXFont.custom(.bold, 13, relativeTo: .caption)).foregroundColor(KXColor.ink)
                     + Text(" · target \(TodayFormat.one(target.low))–\(TodayFormat.one(target.high))")
@@ -352,7 +354,7 @@ struct TodayBodyDetailView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: KXSpacing.xl) {
                     VStack(alignment: .leading, spacing: KXSpacing.md) {
-                        KXSectionHeader("Recovery")
+                        KXSectionHeader("Recovery") { InfoButton(.recovery) }
                         if let recovery = report.recovery {
                             RecoveryBreakdownSection(recovery: recovery)
                         } else {
@@ -370,11 +372,14 @@ struct TodayBodyDetailView: View {
                             .font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
+                    // Readiness in one place: the last days' exertion and body data from Apple Health.
+                    DailyStrainChart(days: report.days, target: report.target)
+                    BodyCard()
                 }
                 .padding(KXSpacing.screenMargin)
             }
             .background(KXColor.background.ignoresSafeArea())
-            .navigationTitle("Today")
+            .navigationTitle("Readiness")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
         }

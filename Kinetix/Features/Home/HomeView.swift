@@ -71,18 +71,23 @@ struct HomeView: View {
                 VStack(alignment: .leading, spacing: KXSpacing.xl) {
                     KXScreenHeader(title: "Today", onNotifications: { showUpdates = true },
                                    onEditDashboard: { showEditDashboard = true })
+                    TabTourCard(.today)
                     greeting
                     if let banner { changeBanner(banner) }
                     if profile == nil { planPrompt }
                     if profile?.style == .custom, !hasActivePlan { buildOwnPlanPrompt }
-                    if let plan = plans.first, plan.isPaused { PausedPlanCard(plan: plan) }
-                    if profile != nil { NotificationPromptCard() }
-                    if profile != nil { HealthRunMatchCard(units: units) }
+                    // One prompt at a time: a paused plan, else a run from another app to count, else
+                    // the getting-started checklist (which includes turning on reminders).
+                    if let plan = plans.first, plan.isPaused {
+                        PausedPlanCard(plan: plan)
+                    } else if profile != nil {
+                        HealthRunMatchCard(units: units, otherwiseGettingStarted: true)
+                    }
                     ForEach(layout.visibleCards, id: \.self) { card in
                         dashboardCard(card, data: data)
                     }
                     // Once today's score is logged it moves out of the way, to the bottom.
-                    if layout.visibleCards.contains(.checkIn), data.todaysCheckIn != nil {
+                    if layout.visibleCards.contains(.checkIn) || layout.visibleCards.contains(.load), data.todaysCheckIn != nil {
                         checkInCard(data)
                     }
                     // Your week: always last, under the day's check-in. Folded to one line, except from Sunday
@@ -275,6 +280,9 @@ struct HomeView: View {
         case .body:
             BodyCard()
         case .load:
+            // Readiness: today's check-in first (when it has no card of its own), then recovery and
+            // exertion. Tap for the breakdown, the daily chart and body data.
+            if !layout.visibleCards.contains(.checkIn), data.todaysCheckIn == nil { checkInCard(data) }
             StrainCard(report: data.strain, isWaitingForLastNight: inputs.isWaitingForLastNight)
         case .dailyLoad:
             DailyStrainChart(days: data.strain.days, target: data.strain.target)

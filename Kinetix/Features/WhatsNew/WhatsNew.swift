@@ -18,6 +18,14 @@ enum WhatsNew {
     }
 
     static let releases: [Release] = [
+        Release(id: "2026-11-simpler-1", title: "What's new", items: [
+            Item(symbol: "rectangle.stack", title: "A simpler Today",
+                 detail: "Today now shows your session, Readiness (check-in, recovery and effort in one card), your week and your goal. Add more cards with ••• then Edit dashboard."),
+            Item(symbol: "lightbulb", title: "Tours and help",
+                 detail: "A quick tour the first time you open each tab, a Getting started checklist, a ? next to anything technical, and Help & questions in Settings."),
+            Item(symbol: "slider.horizontal.3", title: "Tidier tabs",
+                 detail: "Plan has one Adjust plan button. Your saved workouts and routes are tucked under the Workout tab. Activity is Feed, Stats and Achievements, and Settings is grouped more clearly.")
+        ]),
         Release(id: "2026-11-activity-1", title: "What's new", items: [
             Item(symbol: "chart.bar.xaxis", title: "Activity tab",
                  detail: "Progress is now Activity: your progress, every session in one feed, statistics (totals, training calendar, weekly volume, pace and strength trends, best efforts) and achievements."),

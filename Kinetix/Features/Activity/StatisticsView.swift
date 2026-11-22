@@ -3,9 +3,12 @@ import SwiftData
 import Charts
 import TrainingEngine
 
-/// Statistics: totals for a period, a calendar of training days, weekly volume, average runs a
-/// week, running trends (pace by run type, cadence), strength trends (sets by muscle group,
-/// estimated 1-rep max) and best efforts.
+/// Stats, one view at a time:
+/// - Overview: totals for a period, the training calendar, sessions a week, effort and recovery;
+/// - Running: your paces, totals, weekly distance, pace and cadence trends, best efforts, race
+///   predictions and every run;
+/// - Strength: lifts over time, sets per muscle group, weekly volume and every session;
+/// - Health: body data from Apple Health.
 struct StatisticsView: View {
     let units: UnitSystem
     let runs: [RunLogModel]
@@ -13,25 +16,50 @@ struct StatisticsView: View {
     let external: [ExternalWorkout]
     @Query(filter: #Predicate<UserProfileModel> { $0.deletedAt == nil }) private var profiles: [UserProfileModel]
 
+    enum Filter: String, CaseIterable, Identifiable {
+        case overview = "Overview", running = "Running", strength = "Strength", health = "Health"
+        var id: String { rawValue }
+    }
+
     enum Period: String, CaseIterable, Identifiable {
         case week = "Week", month = "Month", year = "Year", all = "All time"
         var id: String { rawValue }
     }
+    @AppStorage("stats.filter") private var filterRaw = Filter.overview.rawValue
     @State private var period: Period = .month
 
     private var format: DisplayFormat { DisplayFormat(units: units) }
+    private var filter: Binding<Filter> {
+        Binding(get: { Filter(rawValue: filterRaw) ?? .overview }, set: { filterRaw = $0.rawValue })
+    }
 
     var body: some View {
         let activities = ActivityRecords.make(runs: runs, lifts: workouts, external: external)
         let calendar = Calendar.kinetix
         VStack(alignment: .leading, spacing: KXSpacing.xl) {
-            totalsCard(activities, calendar: calendar)
-            HeatmapCard(days: TrainingStats.heatmap(activities, days: 26 * 7, now: .now, calendar: calendar))
-            weeklyCards(activities, calendar: calendar)
-            runningTrends(activities, calendar: calendar)
-            strengthTrends(calendar: calendar)
-            BestEffortsCard(units: units)
-            if let profile = profiles.first?.profile { RacePredictionsCard(profile: profile) }
+            Picker("Show", selection: filter) {
+                ForEach(Filter.allCases) { Text($0.rawValue).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            .accessibilityIdentifier("stats.filter")
+            switch filter.wrappedValue {
+            case .overview:
+                totalsCard(activities, calendar: calendar)
+                HeatmapCard(days: TrainingStats.heatmap(activities, days: 26 * 7, now: .now, calendar: calendar))
+                sessionsChart(activities, calendar: calendar)
+                ProgressSummaryView(units: units, runs: runs, workouts: workouts, profile: profiles.first?.profile)
+            case .running:
+                runningTrends(activities, calendar: calendar)
+                BestEffortsCard(units: units)
+                if let profile = profiles.first?.profile { RacePredictionsCard(profile: profile) }
+                RunningProgressView(units: units)
+            case .strength:
+                StrengthTrendCard(workouts: workouts, units: units)
+                strengthTrends(calendar: calendar)
+                StrengthProgressView(units: units)
+            case .health:
+                HealthProgressView()
+            }
         }
     }
 
@@ -86,21 +114,13 @@ struct StatisticsView: View {
         .accessibilityElement(children: .combine)
     }
 
-    // MARK: Weekly volume
+    // MARK: Sessions a week
 
-    private func weeklyCards(_ activities: [ActivityRecord], calendar: Calendar) -> some View {
+    private func sessionsChart(_ activities: [ActivityRecord], calendar: Calendar) -> some View {
         let weeks = TrainingStats.weekly(activities, weeks: 12, now: .now, calendar: calendar)
-        return VStack(alignment: .leading, spacing: KXSpacing.xl) {
-            WeeklyBarChart(title: "Weekly distance", weeks: weeks.map { WeeklyTotal(weekStart: $0.start, actual: $0.totals.runMeters) },
-                           unitLabel: Units.distanceUnitLabel(units), seriesName: "Run", color: KXColor.run,
-                           valueFormatter: { format.distance($0) }, scale: { Units.distance(meters: $0, in: units) })
-            WeeklyBarChart(title: "Weekly gym sets", weeks: weeks.map { WeeklyTotal(weekStart: $0.start, actual: Double($0.totals.gymSets)) },
-                           unitLabel: "sets", seriesName: "Sets", color: KXColor.lift,
-                           valueFormatter: { "\(Int($0)) sets" }, scale: { $0 })
-            WeeklyBarChart(title: "Sessions a week", weeks: weeks.map { WeeklyTotal(weekStart: $0.start, actual: Double($0.totals.sessions)) },
-                           unitLabel: "sessions", seriesName: "Sessions", color: KXColor.accent,
-                           valueFormatter: { "\(Int($0)) sessions" }, scale: { $0 })
-        }
+        return WeeklyBarChart(title: "Sessions a week", weeks: weeks.map { WeeklyTotal(weekStart: $0.start, actual: Double($0.totals.sessions)) },
+                              unitLabel: "sessions", seriesName: "Sessions", color: KXColor.accent,
+                              valueFormatter: { "\(Int($0)) sessions" }, scale: { $0 })
     }
 
     // MARK: Running trends

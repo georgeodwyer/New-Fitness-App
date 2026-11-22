@@ -11,6 +11,7 @@ struct PlanView: View {
     @Query(filter: #Predicate<RunLogModel> { $0.isFinished && $0.deletedAt == nil }) private var runs: [RunLogModel]
     @State private var showOnboarding = false
     @State private var showWalkthrough = false
+    @State private var showAdjust = false
     @State private var showCalendar = false
     @State private var showReview = false
     @State private var showBuilder = false
@@ -175,7 +176,8 @@ struct PlanView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: KXSpacing.xl) {
-                    KXScreenHeader(title: "Training Plan", onCalendar: calendarAction, menu: menuItems)
+                    KXScreenHeader(title: "Training Plan", onCalendar: calendarAction)
+                    TabTourCard(.plan)
                     if let plan = plans.first, plan.isPaused { PausedPlanCard(plan: plan) }
                     if profiles.isEmpty {
                         PlanIntroCard { showOnboarding = true }
@@ -193,7 +195,19 @@ struct PlanView: View {
                         }
                         .kxCard()
                     }
-                    OwnWorkoutsCard()
+                    if outline != nil {
+                        Button { showAdjust = true } label: {
+                            Label("Adjust plan", systemImage: "slider.horizontal.3").frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.kx(.outlined, fullWidth: true))
+                        .accessibilityIdentifier("plan.adjust")
+                        .confirmationDialog("Adjust your plan", isPresented: $showAdjust, titleVisibility: .visible) {
+                            ForEach(menuItems) { item in Button(item.title, action: item.action) }
+                            Button("Cancel", role: .cancel) {}
+                        } message: {
+                            Text("Saved workouts can be linked to your plan from the Workout tab.")
+                        }
+                    }
                     if let outline {
                         RaceCountdownCard(outline: outline, profile: profiles.first?.profile)
                         WeeklyDistanceCard(outline: outline, runs: runs, format: format, sessions: plans.first?.sessions ?? [])

@@ -31,6 +31,7 @@ struct FunctionalWorkoutView: View {
     private var live: some View {
         VStack(spacing: KXSpacing.lg) {
             header
+            WorkoutHintBanner(.functional)
             totalClock
             if let station = session.station {
                 stationCard(station)

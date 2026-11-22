@@ -12,6 +12,8 @@ struct HealthRunMatchCard: View {
     @State private var integrations = IntegrationSettings.shared
     @AppStorage("healthMatch.dismissed") private var dismissedRaw = ""
     let units: UnitSystem
+    /// With nothing to count, show the Getting started checklist instead (one prompt at a time).
+    var otherwiseGettingStarted = false
 
     private var dismissed: Set<UUID> { Set(dismissedRaw.split(separator: ",").compactMap { UUID(uuidString: String($0)) }) }
 
@@ -57,6 +59,8 @@ struct HealthRunMatchCard: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .kxCard()
+        } else if otherwiseGettingStarted {
+            GettingStartedCard()
         }
     }
 

@@ -139,7 +139,7 @@ final class ScreenshotTests: XCTestCase {
         }
 
         app.tabBars.buttons["Activity"].tap()
-        if app.buttons["activity.section.progress"].waitForExistence(timeout: 3) { app.buttons["activity.section.progress"].tap() }
+        if app.buttons["activity.section.statistics"].waitForExistence(timeout: 3) { app.buttons["activity.section.statistics"].tap() }
         if app.buttons["Running"].waitForExistence(timeout: 3) { app.buttons["Running"].tap() }
         snap("24-progress-running")
         app.swipeUp()
@@ -416,6 +416,8 @@ final class ScreenshotTests: XCTestCase {
     /// makes a loop, saves it, and opens it on the run set-up screen.
     private func planRoute() {
         app.tabBars.buttons["Workout"].tap()
+        let more = app.buttons["workout.more"].firstMatch
+        if more.waitForExistence(timeout: 3), !app.buttons["record.planRoute"].exists { more.tap() }
         let plan = app.buttons["record.planRoute"].firstMatch
         if !plan.waitForExistence(timeout: 3) { app.swipeUp() }
         guard plan.waitForExistence(timeout: 5) else { return }

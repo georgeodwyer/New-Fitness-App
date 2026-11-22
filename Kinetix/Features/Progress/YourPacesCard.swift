@@ -37,6 +37,7 @@ struct YourPacesCard: View {
         VStack(alignment: .leading, spacing: KXSpacing.sm) {
             HStack {
                 KXOverline("Your paces")
+                InfoButton(.paces)
                 Spacer()
                 Button("Edit") { editing = true }
                     .font(KXFont.captionEmphasis)

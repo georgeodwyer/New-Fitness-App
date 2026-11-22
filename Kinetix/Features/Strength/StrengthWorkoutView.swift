@@ -44,6 +44,9 @@ struct StrengthWorkoutView: View {
     private var workout: some View {
         VStack(spacing: 0) {
             header
+            WorkoutHintBanner(.gym)
+                .padding(.horizontal, KXSpacing.screenMargin)
+                .padding(.bottom, KXSpacing.sm)
             if model.needsWarmUp {
                 WarmUpPage(model: model, units: units)
             } else {
@@ -710,6 +713,7 @@ private struct RPEPicker: View {
             Text("Effort (RPE)")
                 .font(KXFont.caption)
                 .foregroundStyle(KXColor.inkSecondary)
+            InfoButton(.rpe)
             Spacer()
             ForEach(6...10, id: \.self) { rpe in
                 let selected = value == Double(rpe)

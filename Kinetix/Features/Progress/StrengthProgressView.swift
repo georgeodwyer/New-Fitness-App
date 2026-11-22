@@ -100,6 +100,7 @@ struct StrengthProgressView: View {
         let tracked = trackedIds.compactMap { byId[$0] }
         return VStack(alignment: .leading, spacing: KXSpacing.md) {
             KXSectionHeader("Your lifts", subtitle: "Estimated 1-rep max, best set each session") {
+                InfoButton(.estimatedMax)
                 Button("Choose") { choosing = true }
                     .font(KXFont.captionEmphasis)
                     .foregroundStyle(KXColor.accent)

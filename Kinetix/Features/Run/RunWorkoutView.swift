@@ -71,6 +71,7 @@ struct RunWorkoutView: View {
                         Text(model.title).font(KXFont.display).foregroundStyle(KXColor.ink)
                         Text(model.planned?.summary ?? "").font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)
                     }
+                    WorkoutHintBanner(.run)
                     treadmillChoice
                     if !model.isTreadmill { gpsStatusCard }
                     if let route = model.plannedRoute, !model.isTreadmill {

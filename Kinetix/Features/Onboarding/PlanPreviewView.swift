@@ -250,8 +250,7 @@ struct PlanPreviewView: View {
             PlanService.createPlan(for: profile, in: context)
         }
         Walkthrough.isPending = true
-        // A good moment to ask: they've just got a plan to be reminded about.
-        Task { await NotificationService.requestPermissionIfNeeded() }
+        // Reminders, Apple Watch and other apps are offered on Today's Getting started checklist.
     }
 }
 

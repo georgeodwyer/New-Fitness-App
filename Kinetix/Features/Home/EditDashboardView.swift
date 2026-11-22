@@ -31,7 +31,7 @@ struct EditDashboardView: View {
                 }
                 Section {
                     Button("Reset to default") { layout = .default }
-                        .disabled(layout.cards == DashboardCard.defaultOrder && layout.hiddenCards.isEmpty)
+                        .disabled(layout == .default)
                         .accessibilityIdentifier("dashboard.reset")
                 }
             }

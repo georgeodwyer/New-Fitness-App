@@ -35,7 +35,7 @@ struct LoadTrendCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: KXSpacing.md) {
-            KXSectionHeader("Week vs your usual", subtitle: "Last 7 days as a % of an average week, over 8 weeks")
+            KXSectionHeader("Week vs your usual", subtitle: "Last 7 days as a % of an average week, over 8 weeks") { InfoButton(.weekVsUsual) }
             if points.count < 2 {
                 Text("This appears after about two weeks of training. Keep logging sessions.")
                     .font(KXFont.callout).foregroundStyle(KXColor.inkSecondary)

@@ -2,12 +2,9 @@ import SwiftUI
 import SwiftData
 import TrainingEngine
 
-/// The Profile tab: who you are and a summary of what you've done (level, badges, race
-/// predictions, strength records), running tools, and Settings behind the cog.
+/// The Profile tab: who you are, your level (tap for Achievements in Activity), running tools, and Settings behind the cog.
 struct ProfileView: View {
     @Query(filter: #Predicate<UserProfileModel> { $0.deletedAt == nil }) private var profiles: [UserProfileModel]
-    @Query(filter: #Predicate<PersonalRecordModel> { $0.deletedAt == nil }, sort: \PersonalRecordModel.achievedAt, order: .reverse)
-    private var records: [PersonalRecordModel]
     @AppStorage(UnitPreference.key) private var storedUnits = UnitPreference.defaultForRegion.rawValue
     @Environment(AppRouter.self) private var router
 
@@ -20,12 +17,9 @@ struct ProfileView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: KXSpacing.xl) {
+                    TabTourCard(.profile)
                     profileCard
                     ProfileLevelCard(open: openAchievements)
-                    AchievementsCard(onOpen: openAchievements)
-                    if let profile = profileModel?.profile { RacePredictionsCard(profile: profile) }
-                    let lifts = records.filter { $0.kindRaw == RecordKind.estimatedOneRepMax.rawValue }
-                    if !lifts.isEmpty { RecentRecordsCard(records: Array(lifts.prefix(5)), units: units) }
                     toolsCard
                 }
                 .padding(KXSpacing.screenMargin)

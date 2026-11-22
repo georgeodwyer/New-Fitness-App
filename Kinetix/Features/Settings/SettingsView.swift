@@ -2,9 +2,9 @@ import SwiftUI
 import SwiftData
 import TrainingEngine
 
-/// Settings (the cog on the Profile tab): appearance, training profile (with plan
-/// regeneration), units, coaching, notifications, integrations, account (export and delete)
-/// and about. Pushed inside the Profile tab's navigation.
+/// Settings (the cog on the Profile tab), in six groups: Training, Watch & apps, Notifications &
+/// display, Account, Help & about, and Advanced (regenerate, export, delete). Pushed inside the
+/// Profile tab's navigation.
 struct SettingsView: View {
     @Environment(\.modelContext) private var context
     @Query(filter: #Predicate<UserProfileModel> { $0.deletedAt == nil }) private var profiles: [UserProfileModel]
@@ -26,20 +26,7 @@ struct SettingsView: View {
 
     var body: some View {
             List {
-                Section {
-                    Picker("Appearance", selection: $appearance) {
-                        Text("Dark").tag(AppearanceChoice.dark.rawValue)
-                        Text("Light").tag(AppearanceChoice.light.rawValue)
-                        Text("Match iPhone").tag(AppearanceChoice.system.rawValue)
-                    }
-                    .pickerStyle(.segmented)
-                    .accessibilityIdentifier("settings.appearance")
-                    .onChange(of: appearance) { _, _ in AppearanceChoice.markChosen() }
-                } header: {
-                    Text("Appearance")
-                }
-
-                // Training: what the plan is built from.
+                // Training: what the plan is built from and what you hear during a session.
                 Section {
                     if let profileModel {
                         NavigationLink {
@@ -58,25 +45,6 @@ struct SettingsView: View {
                         }
                         .accessibilityIdentifier("settings.buildPlan")
                     }
-                    Picker(selection: unitsBinding) {
-                        Text("Kilometres & kg").tag(UnitSystem.metric)
-                        Text("Miles & lb").tag(UnitSystem.imperial)
-                    } label: {
-                        settingsRow("Units", detail: nil, symbol: "ruler", tint: KXColor.slate)
-                    }
-                    if profileModel != nil {
-                        Button {
-                            confirmRegenerate = true
-                        } label: {
-                            Label("Regenerate my plan", systemImage: "arrow.clockwise")
-                        }
-                    }
-                } header: {
-                    Text("Training")
-                }
-
-                // Coaching & watch: what you hear and feel during and around a session.
-                Section("Coaching & watch") {
                     if let settings = coachingSettings.first {
                         NavigationLink {
                             CoachingSettingsView(settings: settings, units: currentUnits)
@@ -86,23 +54,94 @@ struct SettingsView: View {
                         }
                         .accessibilityIdentifier("settings.coaching")
                     }
+                } header: {
+                    Text("Training")
+                }
+
+                // Watch and apps: devices and other apps Kinetix works with.
+                Section {
                     AppleWatchRow()
                     AppleWorkoutRow()
                     GarminRow()
+                    IntegrationsSection(includeWatch: false)
+                } header: {
+                    Text("Watch & apps")
+                }
+
+                Section {
                     NavigationLink {
                         NotificationsSettingsView()
                     } label: {
                         settingsRow("Notifications", detail: "Morning summary and rest alerts", symbol: "bell.fill", tint: KXColor.warning)
                     }
                     .accessibilityIdentifier("settings.notifications")
-                }
-
-                Section("Connections") {
-                    IntegrationsSection(includeWatch: false)
+                    Picker(selection: unitsBinding) {
+                        Text("Kilometres & kg").tag(UnitSystem.metric)
+                        Text("Miles & lb").tag(UnitSystem.imperial)
+                    } label: {
+                        settingsRow("Units", detail: nil, symbol: "ruler", tint: KXColor.slate)
+                    }
+                    Picker("Appearance", selection: $appearance) {
+                        Text("Dark").tag(AppearanceChoice.dark.rawValue)
+                        Text("Light").tag(AppearanceChoice.light.rawValue)
+                        Text("Match iPhone").tag(AppearanceChoice.system.rawValue)
+                    }
+                    .pickerStyle(.segmented)
+                    .accessibilityIdentifier("settings.appearance")
+                    .onChange(of: appearance) { _, _ in AppearanceChoice.markChosen() }
+                } header: {
+                    Text("Notifications & display")
                 }
 
                 Section {
                     AccountSection()
+                } header: {
+                    Text("Account")
+                }
+
+                Section {
+                    NavigationLink {
+                        HelpView()
+                    } label: {
+                        Label("Help & questions", systemImage: "questionmark.circle")
+                    }
+                    .accessibilityIdentifier("settings.help")
+                    Button {
+                        showWalkthrough = true
+                    } label: {
+                        Label("App tour", systemImage: "play.rectangle")
+                    }
+                    .accessibilityIdentifier("settings.appTour")
+                    Button {
+                        TabTours.resetAll()
+                    } label: {
+                        Label("Show tips for each tab again", systemImage: "lightbulb")
+                    }
+                    .accessibilityIdentifier("settings.resetTips")
+                    NavigationLink {
+                        HealthDisclaimerView()
+                    } label: {
+                        Label("Health & safety", systemImage: "cross.case")
+                    }
+                    NavigationLink {
+                        PrivacyPolicyView()
+                    } label: {
+                        Label("Privacy policy", systemImage: "hand.raised")
+                    }
+                    LabeledContent("Version", value: Bundle.main.appVersion)
+                } header: {
+                    Text("Help & about")
+                }
+
+                // Things most people rarely need.
+                Section {
+                    if profileModel != nil {
+                        Button {
+                            confirmRegenerate = true
+                        } label: {
+                            Label("Regenerate my plan", systemImage: "arrow.clockwise")
+                        }
+                    }
                     Button {
                         prepareExport()
                     } label: {
@@ -119,38 +158,16 @@ struct SettingsView: View {
                         Label("Delete account and data", systemImage: "trash")
                     }
                 } header: {
-                    Text("Account")
+                    Text("Advanced")
                 } footer: {
-                    Text("Deleting is permanent, here and in the cloud.")
-                }
-
-                Section {
-                    Button {
-                        showWalkthrough = true
-                    } label: {
-                        Label("App tour", systemImage: "questionmark.circle")
+                    VStack(spacing: KXSpacing.lg) {
+                        Text("Deleting is permanent, here and in the cloud.")
+                        HStack(spacing: KXSpacing.sm) {
+                            KXLogo(size: 28)
+                            KXWordmark(height: 13)
+                        }
+                        .frame(maxWidth: .infinity)
                     }
-                    .accessibilityIdentifier("settings.appTour")
-                    NavigationLink {
-                        HealthDisclaimerView()
-                    } label: {
-                        Label("Health & safety", systemImage: "cross.case")
-                    }
-                    NavigationLink {
-                        PrivacyPolicyView()
-                    } label: {
-                        Label("Privacy policy", systemImage: "hand.raised")
-                    }
-                    LabeledContent("Version", value: Bundle.main.appVersion)
-                } header: {
-                    Text("About")
-                } footer: {
-                    HStack(spacing: KXSpacing.sm) {
-                        KXLogo(size: 28)
-                        KXWordmark(height: 13)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, KXSpacing.lg)
                 }
 
                 // Testing tools: Xcode and TestFlight builds only, never the App Store.
