@@ -234,7 +234,7 @@ private struct FeedCard: View {
                 }
                 if item.sets > 0 { stat("Sets", "\(item.sets)") }
             }
-            if let route = item.route, route.count >= 2 { RouteMap(points: route) }
+            if let route = item.route, route.count >= 2 { FriendRouteMap(points: route) }
         }
         .kxCard()
     }
@@ -249,7 +249,7 @@ private struct FeedCard: View {
 }
 
 /// A friend's route (already trimmed 200 m at each end).
-struct RouteMap: View {
+struct FriendRouteMap: View {
     let points: [[Double]]
 
     var body: some View {
