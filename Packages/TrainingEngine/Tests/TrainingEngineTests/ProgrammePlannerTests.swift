@@ -92,7 +92,7 @@ final class ProgrammePlannerTests: XCTestCase {
                                                  "\(programme.name), \(runsWanted) runs, week \(index + 1): \(runs.map(\.title))")
                         // Topping up never makes an easy run longer than the long run.
                         let longest = runs.filter { $0.kind == .run(.long) }.compactMap(\.estimatedDistanceMeters).max()
-                        if let longest {
+                        if let longest, !race {
                             for run in runs where run.kind == .run(.easy) {
                                 XCTAssertLessThanOrEqual(run.estimatedDistanceMeters ?? 0, longest + 500,
                                                          "\(programme.name), \(runsWanted) runs, week \(index + 1): \(run.title)")

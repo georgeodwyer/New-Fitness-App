@@ -688,11 +688,13 @@ enum ProgrammePlanner {
 
     /// Longest an easy run grows to when a short week tops up: an hour at easy pace.
     static let shortWeekEasyMinutes = 60.0
+    /// A topped-up easy run stays clearly shorter than the long run.
+    static let shortWeekEasyShareOfLong = 0.9
     /// Most a hard session's cool-down grows by when a short week tops up.
     static let shortWeekExtraCoolDownMeters = 2000.0
 
     /// Fills a short week's gap: easy runs first (shared evenly, each up to an hour at easy
-    /// pace and never longer than the long run), then the long run (up to its usual cap), then
+    /// pace and 90% of the long run), then the long run (up to its usual cap), then
     /// the hard session's cool-down (up to 2 km more).
     private static func topUpShortWeek(_ runs: inout [PlannedRun], longMeters: inout Double, context c: WeekContext) {
         var gap = c.weekMeters - runs.reduce(0) { $0 + $1.meters }
@@ -707,11 +709,11 @@ enum ProgrammePlanner {
                 && (s.type == "easy" || s.type == "recovery") && s.name != "Shakeout"
         }
         for _ in 0..<2 where gap > 500 {
-            let open = easy.filter { runs[$0].meters < min(easyCap, longMeters > 0 ? longMeters : easyCap) - 100 }
+            let open = easy.filter { runs[$0].meters < min(easyCap, longMeters > 0 ? longMeters * shortWeekEasyShareOfLong : easyCap) - 100 }
             guard !open.isEmpty else { break }
             let each = gap / Double(open.count)
             for i in open {
-                let cap = min(easyCap, longMeters > 0 ? longMeters : easyCap)
+                let cap = min(easyCap, longMeters > 0 ? longMeters * shortWeekEasyShareOfLong : easyCap)
                 let wanted = min(each, cap - runs[i].meters)
                 guard wanted > 0 else { continue }
                 let grown = min(RunBuilder.tidy(runs[i].meters + wanted), max(cap, runs[i].meters))
