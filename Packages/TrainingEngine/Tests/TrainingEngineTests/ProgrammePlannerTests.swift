@@ -90,6 +90,14 @@ final class ProgrammePlannerTests: XCTestCase {
                     if runsWanted <= 3 {
                         XCTAssertLessThanOrEqual(hard.count + (race ? 1 : 0), 1,
                                                  "\(programme.name), \(runsWanted) runs, week \(index + 1): \(runs.map(\.title))")
+                        // Topping up never makes an easy run longer than the long run.
+                        let longest = runs.filter { $0.kind == .run(.long) }.compactMap(\.estimatedDistanceMeters).max()
+                        if let longest {
+                            for run in runs where run.kind == .run(.easy) {
+                                XCTAssertLessThanOrEqual(run.estimatedDistanceMeters ?? 0, longest + 500,
+                                                         "\(programme.name), \(runsWanted) runs, week \(index + 1): \(run.title)")
+                            }
+                        }
                     }
                     if !race, target.runVolumeMeters > 0, meters < target.runVolumeMeters * 0.9 || meters > target.runVolumeMeters * 1.1 { shortfalls += 1 }
                     if index < 4 || race {
@@ -372,6 +380,48 @@ final class ProgrammePlannerTests: XCTestCase {
         let long = generator.makeOutline(for: profile(runner, event: later), startingOn: monday)
         XCTAssertEqual(long.weeks[4].programmeWeek, 1)
         XCTAssertEqual(long.weeks[15].programmeWeek, 12)
+    }
+
+    func testLeadInGrowthRate() {
+        let rules = TestSupport.bundledTemplates.programmes.rules(for: .intermediate)
+        // 12 lead-in weeks: weeks 4, 8 and 12 follow a lighter week, so 9 weeks grow.
+        XCTAssertEqual(ProgrammePlanner.leadInGrowth(weeks: 12, start: 20000, target: 30000, rules: rules),
+                       pow(1.5, 1.0 / 9) - 1, accuracy: 0.0001)
+        XCTAssertEqual(ProgrammePlanner.leadInGrowth(weeks: 12, start: 20000, target: nil, rules: rules), 0)
+        XCTAssertEqual(ProgrammePlanner.leadInGrowth(weeks: 12, start: 40000, target: 30000, rules: rules), 0)
+        XCTAssertEqual(ProgrammePlanner.leadInGrowth(weeks: 0, start: 20000, target: 30000, rules: rules), 0)
+        // A big gap in few weeks: no more than 8% a week.
+        XCTAssertEqual(ProgrammePlanner.leadInGrowth(weeks: 3, start: 10000, target: 40000, rules: rules), 0.08, accuracy: 0.0001)
+    }
+
+    func testLeadInBuildsGentlyToTheProgramme() {
+        // Race in 24 weeks for a 12-week programme: 12 lead-in weeks.
+        let runner = runners[1]
+        let far = calendar.date(byAdding: .day, value: 23 * 7 + 6, to: monday)!
+        let racer = profile(runner, event: far)
+        let outline = generator.makeOutline(for: racer, startingOn: monday)
+        let firstProgramme = try! XCTUnwrap(outline.weeks.firstIndex { $0.leadInGrowth == nil && $0.programmeWeek == 1 && $0.index >= 12 })
+        XCTAssertEqual(firstProgramme, 12)
+        let leadIn = Array(outline.weeks[..<firstProgramme])
+        XCTAssertTrue(leadIn.allSatisfy { $0.leadInGrowth != nil })
+        // Never more than 8% up on the week before (lighter weeks aside), every fourth week lighter.
+        for (i, week) in leadIn.enumerated() where i > 0 {
+            XCTAssertLessThanOrEqual(week.base ?? 0, (leadIn[i - 1].base ?? 0) * 1.08 + 1, "week \(i + 1)")
+            XCTAssertEqual(week.isRecoveryWeek, i % 4 == 3, "week \(i + 1)")
+        }
+        // It builds: the last lead-in week's base is above the first's.
+        XCTAssertGreaterThan(leadIn.last?.base ?? 0, (leadIn.first?.base ?? 0) * 1.05)
+        // Arrives at (or near) the programme's starting volume when the climb fits in 8% steps.
+        let rules = TestSupport.bundledTemplates.programmes.rules(for: runner.level)
+        let start = ProgrammePlanner.startVolume(profile: racer, programme: programme, rules: rules)
+        if let target = programme.raceReady(for: runner.level), target > start,
+           ProgrammePlanner.leadInGrowth(weeks: 12, start: start, target: target, rules: rules) < 0.079 {
+            XCTAssertGreaterThanOrEqual(outline.weeks[firstProgramme].base ?? 0, target * 0.97)
+        }
+        // A rebuild part-way through keeps the lead-in's gentle rate.
+        let rebuilt = try! XCTUnwrap(ProgrammePlanner.adapted(outline, from: 5, hold: false, limit: nil, programme: programme,
+                                                               profile: racer, rules: rules))
+        XCTAssertEqual(rebuilt.weeks[6].base ?? 0, outline.weeks[6].base ?? 0, accuracy: 1)
     }
 
     func testNextCycleStartsFromRecentRunning() {

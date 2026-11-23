@@ -25,6 +25,10 @@ public struct WeekTarget: Codable, Equatable, Sendable {
     public var base: Double? = nil
     /// The programme's % for this week (lead-in weeks use the first week's).
     public var volumeShare: Double? = nil
+    /// A lead-in week before the programme starts (the race is further away than the
+    /// programme): how fast its base grows, so the lead-in builds gently from current running to
+    /// the programme's starting volume.
+    public var leadInGrowth: Double? = nil
 }
 
 public struct PlanBlock: Equatable, Sendable {

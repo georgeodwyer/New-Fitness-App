@@ -40,6 +40,8 @@ enum ProgrammePlanner {
 
     private enum Slot {
         case programme(ProgrammeWeek, volumeShare: Double)
+        /// A week before the programme starts, its base growing at `growth` a week.
+        case leadIn(ProgrammeWeek, volumeShare: Double, growth: Double)
         /// The easy week after the programme.
         case recovery
         /// An easy first week, for runners who've just raced and asked for one.
@@ -78,14 +80,17 @@ enum ProgrammePlanner {
         }
 
         var slots: [Slot] = easyStart ? [.easyStart] : []
-        // Lead-in: the base weeks again at the starting volume, every fourth a little lighter.
+        // Lead-in: the base weeks again, building gently from current running so the runner
+        // arrives at the programme's first week at its starting volume; every fourth a little lighter.
         let baseWeeks = programme.weeks.filter { $0.phase == .base && !$0.isDeload }
         let leadPattern = baseWeeks.isEmpty ? Array(programme.weeks.prefix(1)) : baseWeeks
         let firstShare = programme.weeks.first?.volume ?? 1
+        let growth = leadInGrowth(weeks: leadIn, start: startVolume(profile: profile, programme: programme, rules: rules),
+                                  target: programme.raceReady(for: profile.runningExperience), rules: rules)
         for i in 0..<leadIn {
             var week = leadPattern[i % leadPattern.count]
             week.isDeload = i % 4 == 3
-            slots.append(.programme(week, volumeShare: week.isDeload ? firstShare * 0.9 : firstShare))
+            slots.append(.leadIn(week, volumeShare: week.isDeload ? firstShare * 0.9 : firstShare, growth: growth))
         }
         for week in programme.weeks where week.week >= firstWeek {
             slots.append(.programme(week, volumeShare: week.volume))
@@ -124,6 +129,22 @@ enum ProgrammePlanner {
     /// A lighter week is at most this share of the week before it.
     static let lighterWeekShare = 0.85
 
+    /// Most a lead-in builds in a week.
+    static let leadInMaxGrowth = 0.08
+
+    /// How fast the lead-in's base grows so it reaches the race-ready base by the programme's
+    /// first week: the steady weekly rate over the weeks that grow (not the week after a lighter
+    /// one), between 0 and 8% (and never above the usual weekly limit). 0 without a race-ready
+    /// volume or when the runner is already there.
+    static func leadInGrowth(weeks leadIn: Int, start: Double, target: Double?, rules: ProgrammeRules) -> Double {
+        guard leadIn > 0, let target, target > start, start > 0 else { return 0 }
+        // Week i grows when week i-1 wasn't a lighter week; the programme's first week counts too.
+        let steps = (1...leadIn).filter { ($0 - 1) % 4 != 3 }.count
+        guard steps > 0 else { return 0 }
+        let rate = pow(target / start, 1 / Double(steps)) - 1
+        return min(max(rate, 0), leadInMaxGrowth, rules.maxWeeklyIncrease)
+    }
+
     /// What carries from one week to the next while sizing weeks.
     private struct VolumeState {
         var base: Double
@@ -143,10 +164,12 @@ enum ProgrammePlanner {
         var volume: Double
         var share: Double?
         switch slot {
-        case .programme(let week, let volumeShare):
+        case .programme(let week, let volumeShare), .leadIn(let week, let volumeShare, _):
+            var rate = rules.maxWeeklyIncrease
+            if case .leadIn(_, _, let growth) = slot { rate = growth }
             if state.startedProgramme, let target, !hold {
                 if state.base < target, !state.previousWasDeload {
-                    state.base = min(target, state.base * (1 + rules.maxWeeklyIncrease))
+                    state.base = min(target, state.base * (1 + rate))
                 } else if state.base > target {
                     state.base = max(target, state.base * (1 - rules.easeDown))
                 }
@@ -173,6 +196,11 @@ enum ProgrammePlanner {
         return (volume, share)
     }
 
+    private static func leadInRate(_ slot: Slot) -> Double? {
+        if case .leadIn(_, _, let growth) = slot { return growth }
+        return nil
+    }
+
     private static func buildWeeks(_ slots: [Slot], programme: Programme, start: Double, target: Double?, startMonday: Date,
                                    firstIndex: Int, history: [Double], cycle: Int, rules: ProgrammeRules,
                                    calendar: Calendar) -> [WeekTarget] {
@@ -187,7 +215,7 @@ enum ProgrammePlanner {
             var isPostProgramme = false
             var isEasyStart = false
             switch slot {
-            case .programme(let week, _):
+            case .programme(let week, _), .leadIn(let week, _, _):
                 phase = week.phase
                 programmeWeek = week.week
                 isRecovery = week.isDeload
@@ -208,7 +236,8 @@ enum ProgrammePlanner {
             weeks.append(WeekTarget(index: firstIndex + offset, startDate: monday, phase: phase, weekInPhase: weekInPhase,
                                     isRecoveryWeek: isRecovery, runVolumeMeters: sized.volume, programmeWeek: programmeWeek,
                                     programmeCycle: cycle, isPostProgrammeRecovery: isPostProgramme ? true : nil,
-                                    isEasyStart: isEasyStart ? true : nil, base: state.base, volumeShare: sized.share))
+                                    isEasyStart: isEasyStart ? true : nil, base: state.base, volumeShare: sized.share,
+                                    leadInGrowth: leadInRate(slot)))
         }
         return weeks
     }
@@ -239,7 +268,11 @@ enum ProgrammePlanner {
                 slot = .easyStart
             } else if let number = week.programmeWeek, var written = programme.week(number) {
                 written.isDeload = week.isRecoveryWeek
-                slot = .programme(written, volumeShare: week.volumeShare ?? written.volume)
+                if let growth = week.leadInGrowth {
+                    slot = .leadIn(written, volumeShare: week.volumeShare ?? written.volume, growth: growth)
+                } else {
+                    slot = .programme(written, volumeShare: week.volumeShare ?? written.volume)
+                }
             } else {
                 return nil
             }
@@ -639,12 +672,76 @@ enum ProgrammePlanner {
             }
             break
         }
+        // 4) Short weeks (three runs or fewer) that still fall short of the week: easy runs grow,
+        //    up to an hour at easy pace, then the long run up to its usual limit, and anything
+        //    left becomes a longer cool-down on the hard session.
+        if runs.filter({ !$0.session.isRace }).count <= 3, !runs.contains(where: \.session.isRace) {
+            topUpShortWeek(&runs, longMeters: &longMeters, context: c)
+        }
         for i in runs.indices where runs[i].structure.segments.isEmpty {
             let built = flexible(runs[i].session, meters: runs[i].meters, zones: c.zones)
             runs[i].structure = built.structure
             runs[i].summary = built.summary
         }
         return runs
+    }
+
+    /// Longest an easy run grows to when a short week tops up: an hour at easy pace.
+    static let shortWeekEasyMinutes = 60.0
+    /// Most a hard session's cool-down grows by when a short week tops up.
+    static let shortWeekExtraCoolDownMeters = 2000.0
+
+    /// Fills a short week's gap: easy runs first (shared evenly, each up to an hour at easy
+    /// pace and never longer than the long run), then the long run (up to its usual cap), then
+    /// the hard session's cool-down (up to 2 km more).
+    private static func topUpShortWeek(_ runs: inout [PlannedRun], longMeters: inout Double, context c: WeekContext) {
+        var gap = c.weekMeters - runs.reduce(0) { $0 + $1.meters }
+        guard gap > 500 else { return }
+        let easyPace = c.zones.typicalPace(for: .easy).secondsPerKm
+        let easyCap = min(shortWeekEasyMinutes * 60 / max(easyPace, 1) * 1000, c.longestRun)
+
+        // Easy runs (auto-sized ones only), a fair share each, then again for any left over.
+        let easy = runs.indices.filter {
+            let s = runs[$0].session
+            return !s.isRace && s.runType != .long && !s.isStructured && !s.isRunWalk && s.distance.kind == "auto"
+                && (s.type == "easy" || s.type == "recovery") && s.name != "Shakeout"
+        }
+        for _ in 0..<2 where gap > 500 {
+            let open = easy.filter { runs[$0].meters < min(easyCap, longMeters > 0 ? longMeters : easyCap) - 100 }
+            guard !open.isEmpty else { break }
+            let each = gap / Double(open.count)
+            for i in open {
+                let cap = min(easyCap, longMeters > 0 ? longMeters : easyCap)
+                let wanted = min(each, cap - runs[i].meters)
+                guard wanted > 0 else { continue }
+                let grown = min(RunBuilder.tidy(runs[i].meters + wanted), max(cap, runs[i].meters))
+                gap -= grown - runs[i].meters
+                runs[i].meters = grown
+            }
+        }
+
+        // The long run, up to its usual cap.
+        if gap > 500, let i = runs.indices.first(where: { runs[$0].session.runType == .long && runs[$0].structure.segments.isEmpty }) {
+            let wanted = min(gap, c.longCap - runs[i].meters)
+            if wanted > 0 {
+                let grown = min(RunBuilder.tidy(runs[i].meters + wanted), max(c.longCap, runs[i].meters))
+                gap -= grown - runs[i].meters
+                runs[i].meters = grown
+                longMeters = grown
+            }
+        }
+
+        // A longer easy cool-down on the hard session.
+        if gap > 500, let i = runs.indices.first(where: { runs[$0].session.isStructured && !runs[$0].session.isRace }),
+           let last = runs[i].structure.segments.indices.last, runs[i].structure.segments[last].kind == .coolDown,
+           case .distance(let meters) = runs[i].structure.segments[last].length {
+            let added = RunBuilder.tidy(min(gap, shortWeekExtraCoolDownMeters))
+            if added > 0 {
+                runs[i].structure.segments[last].length = .distance(meters: meters + added)
+                runs[i].meters += added
+                gap -= added
+            }
+        }
     }
 
     /// The longest an easier run should be: recovery runs well short of the long run, easy
