@@ -93,7 +93,9 @@ final class ProgrammePlannerTests: XCTestCase {
                         // Topping up never makes an easy run longer than the long run.
                         let longest = runs.filter { $0.kind == .run(.long) }.compactMap(\.estimatedDistanceMeters).max()
                         if let longest, !race {
-                            for run in runs where run.kind == .run(.easy) {
+                            // Only runs Kinetix sizes (tidied to 500 m); timed run/walk sessions are as written.
+                            for run in runs where run.kind == .run(.easy)
+                                && (run.estimatedDistanceMeters ?? 0).truncatingRemainder(dividingBy: 500) == 0 {
                                 XCTAssertLessThanOrEqual(run.estimatedDistanceMeters ?? 0, longest + 500,
                                                          "\(programme.name), \(runsWanted) runs, week \(index + 1): \(run.title)")
                             }
