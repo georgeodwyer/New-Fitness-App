@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		013D99986BF8E1B53E3814D5 /* GoalTodayCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = E200A7444FC1CAAC61BFE93C /* GoalTodayCard.swift */; };
 		0147D8BEC0DBA6EF2072DCD9 /* KXStepper.swift in Sources */ = {isa = PBXBuildFile; fileRef = D763CB1795460ACC4115555D /* KXStepper.swift */; };
 		019C4AE040EEE60FFD47B6AF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9D4B9D509AC09C29705FCC4B /* Assets.xcassets */; };
 		0256EAD3B08ADE3512154318 /* VoiceCoach.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CB8951AE011CBA263FE6226 /* VoiceCoach.swift */; };
@@ -31,6 +32,7 @@
 		1812BF13B446FB1165CDB5C1 /* PlannedSessionDestination.swift in Sources */ = {isa = PBXBuildFile; fileRef = C020B6C7BA9E92A91574F16A /* PlannedSessionDestination.swift */; };
 		1AC8C576044C6F8943D0AF01 /* KXColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18F5261D8A4C543FC07B8C9C /* KXColor.swift */; };
 		1B3C3B5BEC535848B04D4F04 /* GarminView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE0936484F36B69A2CADB66 /* GarminView.swift */; };
+		1F95250C613E0A7D8A4554CD /* BodyTrendsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 323CD1BD2C46DFA7ABF6075A /* BodyTrendsCard.swift */; };
 		206F2C15785968438951E0FA /* FormService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7345817CFB044E76A6D87524 /* FormService.swift */; };
 		216F5523D8A55BAAAE128F93 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B86E9E847C741EE0B68892BC /* Assets.xcassets */; };
 		22851E1FF85868FF37945C3E /* RunWorkoutManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9816665D38BFB8C7D3C8793 /* RunWorkoutManager.swift */; };
@@ -339,6 +341,7 @@
 		2F846785FB21370DB2686F26 /* WeekRearrangeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeekRearrangeView.swift; sourceTree = "<group>"; };
 		2FCE0202A3E975345AA0F2B0 /* KXProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXProgress.swift; sourceTree = "<group>"; };
 		3238845C1F80144B68E1D0D4 /* RouteService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteService.swift; sourceTree = "<group>"; };
+		323CD1BD2C46DFA7ABF6075A /* BodyTrendsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyTrendsCard.swift; sourceTree = "<group>"; };
 		325D39D3C463CAE911C0A916 /* BarlowCondensed-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "BarlowCondensed-Bold.ttf"; sourceTree = "<group>"; };
 		3262E1031AC88DFAE24E19EB /* TrainingNotificationsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingNotificationsTests.swift; sourceTree = "<group>"; };
 		3324BC4178F9C48599831EB1 /* ActivityScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityScreen.swift; sourceTree = "<group>"; };
@@ -498,6 +501,7 @@
 		DE60D8E623FC5E87ABB1C84E /* GymTemplateEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GymTemplateEditorView.swift; sourceTree = "<group>"; };
 		DFBEFA7B7B4203748B86952F /* AccountServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountServiceTests.swift; sourceTree = "<group>"; };
 		E1A1F79A98C11CFA85E3E4C1 /* CalendarTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarTests.swift; sourceTree = "<group>"; };
+		E200A7444FC1CAAC61BFE93C /* GoalTodayCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalTodayCard.swift; sourceTree = "<group>"; };
 		E266EDCEE7A3C5533B50F72F /* KXText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXText.swift; sourceTree = "<group>"; };
 		E29498CEEBE32CAE95B52D85 /* KXHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KXHeader.swift; sourceTree = "<group>"; };
 		E52E3E78C54380C735C981F1 /* SyncMapping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncMapping.swift; sourceTree = "<group>"; };
@@ -1016,6 +1020,7 @@
 		D779458ACB250551828C0F7D /* Health */ = {
 			isa = PBXGroup;
 			children = (
+				323CD1BD2C46DFA7ABF6075A /* BodyTrendsCard.swift */,
 				C7D04D4055C041D71F46AC5F /* HealthViews.swift */,
 			);
 			path = Health;
@@ -1080,6 +1085,7 @@
 				F0B148FD2061C24465AF19AE /* DoneTodayCard.swift */,
 				411F91EB9B9E2B27AB0C454F /* EditDashboardView.swift */,
 				19D6B6CB556D193AB6006DBA /* GettingStartedCard.swift */,
+				E200A7444FC1CAAC61BFE93C /* GoalTodayCard.swift */,
 				C6B7ED0E6F54F0360FEF86BF /* HealthRunMatchCard.swift */,
 				1D0A8758A0E38811D70F3371 /* HomeView.swift */,
 				20FB067B24E854B00EC36D31 /* StrainCards.swift */,
@@ -1316,6 +1322,7 @@
 				6F2333E9AC60E44595804758 /* BalanceService.swift in Sources */,
 				80A66EE79053B4E0B2BC11DF /* BestEffortsCard.swift in Sources */,
 				6C1ED1DD208D41FAC934C88C /* BluetoothTreadmillViews.swift in Sources */,
+				1F95250C613E0A7D8A4554CD /* BodyTrendsCard.swift in Sources */,
 				E018DCDDBC4BF22B9DCBA451 /* BuildChannel.swift in Sources */,
 				2F9D22A335B60F09A3CF5C37 /* CadenceCard.swift in Sources */,
 				176A9CA264F5F1958B93191B /* CoachingSettingsModel.swift in Sources */,
@@ -1339,6 +1346,7 @@
 				EDDBE2DBA03463F2DC09D72B /* GarminService.swift in Sources */,
 				1B3C3B5BEC535848B04D4F04 /* GarminView.swift in Sources */,
 				F4ED317E86D3D6342A3BEEF1 /* GettingStartedCard.swift in Sources */,
+				013D99986BF8E1B53E3814D5 /* GoalTodayCard.swift in Sources */,
 				605B6E2AF0A60490FC53798F /* GymService.swift in Sources */,
 				9F4B9AF3C9674797C22FF1D7 /* GymSetupView.swift in Sources */,
 				E8900BCC467BDA427CF1A84C /* GymTemplateEditorView.swift in Sources */,
