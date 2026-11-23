@@ -363,14 +363,14 @@ enum ProgrammePlanner {
                                                            rules: rules),
                                  outline: outline, programme: programme, profile: profile, rules: rules)
         if let long = sessions.first(where: { $0.runType == .long && !$0.isRace }), !sessions.contains(where: \.isRace),
-           let wanted = wantedLongRun(long, week: week, programme: programme, rules: rules), wanted > longCap + 1000 {
+           let wanted = wantedLongRun(long, week: week, programme: programme, share: longRunShare(runs: weekCounts.runs)), wanted > longCap + 1000 {
             let unit = Units.distanceUnitLabel(profile.units)
             notes.append("Long run kept to \(String(format: "%.1f", Units.distance(meters: RunBuilder.tidy(longCap), in: profile.units))) \(unit) "
                          + "(the programme has \(String(format: "%.0f", Units.distance(meters: wanted, in: profile.units))) \(unit)) so it builds steadily from your recent long runs.")
         }
 
         let context = WeekContext(weekMeters: weekMeters, shortest: shortest, longestRun: rules.longestRunMeters,
-                                  longShare: rules.longRunShare, longCap: longCap, longSpec: programmeWeek?.longRun ?? .auto,
+                                  longShare: longRunShare(runs: weekCounts.runs), longCap: longCap, longSpec: programmeWeek?.longRun ?? .auto,
                                   raceMeters: trialMeters, raceZone: programme.trialZone(isRace: hasEventThisWeek),
                                   raceUsesGoalPace: trialMeters >= programme.timeTrialMeters,
                                   raceIsEffort: programme.goal == .first5k && profile.goalTimeSeconds == nil,
@@ -513,12 +513,24 @@ enum ProgrammePlanner {
 
     /// The long run a week's programme asks for, before any cap.
     private static func wantedLongRun(_ session: ProgrammeSession, week: WeekTarget, programme: Programme,
-                                      rules: ProgrammeRules) -> Double? {
+                                      share: Double) -> Double? {
         let spec = session.distance.kind == "auto" ? (week.programmeWeek.flatMap(programme.week)?.longRun ?? .auto) : session.distance
         switch spec.kind {
-        case "meters": return spec.value ?? week.runVolumeMeters * rules.longRunShare
-        case "share": return week.runVolumeMeters * (spec.value ?? rules.longRunShare)
-        default: return week.runVolumeMeters * rules.longRunShare
+        case "meters": return spec.value ?? week.runVolumeMeters * share
+        case "share": return week.runVolumeMeters * (spec.value ?? share)
+        default: return week.runVolumeMeters * share
+        }
+    }
+
+    /// The long run's share of the week's running when the programme doesn't set one: the fewer
+    /// runs in the week, the bigger each one's share (about 28% with five or more runs, 33% with
+    /// four, 38% with three, 48% with two). The programme's long-run cap still applies.
+    static func longRunShare(runs: Int) -> Double {
+        switch runs {
+        case ...2: return 0.48
+        case 3: return 0.38
+        case 4: return 0.33
+        default: return 0.28
         }
     }
 

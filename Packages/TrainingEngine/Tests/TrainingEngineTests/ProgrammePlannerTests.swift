@@ -384,6 +384,38 @@ final class ProgrammePlannerTests: XCTestCase {
         XCTAssertEqual(long.weeks[15].programmeWeek, 12)
     }
 
+    func testLongRunShareRisesWithFewerRuns() {
+        XCTAssertEqual(ProgrammePlanner.longRunShare(runs: 2), 0.48)
+        XCTAssertEqual(ProgrammePlanner.longRunShare(runs: 3), 0.38)
+        XCTAssertEqual(ProgrammePlanner.longRunShare(runs: 4), 0.33)
+        XCTAssertEqual(ProgrammePlanner.longRunShare(runs: 5), 0.28)
+        XCTAssertEqual(ProgrammePlanner.longRunShare(runs: 7), 0.28)
+    }
+
+    func testThreeRunWeeksHaveABiggerLongRun() {
+        // Half marathon, 3 runs: the long run is about 38% of an ordinary week (unless capped).
+        let runner = runners[1]
+        let days: [Weekday] = [.monday, .tuesday, .wednesday, .thursday, .saturday, .sunday]
+        var racer = TestSupport.profile(running: runner.level, goal: .halfMarathon, days: days, doubles: 0)
+        racer.liftSessionsPerWeek = 3
+        racer.weeklyRunMeters = 30000
+        racer.longestRecentRunMeters = 14000
+        let outline = generator.makeOutline(for: racer, startingOn: monday)
+        var checked = 0
+        for index in outline.weeks.indices {
+            guard let week = generator.generateWeek(index, outline: outline, profile: racer) else { continue }
+            let runs = week.sessions.filter { $0.kind.discipline == .run }
+            guard runs.count == 3, !week.notes.contains(where: { $0.hasPrefix("Long run kept to") }),
+                  let long = runs.first(where: { $0.kind == .run(.long) })?.estimatedDistanceMeters,
+                  !runs.contains(where: { $0.title.lowercased().contains("race") || $0.title.lowercased().contains("time trial") })
+            else { continue }
+            let total = runs.compactMap(\.estimatedDistanceMeters).reduce(0, +)
+            XCTAssertGreaterThanOrEqual(long / total, 0.33, "week \(index + 1): \(long) of \(total)")
+            checked += 1
+        }
+        print("THREE-RUN LONG RUN WEEKS CHECKED: \(checked)")
+    }
+
     func testLeadInGrowthRate() {
         let rules = TestSupport.bundledTemplates.programmes.rules(for: .intermediate)
         // 12 lead-in weeks: weeks 4, 8 and 12 follow a lighter week, so 9 weeks grow.
