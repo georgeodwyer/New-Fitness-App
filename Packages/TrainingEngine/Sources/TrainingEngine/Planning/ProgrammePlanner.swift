@@ -360,7 +360,7 @@ enum ProgrammePlanner {
         // Long run cap: the programme's, their longest recent run early on, and at most 15% (or
         // 1.5 km) over the longest of the last few long runs, so it builds steadily.
         let longCap = longRunCap(index, previous: longRuns(before: index, outline: outline, programme: programme, profile: profile,
-                                                           rules: rules),
+                                                           rules: rules, share: longRunShare(runs: weekCounts.runs)),
                                  outline: outline, programme: programme, profile: profile, rules: rules)
         if let long = sessions.first(where: { $0.runType == .long && !$0.isRace }), !sessions.contains(where: \.isRace),
            let wanted = wantedLongRun(long, week: week, programme: programme, share: longRunShare(runs: weekCounts.runs)), wanted > longCap + 1000 {
@@ -556,7 +556,7 @@ enum ProgrammePlanner {
     /// The long runs of the weeks before `index`, sized as their weeks size them (nil for weeks
     /// without one: recovery weeks after the programme, easy starts and race weeks).
     private static func longRuns(before index: Int, outline: PlanOutline, programme: Programme, profile: AthleteProfile,
-                                 rules: ProgrammeRules) -> [Double?] {
+                                 rules: ProgrammeRules, share: Double) -> [Double?] {
         var result: [Double?] = []
         for i in 0..<min(index, outline.weeks.count) {
             let week = outline.weeks[i]
@@ -566,7 +566,7 @@ enum ProgrammePlanner {
             }
             let sessions = programme.sessions(inWeek: number)
             guard !sessions.contains(where: \.isRace), let long = sessions.first(where: { $0.runType == .long }),
-                  let wanted = wantedLongRun(long, week: week, programme: programme, rules: rules) else {
+                  let wanted = wantedLongRun(long, week: week, programme: programme, share: share) else {
                 result.append(nil)
                 continue
             }
