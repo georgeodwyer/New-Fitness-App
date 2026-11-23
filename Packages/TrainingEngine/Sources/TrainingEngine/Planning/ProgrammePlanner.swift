@@ -614,6 +614,8 @@ enum ProgrammePlanner {
                 runs[i].structure = built.structure
                 runs[i].meters = built.structure.estimate(zones: c.zones).distanceMeters
                 runs[i].summary = built.summary
+                // A run/walk long run is still the week's long run: easy runs stay shorter.
+                if session.runType == .long { longMeters = runs[i].meters }
             } else if session.runType == .long {
                 let spec = session.distance.kind == "auto" ? c.longSpec : session.distance
                 var meters: Double
